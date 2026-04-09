@@ -41,8 +41,11 @@ export default function AboutClient() {
           <span className="font-thin tracking-[0.3em] text-5xl uppercase" style={{ color: "#E8A020" }}>up</span>
         </div>
         <p className="tracking-[0.5em] uppercase text-gray-400 mb-8 text-sm">find your night</p>
-        <p className="text-gray-300 max-w-2xl mx-auto text-lg leading-relaxed">
-          Nightup.gr is Greece's #1 platform for party and events discovery. We connect nightlife lovers with the best events, venues, and professionals across the country — from the underground clubs of Athens to the sunsets of Mykonos.
+        <p className="text-xl md:text-2xl font-semibold text-white max-w-2xl mx-auto mb-4 leading-snug">
+          Ξεκίνησε από ένα Σάββατο βράδυ που δεν ξέραμε πού να πάμε. Τώρα κανείς δεν έχει αυτό το πρόβλημα.
+        </p>
+        <p className="text-gray-300 max-w-2xl mx-auto text-base leading-relaxed">
+          Το Nightup είναι η πρώτη ελληνική πλατφόρμα όπου βρίσκεις events και club nights σε όλη την Ελλάδα — φιλτράρεις με βάση τη μουσική και την πόλη σου και πας κατευθείαν εκεί που θέλεις. Κι αν θέλεις να φτιάξεις το δικό σου πάρτι, έχουμε και αυτό — venues, DJs, ήχος, φώτα, catering. Όλοι οι επαγγελματίες που χρειάζεσαι, σε ένα μέρος.
         </p>
       </section>
 

@@ -74,12 +74,9 @@ export default function PartyClient({ professionals }: { professionals: Professi
           style={{ backgroundColor: "#E8A020" }}
         />
         <div className="relative z-10">
-          <h1 className="text-4xl md:text-5xl font-semibold mb-4">
-            Make Your{" "}
-            <span style={{ color: "#E8A020" }}>Party</span>
-          </h1>
+          <h1 className="text-4xl md:text-5xl font-semibold mb-4">Make it happen.</h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Find the best venues, artists, photographers, and everything you need to throw an unforgettable event in Greece.
+            Όλοι οι επαγγελματίες που χρειάζεσαι για το πάρτι σου, σε ένα μέρος.
           </p>
         </div>
       </section>

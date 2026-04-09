@@ -31,8 +31,9 @@ export default function HomePage() {
             <span className="font-thin tracking-[0.3em] text-5xl md:text-7xl uppercase" style={{ color: "#E8A020" }}>up</span>
           </div>
           <p className="text-sm md:text-base tracking-[0.5em] uppercase text-gray-400 mb-8">find your night</p>
-          <p className="text-lg md:text-xl text-gray-300 mb-10">
-            Greece's #1 platform for events, parties, and nightlife. Athens to Mykonos — we've got your night covered.
+          <p className="text-2xl md:text-3xl font-semibold text-white mb-4">Your night starts here.</p>
+          <p className="text-base md:text-lg text-gray-300 mb-10">
+            Βρες events και club nights σε όλη την Ελλάδα — ή φτιάξε το δικό σου πάρτι από το μηδέν. Venues, DJs, ήχος, φώτα, catering — όλα σε ένα μέρος.
           </p>
           <HeroSearch />
         </div>

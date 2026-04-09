@@ -50,8 +50,8 @@ export default function EventsClient({ events }: { events: Event[] }) {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold mb-2">Events</h1>
-        <p className="text-gray-400">Discover the best nights across Greece</p>
+        <h1 className="text-3xl font-semibold mb-2">Every night has its sound.</h1>
+        <p className="text-gray-400">Βρες το event που ταιριάζει στο βράδυ σου — από techno μέχρι μπουζούκια.</p>
       </div>
 
       {/* Genre Pills */}
@@ -73,9 +73,9 @@ export default function EventsClient({ events }: { events: Event[] }) {
       </div>
 
       {/* Filters Row */}
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
         {/* Search query */}
-        <div className="flex items-center gap-2 flex-1 min-w-48">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <input
             type="text"
             placeholder="Search events, venues..."
@@ -91,38 +91,41 @@ export default function EventsClient({ events }: { events: Event[] }) {
           )}
         </div>
 
-        {/* Date filter */}
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400">Date:</label>
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-lg text-sm outline-none"
+        {/* Date + City filters row on mobile */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Date filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-400 whitespace-nowrap">Date:</label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-1.5 rounded-lg text-sm outline-none"
+              style={{ backgroundColor: "#1A1A2E", color: "#fff", border: "1px solid #333" }}
+            />
+            {dateFilter && (
+              <button onClick={() => setDateFilter("")} className="text-xs text-gray-400 hover:text-white">
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* City filter */}
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="px-3 py-1.5 rounded-lg text-sm outline-none cursor-pointer"
             style={{ backgroundColor: "#1A1A2E", color: "#fff", border: "1px solid #333" }}
-          />
-          {dateFilter && (
-            <button onClick={() => setDateFilter("")} className="text-xs text-gray-400 hover:text-white">
-              Clear
-            </button>
-          )}
+          >
+            {CITIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          <span className="text-xs text-gray-500">
+            {filtered.length} event{filtered.length !== 1 ? "s" : ""}
+          </span>
         </div>
-
-        {/* City filter */}
-        <select
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-sm outline-none cursor-pointer"
-          style={{ backgroundColor: "#1A1A2E", color: "#fff", border: "1px solid #333" }}
-        >
-          {CITIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-
-        <span className="text-xs text-gray-500 self-center">
-          {filtered.length} event{filtered.length !== 1 ? "s" : ""}
-        </span>
       </div>
 
       {/* Events Grid */}

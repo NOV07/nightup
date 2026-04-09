@@ -99,7 +99,7 @@ export default async function EventPage({ params }: Props) {
             {/* Share */}
             <div className="mb-8">
               <h2 className="text-lg font-semibold mb-3">Share</h2>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 {["Twitter", "Facebook", "WhatsApp", "Copy link"].map((s) => (
                   <button
                     key={s}

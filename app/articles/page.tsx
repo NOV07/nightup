@@ -11,8 +11,14 @@ export default function ArticlesPage() {
 
   return (
     <div>
+      {/* Page Header */}
+      <div className="max-w-7xl mx-auto px-4 pt-8 pb-4">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">The Nightup Journal.</h1>
+        <p className="text-gray-400">Read between the sets.</p>
+      </div>
+
       {/* Featured Hero */}
-      <div className="relative h-72 md:h-96 w-full overflow-hidden">
+      <div className="relative h-64 md:h-80 w-full overflow-hidden">
         <Image src={featured.image} alt={featured.title} fill className="object-cover" priority />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 20%, #0F0F1A 100%)" }} />
         <div className="absolute bottom-8 left-0 right-0 max-w-4xl mx-auto px-4">
@@ -22,7 +28,7 @@ export default function ArticlesPage() {
           >
             {featured.category}
           </span>
-          <h1 className="text-2xl md:text-4xl font-bold mb-2 leading-tight">{featured.title}</h1>
+          <h2 className="text-xl md:text-3xl font-bold mb-2 leading-tight">{featured.title}</h2>
           <div className="flex items-center gap-3 text-sm text-gray-400">
             <span>{new Date(featured.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
             <span>·</span>

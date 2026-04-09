@@ -74,7 +74,7 @@ function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 pt-6 border-t flex flex-col md:flex-row items-center justify-between gap-2" style={{ borderColor: "#1A1A2E" }}>
-        <p className="text-xs text-gray-600">© 2026 Nightup.gr. All rights reserved.</p>
+        <p className="text-xs text-gray-600">© 2026 Nightup. All rights reserved.</p>
         <div className="flex gap-4 text-xs text-gray-600">
           <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-white transition-colors">Terms of Service</a>

@@ -33,10 +33,8 @@ export default function RadioClient({
     <div className="max-w-4xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-semibold mb-3">
-          Night<span style={{ color: "#E8A020" }}>up</span> Radio
-        </h1>
-        <p className="text-gray-400">Live streams from Greece's hottest electronic stations</p>
+        <h1 className="text-4xl font-semibold mb-3">Live from Athens.</h1>
+        <p className="text-gray-400">House. Techno. R&amp;B. Always on.</p>
       </div>
 
       {/* Now Playing */}

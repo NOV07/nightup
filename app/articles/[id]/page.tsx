@@ -89,7 +89,7 @@ export default async function ArticlePage({ params }: Props) {
         {/* Share */}
         <div className="pb-10 border-t pt-8" style={{ borderColor: "#1A1A2E" }}>
           <p className="text-sm text-gray-400 mb-3">Share this article:</p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {["Twitter", "Facebook", "WhatsApp"].map((s) => (
               <button
                 key={s}

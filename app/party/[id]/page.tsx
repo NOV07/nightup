@@ -51,15 +51,15 @@ export default async function ProfessionalPage({ params }: Props) {
               <Image src={pro.avatar} alt={pro.name} fill className="object-cover" />
             </div>
 
-            <h1 className="text-2xl font-bold mb-1">{pro.name}</h1>
-            <p className="text-sm mb-2" style={{ color: "#E8A020" }}>{pro.category}</p>
+            <h1 className="text-2xl font-bold mb-1 text-center md:text-left">{pro.name}</h1>
+            <p className="text-sm mb-2 text-center md:text-left" style={{ color: "#E8A020" }}>{pro.category}</p>
 
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
               <StarRating stars={pro.stars} />
               <span className="text-sm text-gray-400">{pro.stars} ({pro.reviewCount} reviews)</span>
             </div>
 
-            <p className="text-sm text-gray-400 mb-6">📍 {pro.location}</p>
+            <p className="text-sm text-gray-400 mb-6 text-center md:text-left">📍 {pro.location}</p>
 
             <ContactModal name={pro.name} phone={pro.contact} email={pro.email} />
           </div>
