@@ -42,7 +42,7 @@ export default function HeroSearch() {
         <select
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          className="px-3 py-2 rounded-xl text-sm outline-none cursor-pointer sm:border-l"
+          className="w-full sm:w-auto px-3 py-2 rounded-xl text-sm outline-none cursor-pointer sm:border-l"
           style={{ backgroundColor: "#16213E", color: "#fff", borderColor: "#333" }}
         >
           {CITIES.map((c) => (
@@ -53,7 +53,7 @@ export default function HeroSearch() {
         {/* Search button */}
         <button
           onClick={handleSearch}
-          className="px-6 py-2 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
+          className="w-full sm:w-auto px-6 py-2 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
           style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
         >
           Search

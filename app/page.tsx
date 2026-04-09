@@ -25,7 +25,7 @@ export default function HomePage() {
           style={{ backgroundColor: "#A020E8" }}
         />
 
-        <div className="relative z-10 max-w-3xl mx-auto">
+        <div className="relative z-10 max-w-3xl mx-auto w-full">
           <div className="flex items-baseline justify-center gap-1 mb-2">
             <span className="font-thin tracking-[0.3em] text-5xl md:text-7xl uppercase text-white">Night</span>
             <span className="font-thin tracking-[0.3em] text-5xl md:text-7xl uppercase" style={{ color: "#E8A020" }}>up</span>
@@ -33,7 +33,7 @@ export default function HomePage() {
           <p className="text-sm md:text-base tracking-[0.5em] uppercase text-gray-400 mb-8">find your night</p>
           <p className="text-2xl md:text-3xl font-semibold text-white mb-4">Your night starts here.</p>
           <p className="text-base md:text-lg text-gray-300 mb-10">
-            Βρες events και club nights σε όλη την Ελλάδα — ή φτιάξε το δικό σου πάρτι από το μηδέν. Venues, DJs, ήχος, φώτα, catering — όλα σε ένα μέρος.
+            Βρες events και club nights σε όλη την Ελλάδα. Φτιάξε το δικό σου πάρτι από το μηδέν. Venues, DJs, ήχος, φώτα, catering. Όλα σε ένα μέρος.
           </p>
           <HeroSearch />
         </div>
@@ -41,7 +41,7 @@ export default function HomePage() {
 
       {/* Live Radio */}
       <section className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center justify-center md:justify-start gap-3 mb-6">
           <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "#E8A020" }} />
           <h2 className="text-xs font-semibold tracking-widest uppercase" style={{ color: "#E8A020" }}>Live Radio</h2>
         </div>
@@ -50,8 +50,8 @@ export default function HomePage() {
 
       {/* Recommended Events */}
       <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Recommended Events</h2>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-6">
+          <h2 className="text-xl font-semibold text-center sm:text-left">Recommended Events</h2>
           <Link href="/events" className="text-sm transition-colors" style={{ color: "#E8A020" }}>
             View all →
           </Link>
@@ -65,8 +65,8 @@ export default function HomePage() {
 
       {/* Latest Articles */}
       <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Latest Articles</h2>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-6">
+          <h2 className="text-xl font-semibold text-center sm:text-left">Latest Articles</h2>
           <Link href="/articles" className="text-sm transition-colors" style={{ color: "#E8A020" }}>
             View all →
           </Link>
@@ -100,7 +100,7 @@ export default function HomePage() {
 
       {/* New Releases */}
       <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center justify-center md:justify-start gap-3 mb-6">
           <h2 className="text-xl font-semibold">New Releases</h2>
           <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
             NEW

@@ -52,7 +52,7 @@ export default function MiniPlayer() {
               {currentStation.name}
             </span>
             <span className="text-xs text-gray-400 truncate hidden md:block">
-              — {currentStation.genre}
+              {currentStation.genre}
             </span>
           </div>
         </div>

@@ -212,7 +212,7 @@ export default function RadioClient({
               )}
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium">{t.artist}</span>
-                <span className="text-sm text-gray-400"> — {t.track}</span>
+                <span className="text-sm text-gray-400"> · {t.track}</span>
               </div>
             </div>
           ))}

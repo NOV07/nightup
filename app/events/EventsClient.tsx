@@ -51,7 +51,7 @@ export default function EventsClient({ events }: { events: Event[] }) {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-semibold mb-2">Every night has its sound.</h1>
-        <p className="text-gray-400">Βρες το event που ταιριάζει στο βράδυ σου — από techno μέχρι μπουζούκια.</p>
+        <p className="text-gray-400">Βρες το event που ταιριάζει στο βράδυ σου. Από techno μέχρι μπουζούκια.</p>
       </div>
 
       {/* Genre Pills */}
