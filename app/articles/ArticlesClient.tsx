@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-const CATEGORIES = ["All", "Venues", "Festivals", "Artists", "Guide", "Music"];
+const CATEGORIES = ["All", "Venues", "Festivals", "Artists", "Guide", "Music", "Culture"];
 
 interface Article {
   id: string;
@@ -33,9 +33,9 @@ export default function ArticlesClient({ articles }: { articles: Article[] }) {
             onClick={() => setActiveCategory(cat)}
             className="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0"
             style={{
-              backgroundColor: activeCategory === cat ? "#E8A020" : "#1A1A2E",
-              color: activeCategory === cat ? "#0F0F1A" : "#aaa",
-              border: `1px solid ${activeCategory === cat ? "#E8A020" : "#333"}`,
+              backgroundColor: activeCategory === cat ? "#E8A020" : "#111120",
+              color: activeCategory === cat ? "#0F0F1A" : "rgba(255,255,255,0.45)",
+              border: `1px solid ${activeCategory === cat ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
             }}
           >
             {cat}
@@ -49,14 +49,15 @@ export default function ArticlesClient({ articles }: { articles: Article[] }) {
           <Link
             key={a.id}
             href={`/articles/${a.id}`}
-            className="group block rounded-2xl overflow-hidden transition-transform hover:-translate-y-1"
-            style={{ backgroundColor: "#1A1A2E" }}
+            className="group block rounded-2xl overflow-hidden card-hover"
+            style={{ backgroundColor: "#111120", border: "1px solid rgba(232,160,32,0.1)" }}
           >
             <div className="relative h-52 overflow-hidden">
               <Image
                 src={a.image}
                 alt={a.title}
                 fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

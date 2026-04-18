@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import EventCard from "../components/EventCard";
+import { useLanguage } from "../components/LanguageContext";
 
-const GENRES = ["All", "Techno", "House", "Deep House", "Hip-Hop", "R&B", "Latin", "Open Air", "Afrobeats", "Live Music"];
-const CITIES = ["All Cities", "Athens", "Thessaloniki", "Mykonos", "Heraklion", "Patras"];
+const GENRES = ["All", "Techno", "House", "Deep House", "Hip-Hop", "R&B", "Latin", "Open Air", "Rock", "Laika", "Entechno", "Other"];
+const CITIES = ["All Cities", "Athens", "Thessaloniki", "Mykonos", "Santorini", "Heraklion", "Patras", "Rhodes", "Ios", "Corfu", "Zakynthos"];
 
 interface Event {
   id: string;
@@ -19,9 +21,27 @@ interface Event {
   city: string;
   interestedCount: number;
   goingCount: number;
+  featured?: boolean;
+  nightupPick?: boolean;
+  organizerName?: string;
+  organizerSlug?: string;
+}
+
+function getWeekRange() {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - ((day + 6) % 7));
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  return {
+    from: mon.toISOString().split("T")[0],
+    to: sun.toISOString().split("T")[0],
+  };
 }
 
 export default function EventsClient({ events }: { events: Event[] }) {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [genre, setGenre] = useState("All");
   const [city, setCity] = useState("All Cities");
@@ -31,8 +51,10 @@ export default function EventsClient({ events }: { events: Event[] }) {
   useEffect(() => {
     const q = searchParams.get("q");
     const c = searchParams.get("city");
+    const g = searchParams.get("genre");
     if (q) setQuery(q);
     if (c && CITIES.includes(c)) setCity(c);
+    if (g && GENRES.includes(g)) setGenre(g);
   }, [searchParams]);
 
   const filtered = events.filter((e) => {
@@ -46,99 +68,162 @@ export default function EventsClient({ events }: { events: Event[] }) {
     return true;
   });
 
+  const { from: weekStart, to: weekEnd } = getWeekRange();
+
+  const hotEvents = [...events]
+    .filter((e) => e.featured)
+    .sort((a, b) => (b.interestedCount + b.goingCount) - (a.interestedCount + a.goingCount))
+    .slice(0, 3);
+
+  const hotIds = new Set(hotEvents.map((e) => e.id));
+  const popularEvents = [...events]
+    .filter((e) => !hotIds.has(e.id))
+    .sort((a, b) => (b.interestedCount + b.goingCount) - (a.interestedCount + a.goingCount))
+    .slice(0, 2);
+
+  const nightupPicks = events.filter((e) => e.nightupPick);
+
+  const weekendEvents = events.filter((e) => e.date >= weekStart && e.date <= weekEnd).slice(0, 8);
+
+  const isFiltering = genre !== "All" || city !== "All Cities" || dateFilter || query;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold mb-2">Every night has its sound.</h1>
-        <p className="text-gray-400">Βρες το event που ταιριάζει στο βράδυ σου. Από techno μέχρι μπουζούκια.</p>
+        <h1 className="text-3xl font-semibold mb-2">{t("events_hero_title")}</h1>
+        <p className="text-gray-400">{t("events_hero_body")}</p>
       </div>
 
-      {/* Genre Pills */}
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide">
-        {GENRES.map((g) => (
-          <button
-            key={g}
-            onClick={() => setGenre(g)}
-            className="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0"
-            style={{
-              backgroundColor: genre === g ? "#E8A020" : "#1A1A2E",
-              color: genre === g ? "#0F0F1A" : "#aaa",
-              border: `1px solid ${genre === g ? "#E8A020" : "#333"}`,
-            }}
-          >
-            {g}
-          </button>
-        ))}
-      </div>
-
-      {/* Filters Row */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
-        {/* Search query */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      {/* Search + Filters */}
+      <div className="rounded-2xl p-4 mb-8" style={{ backgroundColor: "#0a0a14", border: "1px solid rgba(232,160,32,0.12)" }}>
+        <div className="flex flex-col sm:flex-row gap-3 mb-3">
           <input
             type="text"
-            placeholder="Search events, venues..."
+            placeholder="Search events, artists, venues..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full px-3 py-1.5 rounded-lg text-sm outline-none"
-            style={{ backgroundColor: "#1A1A2E", color: "#fff", border: "1px solid #333" }}
+            className="flex-1 px-3 py-2 rounded-xl text-sm outline-none focus-gold"
+            style={{ backgroundColor: "#0d0d1a", color: "#fff", border: "1px solid rgba(232,160,32,0.15)" }}
           />
-          {query && (
-            <button onClick={() => setQuery("")} className="text-xs text-gray-400 hover:text-white whitespace-nowrap">
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Date + City filters row on mobile */}
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Date filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-400 whitespace-nowrap">Date:</label>
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ backgroundColor: "#1A1A2E", color: "#fff", border: "1px solid #333" }}
-            />
-            {dateFilter && (
-              <button onClick={() => setDateFilter("")} className="text-xs text-gray-400 hover:text-white">
-                Clear
-              </button>
-            )}
-          </div>
-
-          {/* City filter */}
-          <select
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="px-3 py-1.5 rounded-lg text-sm outline-none cursor-pointer"
-            style={{ backgroundColor: "#1A1A2E", color: "#fff", border: "1px solid #333" }}
-          >
-            {CITIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+          <select value={city} onChange={(e) => setCity(e.target.value)} className="px-3 py-2 rounded-xl text-sm outline-none cursor-pointer focus-gold" style={{ backgroundColor: "#0d0d1a", color: "#fff", border: "1px solid rgba(232,160,32,0.15)" }}>
+            {CITIES.map((c) => <option key={c}>{c}</option>)}
           </select>
-
-          <span className="text-xs text-gray-500">
-            {filtered.length} event{filtered.length !== 1 ? "s" : ""}
-          </span>
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl text-sm outline-none focus-gold"
+            style={{ backgroundColor: "#0d0d1a", color: dateFilter ? "#fff" : "#555", border: "1px solid rgba(232,160,32,0.15)", colorScheme: "dark" }}
+          />
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {GENRES.map((g) => (
+            <button
+              key={g}
+              onClick={() => setGenre(g)}
+              className="whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all flex-shrink-0"
+              style={{
+                backgroundColor: genre === g ? "#E8A020" : "#111120",
+                color: genre === g ? "#0F0F1A" : "rgba(255,255,255,0.45)",
+                border: `1px solid ${genre === g ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
+              }}
+            >
+              {g}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Events Grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-24 text-gray-500">
-          <p className="text-4xl mb-4">🎧</p>
-          <p>No events found. Try different filters.</p>
+      {isFiltering ? (
+        /* Filtered results */
+        <div>
+          <p className="text-sm text-gray-400 mb-4">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</p>
+          {filtered.length === 0 ? (
+            <div className="text-center py-20 text-gray-500">
+              <p className="text-4xl mb-4">🎧</p>
+              <p>No events match your search. Try different filters.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filtered.map((e) => <EventCard key={e.id} {...e} />)}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((e) => (
-            <EventCard key={e.id} {...e} />
-          ))}
+        /* Sectioned view */
+        <div className="space-y-12">
+          {/* Hot Events */}
+          {hotEvents.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="section-divider" />
+                <h2 className="text-xl font-bold tracking-tight">🔥 Hot Events</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {hotEvents.map((e) => (
+                  <EventCard key={e.id} {...e} badge="🔥 Hot" />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Most Popular */}
+          {popularEvents.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="section-divider" />
+                <h2 className="text-xl font-bold tracking-tight">📈 Most Popular</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {popularEvents.map((e) => (
+                  <EventCard key={e.id} {...e} badge="📈 Popular" />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Nightup Picks */}
+          {nightupPicks.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="section-divider" />
+                <h2 className="text-xl font-bold tracking-tight">⭐ Nightup Picks</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {nightupPicks.map((e) => <EventCard key={e.id} {...e} />)}
+              </div>
+            </section>
+          )}
+
+          {/* This Weekend */}
+          <section>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <span className="section-divider" />
+                <h2 className="text-xl font-bold tracking-tight">This Weekend</h2>
+              </div>
+              <Link href="/events/all" className="text-sm font-medium transition-colors hover:text-white" style={{ color: "#E8A020" }}>View All →</Link>
+            </div>
+            {weekendEvents.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                <p>No events this weekend yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {weekendEvents.map((e) => <EventCard key={e.id} {...e} />)}
+              </div>
+            )}
+          </section>
+
+          <div className="text-center pt-4">
+            <Link
+              href="/events/all"
+              className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105"
+              style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
+            >
+              View All Events →
+            </Link>
+          </div>
         </div>
       )}
     </div>

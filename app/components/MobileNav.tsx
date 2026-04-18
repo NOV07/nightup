@@ -32,11 +32,12 @@ const navItems = [
     ),
   },
   {
-    href: "/radio",
-    label: "Radio",
+    href: "/nightwaves",
+    label: "Nightwaves",
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      <svg width="20" height="20" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+        <path d="M0 6h1.5M1.5 6V3M1.5 3V6M3 6V1M3 1V6M4.5 6V4M4.5 4V6M6 6V2M6 2V6M7.5 6V0M7.5 0V6M9 6V2M9 2V6M10.5 6V4M10.5 4V6M12 6V1M12 1V6M13.5 6V3M13.5 3V6M15 6h1"
+          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
       </svg>
     ),
   },
