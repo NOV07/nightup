@@ -1,73 +1,223 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy: #0F0F1A;
+  --color-navy: #0A0A12;
+  --color-navy-mid: #0F0F1A;
   --color-gold: #E8A020;
   --color-gold-light: #F0B84A;
-  --color-surface: #1A1A2E;
-  --color-surface-2: #16213E;
+  --color-gold-dim: rgba(232, 160, 32, 0.12);
+  --color-surface: #111120;
+  --color-surface-2: #1A1A2E;
+  --color-surface-3: #16213E;
   --font-sans: var(--font-geist-sans);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background-color: #0F0F1A;
+  background-color: #0A0A12;
   color: #FFFFFF;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   min-height: 100vh;
+  line-height: 1.6;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0F0F1A;
-}
-::-webkit-scrollbar-thumb {
-  background: #E8A020;
-  border-radius: 3px;
-}
+/* ── Transitions ─────────────────────────────────────────── */
+button, a { transition: all 0.2s ease; }
 
-/* Hide scrollbar on mobile */
-@media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    display: none;
-  }
-}
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0A0A12; }
+::-webkit-scrollbar-thumb { background: rgba(232, 160, 32, 0.4); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #E8A020; }
+@media (max-width: 768px) { ::-webkit-scrollbar { display: none; } }
 
-/* Gradient text utility */
+/* ── Text utilities ──────────────────────────────────────── */
 .text-gradient {
-  background: linear-gradient(135deg, #E8A020, #F0B84A);
+  background: linear-gradient(135deg, #E8A020 0%, #F0B84A 50%, #E8A020 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glow effect */
-.glow-gold {
-  box-shadow: 0 0 20px rgba(232, 160, 32, 0.3);
+.text-gradient-soft {
+  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Hide number input arrows */
+/* ── Glow utilities ──────────────────────────────────────── */
+.glow-gold   { box-shadow: 0 0 24px rgba(232, 160, 32, 0.25); }
+.glow-gold-sm { box-shadow: 0 0 12px rgba(232, 160, 32, 0.18); }
+
+/* ── Card hover — premium lift ───────────────────────────── */
+.card-hover {
+  transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
+              box-shadow 0.35s ease,
+              border-color 0.35s ease;
+}
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(232, 160, 32, 0.18);
+}
+
+/* Event card specific hover ring */
+.event-card {
+  position: relative;
+  transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
+              box-shadow 0.35s ease;
+}
+.event-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(232, 160, 32, 0);
+  transition: border-color 0.35s ease;
+  pointer-events: none;
+}
+.event-card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.6),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.event-card:hover::after {
+  border-color: rgba(232, 160, 32, 0.25);
+}
+
+/* ── Glass card ──────────────────────────────────────────── */
+.glass-card {
+  background: rgba(17, 17, 32, 0.75);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Focus ring ──────────────────────────────────────────── */
+.focus-gold:focus {
+  outline: none;
+  border-color: #E8A020 !important;
+  box-shadow: 0 0 0 3px rgba(232, 160, 32, 0.18);
+}
+
+/* ── Input fixes ─────────────────────────────────────────── */
 input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+
+/* ── Section label ───────────────────────────────────────── */
+.section-divider {
+  display: inline-block;
+  width: 2px;
+  height: 20px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, #E8A020, rgba(232, 160, 32, 0.1));
+  flex-shrink: 0;
 }
 
-/* Audio visualizer bar animation */
+/* ── Animations ──────────────────────────────────────────── */
+
+/* Audio visualizer */
 @keyframes visualizer {
   0%, 100% { height: 4px; }
   50% { height: 20px; }
 }
+.visualizer-bar { animation: visualizer 0.8s ease-in-out infinite; }
 
-.visualizer-bar {
-  animation: visualizer 0.8s ease-in-out infinite;
+/* Ambient blob float */
+@keyframes float-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -30px) scale(1.06); }
+  66% { transform: translate(-15px, 15px) scale(0.96); }
 }
+@keyframes float-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-25px, 20px) scale(1.08); }
+  70% { transform: translate(10px, -10px) scale(0.94); }
+}
+
+/* Glow pulse */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.14; }
+}
+
+/* Slide up (player bar entrance) */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Fade in up (content sections) */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shimmer (gold highlight sweep) */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Live dot pulse */
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 160, 32, 0.6); }
+  50%       { box-shadow: 0 0 0 6px rgba(232, 160, 32, 0); }
+}
+
+/* Gentle spin (decorative) */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Utility animation classes ───────────────────────────── */
+.animate-float-a { animation: float-a 12s ease-in-out infinite; }
+.animate-float-b { animation: float-b 16s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 4s ease-in-out infinite; }
+.animate-fade-up { animation: fadeInUp 0.6s ease both; }
+.animate-live-pulse { animation: live-pulse 2s ease infinite; }
+
+/* ── Gold shimmer button ─────────────────────────────────── */
+.btn-gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    #E8A020 0%,
+    #F0B84A 40%,
+    #E8A020 60%,
+    #F0B84A 100%
+  );
+  background-size: 200% auto;
+  transition: background-position 0.5s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-gold-shimmer:hover {
+  background-position: right center;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(232, 160, 32, 0.35);
+}
+
+/* ── Gradient border card ────────────────────────────────── */
+.grad-border {
+  background:
+    linear-gradient(#111120, #111120) padding-box,
+    linear-gradient(135deg, rgba(232,160,32,0.3), rgba(232,160,32,0.05) 60%, transparent) border-box;
+  border: 1px solid transparent;
+}
+
+/* ── Article rich-text content ───────────────────────────── */
+.article-content h2 { color: #fff; font-size: 26px; font-weight: 600; margin: 32px 0 16px; }
+.article-content h3 { color: #fff; font-size: 20px; font-weight: 500; margin: 24px 0 12px; }
+.article-content p { color: rgba(255,255,255,0.8); font-size: 17px; line-height: 1.85; margin-bottom: 20px; }
+.article-content strong { color: #fff; }
+.article-content a { color: #E8A020; }
+.article-content a:hover { text-decoration: underline; }
+.article-content blockquote { border-left: 3px solid #E8A020; padding-left: 20px; color: rgba(255,255,255,0.6); font-style: italic; margin: 24px 0; }
+.article-content ul, .article-content ol { color: rgba(255,255,255,0.8); padding-left: 24px; line-height: 1.8; margin-bottom: 20px; }
+.article-content li { margin-bottom: 8px; }

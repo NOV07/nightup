@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import RichTextEditor from "../components/admin/RichTextEditor";
 import { useRouter } from "next/navigation";
 
 function readFileAsBase64(file: File): Promise<string> {
@@ -44,7 +45,7 @@ interface AllContent {
 
 const defaultEventForm = { title: "", image_url: "", genre: "Techno", price: "", date: "", time: "23:00", venue: "", city: "Athens", lineup: "", description: "", ticket_url: "https://tickets.nightup.gr" };
 const defaultProForm = { name: "", avatar: "", category: "Venues", rating: "5", review_count: "0", location: "", description: "" };
-const defaultArticleForm = { title: "", category: "Venues", date: "", read_time: "5 min read", image: "", excerpt: "", body: "", featured: false };
+const defaultArticleForm = { title: "", category: "Venues", date: "", read_time: "5", image: "", excerpt: "", body: "", featured: false, series: "", series_order: "" };
 const defaultOrgForm = { name: "", type: "Club", city: "Athens", about: "", cover_image: "", avatar: "", instagram: "", facebook: "", tiktok: "", website: "" };
 const defaultReleaseForm = { title: "", artist: "", type: "Single", genre: "House", cover_image: "", spotify_url: "", soundcloud_url: "", description: "", release_date: "", is_promoted: false };
 const defaultMixForm = { title: "", artist: "", genre: "House", cover_image: "", soundcloud_url: "", duration: "" };
@@ -79,6 +80,7 @@ export default function AdminClient() {
   const [mixForm, setMixForm] = useState({ ...defaultMixForm });
   const [playlistForm, setPlaylistForm] = useState({ ...defaultPlaylistForm });
   const [artistForm, setArtistForm] = useState({ ...defaultArtistForm });
+  const [articleContent, setArticleContent] = useState("");
 
   const [adminEventPhoto, setAdminEventPhoto] = useState<string>("");
   const [adminEventPhotoError, setAdminEventPhotoError] = useState("");
@@ -224,13 +226,24 @@ export default function AdminClient() {
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "articles", data: articleForm }),
+      body: JSON.stringify({
+        table: "articles",
+        data: {
+          ...articleForm,
+          read_time: articleForm.read_time ? `${articleForm.read_time} min read` : "5 min read",
+          content: articleContent,
+          body: articleContent,
+          series: articleForm.series || null,
+          series_order: articleForm.series_order ? parseInt(articleForm.series_order) : null,
+        },
+      }),
     });
     const json = await res.json();
     setAddLoading(false);
     if (!res.ok) { setAddError(json.error ?? "Failed"); return; }
     setAddSuccess("Article added!");
     setArticleForm({ ...defaultArticleForm });
+    setArticleContent("");
     setShowAddForm(false);
     await fetchContent();
   }
@@ -379,6 +392,9 @@ export default function AdminClient() {
         <div className="min-w-0 flex-1">
           <p className="font-medium text-sm truncate">{primary || "—"}</p>
           {secondary && <p className="text-xs text-gray-500 mt-0.5 truncate">{secondary}</p>}
+          {tab === "articles" && !!(item as any).series && (
+            <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block" style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}>{String((item as any).series)}</span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Nightup Pick toggle — events */}
@@ -626,10 +642,15 @@ export default function AdminClient() {
                     <div className="sm:col-span-2"><label className={labelCls}>Title *</label><input required className={inputCls} style={inputStyle} value={articleForm.title} onChange={(e) => setArticleForm((f) => ({ ...f, title: e.target.value }))} /></div>
                     <div><label className={labelCls}>Category</label><select className={inputCls} style={inputStyle} value={articleForm.category} onChange={(e) => setArticleForm((f) => ({ ...f, category: e.target.value }))}>{ART_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></div>
                     <div><label className={labelCls}>Date</label><input type="date" className={inputCls} style={inputStyle} value={articleForm.date} onChange={(e) => setArticleForm((f) => ({ ...f, date: e.target.value }))} /></div>
-                    <div><label className={labelCls}>Read Time</label><input className={inputCls} style={inputStyle} value={articleForm.read_time} onChange={(e) => setArticleForm((f) => ({ ...f, read_time: e.target.value }))} placeholder="5 min read" /></div>
+                    <div><label className={labelCls}>Read Time (min)</label><input type="number" min="1" className={inputCls} style={inputStyle} value={articleForm.read_time} onChange={(e) => setArticleForm((f) => ({ ...f, read_time: e.target.value }))} placeholder="5" /></div>
                     <div><label className={labelCls}>Image URL</label><input className={inputCls} style={inputStyle} value={articleForm.image} onChange={(e) => setArticleForm((f) => ({ ...f, image: e.target.value }))} placeholder="https://..." /></div>
+                    <div><label className={labelCls}>Series Slug</label><input className={inputCls} style={inputStyle} value={articleForm.series} onChange={(e) => setArticleForm((f) => ({ ...f, series: e.target.value }))} placeholder="recovery-blueprint" /></div>
+                    <div><label className={labelCls}>Series Order</label><input type="number" min="1" className={inputCls} style={inputStyle} value={articleForm.series_order} onChange={(e) => setArticleForm((f) => ({ ...f, series_order: e.target.value }))} placeholder="1" /></div>
                     <div className="sm:col-span-2"><label className={labelCls}>Excerpt</label><textarea rows={2} className={inputCls} style={inputStyle} value={articleForm.excerpt} onChange={(e) => setArticleForm((f) => ({ ...f, excerpt: e.target.value }))} /></div>
-                    <div className="sm:col-span-2"><label className={labelCls}>Body</label><textarea rows={8} className={inputCls} style={inputStyle} value={articleForm.body} onChange={(e) => setArticleForm((f) => ({ ...f, body: e.target.value }))} /></div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>Content</label>
+                      <RichTextEditor initialContent={articleContent} onChange={setArticleContent} />
+                    </div>
                     <div className="flex items-center gap-2"><input type="checkbox" id="art_featured" checked={articleForm.featured} onChange={(e) => setArticleForm((f) => ({ ...f, featured: e.target.checked }))} /><label htmlFor="art_featured" className="text-sm text-gray-300">Featured article</label></div>
                   </div>
                   {addError && <p className="text-red-400 text-xs">{addError}</p>}
@@ -901,7 +922,15 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("read_time", "Read Time")}
           {field("image", "Image URL")}
           {field("excerpt", "Excerpt", "textarea", undefined, true)}
-          {field("body", "Body", "textarea", undefined, true)}
+          {field("series", "Series Slug")}
+          {field("series_order", "Series Order", "number")}
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Content</label>
+            <RichTextEditor
+              initialContent={String(form["content"] || form["body"] || "")}
+              onChange={(html) => setForm((f) => ({ ...f, content: html, body: html }))}
+            />
+          </div>
           {field("featured", "Featured", "checkbox", undefined, true)}
         </>)}
         {tab === "organizers" && (<>
