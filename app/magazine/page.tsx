@@ -53,7 +53,7 @@ export default async function MagazinePage() {
         title: a.title,
         category: a.category,
         date: a.date ?? "",
-        readTime: a.read_time ?? "",
+        readTime: a.read_time ? `${a.read_time} min read` : "",
         image: a.image_url || FALLBACK_IMAGE,
         excerpt: a.excerpt ?? "",
         featured: (a as any).featured ?? false,

@@ -230,7 +230,7 @@ export default function AdminClient() {
         table: "articles",
         data: {
           ...articleForm,
-          read_time: articleForm.read_time ? `${articleForm.read_time} min read` : "5 min read",
+          read_time: articleForm.read_time ? parseInt(articleForm.read_time) : 5,
           content: articleContent,
           body: articleContent,
           series: articleForm.series || null,

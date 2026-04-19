@@ -20,7 +20,7 @@ interface Article {
   title: string;
   category: string;
   date: string;
-  readTime: string;
+  read_time: number | null;
   image: string;
   excerpt: string;
   body: string;
@@ -45,7 +45,7 @@ async function getArticle(id: string): Promise<Article | null> {
         title: data.title,
         category: data.category,
         date: data.date ?? "",
-        readTime: data.read_time ?? "",
+        read_time: data.read_time ?? null,
         image: data.image_url ?? (data as any).image ?? "",
         excerpt: data.excerpt ?? "",
         body: data.body ?? "",
@@ -63,7 +63,7 @@ async function getArticle(id: string): Promise<Article | null> {
     title: mock.title,
     category: mock.category,
     date: mock.date,
-    readTime: (mock as any).readTime ?? "",
+    read_time: (mock as any).readTime ?? null,
     image: (mock as any).image ?? "",
     excerpt: (mock as any).excerpt ?? "",
     body: (mock as any).body ?? "",
@@ -104,9 +104,7 @@ export default async function MagazineArticlePage({ params }: Props) {
 
   const related = articles.filter((a) => a.id !== id && (a as any).category === article.category).slice(0, 3);
   const formattedDate = new Date(article.date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const displayReadTime = article.readTime
-    ? article.readTime.includes("min") ? article.readTime : `${article.readTime} min read`
-    : null;
+  const displayReadTime = article.read_time ? `${article.read_time} min read` : null;
 
   return (
     <div>

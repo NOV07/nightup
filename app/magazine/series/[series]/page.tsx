@@ -74,7 +74,7 @@ export default async function SeriesPage({ params }: Props) {
                 {a.excerpt && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{a.excerpt}</p>}
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{a.date ? new Date(a.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}</span>
-                  {a.read_time && <span>{a.read_time}</span>}
+                  {a.read_time && <span>{a.read_time} min read</span>}
                 </div>
               </div>
             </Link>
