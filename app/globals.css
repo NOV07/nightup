@@ -12,14 +12,38 @@
   --font-sans: var(--font-geist-sans);
 }
 
+:root {
+  --bg-primary: #0F0F1A;
+  --bg-surface: #1A1A28;
+  --text-primary: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --text-body: #D4D4D8;
+  --gold: #E8A020;
+  --gold-bright: #F5B335;
+  --gold-subtle: rgba(232, 160, 32, 0.08);
+  --gold-glow: rgba(232, 160, 32, 0.20);
+  --gold-border: rgba(232, 160, 32, 0.15);
+  --font-serif: var(--font-spectral), Georgia, serif;
+  --font-sans: var(--font-inter), -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 60px;
+  --space-7: 80px;
+}
+
 * { box-sizing: border-box; }
 
 html { scroll-behavior: smooth; }
 
 body {
-  background-color: #0A0A12;
-  color: #FFFFFF;
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   min-height: 100vh;
   line-height: 1.6;
 }
