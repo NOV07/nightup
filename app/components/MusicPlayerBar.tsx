@@ -37,7 +37,7 @@ export default function MusicPlayerBar() {
 
   return (
     <div
-      className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+8px)] md:bottom-4 left-4 z-50 w-[calc(100vw-32px)] max-w-[400px] rounded-xl border overflow-hidden"
+      className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+8px)] md:bottom-4 left-4 z-50 w-[calc(100vw-32px)] max-w-[560px] rounded-xl border overflow-hidden"
       style={{
         backgroundColor: "#0A0A14",
         borderColor: "rgba(232,160,32,0.25)",
@@ -45,21 +45,21 @@ export default function MusicPlayerBar() {
         animation: "slideUp 0.2s ease-out",
       }}
     >
-      <div className="px-3 flex items-center gap-3 h-[80px]">
+      <div className="px-4 flex items-center gap-3 h-[88px]">
 
-        {/* Cover + info */}
-        <div className="flex items-center gap-2.5 flex-shrink-0" style={{ width: "clamp(100px, 18%, 180px)" }}>
+        {/* Cover + info — fixed 120px */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, width: "120px" }}>
           <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ outline: "1px solid rgba(232,160,32,0.25)" }}>
             <Image src={currentTrack.cover || FALLBACK} alt={currentTrack.title} fill sizes="40px" className="object-cover" />
           </div>
-          <div className="min-w-0 hidden sm:block">
+          <div style={{ minWidth: 0, maxWidth: "72px" }}>
             <p className="text-xs font-semibold truncate" style={{ color: "#E8A020" }}>{currentTrack.artist}</p>
             <p className="text-xs truncate" style={{ color: "#bbb" }}>{currentTrack.title}</p>
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex-1 flex flex-col justify-center gap-1.5 min-w-0">
+        {/* Controls — flex-1 */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: "6px", minWidth: 0 }}>
           {playbackError ? (
             <div className="flex items-center gap-2">
               <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="#E8A020" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ export default function MusicPlayerBar() {
                 </button>
               )}
 
-              <div className="flex-1 flex items-center gap-2 min-w-0">
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", minWidth: "120px" }}>
                 <div
                   ref={barRef}
                   onClick={handleSeek}
@@ -114,12 +114,31 @@ export default function MusicPlayerBar() {
                     const pctHover = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                     setHoverTime(Math.floor(pctHover * duration));
                   }}
-                  onMouseLeave={() => setHoverTime(null)}
-                  className="flex-1 h-1.5 rounded-full cursor-pointer relative group"
-                  style={{ backgroundColor: "#1A1A2E" }}
+                  onMouseEnter={e => (e.currentTarget.style.height = "12px")}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.height = "10px";
+                    setHoverTime(null);
+                  }}
+                  className="flex-1 rounded-full cursor-pointer relative group"
+                  style={{ backgroundColor: "#1A1A2E", height: "10px", transition: "height 0.15s" }}
                 >
                   <div className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ width: `${pct}%`, backgroundColor: "#E8A020", transition: "width 0.3s" }} />
+                    style={{ width: `${pct}%`, backgroundColor: "#E8A020", boxShadow: "0 0 6px rgba(232,160,32,0.4)", transition: "width 0.3s" }} />
+                  {duration > 0 && (
+                    <div style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: `${pct}%`,
+                      transform: "translate(-50%, -50%)",
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      backgroundColor: "#E8A020",
+                      boxShadow: "0 0 8px rgba(232,160,32,0.6)",
+                      pointerEvents: "none",
+                      transition: "left 0.3s",
+                    }} />
+                  )}
                   {hoverTime !== null && (
                     <div style={{
                       position: "absolute",

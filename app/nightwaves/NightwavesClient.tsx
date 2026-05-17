@@ -46,7 +46,7 @@ interface RecentItem { id: string; title: string; artist?: string; typeBadge: st
 
 export default function NightwavesClient({ mixes, releases, playlists, recentItems }: { mixes: Mix[]; releases: Release[]; playlists: Playlist[]; recentItems: RecentItem[] }) {
   const { currentStation, isPlaying, playStation } = useRadio();
-  const { currentTrack, setTrack } = usePlayerStore();
+  const { currentTrack, isPlaying: trackPlaying, setTrack } = usePlayerStore();
   const liveStations = STATIONS.filter((s) => !s.comingSoon);
 
   return (
@@ -221,29 +221,42 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {liveStations.map((s) => {
               const active = currentStation.id === s.id && isPlaying;
-              const stStyle = STATION_STYLES[s.id] ?? { gradient: "linear-gradient(135deg, #111120, #16162a)", genre: "", bpm: "" };
               return (
                 <div
                   key={s.id}
                   onClick={() => playStation(s)}
                   className="relative cursor-pointer rounded-2xl overflow-hidden transition-all duration-300"
                   style={{
-                    background: stStyle.gradient,
+                    background: STATION_STYLES[s.id]?.gradient || "linear-gradient(135deg, #111120, #16162a)",
                     border: `1px solid ${active ? "#E8A020" : "#1e1e30"}`,
                     boxShadow: active ? "0 0 32px rgba(232,160,32,0.18), inset 0 0 32px rgba(232,160,32,0.04)" : "none",
                     transform: active ? "translateY(-2px)" : "none",
+                    minHeight: "140px",
                   }}
                 >
+                  {/* Decorative waveform background */}
+                  <div style={{ position: "absolute", bottom: 0, right: 16, top: 0, display: "flex", alignItems: "flex-end", gap: "3px", opacity: active ? 0.12 : 0.05, pointerEvents: "none" }}>
+                    {[30,50,70,45,80,55,65,40,75,50].map((h, i) => (
+                      <div key={i} style={{
+                        width: "3px",
+                        height: `${h}%`,
+                        background: "#E8A020",
+                        borderRadius: "2px 2px 0 0",
+                        animationName: active ? "visualizer" : "none",
+                        animationDuration: "0.8s",
+                        animationTimingFunction: "ease-in-out",
+                        animationDelay: `${i * 0.1}s`,
+                        animationIterationCount: "infinite",
+                      }} />
+                    ))}
+                  </div>
+
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       {active ? (
-                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
-                          LIVE
-                        </span>
+                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>LIVE</span>
                       ) : (
-                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#1A1A2E", color: "rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                          RADIO
-                        </span>
+                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#1A1A2E", color: "rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.08)" }}>RADIO</span>
                       )}
                       {active && (
                         <span className="flex gap-0.5 items-end h-5">
@@ -258,18 +271,18 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                     </div>
                     <div className="mb-5">
                       <p style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>
-                        {stStyle.genre} · {stStyle.bpm}
+                        {STATION_STYLES[s.id]?.genre} · {STATION_STYLES[s.id]?.bpm}
                       </p>
                     </div>
                     <div className="flex items-center justify-end">
                       <button
-                        className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                        className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
                         style={{ backgroundColor: active ? "#E8A020" : "#1E1E30", color: active ? "#0F0F1A" : "#fff", border: active ? "none" : "1px solid #333" }}
                       >
                         {active ? (
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
                         ) : (
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                          <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                         )}
                       </button>
                     </div>
@@ -298,21 +311,28 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
               {mixes.map((mix) => {
-                const isActive = currentTrack?.soundcloudUrl === mix.soundcloud_url && !!mix.soundcloud_url;
+                const isActive = currentTrack?.id === mix.id && trackPlaying;
                 return (
                   <div
                     key={mix.id}
-                    className="group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
+                    className="mix-card group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
                     style={{ backgroundColor: "#111120", border: `1px solid ${isActive ? "#E8A020" : "#1a1a2e"}` }}
                   >
                     {/* Image — click to play */}
                     <button
                       className="relative aspect-square w-full overflow-hidden block"
-                      onClick={() => mix.soundcloud_url && setTrack({ soundcloudUrl: mix.soundcloud_url, title: mix.title, artist: mix.artist, cover: mix.cover_image, type: "mix", id: mix.id })}
+                      onClick={(e) => { e.stopPropagation(); mix.soundcloud_url && setTrack({ soundcloudUrl: mix.soundcloud_url, title: mix.title, artist: mix.artist, cover: mix.cover_image, type: "mix", id: mix.id }); }}
                     >
                       <Image src={mix.cover_image || FALLBACK} alt={mix.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                      <div className="mix-play-btn" style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        ...(isActive && { opacity: 1 }),
+                      }}>
                         <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: "#E8A020", boxShadow: "0 0 24px rgba(232,160,32,0.5)" }}>
                           {isActive ? (
                             <span className="flex gap-0.5 items-end h-5">

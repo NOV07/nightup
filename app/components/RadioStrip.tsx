@@ -32,13 +32,13 @@ export default function RadioStrip() {
     <div
       ref={ref}
       className="radio-strip-desktop"
-      style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 500 }}
+      style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 500, maxWidth: "calc(100vw - 48px)" }}
     >
       {/* ── Expanded panel ── */}
       {isOpen && (
         <div style={{
           position: "absolute", bottom: "52px", right: 0,
-          width: "260px",
+          width: "240px",
           background: "#0e0e1c",
           border: "1px solid rgba(232,160,32,0.18)",
           borderRadius: "12px",
