@@ -131,7 +131,7 @@ export default async function HomePage() {
       eyebrow: "Event of the week",
       title: e.title,
       subtitle: `${e.venue} · ${e.city}`,
-      meta: [e.date, e.venue, e.price ? `From ${e.price}` : "Free entry"],
+      meta: [new Date(e.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }), e.venue, e.price ? `From ${e.price}` : "Free entry"],
       ctaLabel: "Get tickets",
       ctaHref: `/events/${e.id}`,
       image: e.image || undefined,
@@ -422,87 +422,6 @@ export default async function HomePage() {
             </div>
           )}
 
-        </div>
-      </section>
-
-      {/* ── MORE FROM THE MAGAZINE ── */}
-      <section style={{
-        padding: "0 32px 48px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-      }}>
-        <div style={{
-          padding: "16px 0 20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-        }}>
-          <div>
-            <p style={{
-              fontFamily: "var(--font-sans)", fontSize: "11px",
-              letterSpacing: "0.15em", textTransform: "uppercase",
-              color: "var(--text-muted)", margin: 0,
-            }}>More from the magazine</p>
-            <div style={{ width: "20px", height: "1px",
-              background: "var(--gold)", marginTop: "5px" }} />
-          </div>
-          <Link href="/magazine" style={{
-            fontFamily: "var(--font-mono)", fontSize: "9px",
-            letterSpacing: "0.1em", textTransform: "uppercase",
-            color: "var(--text-muted)", textDecoration: "none",
-          }}>All articles →</Link>
-        </div>
-
-        <div className="magazine-grid-responsive" style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0,1fr))",
-          gap: "1px",
-          background: "rgba(255,255,255,0.04)",
-        }}>
-          {latestArticles.map((a: any, i: number) => (
-            <Link key={a.id}
-              href={`/magazine/${a.id}`}
-              className="discover-card reveal-up"
-              style={{
-                background: "var(--bg-primary)",
-                textDecoration: "none",
-                display: "block",
-                overflow: "hidden",
-                transitionDelay: `${i * 0.1}s`,
-              }}>
-              <div style={{ position: "relative", overflow: "hidden" }}>
-                <Image src={a.image} alt={a.title}
-                  width={480} height={200}
-                  className="discover-card-img"
-                  style={{ width: "100%", height: "160px",
-                    objectFit: "cover", display: "block" }} />
-              </div>
-              <div style={{ padding: "14px" }}>
-                <p style={{
-                  fontFamily: "var(--font-mono)", fontSize: "8px",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--gold)", marginBottom: "6px",
-                  display: "flex", alignItems: "center", gap: "5px",
-                }}>
-                  <span style={{ width: "4px", height: "4px",
-                    borderRadius: "50%", background: "var(--gold)",
-                    display: "inline-block" }} />
-                  {a.category}
-                </p>
-                <h3 style={{
-                  fontFamily: "var(--font-serif)", fontSize: "17px",
-                  fontWeight: 400, lineHeight: 1.35,
-                  color: "var(--text-primary)",
-                }} className="discover-card-title">
-                  {a.title}
-                </h3>
-                <p style={{
-                  fontFamily: "var(--font-mono)", fontSize: "8px",
-                  letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: "var(--text-muted)", marginTop: "7px",
-                }}>Magazine · {a.readTime}</p>
-              </div>
-            </Link>
-          ))}
         </div>
       </section>
 
