@@ -564,3 +564,9 @@ section:hover .hero-arrow { opacity: 1 !important; }
   /* Hide desktop-only radio strip on mobile */
   .radio-strip-desktop { display: none !important; }
 }
+
+@media (min-width: 769px) {
+  nav.mobile-nav-bar {
+    display: none !important;
+  }
+}

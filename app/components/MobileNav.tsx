@@ -43,7 +43,7 @@ export default function MobileNav() {
   const pathname = usePathname();
   return (
     <nav
-      className="md:hidden"
+      className="md:hidden flex mobile-nav-bar"
       style={{
         position: "fixed",
         bottom: 0, left: 0, right: 0,
@@ -52,7 +52,6 @@ export default function MobileNav() {
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderTop: "1px solid rgba(255,255,255,0.06)",
-        display: "flex",
         height: "calc(56px + env(safe-area-inset-bottom))",
         paddingBottom: "env(safe-area-inset-bottom)",
         alignItems: "stretch",

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import EventCard from './EventCard'
+import HotEventCard from './HotEventCard'
 
 interface EventTabsProps {
   thisWeekCards: any[]
@@ -55,9 +55,24 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
             display: 'grid',
             gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
             gap: '8px',
+            height: '280px',
           }}>
             {cards.slice(0, 4).map((e: any) => (
-              <EventCard key={e.id} {...e} badge={e.badge || undefined} />
+              <HotEventCard
+                key={e.id}
+                id={e.id}
+                title={e.title}
+                image={e.image_url || e.image}
+                genre={e.genre}
+                price={e.price}
+                date={e.date}
+                time={e.time}
+                venue={e.venue}
+                city={e.city}
+                isRadarPick={e.isRadarPick || e.badge === 'Nightup Radar'}
+                showHotBadge={activeTab === 'hot'}
+                variant="compact"
+              />
             ))}
           </div>
         ) : (

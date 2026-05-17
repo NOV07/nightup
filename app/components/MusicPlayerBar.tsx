@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import { usePlayerStore } from "./PlayerContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
@@ -22,6 +22,7 @@ export default function MusicPlayerBar() {
     return () => clearTimeout(t);
   }, [playbackError, clearTrack]);
   const barRef = useRef<HTMLDivElement>(null);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
 
   const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!barRef.current || !duration) return;
@@ -104,11 +105,40 @@ export default function MusicPlayerBar() {
               )}
 
               <div className="flex-1 flex items-center gap-2 min-w-0">
-                <div ref={barRef} onClick={handleSeek}
-                  className="flex-1 h-1.5 rounded-full cursor-pointer relative overflow-hidden"
-                  style={{ backgroundColor: "#1A1A2E" }}>
-                  <div className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-300"
-                    style={{ width: `${pct}%`, backgroundColor: "#E8A020" }} />
+                <div
+                  ref={barRef}
+                  onClick={handleSeek}
+                  onMouseMove={(e) => {
+                    if (!barRef.current || !duration) return;
+                    const rect = barRef.current.getBoundingClientRect();
+                    const pctHover = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                    setHoverTime(Math.floor(pctHover * duration));
+                  }}
+                  onMouseLeave={() => setHoverTime(null)}
+                  className="flex-1 h-1.5 rounded-full cursor-pointer relative group"
+                  style={{ backgroundColor: "#1A1A2E" }}
+                >
+                  <div className="absolute inset-y-0 left-0 rounded-full"
+                    style={{ width: `${pct}%`, backgroundColor: "#E8A020", transition: "width 0.3s" }} />
+                  {hoverTime !== null && (
+                    <div style={{
+                      position: "absolute",
+                      bottom: "12px",
+                      left: `${pct}%`,
+                      transform: "translateX(-50%)",
+                      background: "#1A1A2E",
+                      border: "1px solid rgba(232,160,32,0.3)",
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "9px",
+                      color: "#E8A020",
+                      whiteSpace: "nowrap",
+                      pointerEvents: "none",
+                    }}>
+                      {fmt(hoverTime)}
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs font-mono flex-shrink-0 tabular-nums" style={{ color: "#555" }}>
                   {duration > 0 ? `${fmt(position)} / ${fmt(duration)}` : "--:--"}

@@ -6,7 +6,7 @@ import { useRadio, STATIONS } from "./RadioContext";
 const PILL_BARS = [3, 7, 11, 7, 3];
 
 export default function RadioStrip() {
-  const { currentStation, isPlaying, playStation, togglePlay } = useRadio();
+  const { currentStation, isPlaying, volume, setVolume, playStation, togglePlay } = useRadio();
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -112,6 +112,41 @@ export default function RadioStrip() {
               </button>
             );
           })}
+
+          {/* Volume control */}
+          <div style={{
+            padding: "10px 16px",
+            borderTop: "1px solid rgba(255,255,255,0.05)",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#444", flexShrink: 0 }}>
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+            </svg>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              style={{
+                flex: 1,
+                accentColor: "#E8A020",
+                cursor: "pointer",
+              }}
+            />
+            <span style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "8px",
+              color: "#555",
+              minWidth: "24px",
+              textAlign: "right",
+            }}>
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
 
           {/* Footer */}
           <Link

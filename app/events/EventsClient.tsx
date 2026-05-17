@@ -253,7 +253,7 @@ export default function EventsClient({
 
               {hotEvents.length === 1 && (
                 <div className="animate-fade-up" style={{ animationDelay: `${0.2}s` }}>
-                  <HotEventCard {...hotEvents[0]} variant="large" />
+                  <HotEventCard {...hotEvents[0]} variant="large" showHotBadge={true} />
                 </div>
               )}
 
@@ -261,7 +261,7 @@ export default function EventsClient({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {hotEvents.map((e, i) => (
                     <div key={e.id} className="animate-fade-up" style={{ animationDelay: `${0.2 + i * 0.05}s` }}>
-                      <HotEventCard {...e} variant="compact" />
+                      <HotEventCard {...e} variant="compact" showHotBadge={true} />
                     </div>
                   ))}
                 </div>
@@ -271,13 +271,13 @@ export default function EventsClient({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Large hero */}
                   <div className="animate-fade-up" style={{ animationDelay: "0.2s" }}>
-                    <HotEventCard {...hotEvents[0]} variant="large" />
+                    <HotEventCard {...hotEvents[0]} variant="large" showHotBadge={true} />
                   </div>
                   {/* Two stacked */}
                   <div className="grid gap-4" style={{ gridTemplateRows: "1fr 1fr", height: "480px" }}>
                     {hotEvents.slice(1, 3).map((e, i) => (
                       <div key={e.id} className="animate-fade-up" style={{ animationDelay: `${0.25 + i * 0.05}s` }}>
-                        <HotEventCard {...e} variant="compact" />
+                        <HotEventCard {...e} variant="compact" showHotBadge={true} />
                       </div>
                     ))}
                   </div>

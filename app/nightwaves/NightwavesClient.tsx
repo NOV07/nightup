@@ -7,6 +7,12 @@ import { usePlayerStore } from "../components/PlayerContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
+const STATION_STYLES: Record<string, { gradient: string; genre: string; bpm: string }> = {
+  house:  { gradient: "linear-gradient(135deg, #1a0f2e 0%, #0d0d1a 100%)", genre: "Deep · Tech House", bpm: "124–128 BPM" },
+  techno: { gradient: "linear-gradient(135deg, #0a0f1a 0%, #050810 100%)", genre: "Dark · Industrial", bpm: "138–145 BPM" },
+  rnb:    { gradient: "linear-gradient(135deg, #1a0a0f 0%, #100508 100%)", genre: "Neo Soul · Funk", bpm: "80–95 BPM" },
+};
+
 function formatDuration(d: string | number | null | undefined): string | null {
   if (!d) return null;
   const n = Number(d);
@@ -45,30 +51,167 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
 
   return (
     <div style={{ backgroundColor: "#0F0F1A", minHeight: "100vh" }}>
-      {/* Hero */}
-      <div
-        className="relative overflow-hidden"
-        style={{ background: "linear-gradient(180deg, #0a0a14 0%, #111122 60%, #0F0F1A 100%)" }}
-      >
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/3 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: "#E8A020" }} />
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full opacity-8 blur-3xl" style={{ backgroundColor: "#6020E8" }} />
-        </div>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 pt-16 pb-12">
-          <div className="flex items-center gap-4 mb-3">
-            <svg width="32" height="24" viewBox="0 0 32 24" fill="none" aria-hidden="true">
-              <path d="M0 12h2.5M2.5 12V5M2.5 5V12M6 12V1M6 1V12M9.5 12V7M9.5 7V12M13 12V3M13 3V12M16.5 12V0M16.5 0V12M20 12V3M20 3V12M23.5 12V7M23.5 7V12M27 12V1M27 1V12M30.5 12V5M30.5 5V12M32 12h-1.5" stroke="#E8A020" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
-            <h1 className="text-5xl font-bold tracking-tight">Nightwaves</h1>
+      {/* ── HERO ── */}
+      <div style={{
+        position: "relative",
+        width: "100%",
+        minHeight: "340px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        background: "#0a0a14",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+      }}>
+
+        {/* Animated particles — floating dots */}
+        {[...Array(18)].map((_, i) => (
+          <div key={i} style={{
+            position: "absolute",
+            width: `${2 + (i % 3)}px`,
+            height: `${2 + (i % 3)}px`,
+            borderRadius: "50%",
+            background: "#E8A020",
+            opacity: 0.08 + (i % 5) * 0.04,
+            left: `${(i * 17 + 5) % 95}%`,
+            top: `${(i * 23 + 10) % 85}%`,
+            animation: `nw-float ${4 + (i % 4)}s ease-in-out infinite alternate`,
+            animationDelay: `${i * 0.3}s`,
+          }} />
+        ))}
+
+        {/* Slow horizontal scan line */}
+        <div style={{
+          position: "absolute",
+          left: 0, right: 0,
+          height: "1px",
+          background: "linear-gradient(90deg, transparent 0%, rgba(232,160,32,0.15) 40%, rgba(232,160,32,0.3) 50%, rgba(232,160,32,0.15) 60%, transparent 100%)",
+          animation: "nw-scan 6s ease-in-out infinite alternate",
+          top: "30%",
+        }} />
+
+        {/* Center content */}
+        <div style={{
+          position: "relative",
+          textAlign: "center",
+          padding: "64px 32px",
+          zIndex: 1,
+        }}>
+
+          {/* Eyebrow */}
+          <p style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "9px",
+            letterSpacing: "0.35em",
+            textTransform: "uppercase",
+            color: "rgba(232,160,32,0.6)",
+            marginBottom: "24px",
+            animation: "nw-fadein 1s ease both",
+          }}>
+            Nightwaves
+          </p>
+
+          {/* Main headline */}
+          <h1 style={{
+            fontFamily: "var(--font-serif)",
+            fontSize: "clamp(38px, 6vw, 72px)",
+            fontWeight: 400,
+            color: "#F4F4F5",
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            marginBottom: "20px",
+            animation: "nw-fadein 1s ease 0.2s both",
+          }}>
+            Get lost in{" "}
+            <em style={{ color: "#E8A020", fontStyle: "italic" }}>the sound.</em>
+          </h1>
+
+          {/* Subtitle */}
+          <p style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: "14px",
+            color: "rgba(255,255,255,0.35)",
+            letterSpacing: "0.04em",
+            marginBottom: "36px",
+            animation: "nw-fadein 1s ease 0.4s both",
+          }}>
+            mixes · radio · releases
+          </p>
+
+          {/* CTA — Play now */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+            animation: "nw-fadein 1s ease 0.6s both",
+          }}>
+            <button
+              onClick={() => {
+                const el = document.getElementById("nightwaves-live-radio");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "12px 28px",
+                background: "rgba(232,160,32,0.08)",
+                border: "1px solid rgba(232,160,32,0.3)",
+                borderRadius: "2px",
+                color: "#E8A020",
+                fontFamily: "var(--font-mono)",
+                fontSize: "10px",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(232,160,32,0.15)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(232,160,32,0.6)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(232,160,32,0.08)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(232,160,32,0.3)";
+              }}
+            >
+              <span style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: "#E8A020",
+                animation: "nw-pulse 1.4s ease-in-out infinite",
+              }} />
+              Start listening
+            </button>
           </div>
-          <p className="text-gray-400 text-lg max-w-xl">Live radio, top mixes, and the freshest releases from the Greek night scene.</p>
         </div>
+
+        <style>{`
+          @keyframes nw-float {
+            from { transform: translateY(0px) translateX(0px); }
+            to   { transform: translateY(-18px) translateX(8px); }
+          }
+          @keyframes nw-scan {
+            from { top: 20%; opacity: 0.4; }
+            to   { top: 80%; opacity: 0.8; }
+          }
+          @keyframes nw-fadein {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes nw-pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(232,160,32,0.4); }
+            50%      { opacity: 0.6; box-shadow: 0 0 0 6px rgba(232,160,32,0); }
+          }
+        `}</style>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-10">
 
         {/* LIVE RADIO */}
-        <section className="mb-16">
+        <section id="nightwaves-live-radio" className="mb-16">
           <div className="flex items-center gap-3 mb-7">
             <span className="section-divider" />
             <h2 className="text-2xl font-bold tracking-tight">Live Radio</h2>
@@ -78,22 +221,21 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {liveStations.map((s) => {
               const active = currentStation.id === s.id && isPlaying;
+              const stStyle = STATION_STYLES[s.id] ?? { gradient: "linear-gradient(135deg, #111120, #16162a)", genre: "", bpm: "" };
               return (
                 <div
                   key={s.id}
                   onClick={() => playStation(s)}
                   className="relative cursor-pointer rounded-2xl overflow-hidden transition-all duration-300"
                   style={{
-                    background: active
-                      ? "linear-gradient(135deg, #1a1520, #1e1a2e)"
-                      : "linear-gradient(135deg, #111120, #16162a)",
+                    background: stStyle.gradient,
                     border: `1px solid ${active ? "#E8A020" : "#1e1e30"}`,
                     boxShadow: active ? "0 0 32px rgba(232,160,32,0.18), inset 0 0 32px rgba(232,160,32,0.04)" : "none",
                     transform: active ? "translateY(-2px)" : "none",
                   }}
                 >
                   <div className="p-6">
-                    <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-start justify-between mb-4">
                       {active ? (
                         <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
                           LIVE
@@ -111,8 +253,13 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                         </span>
                       )}
                     </div>
-                    <div className="mb-5">
+                    <div className="mb-1">
                       <h3 className="font-bold text-xl tracking-tight">{s.name}</h3>
+                    </div>
+                    <div className="mb-5">
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>
+                        {stStyle.genre} · {stStyle.bpm}
+                      </p>
                     </div>
                     <div className="flex items-center justify-end">
                       <button

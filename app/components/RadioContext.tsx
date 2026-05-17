@@ -37,7 +37,7 @@ export const STATIONS: Station[] = [
     genre: "",
     logo: "",
     description: "",
-    streamUrls: ["https://stream.zeno.fm/1bwpzrn2p5zuv", "https://hydra.cdnstream.com/1536_128"],
+    streamUrls: ["https://stream.zeno.fm/1bwpzrn2p5zuv"],
   },
 ];
 

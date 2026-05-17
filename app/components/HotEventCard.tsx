@@ -20,11 +20,12 @@ interface HotEventCardProps {
   venue: string;
   city: string;
   isRadarPick?: boolean;
+  showHotBadge?: boolean;
   variant?: "large" | "compact";
 }
 
 export default function HotEventCard({
-  id, title, image, price, date, time, venue, isRadarPick,
+  id, title, image, price, date, time, venue, isRadarPick, showHotBadge = false,
   variant = "large",
 }: HotEventCardProps) {
   const [saved, setSaved] = useState(false);
@@ -67,12 +68,11 @@ export default function HotEventCard({
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-      {/* Top-left: RadarBadge takes precedence over HOT */}
-      {isRadarPick ? (
-        <RadarBadge />
-      ) : (
+      {/* Top-left: RadarBadge + optional Hot badge */}
+      {isRadarPick && <RadarBadge />}
+      {showHotBadge && (
         <div
-          className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 backdrop-blur-sm"
+          className={`absolute ${isRadarPick ? "top-10" : "top-3"} left-3 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 backdrop-blur-sm`}
           style={{ backgroundColor: "rgba(220,38,38,0.85)" }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0 animate-pulse-dot" />

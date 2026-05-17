@@ -199,23 +199,29 @@ export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
   return (
     <div style={{ backgroundColor: "#09090f", minHeight: "100vh" }}>
       {/* ── Hero ── */}
-      <section
-        className="relative py-16 px-4 text-center overflow-hidden"
-        style={{ background: "linear-gradient(180deg, #1A1A2E 0%, #09090f 100%)" }}
-      >
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ backgroundColor: AMBER }}
-        />
-        <div className="relative z-10 max-w-2xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-semibold text-white mb-3">
-            Network
-          </h1>
-          <p className="text-lg" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Find venues, artists, photographers, and every professional you need.
-          </p>
-        </div>
-      </section>
+      <div style={{ padding: "40px 32px 32px", maxWidth: "860px" }}>
+        <h1 style={{
+          fontFamily: "var(--font-sans)",
+          fontSize: "clamp(28px, 4vw, 42px)",
+          fontWeight: 700,
+          color: "#F4F4F5",
+          lineHeight: 1.2,
+          marginBottom: "12px",
+          letterSpacing: "-0.02em",
+        }}>
+          The people behind the night.
+        </h1>
+        <p style={{
+          fontFamily: "var(--font-sans)",
+          fontSize: "15px",
+          color: "rgba(255,255,255,0.45)",
+          lineHeight: 1.6,
+          maxWidth: "480px",
+          margin: 0,
+        }}>
+          Venues, DJs, sound engineers, photographers, studios — everyone you need to build your event or release your music.
+        </p>
+      </div>
 
       {/* ── Sticky filter bar ── */}
       <div
