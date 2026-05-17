@@ -50,7 +50,7 @@ export default function CompactEventItem({
           className="truncate"
           style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-mono)" }}
         >
-          {time || formattedDay} · {venue}
+          {formattedDay}{time ? ` · ${time}` : ""} · {venue}
         </p>
       </div>
     </Link>

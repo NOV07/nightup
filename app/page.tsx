@@ -465,7 +465,11 @@ export default async function HomePage() {
             artist: item.artist ?? "",
             cover_image: item.cover_url,
             typeBadge: item.subtitle || item.type,
-            href: "/nightwaves",
+            href: item.type === "mix"
+              ? `/nightwaves/mix/${item.id}`
+              : item.type === "playlist"
+              ? `/nightwaves/playlist/${item.id}`
+              : `/nightwaves/release/${item.id}`,
             external: false,
             soundcloudUrl: item.source === "soundcloud" ? item.source_url : undefined,
             type: (item.type === "mix" ? "mix" : item.type === "playlist" ? "playlist" : "release") as "mix" | "release" | "playlist",
@@ -475,8 +479,12 @@ export default async function HomePage() {
             artist: r.artist ?? "",
             cover_image: r.cover_image,
             typeBadge: r.typeBadge,
-            href: r.href || "/nightwaves",
-            external: r.external ?? false,
+            href: r._contentType === "mix"
+              ? `/nightwaves/mix/${r.id}`
+              : r._contentType === "playlist"
+              ? `/nightwaves/playlist/${r.id}`
+              : `/nightwaves/release/${r.id}`,
+            external: false,
             soundcloudUrl: r._contentType === "mix" ? r.soundcloud_url : undefined,
             type: (r._contentType === "mix" ? "mix" : r._contentType === "playlist" ? "playlist" : "release") as "mix" | "release" | "playlist",
           }))).map((item, i) => (

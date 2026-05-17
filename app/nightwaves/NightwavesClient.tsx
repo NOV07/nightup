@@ -94,12 +94,15 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-6">
-                      <span
-                        className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest"
-                        style={{ backgroundColor: active ? "#E8A020" : "#1A1A2E", color: active ? "#0F0F1A" : "#E8A020", border: active ? "none" : "1px solid #E8A02050" }}
-                      >
-                        LIVE
-                      </span>
+                      {active ? (
+                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
+                          LIVE
+                        </span>
+                      ) : (
+                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#1A1A2E", color: "rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          RADIO
+                        </span>
+                      )}
                       {active && (
                         <span className="flex gap-0.5 items-end h-5">
                           {[0, 1, 2, 3].map((i) => (
@@ -241,7 +244,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                       {item.is_promoted && (
-                        <span className="absolute top-2 left-2 text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>⭐</span>
+                        <span className="absolute top-2 left-2 text-[9px] font-black px-2 py-0.5 rounded-full tracking-wider uppercase" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>Pick</span>
                       )}
                       <span className="absolute top-2 right-2 text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
                         {item.typeBadge}

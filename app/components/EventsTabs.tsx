@@ -53,10 +53,10 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
         {cards.length > 0 ? (
           <div className="ev-grid-responsive" style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
             gap: '8px',
           }}>
-            {cards.slice(0, 5).map((e: any) => (
+            {cards.slice(0, 4).map((e: any) => (
               <EventCard key={e.id} {...e} badge={e.badge || undefined} />
             ))}
           </div>
