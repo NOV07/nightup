@@ -172,6 +172,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
   50% { opacity: 0.14; }
 }
 
+/* Hot badge dot */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.5; }
+}
+.animate-pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+
 /* Slide up (player bar entrance) */
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0; }
@@ -245,3 +252,315 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
 .article-content blockquote { border-left: 3px solid #E8A020; padding-left: 20px; color: rgba(255,255,255,0.6); font-style: italic; margin: 24px 0; }
 .article-content ul, .article-content ol { color: rgba(255,255,255,0.8); padding-left: 24px; line-height: 1.8; margin-bottom: 20px; }
 .article-content li { margin-bottom: 8px; }
+
+/* ── Radar ping ──────────────────────────────────────── */
+@keyframes radar-ping {
+  0%   { transform: scale(0.25); opacity: 0; }
+  18%  { opacity: 0.75; }
+  100% { transform: scale(1);    opacity: 0; }
+}
+.radar-ping::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,160,32,0.3);
+  animation: radar-ping 2s ease-out infinite;
+}
+
+/* ── Waveform bar ────────────────────────────────────── */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.4); }
+  50%       { transform: scaleY(1);   }
+}
+
+/* ── Radio panel open ────────────────────────────────── */
+@keyframes panelIn {
+  from { transform: translateY(8px) scaleY(0.95); opacity: 0; }
+  to   { transform: translateY(0)   scaleY(1);    opacity: 1; }
+}
+
+/* ── Hero slide text entrance ────────────────────────── */
+@keyframes slideTextIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Ken Burns hero ──────────────────────────────────── */
+@keyframes ken-burns {
+  from { transform: scale(1.0); }
+  to   { transform: scale(1.05); }
+}
+
+/* ── Radar dot ───────────────────────────────────────── */
+.radar-dot {
+  position: relative;
+  width: 5px;
+  height: 5px;
+  border: 1px solid #E8A020;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.radar-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 160, 32, 0.3);
+  animation: radar-ping 2s ease-out infinite;
+}
+
+/* ── Card image zoom ─────────────────────────────────── */
+.card-img {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Fade-in on scroll ───────────────────────────────── */
+.fade-card {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-card.visible {
+  opacity: 1;
+  transform: none;
+}
+.fade-delay-1 { transition-delay: 80ms;  }
+.fade-delay-2 { transition-delay: 160ms; }
+.fade-delay-3 { transition-delay: 240ms; }
+.fade-delay-4 { transition-delay: 320ms; }
+
+/* ── Nav link hover underline ────────────────────────── */
+.nav-link { position: relative; }
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+}
+.nav-link:hover { color: var(--text-primary) !important; transition: color 0.2s; }
+.nav-link:hover::after { width: 100%; }
+
+/* ── Hero navigation arrows ──────────────────────────── */
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+.hero-arrow-left  { left: 28px; }
+.hero-arrow-right { right: 28px; }
+section:hover .hero-arrow { opacity: 1 !important; }
+.hero-arrow:hover .corner-mark polyline,
+.hero-arrow:hover .corner-mark line {
+  stroke: #E8A020 !important;
+  transition: stroke 0.2s ease;
+}
+
+/* ── Discover cards ──────────────────────────────────── */
+.discover-card { cursor: pointer; }
+.discover-card-img {
+  transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.discover-card:hover .discover-card-img { transform: scale(1.04); }
+.discover-card-title { transition: color 0.2s; }
+.discover-card:hover .discover-card-title { color: var(--gold) !important; }
+
+/* ── Radar ping dark (gold badge variant) ────────────── */
+.radar-ping-dark { position: relative; }
+.radar-ping-dark::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid rgba(15,15,26,0.4);
+  animation: radar-ping 2s ease-out infinite;
+}
+
+/* ── Event card hover ────────────────────────────────── */
+.event-card-image {
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.event-card-wrapper:hover .event-card-image { transform: scale(1.04); }
+.event-card-wrapper:hover .event-card-title { color: var(--gold) !important; }
+
+/* ── Release card hover ──────────────────────────────────── */
+.release-card:hover { background: #1e1e32 !important; }
+.release-card:hover .release-title { color: var(--gold) !important; }
+
+/* ── Release item card (discover grid) hover ─────────────── */
+.release-item-card:hover { background: var(--bg-surface) !important; }
+.release-item-card:hover .discover-card-title { color: var(--gold) !important; }
+.release-item-card:hover .release-play-hint { opacity: 1 !important; }
+
+/* ── Scroll reveal — initial states ─────────────────────── */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition: opacity 0.8s cubic-bezier(0.4,0,0.2,1),
+              transform 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.reveal-right {
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity 0.8s cubic-bezier(0.4,0,0.2,1),
+              transform 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.reveal-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.4,0,0.2,1),
+              transform 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Triggered state */
+.reveal-left.revealed,
+.reveal-right.revealed,
+.reveal-up.revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Stagger delays for children */
+.reveal-right:nth-child(2) { transition-delay: 0.1s; }
+.reveal-right:nth-child(3) { transition-delay: 0.2s; }
+
+/* Release row hover */
+.release-row-item:hover {
+  background: var(--bg-surface) !important;
+}
+.release-row-item:hover .release-title {
+  color: var(--gold) !important;
+}
+.release-row-item:hover .release-thumb {
+  transform: scale(1.06) !important;
+}
+
+/* ── Nav search wrapper — prevent flex squeeze clipping search button ── */
+.nav-search-wrapper { flex-shrink: 0; }
+
+/* ── Border radius system ────────────────────────────── */
+.event-card-wrapper    { border-radius: 6px !important; overflow: hidden; }
+.discover-card         { border-radius: 6px !important; overflow: hidden; }
+.release-row-item      { border-radius: 6px !important; }
+.release-item-card     { border-radius: 6px !important; overflow: hidden; }
+.disc-feat             { border-radius: 6px !important; overflow: hidden; }
+.disc-small            { border-radius: 6px !important; overflow: hidden; }
+.radio-panel-container { border-radius: 12px !important; }
+.nav-signin            { border-radius: 4px !important; }
+.slide-cta             { border-radius: 4px !important; }
+.nav-toggle            { border-radius: 6px !important; overflow: hidden; }
+.ev-radar              { border-radius: 4px !important; }
+.ev-tab                { border-radius: 0 !important; }
+.ntb                   { border-radius: 0 !important; }
+.radar-ping            { border-radius: 50% !important; }
+
+/* ── Wave animation ──────────────────────────────────── */
+@keyframes waveAnim {
+  0%, 100% { transform: scaleY(0.4); }
+  50%       { transform: scaleY(1);   }
+}
+.wave-bar {
+  width: 2px;
+  border-radius: 1px;
+  background: #E8A020;
+  animation: waveAnim 0.9s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.wave-bar:nth-child(1) { animation-delay: 0s;    }
+.wave-bar:nth-child(2) { animation-delay: 0.15s; }
+.wave-bar:nth-child(3) { animation-delay: 0.3s;  }
+.wave-bar:nth-child(4) { animation-delay: 0.15s; }
+.wave-bar:nth-child(5) { animation-delay: 0s;    }
+
+/* ── Volume slider ───────────────────────────────────── */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  border-radius: 1px;
+  outline: none;
+  cursor: pointer;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #E8A020;
+  cursor: pointer;
+  border: none;
+}
+.volume-slider::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #E8A020;
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Mobile responsive overrides ─────────────────────── */
+@media (max-width: 768px) {
+  /* Navbar */
+  .nav-search-wrapper { display: none !important; }
+  .nav-desktop-links  { display: none !important; }
+
+  .nav-lang-toggle    { display: none !important; }
+
+  /* Hero slider text */
+  .hero-slide-title {
+    font-size: clamp(18px, 5vw, 26px) !important;
+  }
+  .hero-slide-body {
+    padding: 20px 16px !important;
+  }
+
+  /* Events grid: 5 col → 2 col */
+  .ev-grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  /* Discover grid: asymmetric → stacked */
+  .discover-grid-responsive {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+  }
+  .discover-grid-responsive > * {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+
+  /* Magazine grid: 3 col → 1 col */
+  .magazine-grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Nightwaves grid: 4 col → 2 col */
+  .nightwaves-grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Section horizontal padding */
+  .events, .discover-section {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* Bottom padding for MobileNav */
+  main {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Hide desktop-only radio strip on mobile */
+  .radio-strip-desktop { display: none !important; }
+}

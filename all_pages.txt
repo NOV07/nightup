@@ -1,0 +1,1863 @@
+import Link from "next/link";
+import Image from "next/image";
+import { events, articles } from "./lib/data";
+import EventCard from "./components/EventCard";
+import HeroSearch from "./components/HeroSearch";
+import HomeMiniRadio from "./components/HomeMiniRadio";
+import { getSupabase } from "./lib/supabase";
+
+export const dynamic = "force-dynamic";
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
+
+/* ─── Section header component ──────────────────────────── */
+function SectionHeader({
+  title, icon, href, linkLabel = "View all →",
+}: { title: string; icon?: React.ReactNode; href: string; linkLabel?: string }) {
+  return (
+    <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center gap-3">
+        <span className="section-divider" />
+        <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+        {icon && <span className="text-xl">{icon}</span>}
+      </div>
+      <Link
+        href={href}
+        className="group flex items-center gap-1 text-sm font-medium transition-colors hover:text-white"
+        style={{ color: "#E8A020" }}
+      >
+        {linkLabel}
+        <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
+    </div>
+  );
+}
+
+export default async function HomePage() {
+  let hotCards: any[] = [];
+  let popularCards: any[] = [];
+  let latestArticles: any[] = [];
+  let newReleases: any[] = [];
+
+  try {
+    const supabase = getSupabase();
+    const [evRes, artRes, relRes, mixFeedRes, playFeedRes] = await Promise.all([
+      supabase
+        .from("events")
+        .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured")
+        .eq("status", "approved")
+        .order("date", { ascending: true })
+        .limit(20),
+      supabase
+        .from("articles")
+        .select("id, title, category, date, read_time, image, image_url, excerpt")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(3),
+      supabase.from("music_releases").select("id, title, artist, type, cover_image, spotify_url, soundcloud_url, is_promoted, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
+      supabase.from("mixes").select("id, title, artist, genre, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
+      supabase.from("playlists").select("id, title, platform, embed_url, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
+    ]);
+
+    if (evRes.data && evRes.data.length > 0) {
+      const toCard = (e: any, badge: string) => ({
+        id: String(e.id), title: e.title, image: e.image_url || FALLBACK_IMAGE,
+        genre: e.genre, price: e.price ?? "", date: e.date, time: e.time ?? "",
+        venue: e.venue, city: e.city,
+        interestedCount: e.interested_count ?? 0, goingCount: e.going_count ?? 0,
+        featured: e.featured ?? false, badge,
+      });
+      const featuredEvents = evRes.data
+        .filter((e: any) => e.featured)
+        .sort((a: any, b: any) => (b.interested_count + b.going_count) - (a.interested_count + a.going_count))
+        .slice(0, 3);
+      hotCards = featuredEvents.map((e: any) => toCard(e, "🔥 Hot"));
+      const hotIds = new Set(featuredEvents.map((e: any) => e.id));
+      popularCards = evRes.data
+        .filter((e: any) => !hotIds.has(e.id))
+        .sort((a: any, b: any) => (b.interested_count + b.going_count) - (a.interested_count + a.going_count))
+        .slice(0, 2)
+        .map((e: any) => toCard(e, "📈 Popular"));
+    }
+    if (artRes.data && artRes.data.length > 0) {
+      latestArticles = artRes.data.map((a: any) => ({
+        id: String(a.id), title: a.title, category: a.category,
+        date: a.date ?? "", readTime: a.read_time ?? "",
+        image: a.image_url || a.image || FALLBACK_IMAGE, excerpt: a.excerpt ?? "",
+      }));
+    }
+    const combined = [
+      ...(relRes.data ?? []).map((r: any) => ({ ...r, _contentType: "release", typeBadge: r.type ?? "Release", href: `/nightwaves/release/${r.id}`, external: false })),
+      ...(mixFeedRes.data ?? []).map((m: any) => ({ ...m, _contentType: "mix", typeBadge: "Mix", href: `/nightwaves/mix/${m.id}`, external: false })),
+      ...(playFeedRes.data ?? []).map((p: any) => ({ ...p, _contentType: "playlist", typeBadge: "Playlist", href: p.embed_url ?? "#", external: true })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+    if (combined.length > 0) newReleases = combined;
+  } catch {}
+
+  /* fallbacks */
+  if (hotCards.length === 0 && popularCards.length === 0) {
+    const mock = events.slice(0, 5);
+    hotCards = mock.slice(0, 3).map((e) => ({ id: e.id, title: e.title, image: e.image, genre: e.genre, price: e.price, date: e.date, time: e.time, venue: e.venue, city: e.city, interestedCount: e.interestedCount, goingCount: e.goingCount, featured: false, badge: "🔥 Hot" }));
+    popularCards = mock.slice(3, 5).map((e) => ({ id: e.id, title: e.title, image: e.image, genre: e.genre, price: e.price, date: e.date, time: e.time, venue: e.venue, city: e.city, interestedCount: e.interestedCount, goingCount: e.goingCount, featured: false, badge: "📈 Popular" }));
+  }
+  if (latestArticles.length === 0) {
+    latestArticles = articles.slice(0, 3).map((a) => ({ id: a.id, title: a.title, category: a.category, date: a.date, readTime: a.readTime, image: a.image, excerpt: a.excerpt }));
+  }
+
+  return (
+    <div style={{ backgroundColor: "#0A0A12" }}>
+
+      {/* ══════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════ */}
+      <section
+        className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 overflow-hidden"
+        style={{ background: "linear-gradient(180deg, #06060f 0%, #0a0a14 40%, #0d0d1a 70%, #0A0A12 100%)" }}
+      >
+        {/* Ambient blobs */}
+        <div className="absolute top-1/4 left-[15%] w-[500px] h-[500px] rounded-full pointer-events-none animate-float-a"
+          style={{ background: "radial-gradient(circle, rgba(232,160,32,0.09) 0%, transparent 70%)" }} />
+        <div className="absolute bottom-1/4 right-[10%] w-[400px] h-[400px] rounded-full pointer-events-none animate-float-b"
+          style={{ background: "radial-gradient(circle, rgba(120,40,200,0.07) 0%, transparent 70%)" }} />
+        <div className="absolute top-[15%] right-1/3 w-[200px] h-[200px] rounded-full pointer-events-none animate-glow-pulse"
+          style={{ background: "radial-gradient(circle, rgba(232,160,32,0.06) 0%, transparent 70%)" }} />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-3xl mx-auto w-full text-center">
+
+          {/* Logo */}
+          <div className="flex items-baseline justify-center gap-1 mb-3">
+            <span className="font-thin tracking-[0.35em] text-[clamp(3rem,10vw,6.5rem)] uppercase text-white select-none">Night</span>
+            <span className="font-thin tracking-[0.35em] text-[clamp(3rem,10vw,6.5rem)] uppercase select-none" style={{ color: "#E8A020" }}>up</span>
+          </div>
+
+          {/* Tagline */}
+          <p className="text-xs md:text-sm tracking-[0.6em] uppercase mb-6 font-medium" style={{ color: "rgba(232,160,32,0.6)" }}>
+            find your night
+          </p>
+
+          {/* Hero copy */}
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight tracking-tight">
+            Your night starts here.
+          </h1>
+          <p className="text-base md:text-lg mb-12 leading-relaxed max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
+            Βρες events και club nights σε όλη την Ελλάδα. Venues, DJs, ήχος, φώτα — όλα σε ένα μέρος.
+          </p>
+
+          <HeroSearch />
+        </div>
+
+        {/* Scroll cue */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
+          <span className="text-xs tracking-widest uppercase" style={{ color: "#E8A020" }}>Scroll</span>
+          <div className="w-px h-8 bg-gradient-to-b from-amber-500/60 to-transparent" />
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          LIVE RADIO STRIP
+      ══════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 py-14">
+        <div className="flex items-center gap-3 mb-6">
+          <span className="w-2 h-2 rounded-full animate-live-pulse flex-shrink-0" style={{ backgroundColor: "#E8A020" }} />
+          <h2 className="text-xs font-bold tracking-[0.4em] uppercase" style={{ color: "#E8A020" }}>Live on Nightwaves</h2>
+          <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(232,160,32,0.2), transparent)" }} />
+          <Link href="/nightwaves"
+            className="group flex items-center gap-1 text-xs font-semibold transition-colors hover:text-white flex-shrink-0"
+            style={{ color: "#E8A020" }}>
+            Listen Live
+            <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+        <HomeMiniRadio />
+      </section>
+
+      {/* ══════════════════════════════════════════
+          HOT & POPULAR
+      ══════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 py-6">
+        <SectionHeader title="Hot & Popular" icon="🔥" href="/events" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
+          {hotCards.map((e: any) => <EventCard key={e.id} {...e} />)}
+        </div>
+        {popularCards.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {popularCards.map((e: any) => <EventCard key={e.id} {...e} />)}
+          </div>
+        )}
+      </section>
+
+      {/* ══════════════════════════════════════════
+          JOURNAL
+      ══════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 py-12">
+        <SectionHeader title="Latest from the Journal" href="/magazine" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {latestArticles.map((a: any, i: number) => (
+            <Link
+              key={a.id}
+              href={`/magazine/${a.id}`}
+              className="group block rounded-2xl overflow-hidden event-card"
+              style={{ backgroundColor: "#111120" }}
+            >
+              {/* 16:9 image */}
+              <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
+                <Image src={a.image} alt={a.title} fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                <div className="absolute inset-0" style={{
+                  background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)"
+                }} />
+                <span className="absolute bottom-3 left-3 text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
+                  {a.category}
+                </span>
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-sm mb-2 line-clamp-2 leading-[1.4]">{a.title}</h3>
+                <p className="text-xs" style={{ color: "#555" }}>{a.readTime}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          NEW RELEASES
+      ══════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <span className="section-divider" />
+            <h2 className="text-2xl font-bold tracking-tight">New Releases</h2>
+            <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>NEW</span>
+          </div>
+          <Link href="/nightwaves"
+            className="group flex items-center gap-1 text-sm font-medium transition-colors hover:text-white"
+            style={{ color: "#E8A020" }}>
+            Explore
+            <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+
+        {newReleases.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {newReleases.map((r: any) => {
+              const isExternal = r.external === true;
+              const CardEl = isExternal ? "a" : Link;
+              const cardProps = isExternal
+                ? { href: r.href as string, target: "_blank" as const, rel: "noopener noreferrer" }
+                : { href: r.href as string };
+              return (
+                <CardEl key={r.id} {...cardProps}
+                  className="group block rounded-2xl overflow-hidden event-card"
+                  style={{ backgroundColor: "#111120" }}>
+                  <div className="relative aspect-square overflow-hidden">
+                    <Image src={r.cover_image || FALLBACK_IMAGE} alt={r.title} fill
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                    <div className="absolute inset-0" style={{
+                      background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)"
+                    }} />
+                    {r.is_promoted && (
+                      <span className="absolute top-2 left-2 text-xs font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>⭐</span>
+                    )}
+                    <span className="absolute top-2 right-2 text-xs font-black px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
+                      {r.typeBadge}
+                    </span>
+                  </div>
+                  <div className="p-3">
+                    {r.artist && <p className="text-xs font-semibold truncate mb-0.5" style={{ color: "#E8A020" }}>{r.artist}</p>}
+                    <h4 className="text-sm font-bold line-clamp-1">{r.title}</h4>
+                  </div>
+                </CardEl>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {articles.slice(3, 7).map((a) => (
+              <Link key={a.id} href={`/magazine/${a.id}`}
+                className="flex items-center gap-4 p-4 rounded-xl transition-colors hover:opacity-80"
+                style={{ backgroundColor: "#111120" }}>
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
+                  <Image src={a.image} alt={a.title} fill className="object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-bold" style={{ color: "#E8A020" }}>{a.category}</span>
+                  <h4 className="text-sm font-bold line-clamp-2 mt-0.5">{a.title}</h4>
+                  <p className="text-xs mt-1" style={{ color: "#444" }}>{a.readTime}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ══════════════════════════════════════════
+          PLANNING A PARTY CTA
+      ══════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 py-12">
+        <div
+          className="relative rounded-3xl px-8 md:px-16 py-14 text-center overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #0e0e1c 0%, #12122a 50%, #0e0e1c 100%)" }}
+        >
+          {/* Decorative ring */}
+          <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{
+            background: "linear-gradient(#12122a, #12122a) padding-box, linear-gradient(135deg, rgba(232,160,32,0.25), rgba(232,160,32,0.03) 60%, transparent) border-box",
+            border: "1px solid transparent",
+          }} />
+
+          {/* Ambient center glow */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(232,160,32,0.07), transparent)"
+          }} />
+
+          <div className="relative z-10">
+            <p className="text-xs font-bold tracking-[0.4em] uppercase mb-4" style={{ color: "rgba(232,160,32,0.6)" }}>
+              For organizers
+            </p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+              Make it happen.
+            </h2>
+            <p className="text-base md:text-lg mb-10 max-w-lg mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
+              Find venues, DJs, photographers, sound & lighting — everything for your perfect event.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-8 mb-10">
+              {[["🏛️", "Venues"], ["🎧", "Artists"], ["💡", "Lighting"], ["📸", "Photography"]].map(([icon, label]) => (
+                <div key={label} className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+                    style={{ backgroundColor: "rgba(232,160,32,0.08)", border: "1px solid rgba(232,160,32,0.15)" }}>
+                    {icon}
+                  </div>
+                  <span className="text-xs font-semibold tracking-wide" style={{ color: "#666" }}>{label}</span>
+                </div>
+              ))}
+            </div>
+
+            <Link
+              href="/party"
+              className="btn-gold-shimmer inline-block px-10 py-3.5 rounded-full font-bold text-sm tracking-wide"
+              style={{ color: "#0F0F1A" }}
+            >
+              Explore Professionals
+            </Link>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  );
+}
+import { Metadata } from "next";
+import { Suspense } from "react";
+import { events as mockEvents } from "../lib/data";
+import EventsClient from "./EventsClient";
+import { getSupabase } from "../lib/supabase";
+
+export const metadata: Metadata = {
+  title: "Events",
+  description: "Discover the best club nights, festivals, and live music events across Greece. Filter by city, genre, and date.",
+};
+export const dynamic = "force-dynamic";
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
+
+export default async function EventsPage() {
+  const eventsData = mockEvents.map((e) => ({
+    id: e.id,
+    title: e.title,
+    image: e.image || FALLBACK_IMAGE,
+    genre: e.genre,
+    price: e.price,
+    date: e.date,
+    time: e.time,
+    venue: e.venue,
+    city: e.city,
+    interestedCount: e.interestedCount,
+    goingCount: e.goingCount,
+    featured: (e as any).featured === true,
+    nightupPick: false,
+  }));
+
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("events")
+      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured, nightup_pick, organizers(name, slug)")
+      .eq("status", "approved")
+      .order("date", { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      const mockIds = new Set(eventsData.map((e) => e.id));
+      const newEvents = data
+        .filter((e) => !mockIds.has(String(e.id)))
+        .map((e) => ({
+          id: String(e.id),
+          title: e.title,
+          image: e.image_url || FALLBACK_IMAGE,
+          genre: e.genre,
+          price: e.price ?? "",
+          date: e.date,
+          time: e.time ?? "",
+          venue: e.venue,
+          city: e.city,
+          interestedCount: e.interested_count ?? 0,
+          goingCount: e.going_count ?? 0,
+          featured: (e as any).featured === true,
+          nightupPick: (e as any).nightup_pick === true,
+          organizerName: (e as any).organizers?.name ?? undefined,
+          organizerSlug: (e as any).organizers?.slug ?? undefined,
+        }));
+      eventsData.push(...newEvents);
+    }
+  } catch {}
+
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-8 text-gray-400">Loading events...</div>}>
+      <EventsClient events={eventsData} />
+    </Suspense>
+  );
+}
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { events } from "../../lib/data";
+import { getSupabase } from "../../lib/supabase";
+import EventInteraction from "./EventInteraction";
+import EventCard from "../../components/EventCard";
+import TranslatedText from "../../components/TranslatedText";
+
+function OrganizerSocials({ instagram, facebook, tiktok, website }: {
+  instagram?: string | null;
+  facebook?: string | null;
+  tiktok?: string | null;
+  website?: string | null;
+}) {
+  const links = [
+    { href: instagram, label: "Instagram", icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+      </svg>
+    )},
+    { href: facebook, label: "Facebook", icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+    )},
+    { href: tiktok, label: "TikTok", icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.93a8.16 8.16 0 004.77 1.52V7.01a4.85 4.85 0 01-1-.32z" />
+      </svg>
+    )},
+    { href: website, label: "Website", icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+      </svg>
+    )},
+  ].filter((l) => l.href);
+
+  if (links.length === 0) return null;
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-3">Organizer</h2>
+      <div className="flex items-center gap-4">
+        {links.map(({ href, label, icon }) => (
+          <a
+            key={label}
+            href={href!}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={label}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ backgroundColor: "#1A1A2E", border: "1px solid #333", color: "#E8A020" }}
+          >
+            {icon}
+            <span>{label}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ShareButtons({ title }: { title: string }) {
+  const encoded = encodeURIComponent(title);
+  const url = encodeURIComponent("https://nightup.gr");
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-3">Share</h2>
+      <div className="flex flex-wrap gap-3">
+        <a href={`https://twitter.com/intent/tweet?text=${encoded}&url=${url}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg text-xs font-medium hover:border-white/40" style={{ backgroundColor: "#1A1A2E", border: "1px solid #333", color: "#aaa" }}>Twitter / X</a>
+        <a href={`https://www.facebook.com/sharer/sharer.php?u=${url}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg text-xs font-medium hover:border-white/40" style={{ backgroundColor: "#1A1A2E", border: "1px solid #333", color: "#aaa" }}>Facebook</a>
+        <a href={`https://wa.me/?text=${encoded}%20${url}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg text-xs font-medium hover:border-white/40" style={{ backgroundColor: "#1A1A2E", border: "1px solid #333", color: "#aaa" }}>WhatsApp</a>
+      </div>
+    </div>
+  );
+}
+
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+const genreColors: Record<string, string> = {
+  Techno: "#E8A020", House: "#A020E8", "Deep House": "#2080E8",
+  "Hip-Hop": "#E82060", "R&B": "#E86020", Latin: "#20E860",
+  "Open Air": "#60E820", Afrobeats: "#E8A020", "Live Music": "#20E8A0",
+};
+
+async function getEvent(id: string) {
+  // Try Supabase first
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("events")
+      .select("*, organizers(id, name, slug, bio, logo_url, social_links)")
+      .eq("id", id)
+      .eq("status", "approved")
+      .single();
+
+    if (!error && data) {
+      const lineupRaw = data.lineup;
+      const lineup: string[] = Array.isArray(lineupRaw)
+        ? lineupRaw
+        : typeof lineupRaw === "string" && lineupRaw
+        ? lineupRaw.split(",").map((s: string) => s.trim())
+        : [];
+      const org = (data as any).organizers;
+      // Try to fetch new-format organizer by organizer_id
+      let newOrganizer: any = null;
+      if (data.organizer_id) {
+        const { data: orgData } = await supabase
+          .from("organizers")
+          .select("id, name, type, city, avatar")
+          .eq("id", data.organizer_id)
+          .single();
+        if (orgData) newOrganizer = orgData;
+      }
+      return {
+        id: String(data.id),
+        title: data.title,
+        image: data.image_url ?? "",
+        genre: data.genre,
+        price: data.price ?? "",
+        date: data.date,
+        time: data.time ?? "",
+        venue: data.venue,
+        city: data.city,
+        interestedCount: data.interested_count ?? 0,
+        goingCount: data.going_count ?? 0,
+        lineup,
+        about: data.description ?? "",
+        ticketUrl: data.ticket_url ?? "https://tickets.nightup.gr",
+        organizerInstagram: (data.organizer_instagram as string) ?? null,
+        organizerFacebook: (data.organizer_facebook as string) ?? null,
+        organizerTiktok: (data.organizer_tiktok as string) ?? null,
+        organizerWebsite: (data.organizer_website as string) ?? null,
+        organizer: org ? { name: org.name, slug: org.slug, logo_url: org.logo_url } : null,
+        linkedOrganizer: newOrganizer,
+        organizerId: data.organizer_id ?? null,
+      };
+    }
+  } catch {
+    // fall through to mock
+  }
+
+  // Fall back to mock data
+  const mock = events.find((e) => e.id === id);
+  return mock ?? null;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const event = await getEvent(id);
+  if (!event) return { title: "Event not found" };
+  return {
+    title: event.title,
+    description: event.about
+      ? event.about.slice(0, 155)
+      : `${event.genre} event at ${event.venue}, ${event.city} on ${event.date}.`,
+  };
+}
+
+export default async function EventPage({ params }: Props) {
+  const { id } = await params;
+  const event = await getEvent(id);
+  if (!event) notFound();
+
+  const related = events
+    .filter((e) => e.id !== id && (e.genre === event.genre || e.city === event.city))
+    .slice(0, 4);
+  const color = genreColors[event.genre] ?? "#E8A020";
+  const formattedDate = new Date(event.date).toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
+  return (
+    <div>
+      {/* Hero image — pure visual, no text inside */}
+      <div className="relative w-full overflow-hidden" style={{ minHeight: "300px", height: "clamp(300px, 40vw, 400px)" }}>
+        {event.image.startsWith("data:") ? (
+          <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+        ) : (
+          <Image src={event.image || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"} alt={event.title} fill sizes="100vw" className="object-cover" priority />
+        )}
+        {/* Strong dark gradient so the image fades cleanly into the page background */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to bottom, rgba(15,15,26,0.15) 0%, rgba(15,15,26,0.4) 50%, rgba(15,15,26,0.95) 100%)" }}
+        />
+        {/* Genre badge anchored inside the hero */}
+        <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: color, color: "#0F0F1A" }}>
+            {event.genre}
+          </span>
+        </div>
+      </div>
+
+      {/* Content starts cleanly below the hero — no negative margin */}
+      <div className="max-w-5xl mx-auto px-4 pt-6">
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 leading-tight">{event.title}</h1>
+            {"organizer" in event && (event as any).organizer && (
+              <Link
+                href={`/organizers/${(event as any).organizer.slug}`}
+                className="inline-flex items-center gap-2 mb-4 text-sm font-medium hover:underline"
+                style={{ color: "#E8A020" }}
+              >
+                {(event as any).organizer.logo_url && (
+                  <img
+                    src={(event as any).organizer.logo_url}
+                    alt={(event as any).organizer.name}
+                    className="w-5 h-5 rounded-full object-cover"
+                    style={{ border: "1px solid #E8A020" }}
+                  />
+                )}
+                by {(event as any).organizer.name}
+              </Link>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {[
+                { icon: "📅", label: "Date", value: formattedDate },
+                { icon: "🕐", label: "Time", value: event.time },
+                { icon: "📍", label: "Venue", value: event.venue },
+                { icon: "🌆", label: "City", value: event.city },
+              ].map(({ icon, label, value }) => (
+                <div key={label} className="flex items-start gap-3 p-3 rounded-xl" style={{ backgroundColor: "#1A1A2E" }}>
+                  <span className="text-lg">{icon}</span>
+                  <div>
+                    <p className="text-xs text-gray-400">{label}</p>
+                    <p className="text-sm font-medium">{value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {event.about && (
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold mb-3">About</h2>
+                <p className="text-gray-300 leading-relaxed"><TranslatedText text={event.about} /></p>
+              </div>
+            )}
+
+            {event.lineup && event.lineup.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold mb-4">Lineup</h2>
+                <div className="flex flex-wrap gap-2">
+                  {event.lineup.map((artist) => (
+                    <span
+                      key={artist}
+                      className="px-4 py-2 rounded-full text-sm font-medium"
+                      style={{ backgroundColor: "#1A1A2E", border: `1px solid ${color}`, color }}
+                    >
+                      {artist}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <OrganizerSocials
+              instagram={"organizerInstagram" in event ? (event as any).organizerInstagram : undefined}
+              facebook={"organizerFacebook" in event ? (event as any).organizerFacebook : undefined}
+              tiktok={"organizerTiktok" in event ? (event as any).organizerTiktok : undefined}
+              website={"organizerWebsite" in event ? (event as any).organizerWebsite : undefined}
+            />
+            <ShareButtons title={event.title} />
+          </div>
+
+          <div className="md:col-span-1">
+            <div className="sticky top-20 space-y-4">
+              <div className="p-6 rounded-2xl" style={{ backgroundColor: "#1A1A2E", border: "1px solid #333" }}>
+                <p className="text-xs text-gray-400 mb-1">Price from</p>
+                <p className="text-3xl font-bold mb-4" style={{ color: "#E8A020" }}>{event.price}</p>
+                <a
+                  href={event.ticketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center py-3 rounded-xl font-semibold transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
+                >
+                  Get Tickets
+                </a>
+              </div>
+              <EventInteraction eventId={event.id} interestedCount={event.interestedCount} goingCount={event.goingCount} />
+            </div>
+          </div>
+        </div>
+
+        {/* Organizer section */}
+        {"linkedOrganizer" in event && (event as any).linkedOrganizer ? (
+          <div className="py-8 border-t" style={{ borderColor: "#1A1A2E" }}>
+            <h2 className="text-lg font-semibold mb-4">Organized by</h2>
+            <div className="flex items-center gap-4 p-4 rounded-2xl" style={{ backgroundColor: "#1A1A2E", border: "1px solid #333" }}>
+              {(event as any).linkedOrganizer.avatar && (
+                <img src={(event as any).linkedOrganizer.avatar} alt={(event as any).linkedOrganizer.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" style={{ border: "1px solid #E8A020" }} />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h3 className="font-semibold">{(event as any).linkedOrganizer.name}</h3>
+                  {(event as any).linkedOrganizer.type && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>{(event as any).linkedOrganizer.type}</span>}
+                </div>
+                {(event as any).linkedOrganizer.city && <p className="text-xs text-gray-400">{(event as any).linkedOrganizer.city}</p>}
+              </div>
+              <Link href={`/organizers/${(event as any).linkedOrganizer.id || (event as any).organizerId}`} className="text-sm font-medium px-4 py-2 rounded-xl hover:opacity-80 flex-shrink-0" style={{ backgroundColor: "#16213E", border: "1px solid #E8A020", color: "#E8A020" }}>
+                View Profile →
+              </Link>
+            </div>
+          </div>
+        ) : ("organizer" in event && (event as any).organizer ? null : null)}
+
+        {related.length > 0 && (
+          <div className="py-12">
+            <h2 className="text-xl font-semibold mb-6">Related Events</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {related.map((e) => (
+                <EventCard key={e.id} {...e} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+import { Metadata } from "next";
+import { professionals as mockProfessionals } from "../lib/data";
+import PartyClient from "./PartyClient";
+import { getSupabase } from "../lib/supabase";
+
+export const metadata: Metadata = {
+  title: "Make Your Party",
+  description: "Find venues, DJs, photographers, caterers, and everything you need to plan the perfect party in Greece.",
+};
+export const dynamic = "force-dynamic";
+
+export default async function PartyPage() {
+  let professionalsData = mockProfessionals.map((p) => ({
+    id: p.id,
+    name: p.name,
+    avatar: p.avatar,
+    category: p.category,
+    stars: p.stars,
+    reviewCount: p.reviewCount,
+    location: p.location,
+    description: p.description,
+    isFeatured: false,
+  }));
+
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("professionals")
+      .select("id, name, avatar, category, rating, review_count, location, description, is_featured")
+      .eq("status", "approved")
+      .order("rating", { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      professionalsData = data.map((p) => ({
+        id: String(p.id),
+        name: p.name,
+        avatar: p.avatar ?? "",
+        category: p.category,
+        stars: p.rating ?? 0,
+        reviewCount: p.review_count ?? 0,
+        location: p.location ?? "",
+        description: p.description ?? "",
+        isFeatured: (p as any).is_featured === true,
+      }));
+    }
+  } catch {
+    // fall back to mock data
+  }
+
+  return <PartyClient professionals={professionalsData} />;
+}
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { professionals } from "../../lib/data";
+import { getSupabase } from "../../lib/supabase";
+import ContactModal from "./ContactModal";
+import TranslatedText from "../../components/TranslatedText";
+
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+function StarRating({ stars }: { stars: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <svg key={i} className="w-4 h-4" fill={i <= Math.round(stars) ? "#E8A020" : "#333"} viewBox="0 0 24 24">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function SocialIcons({ instagram, facebook, tiktok, website }: {
+  instagram?: string | null;
+  facebook?: string | null;
+  tiktok?: string | null;
+  website?: string | null;
+}) {
+  const links = [
+    { href: instagram, label: "Instagram", icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+      </svg>
+    )},
+    { href: facebook, label: "Facebook", icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+    )},
+    { href: tiktok, label: "TikTok", icon: (
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.93a8.16 8.16 0 004.77 1.52V7.01a4.85 4.85 0 01-1-.32z" />
+      </svg>
+    )},
+    { href: website, label: "Website", icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+      </svg>
+    )},
+  ].filter((l) => l.href);
+
+  if (links.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-3 mt-4 flex-wrap">
+      {links.map(({ href, label, icon }) => (
+        <a
+          key={label}
+          href={href!}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={label}
+          className="transition-opacity hover:opacity-80"
+          style={{ color: "#E8A020" }}
+        >
+          {icon}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+async function getProfessional(id: string) {
+  // Try Supabase first
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("professionals")
+      .select("*")
+      .eq("id", id)
+      .eq("status", "approved")
+      .single();
+
+    if (!error && data) {
+      return {
+        id: String(data.id),
+        name: data.name,
+        avatar: data.avatar ?? "",
+        category: data.category,
+        stars: data.rating ?? 0,
+        reviewCount: data.review_count ?? 0,
+        location: data.location ?? "",
+        description: data.description ?? "",
+        photos: (data.photos as string[]) ?? [],
+        reviews: (data.reviews as { name: string; rating: number; text: string }[]) ?? [],
+        contact: data.contact ?? null,
+        email: data.email ?? null,
+        instagram: (data.instagram as string) ?? null,
+        facebook: (data.facebook as string) ?? null,
+        tiktok: (data.tiktok as string) ?? null,
+        website: (data.website as string) ?? null,
+      };
+    }
+  } catch {
+    // fall through to mock
+  }
+
+  const mock = professionals.find((p) => p.id === id);
+  return mock ?? null;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const pro = await getProfessional(id);
+  if (!pro) return { title: "Professional not found" };
+  return { title: pro.name };
+}
+
+export default async function ProfessionalPage({ params }: Props) {
+  const { id } = await params;
+  const pro = await getProfessional(id);
+  if (!pro) notFound();
+
+  const related = professionals.filter((p) => p.id !== id && p.category === pro.category).slice(0, 4);
+  const photos = pro.photos ?? [];
+  const reviews = pro.reviews ?? [];
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-10">
+      <Link href="/party" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-8 transition-colors">
+        ← Back to Party
+      </Link>
+
+      <div className="grid md:grid-cols-3 gap-10">
+        <div className="md:col-span-1">
+          <div className="sticky top-24">
+            <div className="relative w-32 h-32 mx-auto md:mx-0 rounded-full overflow-hidden mb-4" style={{ boxShadow: "0 0 0 4px #E8A020" }}>
+              <Image src={pro.avatar} alt={pro.name} fill className="object-cover" />
+            </div>
+            <h1 className="text-2xl font-bold mb-1 text-center md:text-left">{pro.name}</h1>
+            <p className="text-sm mb-2 text-center md:text-left" style={{ color: "#E8A020" }}>{pro.category}</p>
+            <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+              <StarRating stars={pro.stars} />
+              <span className="text-sm text-gray-400">{pro.stars} ({pro.reviewCount} reviews)</span>
+            </div>
+            <p className="text-sm text-gray-400 mb-4 text-center md:text-left">📍 {pro.location}</p>
+            <div className="flex justify-center md:justify-start">
+              <SocialIcons
+                instagram={"instagram" in pro ? (pro as any).instagram : undefined}
+                facebook={"facebook" in pro ? (pro as any).facebook : undefined}
+                tiktok={"tiktok" in pro ? (pro as any).tiktok : undefined}
+                website={"website" in pro ? (pro as any).website : undefined}
+              />
+            </div>
+            <div className="mt-6">
+              <ContactModal name={pro.name} phone={pro.contact ?? undefined} email={pro.email ?? undefined} />
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-2 space-y-8">
+          <div>
+            <h2 className="text-xl font-semibold mb-3">About</h2>
+            <p className="text-gray-300 leading-relaxed"><TranslatedText text={pro.description} /></p>
+          </div>
+
+          {photos.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Gallery</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {photos.map((photo, i) => (
+                  <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                    <Image src={photo} alt={`Gallery ${i + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {reviews.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Reviews</h2>
+              <div className="space-y-4">
+                {reviews.map((review, i) => (
+                  <div key={i} className="p-4 rounded-xl" style={{ backgroundColor: "#1A1A2E" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium text-sm">{review.name}</p>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <svg key={s} className="w-3 h-3" fill={s <= review.rating ? "#E8A020" : "#333"} viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-400">{review.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {related.length > 0 && (
+        <div className="mt-16">
+          <h2 className="text-xl font-semibold mb-6">Similar Professionals</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {related.map((p) => (
+              <Link key={p.id} href={`/party/${p.id}`} className="block rounded-xl overflow-hidden card-hover" style={{ backgroundColor: "#1A1A2E" }}>
+                <div className="relative h-28">
+                  <Image src={p.avatar} alt={p.name} fill className="object-cover" />
+                </div>
+                <div className="p-3">
+                  <p className="text-sm font-medium truncate">{p.name}</p>
+                  <p className="text-xs text-gray-400">{p.location}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+import { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { articles as mockArticles } from "../lib/data";
+import MagazineClient from "./MagazineClient";
+import { getSupabase } from "../lib/supabase";
+
+export const metadata: Metadata = {
+  title: "Magazine",
+  description: "Read the latest articles about Greek nightlife, music venues, artists, and culture from the Nightup Journal.",
+};
+export const dynamic = "force-dynamic";
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&q=80";
+
+function formatSlug(slug: string) {
+  return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+export default async function MagazinePage() {
+  let articlesData = mockArticles.map((a) => ({
+    id: a.id,
+    title: a.title,
+    category: a.category,
+    date: a.date,
+    readTime: (a as any).readTime ?? "",
+    image: (a as any).image || FALLBACK_IMAGE,
+    excerpt: (a as any).excerpt ?? "",
+    featured: (a as any).featured ?? false,
+    series: null as string | null,
+  }));
+
+  let seriesList: Array<{ slug: string; count: number }> = [];
+
+  try {
+    const supabase = getSupabase();
+    const [articlesRes, seriesRes] = await Promise.all([
+      supabase
+        .from("articles")
+        .select("id, title, category, excerpt, body, date, read_time, status, series, series_order, image_url")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("articles")
+        .select("series")
+        .not("series", "is", null)
+        .eq("status", "approved"),
+    ]);
+
+    if (!articlesRes.error && articlesRes.data && articlesRes.data.length > 0) {
+      articlesData = articlesRes.data.map((a) => ({
+        id: String(a.id),
+        title: a.title,
+        category: a.category,
+        date: a.date ?? "",
+        readTime: a.read_time ? `${a.read_time} min read` : "",
+        image: a.image_url || FALLBACK_IMAGE,
+        excerpt: a.excerpt ?? "",
+        featured: (a as any).featured ?? false,
+        series: a.series ?? null,
+      }));
+    }
+
+    if (!seriesRes.error && seriesRes.data) {
+      const map: Record<string, number> = {};
+      seriesRes.data.forEach((r) => {
+        if (r.series) map[r.series] = (map[r.series] || 0) + 1;
+      });
+      seriesList = Object.entries(map).map(([slug, count]) => ({ slug, count }));
+    }
+  } catch {
+    // fall back to mock data
+  }
+
+  const featured = articlesData.find((a) => a.featured) ?? articlesData[0];
+
+  return (
+    <div>
+      <div className="max-w-7xl mx-auto px-4 pt-8 pb-4">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">The Nightup Journal.</h1>
+        <p className="text-gray-400">Read between the sets.</p>
+      </div>
+
+      {featured && (
+        <>
+          <div className="relative w-full overflow-hidden" style={{ minHeight: "450px" }}>
+            <Image src={featured.image || FALLBACK_IMAGE} alt={featured.title} fill priority sizes="100vw" className="object-cover object-center" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.75) 100%)" }} />
+            <div className="absolute bottom-8 left-0 right-0 max-w-5xl mx-auto px-6 flex items-end justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-3" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
+                  {featured.category}
+                </span>
+                <h2 className="text-xl md:text-3xl font-bold mb-2 leading-tight text-white">{featured.title}</h2>
+                <div className="flex items-center gap-3 text-sm text-gray-300">
+                  <span>{new Date(featured.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
+                  {featured.readTime && <><span>·</span><span>{featured.readTime}</span></>}
+                </div>
+              </div>
+              <Link href={`/magazine/${featured.id}`} className="flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
+                Read Article →
+              </Link>
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 pt-8 pb-8">
+            <MagazineClient articles={articlesData} />
+          </div>
+        </>
+      )}
+
+      {seriesList.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 pb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="section-divider" />
+            <h2 className="text-xl font-semibold">Series</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {seriesList.map(({ slug, count }) => (
+              <Link
+                key={slug}
+                href={`/magazine/series/${slug}`}
+                className="group block rounded-2xl p-6 card-hover"
+                style={{ backgroundColor: "#1A1A2E", border: "1px solid rgba(232,160,32,0.1)" }}
+              >
+                <p className="font-semibold text-base mb-1 group-hover:text-white transition-colors">{formatSlug(slug)}</p>
+                <p className="text-xs text-gray-400 mb-4">{count} {count === 1 ? "article" : "articles"}</p>
+                <span className="text-sm font-medium" style={{ color: "#E8A020" }}>Read Series →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { articles } from "../../lib/data";
+import { getSupabase } from "../../lib/supabase";
+import TranslatedArticleBody from "../../components/TranslatedArticleBody";
+
+interface Props { params: Promise<{ id: string }>; }
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&q=80";
+
+function formatSlug(slug: string) {
+  return slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function extractFirstBlockquote(html: string): string | null {
+  const match = html.match(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/i);
+  if (!match) return null;
+  return match[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function extractNightUpTip(html: string): string | null {
+  const pMatches = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)];
+  for (const m of pMatches) {
+    if (/nightup\s+tip/i.test(m[1])) {
+      return m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    }
+  }
+  return null;
+}
+
+function extractSources(html: string): Array<{ url: string; domain: string }> {
+  const ulMatches = [...html.matchAll(/<ul[^>]*>([\s\S]*?)<\/ul>/gi)];
+  if (!ulMatches.length) return [];
+  const lastUl = ulMatches[ulMatches.length - 1][1];
+  const linkMatches = [...lastUl.matchAll(/href="(https?:\/\/[^"]+)"/gi)];
+  return linkMatches.map((m) => {
+    const url = m[1];
+    try {
+      return { url, domain: new URL(url).hostname.replace(/^www\./, "") };
+    } catch {
+      return { url, domain: url };
+    }
+  });
+}
+
+function generateSummaryBullets(excerpt: string, body: string, content: string): string[] {
+  const raw = excerpt || body || content;
+  const clean = raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const sentences = (clean.match(/[^.!?]+[.!?]+/g) || [])
+    .map((s) => s.trim())
+    .filter((s) => s.length > 25 && s.length < 250);
+  return sentences.slice(0, 3);
+}
+
+interface Article {
+  id: string;
+  title: string;
+  category: string;
+  date: string;
+  read_time: number | null;
+  image: string;
+  excerpt: string;
+  body: string;
+  content: string;
+  series: string | null;
+  series_order: number | null;
+  featured: boolean;
+}
+
+async function getArticle(id: string): Promise<Article | null> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .eq("id", id)
+      .eq("status", "approved")
+      .single();
+    if (!error && data) {
+      return {
+        id: String(data.id),
+        title: data.title,
+        category: data.category,
+        date: data.date ?? "",
+        read_time: data.read_time ?? null,
+        image: data.image_url ?? (data as any).image ?? "",
+        excerpt: data.excerpt ?? "",
+        body: data.body ?? "",
+        content: data.content ?? "",
+        series: data.series ?? null,
+        series_order: data.series_order ?? null,
+        featured: (data as any).featured ?? false,
+      };
+    }
+  } catch {}
+  const mock = articles.find((a) => a.id === id);
+  if (!mock) return null;
+  return {
+    id: mock.id,
+    title: mock.title,
+    category: mock.category,
+    date: mock.date,
+    read_time: (mock as any).readTime ?? null,
+    image: (mock as any).image ?? "",
+    excerpt: (mock as any).excerpt ?? "",
+    body: (mock as any).body ?? "",
+    content: "",
+    series: null,
+    series_order: null,
+    featured: (mock as any).featured ?? false,
+  };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const article = await getArticle(id);
+  if (!article) return { title: "Article not found" };
+  return { title: article.title, description: article.excerpt || article.title };
+}
+
+export default async function MagazineArticlePage({ params }: Props) {
+  const { id } = await params;
+  const article = await getArticle(id);
+  if (!article) notFound();
+
+  let seriesArticles: Array<{ id: string; title: string; series_order: number | null }> = [];
+  if (article.series) {
+    try {
+      const supabase = getSupabase();
+      const { data } = await supabase
+        .from("articles")
+        .select("id, title, series_order")
+        .eq("series", article.series)
+        .eq("status", "approved")
+        .order("series_order", { ascending: true });
+      if (data) {
+        seriesArticles = data.map((a) => ({
+          id: String(a.id),
+          title: a.title,
+          series_order: a.series_order ?? null,
+        }));
+      }
+    } catch {}
+  }
+
+  interface RelatedArticle { id: string; title: string; category: string; date: string; read_time: number | null; image: string; excerpt: string; }
+  let relatedArticles: RelatedArticle[] = [];
+  try {
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from("articles")
+      .select("id, title, category, date, read_time, image_url, excerpt")
+      .eq("status", "approved")
+      .eq("category", article.category)
+      .neq("id", id)
+      .order("created_at", { ascending: false })
+      .limit(3);
+    if (data && data.length > 0) {
+      relatedArticles = data.map((a) => ({
+        id: String(a.id),
+        title: a.title,
+        category: a.category,
+        date: a.date ?? "",
+        read_time: a.read_time ?? null,
+        image: a.image_url || FALLBACK_IMAGE,
+        excerpt: a.excerpt ?? "",
+      }));
+    }
+  } catch {}
+
+  if (relatedArticles.length === 0) {
+    relatedArticles = articles
+      .filter((a) => a.id !== id && (a as any).category === article.category)
+      .slice(0, 3)
+      .map((a) => ({
+        id: a.id,
+        title: a.title,
+        category: a.category,
+        date: a.date,
+        read_time: (a as any).readTime ? parseInt((a as any).readTime) : null,
+        image: (a as any).image || FALLBACK_IMAGE,
+        excerpt: (a as any).excerpt ?? "",
+      }));
+  }
+
+  const formattedDate = new Date(article.date).toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const htmlContent = article.content || "";
+  const firstBlockquote = htmlContent ? extractFirstBlockquote(htmlContent) : null;
+  const nightUpTip = htmlContent ? extractNightUpTip(htmlContent) : null;
+  const sources = htmlContent ? extractSources(htmlContent) : [];
+  const summaryBullets = generateSummaryBullets(article.excerpt, article.body, htmlContent);
+
+  const excerptDisplay =
+    article.excerpt ||
+    (article.body ? article.body.slice(0, 150) + (article.body.length > 150 ? "…" : "") : "");
+
+  return (
+    <div style={{ backgroundColor: "#0F0F1A", minHeight: "100vh" }}>
+
+      {/* Scoped article-content styles */}
+      <style>{`
+        .article-content h2 { color: #fff; font-size: 26px; font-weight: 600; margin-top: 40px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(232,160,32,0.2); }
+        .article-content h3 { color: #fff; font-size: 20px; font-weight: 500; margin-top: 28px; margin-bottom: 12px; }
+        .article-content p { color: rgba(255,255,255,0.82); font-size: 17px; line-height: 1.9; margin-bottom: 20px; }
+        .article-content strong { color: #fff; }
+        .article-content a { color: #E8A020; }
+        .article-content a:hover { text-decoration: underline; }
+        .article-content blockquote { border-left: 3px solid #E8A020; padding: 16px 20px; background: rgba(232,160,32,0.06); border-radius: 0 8px 8px 0; color: rgba(255,255,255,0.7); font-style: italic; margin: 28px 0; }
+        .article-content ul, .article-content ol { color: rgba(255,255,255,0.82); padding-left: 24px; line-height: 1.85; margin-bottom: 20px; }
+        .article-content li { margin-bottom: 10px; }
+      `}</style>
+
+      {/* ── 1. HERO ───────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-4 pt-10 pb-8">
+
+        {/* Back + series breadcrumb */}
+        <div className="flex items-center gap-4 mb-8">
+          <Link href="/magazine" className="text-sm transition-colors" style={{ color: "rgba(255,255,255,0.4)" }}
+            onMouseOver={(e) => (e.currentTarget.style.color = "#fff")}
+            onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}
+          >
+            ← All Articles
+          </Link>
+          {article.series && (
+            <Link
+              href={`/magazine/series/${article.series}`}
+              className="text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ color: "#E8A020" }}
+            >
+              {formatSlug(article.series)} Series →
+            </Link>
+          )}
+        </div>
+
+        {/* Category badge */}
+        <span
+          className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-5"
+          style={{ backgroundColor: "#E8A020", color: "#0F0F1A", letterSpacing: "0.1em", textTransform: "uppercase" }}
+        >
+          {article.category}
+        </span>
+
+        {/* Title */}
+        <h1
+          className="mb-5"
+          style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 300, color: "#ffffff", lineHeight: 1.15 }}
+        >
+          {article.title}
+        </h1>
+
+        {/* Excerpt / standfirst */}
+        {excerptDisplay && (
+          <p className="mb-6" style={{ color: "rgba(255,255,255,0.65)", fontSize: "18px", fontStyle: "italic", lineHeight: 1.7 }}>
+            {excerptDisplay}
+          </p>
+        )}
+
+        {/* Meta row */}
+        <div className="flex items-center gap-3 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <span>{formattedDate}</span>
+          {article.read_time && (
+            <>
+              <span>·</span>
+              <span>{article.read_time} min read</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Hero image */}
+      <div className="max-w-5xl mx-auto px-4">
+        <div
+          className="relative w-full overflow-hidden rounded-2xl"
+          style={{ height: "480px", border: "1px solid rgba(232,160,32,0.2)" }}
+        >
+          <Image
+            src={article.image || FALLBACK_IMAGE}
+            alt={article.title}
+            fill
+            sizes="(max-width: 1280px) 100vw, 1280px"
+            className="object-cover"
+            priority
+          />
+        </div>
+      </div>
+
+      {/* Gold divider */}
+      <div className="max-w-5xl mx-auto px-4 mt-10 mb-10">
+        <div style={{ height: "1px", backgroundColor: "rgba(232,160,32,0.2)" }} />
+      </div>
+
+      {/* ── 2. TWO-COLUMN LAYOUT ──────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 items-start">
+
+          {/* Main content */}
+          <div>
+            {article.content ? (
+              <div className="article-content" dangerouslySetInnerHTML={{ __html: article.content }} />
+            ) : (
+              <div className="article-content">
+                <TranslatedArticleBody body={article.body} />
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <aside className="space-y-5 lg:sticky lg:top-8 h-fit order-first lg:order-last">
+
+            {/* Summary box */}
+            {summaryBullets.length > 0 && (
+              <div
+                className="rounded-xl p-5"
+                style={{ backgroundColor: "rgba(232,160,32,0.06)", border: "1px solid rgba(232,160,32,0.2)" }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020", flexShrink: 0 }} />
+                  <p className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
+                    Σύνοψη
+                  </p>
+                </div>
+                <ul className="space-y-3">
+                  {summaryBullets.map((bullet, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.6 }}>
+                      <span
+                        className="mt-2 flex-shrink-0 rounded-full"
+                        style={{ width: "6px", height: "6px", backgroundColor: "#E8A020", display: "block" }}
+                      />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Category */}
+            <div
+              className="rounded-xl p-5"
+              style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              <p className="text-xs uppercase mb-3" style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
+                Κατηγορία
+              </p>
+              <span
+                className="inline-block text-sm font-semibold px-3 py-1 rounded-full"
+                style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
+              >
+                {article.category}
+              </span>
+            </div>
+
+            {/* Read time */}
+            {article.read_time && (
+              <div
+                className="rounded-xl p-5 flex items-center gap-3"
+                style={{ backgroundColor: "rgba(232,160,32,0.06)", border: "1px solid rgba(232,160,32,0.2)" }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8A020" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  <span style={{ color: "#fff", fontWeight: 600 }}>{article.read_time}</span> min ανάγνωση
+                </p>
+              </div>
+            )}
+
+          </aside>
+        </div>
+      </div>
+
+      {/* ── 3. QUOTE CALLOUT ──────────────────────────────────── */}
+      {firstBlockquote && (
+        <div style={{ backgroundColor: "rgba(232,160,32,0.04)", padding: "64px 24px", margin: "64px 0" }}>
+          <div className="max-w-2xl mx-auto text-center">
+            <div
+              style={{ fontSize: "80px", color: "#E8A020", lineHeight: "0.8", fontFamily: "Georgia, serif", marginBottom: "16px", userSelect: "none" }}
+            >
+              &ldquo;
+            </div>
+            <p style={{ fontSize: "22px", color: "#ffffff", fontStyle: "italic", lineHeight: 1.65 }}>
+              {firstBlockquote}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── 4. NIGHTUP TIP ────────────────────────────────────── */}
+      {nightUpTip && (
+        <div className="max-w-5xl mx-auto px-4 my-8">
+          <div
+            className="flex rounded-xl overflow-hidden"
+            style={{ backgroundColor: "rgba(232,160,32,0.08)" }}
+          >
+            <div style={{ width: "4px", backgroundColor: "#E8A020", flexShrink: 0 }} />
+            <div style={{ padding: "24px 28px" }}>
+              <span
+                className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3"
+                style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
+              >
+                💡 NightUp Tip
+              </span>
+              <p style={{ color: "#ffffff", fontSize: "16px", lineHeight: 1.7 }}>{nightUpTip}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 5. SOURCES ────────────────────────────────────────── */}
+      {sources.length > 0 && (
+        <div className="max-w-5xl mx-auto px-4 my-10">
+          <div className="flex items-center gap-3 mb-5">
+            <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
+            <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
+              Πηγές
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {sources.map((s, i) => (
+              <a
+                key={i}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-lg transition-colors"
+                style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.08)", padding: "12px 16px", display: "flex" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>{s.domain}</span>
+                <span className="text-xs ml-auto truncate" style={{ color: "rgba(255,255,255,0.25)", maxWidth: "260px" }}>{s.url}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── 6. SERIES NAVIGATION ──────────────────────────────── */}
+      {seriesArticles.length > 1 && (
+        <div
+          className="max-w-5xl mx-auto px-4 mt-12 pt-10 border-t"
+          style={{ borderColor: "rgba(232,160,32,0.15)" }}
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
+            <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
+              Περισσότερα από τη σειρά — {article.series ? formatSlug(article.series) : ""}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">
+            {seriesArticles.map((s, idx) => {
+              const isCurrent = s.id === id;
+              return (
+                <Link
+                  key={s.id}
+                  href={`/magazine/${s.id}`}
+                  className={isCurrent ? "pointer-events-none" : "group block"}
+                  style={{
+                    display: "block",
+                    backgroundColor: "#0D0D1A",
+                    border: `1px solid ${isCurrent ? "#E8A020" : "rgba(255,255,255,0.08)"}`,
+                    borderRadius: "12px",
+                    padding: "16px",
+                    textDecoration: "none",
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="text-xs font-bold flex-shrink-0"
+                      style={{ color: "#E8A020", marginTop: "2px", minWidth: "20px" }}
+                    >
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    <div className="min-w-0">
+                      {isCurrent && (
+                        <span
+                          className="inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-2"
+                          style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
+                        >
+                          Διαβάζεις τώρα
+                        </span>
+                      )}
+                      <p
+                        className="text-sm leading-snug"
+                        style={{ color: isCurrent ? "#ffffff" : "rgba(255,255,255,0.6)", fontWeight: isCurrent ? 600 : 400 }}
+                      >
+                        {s.title}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── 7. RELATED ARTICLES ───────────────────────────────── */}
+      {relatedArticles.length > 0 && (
+        <div
+          className="max-w-5xl mx-auto px-4 mt-12 pt-10 border-t"
+          style={{ borderColor: "rgba(232,160,32,0.15)" }}
+        >
+          <div className="flex items-center gap-3 mb-8">
+            <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
+            <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
+              Περισσότερα από {article.category}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+            {relatedArticles.map((r) => (
+              <Link
+                key={r.id}
+                href={`/magazine/${r.id}`}
+                className="group block rounded-2xl overflow-hidden"
+                style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.07)", textDecoration: "none", transition: "border-color 0.2s" }}
+                onMouseOver={(e) => (e.currentTarget.style.borderColor = "rgba(232,160,32,0.3)")}
+                onMouseOut={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+              >
+                <div className="relative overflow-hidden" style={{ height: "180px" }}>
+                  <Image
+                    src={r.image}
+                    alt={r.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover"
+                    style={{ transition: "transform 0.4s ease" }}
+                  />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)" }} />
+                  <span
+                    className="absolute top-3 left-3 text-xs font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "#E8A020", color: "#0F0F1A", letterSpacing: "0.06em", textTransform: "uppercase" }}
+                  >
+                    {r.category}
+                  </span>
+                </div>
+                <div style={{ padding: "16px 18px 18px" }}>
+                  <h3
+                    className="font-semibold leading-snug mb-2 line-clamp-2"
+                    style={{ color: "#ffffff", fontSize: "15px" }}
+                  >
+                    {r.title}
+                  </h3>
+                  {r.excerpt && (
+                    <p className="line-clamp-2 mb-3" style={{ color: "rgba(255,255,255,0.45)", fontSize: "13px", lineHeight: 1.6 }}>
+                      {r.excerpt}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2" style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px" }}>
+                    <span>{new Date(r.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    {r.read_time && (
+                      <>
+                        <span>·</span>
+                        <span>{r.read_time} min read</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── 8. SHARE + BACK ───────────────────────────────────── */}
+      <div
+        className="max-w-5xl mx-auto px-4 py-10 border-t"
+        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div>
+            <p className="text-xs uppercase mb-3" style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
+              Μοιράσου το άρθρο
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(article.title)}&url=${encodeURIComponent("https://nightup.gr")}`}
+                target="_blank" rel="noopener noreferrer"
+                className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
+                style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" }}
+              >
+                Twitter / X
+              </a>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://nightup.gr")}`}
+                target="_blank" rel="noopener noreferrer"
+                className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
+                style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" }}
+              >
+                Facebook
+              </a>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(article.title + " https://nightup.gr")}`}
+                target="_blank" rel="noopener noreferrer"
+                className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
+                style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" }}
+              >
+                WhatsApp
+              </a>
+            </div>
+          </div>
+          <Link
+            href="/magazine"
+            className="text-sm transition-colors"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+          >
+            ← Πίσω στο Magazine
+          </Link>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+import { Metadata } from "next";
+import AboutClient from "./AboutClient";
+import { getSupabase } from "../lib/supabase";
+import { events as mockEvents } from "../lib/data";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "Learn about Nightup.gr — Greece's #1 nightlife and events discovery platform. Find out who we are and how to get in touch.",
+};
+
+export const dynamic = "force-dynamic";
+
+export interface LiveStats {
+  events: number;
+  professionals: number;
+  cities: number;
+  visitors: number;
+}
+
+async function getLiveStats(): Promise<LiveStats> {
+  const supabase = getSupabase();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
+  try {
+    const [eventsRes, profRes, citiesRes, visitorsRes] = await Promise.all([
+      supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "approved"),
+      supabase
+        .from("professionals")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "approved"),
+      supabase
+        .from("events")
+        .select("city")
+        .eq("status", "approved"),
+      supabase
+        .from("site_stats")
+        .select("visitor_count")
+        .eq("month", currentMonth)
+        .maybeSingle(),
+    ]);
+
+    const dbEventCount = eventsRes.count ?? 0;
+    const eventsTotal = dbEventCount + mockEvents.length;
+
+    const profTotal = profRes.count ?? 0;
+
+    const dbCities = new Set<string>(
+      (citiesRes.data ?? []).map((r) => r.city as string).filter(Boolean)
+    );
+    mockEvents.forEach((e) => dbCities.add(e.city));
+    const citiesTotal = dbCities.size;
+
+    const visitorsTotal = (visitorsRes.data?.visitor_count as number) ?? 0;
+
+    return { events: eventsTotal, professionals: profTotal, cities: citiesTotal, visitors: visitorsTotal };
+  } catch {
+    const mockCities = new Set(mockEvents.map((e) => e.city));
+    return { events: mockEvents.length, professionals: 0, cities: mockCities.size, visitors: 0 };
+  }
+}
+
+export default async function AboutPage() {
+  const stats = await getLiveStats();
+  return <AboutClient liveStats={stats} />;
+}

@@ -1,81 +1,92 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  {
-    href: "/",
-    label: "Home",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    href: "/events",
-    label: "Events",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/party",
-    label: "Party",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/nightwaves",
-    label: "Nightwaves",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 16 12" fill="none" aria-hidden="true">
-        <path d="M0 6h1.5M1.5 6V3M1.5 3V6M3 6V1M3 1V6M4.5 6V4M4.5 4V6M6 6V2M6 2V6M7.5 6V0M7.5 0V6M9 6V2M9 2V6M10.5 6V4M10.5 4V6M12 6V1M12 1V6M13.5 6V3M13.5 3V6M15 6h1"
-          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
-  {
-    href: "/about",
-    label: "About",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
+  { href: "/", label: "Home", icon: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  )},
+  { href: "/events", label: "Events", icon: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  )},
+  { href: "/network", label: "Network", icon: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  )},
+  { href: "/nightwaves", label: "Nightwaves", icon: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l12-2v13"/>
+      <circle cx="6" cy="18" r="3"/>
+      <circle cx="18" cy="16" r="3"/>
+    </svg>
+  )},
+  { href: "/magazine", label: "Magazine", icon: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+  )},
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
-
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t"
-      style={{ backgroundColor: "#0F0F1A", borderColor: "#333" }}
+      className="md:hidden"
+      style={{
+        position: "fixed",
+        bottom: 0, left: 0, right: 0,
+        zIndex: 50,
+        backgroundColor: "rgba(15,15,26,0.95)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        display: "flex",
+        height: "calc(56px + env(safe-area-inset-bottom))",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        alignItems: "stretch",
+      }}
     >
-      <div className="flex">
-        {navItems.map((item) => {
-          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors"
-              style={{ color: active ? "#E8A020" : "#666" }}
-            >
-              {item.icon}
-              <span className="text-xs">{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
+      {navItems.map((item) => {
+        const active =
+          pathname === item.href ||
+          (item.href !== "/" && pathname.startsWith(item.href));
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "3px",
+              color: active ? "#E8A020" : "#555",
+              textDecoration: "none",
+              transition: "color 0.2s",
+              fontSize: "9px",
+              fontFamily: "var(--font-mono)",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
     </nav>
   );
 }

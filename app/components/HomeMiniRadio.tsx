@@ -1,73 +1,73 @@
 "use client";
 
-import { useRadio } from "./RadioContext";
+import { useRadio, STATIONS } from "./RadioContext";
 import Link from "next/link";
 
-interface Station {
-  id: string;
-  name: string;
-  genre: string;
-  streamUrl: string;
-  logo: string;
-  description: string;
-}
-
-export default function HomeMiniRadio({ stations }: { stations: Station[] }) {
+export default function HomeMiniRadio() {
   const { currentStation, isPlaying, playStation } = useRadio();
+  const liveStations = STATIONS.filter((s) => !s.comingSoon);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {stations.map((s) => {
-        const active = currentStation?.id === s.id;
+      {liveStations.slice(0, 3).map((s) => {
+        const active = currentStation.id === s.id && isPlaying;
         return (
-          <div
+          <button
             key={s.id}
-            className="flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all"
-            style={{
-              backgroundColor: active ? "#1A1A2E" : "#16213E",
-              border: `1px solid ${active ? "#E8A020" : "#222"}`,
-            }}
             onClick={() => playStation(s)}
+            className="group flex items-center gap-4 p-4 rounded-2xl text-left transition-all duration-300 w-full"
+            style={{
+              backgroundColor: active ? "#111120" : "rgba(255,255,255,0.02)",
+              border: `1px solid ${active ? "#E8A020" : "rgba(255,255,255,0.06)"}`,
+              boxShadow: active ? "0 0 32px rgba(232,160,32,0.12), inset 0 0 24px rgba(232,160,32,0.03)" : "none",
+              transform: active ? "translateY(-2px)" : "none",
+            }}
           >
-            {/* Visualizer / Play indicator */}
+            {/* Play icon / EQ bars */}
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: active && isPlaying ? "#E8A020" : "#1A1A2E", border: `2px solid ${active ? "#E8A020" : "#333"}` }}
+              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300"
+              style={{
+                backgroundColor: active ? "#E8A020" : "rgba(232,160,32,0.08)",
+                border: `1.5px solid ${active ? "#E8A020" : "rgba(232,160,32,0.2)"}`,
+              }}
             >
-              {active && isPlaying ? (
-                <span className="flex gap-0.5 items-end h-5">
+              {active ? (
+                <span className="flex gap-0.5 items-end h-4">
                   {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="w-0.5 rounded-sm"
-                      style={{
-                        backgroundColor: "#0F0F1A",
-                        animation: `visualizer 0.8s ease-in-out ${i * 0.2}s infinite`,
-                        height: "16px",
-                      }}
-                    />
+                    <span key={i} className="w-0.5 rounded-sm"
+                      style={{ backgroundColor: "#0F0F1A", animation: `visualizer 0.8s ease-in-out ${i * 0.2}s infinite`, height: "14px" }} />
                   ))}
                 </span>
               ) : (
-                <svg className="w-4 h-4" fill={active ? "#E8A020" : "#666"} viewBox="0 0 24 24">
+                <svg className="w-4 h-4 ml-0.5 transition-colors" fill="currentColor" viewBox="0 0 24 24"
+                  style={{ color: "#E8A020" }}>
                   <path d="M8 5v14l11-7z" />
                 </svg>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate">{s.name}</p>
-              <p className="text-xs text-gray-400 truncate">{s.genre}</p>
-              {active && isPlaying && (
-                <p className="text-xs mt-1" style={{ color: "#E8A020" }}>● Live</p>
+              <p className="font-bold text-sm truncate"
+                style={{ color: active ? "#fff" : "rgba(255,255,255,0.8)" }}>{s.name}</p>
+              {active && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full animate-live-pulse" style={{ backgroundColor: "#E8A020" }} />
+                  <span className="text-xs font-semibold" style={{ color: "#E8A020" }}>Live</span>
+                </div>
               )}
             </div>
-          </div>
+          </button>
         );
       })}
-      <div className="col-span-full text-right">
-        <Link href="/radio" className="text-xs text-gray-500 hover:text-white transition-colors">
-          Full radio player →
+
+      <div className="col-span-full flex justify-end mt-1">
+        <Link href="/nightwaves"
+          className="group flex items-center gap-1 text-xs font-medium transition-colors hover:text-white"
+          style={{ color: "#555" }}>
+          Full radio player
+          <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </Link>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { articles as mockArticles } from "../lib/data";
 import MagazineClient from "./MagazineClient";
 import { getSupabase } from "../lib/supabase";
 
@@ -18,17 +17,7 @@ function formatSlug(slug: string) {
 }
 
 export default async function MagazinePage() {
-  let articlesData = mockArticles.map((a) => ({
-    id: a.id,
-    title: a.title,
-    category: a.category,
-    date: a.date,
-    readTime: (a as any).readTime ?? "",
-    image: (a as any).image || FALLBACK_IMAGE,
-    excerpt: (a as any).excerpt ?? "",
-    featured: (a as any).featured ?? false,
-    series: null as string | null,
-  }));
+  let articlesData: any[] = [];
 
   let seriesList: Array<{ slug: string; count: number }> = [];
 
@@ -37,14 +26,14 @@ export default async function MagazinePage() {
     const [articlesRes, seriesRes] = await Promise.all([
       supabase
         .from("articles")
-        .select("id, title, category, excerpt, body, date, read_time, status, series, series_order, image_url")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false }),
+        .select("id, title, subtitle, slug, category, series, status, hero_image, published_at, excerpt, read_time, tags")
+        .eq("status", "published")
+        .order("published_at", { ascending: false }),
       supabase
         .from("articles")
         .select("series")
         .not("series", "is", null)
-        .eq("status", "approved"),
+        .eq("status", "published"),
     ]);
 
     if (!articlesRes.error && articlesRes.data && articlesRes.data.length > 0) {
@@ -52,9 +41,9 @@ export default async function MagazinePage() {
         id: String(a.id),
         title: a.title,
         category: a.category,
-        date: a.date ?? "",
+        date: a.published_at ?? "",
         readTime: a.read_time ? `${a.read_time} min read` : "",
-        image: a.image_url || FALLBACK_IMAGE,
+        image: a.hero_image || FALLBACK_IMAGE,
         excerpt: a.excerpt ?? "",
         featured: (a as any).featured ?? false,
         series: a.series ?? null,
@@ -81,27 +70,31 @@ export default async function MagazinePage() {
         <p className="text-gray-400">Read between the sets.</p>
       </div>
 
-      {featured && (
+      {articlesData.length === 0 ? (
+        <p className="text-white/40 text-center py-20">No articles published yet.</p>
+      ) : (
         <>
-          <div className="relative w-full overflow-hidden" style={{ minHeight: "450px" }}>
-            <Image src={featured.image || FALLBACK_IMAGE} alt={featured.title} fill priority sizes="100vw" className="object-cover object-center" />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.75) 100%)" }} />
-            <div className="absolute bottom-8 left-0 right-0 max-w-5xl mx-auto px-6 flex items-end justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-3" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
-                  {featured.category}
-                </span>
-                <h2 className="text-xl md:text-3xl font-bold mb-2 leading-tight text-white">{featured.title}</h2>
-                <div className="flex items-center gap-3 text-sm text-gray-300">
-                  <span>{new Date(featured.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
-                  {featured.readTime && <><span>·</span><span>{featured.readTime}</span></>}
+          {featured && (
+            <div className="relative w-full overflow-hidden" style={{ minHeight: "450px" }}>
+              <Image src={featured.image || FALLBACK_IMAGE} alt={featured.title} fill priority sizes="100vw" className="object-cover object-center" />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.75) 100%)" }} />
+              <div className="absolute bottom-8 left-0 right-0 max-w-5xl mx-auto px-6 flex items-end justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-3" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
+                    {featured.category}
+                  </span>
+                  <h2 className="text-xl md:text-3xl font-bold mb-2 leading-tight text-white">{featured.title}</h2>
+                  <div className="flex items-center gap-3 text-sm text-gray-300">
+                    <span>{new Date(featured.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
+                    {featured.readTime && <><span>·</span><span>{featured.readTime}</span></>}
+                  </div>
                 </div>
+                <Link href={`/magazine/${featured.id}`} className="flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
+                  Read Article →
+                </Link>
               </div>
-              <Link href={`/magazine/${featured.id}`} className="flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
-                Read Article →
-              </Link>
             </div>
-          </div>
+          )}
 
           <div className="max-w-7xl mx-auto px-4 pt-8 pb-8">
             <MagazineClient articles={articlesData} />

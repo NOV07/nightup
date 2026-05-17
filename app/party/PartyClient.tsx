@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 const CATEGORIES = [
   "All",
   "Venues",
@@ -15,7 +17,6 @@ const CATEGORIES = [
   "Decoration",
   "Transport & VIP",
   "Photography",
-  "Adults Only",
 ];
 
 const categoryEmojis: Record<string, string> = {
@@ -26,7 +27,6 @@ const categoryEmojis: Record<string, string> = {
   Decoration: "✨",
   "Transport & VIP": "🚗",
   Photography: "📸",
-  "Adults Only": "🔞",
 };
 
 interface Professional {
@@ -34,34 +34,18 @@ interface Professional {
   name: string;
   avatar: string;
   category: string;
-  stars: number;
-  reviewCount: number;
+  availability?: string | null;
+  tags?: string[];
+  gallery?: string[];
   location: string;
   description: string;
   isFeatured?: boolean;
 }
 
-function StarRating({ stars }: { stars: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <svg
-          key={i}
-          className="w-3.5 h-3.5"
-          fill={i <= Math.round(stars) ? "#E8A020" : "#333"}
-          viewBox="0 0 24 24"
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
-
 function ProfCard({ pro, featured = false }: { pro: Professional; featured?: boolean }) {
   return (
     <Link
-      href={`/party/${pro.id}`}
+      href={`/party/${slugify(pro.name)}`}
       className="group block rounded-2xl overflow-hidden card-hover"
       style={{
         backgroundColor: "#111120",
@@ -95,11 +79,17 @@ function ProfCard({ pro, featured = false }: { pro: Professional; featured?: boo
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-base mb-1">{pro.name}</h3>
-        <div className="flex items-center gap-2 mb-1">
-          <StarRating stars={pro.stars} />
-          <span className="text-xs text-gray-400">{pro.stars} ({pro.reviewCount})</span>
-        </div>
-        <p className="text-xs text-gray-400 mb-3">📍 {pro.location}</p>
+        <p className="text-xs text-gray-400 mb-2">📍 {pro.location}</p>
+        {pro.tags && pro.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {pro.tags.slice(0, 3).map((t) => (
+              <span key={t} className="text-xs px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "0.5px solid rgba(232,160,32,0.25)" }}>
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
         <p className="text-xs text-gray-500 line-clamp-2">{pro.description}</p>
         <div
           className="mt-4 w-full py-2 rounded-lg text-xs font-semibold text-center transition-opacity hover:opacity-90"

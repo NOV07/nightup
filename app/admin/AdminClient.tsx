@@ -15,13 +15,13 @@ function readFileAsBase64(file: File): Promise<string> {
 
 const GENRES = ["Techno", "House", "Deep House", "Minimal", "Drum & Bass", "Trance", "Hip-Hop", "R&B", "Afrobeats", "Reggaeton", "Laika", "Entechno", "Rebetiko", "Dimotika", "Rock", "Jazz", "Classical", "Blues", "Open Air", "Beach Party", "Rooftop"];
 const CITIES = ["Athens", "Thessaloniki", "Mykonos", "Santorini", "Heraklion", "Patras", "Rhodes", "Ios", "Corfu", "Zakynthos"];
-const PRO_CATEGORIES = ["Venues", "Music & Artists", "Sound & Lighting", "Food & Drinks", "Decoration", "Transport & VIP", "Photography", "Adults Only"];
+const PRO_CATEGORIES = ["Venues", "Music & Artists", "Sound & Lighting", "Food & Drinks", "Decoration", "Transport & VIP", "Photography"];
 const ART_CATEGORIES = ["Venues", "Festivals", "Artists", "Guide", "Music", "Culture"];
 const RELEASE_TYPES = ["Single", "EP", "Album"];
 const MUSIC_GENRES = ["Techno", "House", "Deep House", "Hip-Hop", "R&B", "Latin", "Afrobeats", "Pop", "Rock", "Laika", "Entechno", "Other"];
 const ORG_TYPES = ["Club", "Promoter", "Festival", "Bar", "Agency", "Venue", "Other"];
 
-type Tab = "events" | "professionals" | "articles" | "organizers" | "music";
+type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users";
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 
@@ -41,10 +41,11 @@ interface AllContent {
   mixes: ContentItem[];
   playlists: ContentItem[];
   artists: ContentItem[];
+  profiles: ContentItem[];
 }
 
 const defaultEventForm = { title: "", image_url: "", genre: "Techno", price: "", date: "", time: "23:00", venue: "", city: "Athens", lineup: "", description: "", ticket_url: "https://tickets.nightup.gr" };
-const defaultProForm = { name: "", avatar: "", category: "Venues", rating: "5", review_count: "0", location: "", description: "" };
+const defaultProForm = { name: "", avatar: "", category: "Venues", rating: "5", reviews_count: "0", city: "", description: "" };
 const defaultArticleForm = { title: "", category: "Venues", date: "", read_time: "5", image: "", excerpt: "", body: "", featured: false, series: "", series_order: "" };
 const defaultOrgForm = { name: "", type: "Club", city: "Athens", about: "", cover_image: "", avatar: "", instagram: "", facebook: "", tiktok: "", website: "" };
 const defaultReleaseForm = { title: "", artist: "", type: "Single", genre: "House", cover_image: "", spotify_url: "", soundcloud_url: "", description: "", release_date: "", is_promoted: false };
@@ -56,7 +57,7 @@ export default function AdminClient() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("events");
   const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("releases");
-  const [allContent, setAllContent] = useState<AllContent>({ events: [], professionals: [], articles: [], organizers: [], releases: [], mixes: [], playlists: [], artists: [] });
+  const [allContent, setAllContent] = useState<AllContent>({ events: [], professionals: [], articles: [], organizers: [], releases: [], mixes: [], playlists: [], artists: [], profiles: [] });
   const [assignOrgId, setAssignOrgId] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -90,7 +91,10 @@ export default function AdminClient() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/pending");
-      if (res.ok) setAllContent(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setAllContent(data);
+      }
     } finally {
       setLoading(false);
     }
@@ -99,7 +103,10 @@ export default function AdminClient() {
   useEffect(() => { fetchContent(); }, [fetchContent]);
 
   function getTableForTab(tab: Tab, subtab?: MusicSubTab): string {
-    if (tab === "music") return subtab ?? "releases";
+    if (tab === "music") {
+      if (subtab === "releases") return "music_releases";
+      return subtab ?? "music_releases";
+    }
     return tab;
   }
 
@@ -145,6 +152,15 @@ export default function AdminClient() {
       body: JSON.stringify({ id, nightup_pick: !current }),
     });
     setAllContent((prev) => ({ ...prev, events: prev.events.map((e) => e.id === String(id) ? { ...e, nightup_pick: !current } : e) }));
+  }
+
+  async function handleToggleRadarPick(id: string, current: boolean) {
+    await fetch("/api/admin/radar-pick", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, is_radar_pick: !current }),
+    });
+    setAllContent((prev) => ({ ...prev, events: prev.events.map((e) => e.id === String(id) ? { ...e, is_radar_pick: !current } : e) }));
   }
 
   async function handleToggleFeaturedPro(id: string, currentFeatured: boolean) {
@@ -209,7 +225,7 @@ export default function AdminClient() {
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "professionals", data: { ...proForm, rating: parseFloat(proForm.rating), review_count: parseInt(proForm.review_count) } }),
+      body: JSON.stringify({ table: "professionals", data: { ...proForm, rating: parseFloat(proForm.rating), reviews_count: parseInt(proForm.reviews_count) } }),
     });
     const json = await res.json();
     setAddLoading(false);
@@ -345,7 +361,7 @@ export default function AdminClient() {
     return map[musicSubTab] ?? [];
   }
 
-  const currentTabItems = activeTab === "music" ? getMusicItems() : allContent[activeTab] ?? [];
+  const currentTabItems = activeTab === "music" ? getMusicItems() : (allContent as unknown as Record<string, ContentItem[]>)[activeTab] ?? [];
   const pendingItems = currentTabItems.filter((i) => i.status === "pending");
   const publishedItems = currentTabItems.filter((i) => i.status === "approved");
   const hiddenItems = currentTabItems.filter((i) => i.status === "hidden" || i.status === "rejected");
@@ -380,7 +396,7 @@ export default function AdminClient() {
       : (item.title as string);
     const secondary =
       tab === "events" ? [item.venue, item.city, item.date, item.genre].filter(Boolean).join(" · ")
-      : tab === "professionals" ? [item.category, item.location].filter(Boolean).join(" · ")
+      : tab === "professionals" ? [item.category, item.city].filter(Boolean).join(" · ")
       : tab === "organizers" ? [item.type, item.city].filter(Boolean).join(" · ")
       : isRelease ? [item.type, item.genre].filter(Boolean).join(" · ")
       : isMix ? (item.genre as string) || ""
@@ -406,6 +422,17 @@ export default function AdminClient() {
               style={{ backgroundColor: (item as any).nightup_pick ? "#E8A020" : "#2A2A3E", color: (item as any).nightup_pick ? "#0F0F1A" : "#666" }}
             >
               ⭐
+            </button>
+          )}
+          {/* Radar Pick toggle — events */}
+          {tab === "events" && section === "approved" && (
+            <button
+              onClick={() => handleToggleRadarPick(id, !!(item as any).is_radar_pick)}
+              title={(item as any).is_radar_pick ? "Remove Radar Pick" : "Mark as Radar Pick"}
+              className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all"
+              style={{ backgroundColor: (item as any).is_radar_pick ? "#E8A020" : "#2A2A3E", color: (item as any).is_radar_pick ? "#0F0F1A" : "#666" }}
+            >
+              📡
             </button>
           )}
           {/* Featured toggle — events */}
@@ -490,7 +517,7 @@ export default function AdminClient() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "rgba(232,160,32,0.12)" }}>
         <span className="font-bold text-lg">Nightup Admin</span>
-        <button onClick={async () => { await fetch("/api/admin/logout", { method: "POST" }); router.refresh(); }} className="text-xs px-4 py-2 rounded-lg" style={{ backgroundColor: "#111120", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(232,160,32,0.12)" }}>Logout</button>
+        <button onClick={async () => { await fetch("/api/admin/logout", { method: "POST" }); document.cookie = 'admin_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'; router.refresh(); }} className="text-xs px-4 py-2 rounded-lg" style={{ backgroundColor: "#111120", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(232,160,32,0.12)" }}>Logout</button>
       </div>
 
       {/* Summary bar */}
@@ -511,7 +538,7 @@ export default function AdminClient() {
 
       {/* Tabs */}
       <div className="flex gap-1 px-6 pt-5 pb-0 overflow-x-auto">
-        {(["events", "professionals", "articles", "organizers", "music"] as Tab[]).map((tab) => {
+        {(["events", "professionals", "articles", "organizers", "music", "users"] as Tab[]).map((tab) => {
           const pendingCount = tab === "music" ? totalMusicPending : cnt(allContent[tab as keyof AllContent] as ContentItem[] ?? [], "pending");
           return (
             <button
@@ -525,6 +552,13 @@ export default function AdminClient() {
             </button>
           );
         })}
+        <button
+          onClick={() => router.push('/admin/magazine')}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm font-medium capitalize transition-all whitespace-nowrap"
+          style={{ backgroundColor: "transparent", color: "#666", borderBottom: "2px solid transparent" }}
+        >
+          magazine
+        </button>
       </div>
 
       <div className="px-6 py-6 max-w-5xl">
@@ -546,6 +580,51 @@ export default function AdminClient() {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {activeTab === "users" && (
+          <div className="space-y-4">
+            <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#666" }}>Registered Profiles</h2>
+            {allContent.profiles?.length === 0 && (
+              <p className="text-xs pl-1" style={{ color: "#3a3a4e" }}>No profiles yet.</p>
+            )}
+            {allContent.profiles?.map((profile: any) => (
+              <div key={profile.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor: "#111120", border: "1px solid rgba(232,160,32,0.12)" }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  {profile.avatar_url && (
+                    <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{profile.display_name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">@{profile.username} · {profile.profile_type} · {profile.plan_tier}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {profile.is_verified ? (
+                    <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: "rgba(232,160,32,0.15)", color: "#E8A020" }}>✓ Verified</span>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/admin/verify-profile", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: profile.id }),
+                        });
+                        await fetchContent();
+                      }}
+                      className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: "#111120", color: "#666", border: "1px solid #444" }}
+                    >
+                      Verify
+                    </button>
+                  )}
+                  <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color: profile.is_featured ? "#E8A020" : "#555" }}>
+                    {profile.is_featured ? "★ Featured" : "Not featured"}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -624,10 +703,10 @@ export default function AdminClient() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div><label className={labelCls}>Name *</label><input required className={inputCls} style={inputStyle} value={proForm.name} onChange={(e) => setProForm((f) => ({ ...f, name: e.target.value }))} /></div>
                     <div><label className={labelCls}>Category</label><select className={inputCls} style={inputStyle} value={proForm.category} onChange={(e) => setProForm((f) => ({ ...f, category: e.target.value }))}>{PRO_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></div>
-                    <div><label className={labelCls}>Location</label><input className={inputCls} style={inputStyle} value={proForm.location} onChange={(e) => setProForm((f) => ({ ...f, location: e.target.value }))} /></div>
+                    <div><label className={labelCls}>City</label><input className={inputCls} style={inputStyle} value={proForm.city} onChange={(e) => setProForm((f) => ({ ...f, city: e.target.value }))} /></div>
                     <div><label className={labelCls}>Rating (0–5)</label><input type="number" min="0" max="5" step="0.1" className={inputCls} style={inputStyle} value={proForm.rating} onChange={(e) => setProForm((f) => ({ ...f, rating: e.target.value }))} /></div>
                     <div><label className={labelCls}>Avatar URL</label><input className={inputCls} style={inputStyle} value={proForm.avatar} onChange={(e) => setProForm((f) => ({ ...f, avatar: e.target.value }))} placeholder="https://..." /></div>
-                    <div><label className={labelCls}>Review Count</label><input type="number" min="0" className={inputCls} style={inputStyle} value={proForm.review_count} onChange={(e) => setProForm((f) => ({ ...f, review_count: e.target.value }))} /></div>
+                    <div><label className={labelCls}>Review Count</label><input type="number" min="0" className={inputCls} style={inputStyle} value={proForm.reviews_count} onChange={(e) => setProForm((f) => ({ ...f, reviews_count: e.target.value }))} /></div>
                     <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={proForm.description} onChange={(e) => setProForm((f) => ({ ...f, description: e.target.value }))} /></div>
                   </div>
                   {addError && <p className="text-red-400 text-xs">{addError}</p>}
@@ -893,11 +972,17 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("title", "Title")}
           {field("venue", "Venue")}
           {field("date", "Date", "date")}
-          {field("time", "Time")}
-          {field("genre", "Genre", "select", genres)}
+          {field("time", "Start Time")}
+          {field("end_time", "End Time")}
+          {field("genre", "Primary Genre", "select", genres)}
           {field("city", "City", "select", cities)}
+          {field("type", "Event Type", "select", ["Club Night", "Live Show", "Festival", "Open Air", "Private Party", "Other"])}
           {field("price", "Price")}
           {field("image_url", "Image URL")}
+          {field("address", "Address")}
+          {field("maps_url", "Maps URL")}
+          {field("ticket_url", "Ticket URL", "text", undefined, true)}
+          {field("short_description", "Short Description", "text", undefined, true)}
           <div>
             <label className={labelCls}>Organizer</label>
             <select className={inputCls} style={inputStyle} value={String(form.organizer_id ?? "")} onChange={(e) => setForm((f) => ({ ...f, organizer_id: e.target.value || null }))}>
@@ -906,13 +991,19 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
             </select>
           </div>
           {field("lineup", "Lineup (comma-separated)", "text", undefined, true)}
+          {field("dress_code", "Dress Code", "text", undefined, true)}
+          {field("age_restriction", "18+ Age Restriction", "checkbox", undefined, true)}
+          {field("instagram", "Instagram")}
+          {field("facebook", "Facebook")}
+          {field("tiktok", "TikTok")}
+          {field("contact_email", "Contact Email")}
           {field("description", "Description", "textarea", undefined, true)}
-          {field("ticket_url", "Ticket URL", "text", undefined, true)}
+          {field("full_description", "Full Description", "textarea", undefined, true)}
         </>)}
         {tab === "professionals" && (<>
           {field("name", "Name")}
           {field("category", "Category", "select", proCategories)}
-          {field("location", "Location")}
+          {field("city", "City", "select", cities)}
           {field("description", "Description", "textarea", undefined, true)}
         </>)}
         {tab === "articles" && (<>
@@ -920,7 +1011,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("category", "Category", "select", artCategories)}
           {field("date", "Date", "date")}
           {field("read_time", "Read Time")}
-          {field("image", "Image URL")}
+          {field("hero_image", "Hero Image URL")}
           {field("excerpt", "Excerpt", "textarea", undefined, true)}
           {field("series", "Series Slug")}
           {field("series_order", "Series Order", "number")}

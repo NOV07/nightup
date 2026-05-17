@@ -1,9 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import EventCard from "./components/EventCard";
 import HeroSearch from "./components/HeroSearch";
-import HomeMiniRadio from "./components/HomeMiniRadio";
+import EventTabs from "./components/EventsTabs";
 import { getSupabase } from "./lib/supabase";
+import FadeInObserver from "./components/FadeInObserver";
+import HeroSlider from "./components/HeroSlider";
+import NightwavesHomeCard from "./components/NightwavesHomeCard";
 
 export const dynamic = "force-dynamic";
 
@@ -40,13 +42,24 @@ export default async function HomePage() {
   let popularCards: any[] = [];
   let latestArticles: any[] = [];
   let newReleases: any[] = [];
+  let allThisWeekCards: any[] = [];
+  let nightwavesItems: any[] = [];
+
+  const _now = new Date();
+  const _day = _now.getDay();
+  const _mon = new Date(_now);
+  _mon.setDate(_now.getDate() - ((_day + 6) % 7));
+  const weekStart = _mon.toISOString().split("T")[0];
+  const _sun = new Date(_mon);
+  _sun.setDate(_mon.getDate() + 6);
+  const weekEnd = _sun.toISOString().split("T")[0];
 
   try {
     const supabase = getSupabase();
-    const [evRes, artRes, relRes, mixFeedRes, playFeedRes] = await Promise.all([
+    const [evRes, artRes, relRes, mixFeedRes, playFeedRes, nwRes] = await Promise.all([
       supabase
         .from("events")
-        .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured")
+        .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick")
         .eq("status", "approved")
         .order("date", { ascending: true })
         .limit(20),
@@ -57,20 +70,22 @@ export default async function HomePage() {
         .order("created_at", { ascending: false })
         .limit(3),
       supabase.from("music_releases").select("id, title, artist, type, cover_image, spotify_url, soundcloud_url, is_promoted, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
-      supabase.from("mixes").select("id, title, artist, genre, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
+      supabase.from("mixes").select("id, title, artist, genre, cover_image, soundcloud_url, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
       supabase.from("playlists").select("id, title, platform, embed_url, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
+      supabase.from("nightwaves_items").select("id, title, artist, subtitle, cover_url, type, source, source_url").eq("featured_on_home", true).order("order_index", { ascending: true }).limit(4),
     ]);
 
+    const toCard = (e: any, badge: string) => ({
+      id: String(e.id), title: e.title, image: e.image_url || FALLBACK_IMAGE,
+      genre: e.genre, price: e.price ?? "", date: e.date, time: e.time ?? "",
+      venue: e.venue, city: e.city,
+      interestedCount: e.interested_count ?? 0, goingCount: e.going_count ?? 0,
+      featured: e.featured ?? false,
+      badge: e.is_radar_pick ? "Nightup Radar" : badge,
+    });
     if (evRes.data && evRes.data.length > 0) {
-      const toCard = (e: any, badge: string) => ({
-        id: String(e.id), title: e.title, image: e.image_url || FALLBACK_IMAGE,
-        genre: e.genre, price: e.price ?? "", date: e.date, time: e.time ?? "",
-        venue: e.venue, city: e.city,
-        interestedCount: e.interested_count ?? 0, goingCount: e.going_count ?? 0,
-        featured: e.featured ?? false, badge,
-      });
       const featuredEvents = evRes.data
-        .filter((e: any) => e.featured)
+        .filter((e: any) => e.nightup_pick === true)
         .sort((a: any, b: any) => (b.interested_count + b.going_count) - (a.interested_count + a.going_count))
         .slice(0, 3);
       hotCards = featuredEvents.map((e: any) => toCard(e, "🔥 Hot"));
@@ -80,6 +95,12 @@ export default async function HomePage() {
         .sort((a: any, b: any) => (b.interested_count + b.going_count) - (a.interested_count + a.going_count))
         .slice(0, 2)
         .map((e: any) => toCard(e, "📈 Popular"));
+      allThisWeekCards = evRes.data
+        .filter((e: any) => {
+          const d = e.date?.slice(0, 10);
+          return d >= weekStart && d <= weekEnd;
+        })
+        .map((e: any) => toCard(e, ""));
     }
     if (artRes.data && artRes.data.length > 0) {
       latestArticles = artRes.data.map((a: any) => ({
@@ -98,213 +119,465 @@ export default async function HomePage() {
       ...(playFeedRes.data ?? []).map((p: any) => ({ ...p, _contentType: "playlist", typeBadge: "Playlist", href: p.embed_url ?? "#", external: true })),
     ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
     if (combined.length > 0) newReleases = combined;
+    if (nwRes.data && nwRes.data.length > 0) nightwavesItems = nwRes.data;
   } catch {}
 
+  const hotPopularCards = [...hotCards, ...popularCards];
+
+  const heroSlides = [
+    ...([...hotCards].slice(0, 2).map((e: any) => ({
+      id: e.id,
+      type: "event" as const,
+      eyebrow: "Event of the week",
+      title: e.title,
+      subtitle: `${e.venue} · ${e.city}`,
+      meta: [e.date, e.venue, e.price ? `From ${e.price}` : "Free entry"],
+      ctaLabel: "Get tickets",
+      ctaHref: `/events/${e.id}`,
+      image: e.image || undefined,
+      bgColor: "linear-gradient(160deg,#0e1520,#080f18)",
+    }))),
+    ...(latestArticles.slice(0, 1).map((a: any) => ({
+      id: a.id,
+      type: "article" as const,
+      eyebrow: a.category || "Magazine",
+      title: a.title,
+      subtitle: a.excerpt || "",
+      meta: ["Magazine", `${a.readTime} read`],
+      ctaLabel: "Read now",
+      ctaHref: `/magazine/${a.id}`,
+      image: a.image || undefined,
+      bgColor: "linear-gradient(160deg,#16201a,#0c160e)",
+    }))),
+    ...(newReleases.slice(0, 1).map((r: any) => ({
+      id: r.id,
+      type: "release" as const,
+      eyebrow: "New Release",
+      title: r.artist ? `${r.artist} — ${r.title}` : r.title,
+      subtitle: "Stream now on Nightwaves",
+      meta: [r.typeBadge, "Out now"],
+      ctaLabel: "Listen",
+      ctaHref: r.href || "/nightwaves",
+      image: r.cover_image || undefined,
+      bgColor: "linear-gradient(160deg,#1a1408,#100c04)",
+    }))),
+  ];
+
   return (
-    <div style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
+      <FadeInObserver />
 
-      {/* ══════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════ */}
-      <section
-        className="relative min-h-screen flex flex-col items-center justify-center text-center px-4"
-        style={{ background: "var(--bg-primary)" }}
-      >
-        {/* Content */}
-        <div className="relative z-10 max-w-3xl mx-auto w-full text-center">
+      {/* ── HERO SLIDER ── */}
+      <HeroSlider slides={heroSlides} />
 
-          {/* Logo */}
-          <div className="flex items-baseline justify-center gap-1 mb-3">
-            <span className="font-thin tracking-[0.35em] text-[clamp(3rem,10vw,6.5rem)] uppercase text-white select-none">Night</span>
-            <span className="font-thin tracking-[0.35em] text-[clamp(3rem,10vw,6.5rem)] uppercase select-none" style={{ color: "var(--gold)" }}>up</span>
+      {/* ── EVENTS ── */}
+      <section className="events" style={{ padding: "32px" }}>
+        <div style={{
+          display: "flex", justifyContent: "space-between",
+          alignItems: "flex-end", marginBottom: "14px",
+        }}>
+          <div>
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "11px",
+              letterSpacing: "0.15em", textTransform: "uppercase",
+              color: "var(--text-muted)", margin: 0,
+            }}>Events</p>
+            <div style={{ width: "20px", height: "1px", background: "var(--gold)", marginTop: "5px" }} />
           </div>
-
-          {/* Tagline */}
-          <p className="mb-6" style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--text-secondary)", fontSize: "19px", lineHeight: "1.7" }}>
-            find your night
-          </p>
-
-          {/* Hero copy */}
-          <h1 className="mb-4" style={{ fontFamily: "var(--font-sans)", fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.1 }}>
-            Your night starts here.
-          </h1>
-          <p className="mb-12 max-w-xl mx-auto" style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--text-secondary)", fontSize: "19px", lineHeight: "1.7" }}>
-            Βρες events και club nights σε όλη την Ελλάδα. Venues, DJs, ήχος, φώτα — όλα σε ένα μέρος.
-          </p>
-
-          <HeroSearch />
+          <Link href="/events" style={{
+            fontFamily: "var(--font-sans)", fontSize: "11px",
+            color: "var(--text-muted)", letterSpacing: "0.05em",
+            textDecoration: "none",
+          }}>View all →</Link>
         </div>
-
+        <EventTabs thisWeekCards={allThisWeekCards} hotPopularCards={hotPopularCards} />
       </section>
 
-      {/* ══════════════════════════════════════════
-          LIVE RADIO STRIP
-      ══════════════════════════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 py-14">
-        <div className="flex items-center gap-3 mb-6">
-          <span className="w-2 h-2 rounded-full animate-live-pulse flex-shrink-0" style={{ backgroundColor: "var(--gold)" }} />
-          <h2 className="text-xs font-bold tracking-[0.4em] uppercase" style={{ color: "var(--gold)" }}>Live on Nightwaves</h2>
-          <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, var(--gold-glow), transparent)" }} />
-          <Link href="/nightwaves"
-            className="group flex items-center gap-1 text-xs font-semibold transition-colors hover:text-white flex-shrink-0"
-            style={{ color: "var(--gold)" }}>
-            Listen Live
-            <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-        <HomeMiniRadio />
-      </section>
-
-      {/* ══════════════════════════════════════════
-          HOT & POPULAR
-      ══════════════════════════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
-        <SectionHeader title="Hot & Popular" href="/events" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
-          {hotCards.map((e: any) => <EventCard key={e.id} {...e} />)}
-        </div>
-        {popularCards.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {popularCards.map((e: any) => <EventCard key={e.id} {...e} />)}
+      {/* ── DISCOVER ── */}
+      <section className="discover-section" style={{
+        padding: "0 32px 32px",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{
+          padding: "28px 0 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+        }}>
+          <div>
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "11px",
+              letterSpacing: "0.15em", textTransform: "uppercase",
+              color: "var(--text-muted)", margin: 0,
+            }}>Discover</p>
+            <div style={{ width: "20px", height: "1px",
+              background: "var(--gold)", marginTop: "5px" }} />
           </div>
-        )}
-      </section>
+          <Link href="/magazine" style={{
+            fontFamily: "var(--font-mono)", fontSize: "9px",
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            color: "var(--text-muted)", textDecoration: "none",
+          }}>All →</Link>
+        </div>
 
-      {/* ══════════════════════════════════════════
-          JOURNAL
-      ══════════════════════════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <SectionHeader title="Latest from the Journal" href="/magazine" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {latestArticles.map((a: any, i: number) => (
-            <Link
-              key={a.id}
-              href={`/magazine/${a.id}`}
-              className="group block rounded-2xl overflow-hidden event-card"
-              style={{ backgroundColor: "var(--bg-surface)" }}
-            >
-              {/* 16:9 image */}
-              <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
-                <Image src={a.image} alt={a.title} fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
-                <div className="absolute inset-0" style={{
-                  background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)"
+        <div className="discover-grid-responsive" style={{
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1fr",
+          gridTemplateRows: "auto auto",
+          gap: "1px",
+          background: "rgba(255,255,255,0.04)",
+        }}>
+
+          {/* Featured article — col 1, spans 2 rows */}
+          {latestArticles[0] && (
+            <Link href={`/magazine/${latestArticles[0].id}`}
+              className="discover-card reveal-left"
+              style={{
+                gridColumn: "1", gridRow: "1 / 3",
+                background: "var(--bg-primary)",
+                textDecoration: "none",
+                display: "flex", flexDirection: "column",
+                overflow: "hidden",
+              }}>
+              <div style={{
+                position: "relative", flexShrink: 0,
+                overflow: "hidden",
+              }}>
+                <Image src={latestArticles[0].image}
+                  alt={latestArticles[0].title}
+                  width={800} height={500}
+                  className="discover-card-img"
+                  style={{ width: "100%", height: "280px",
+                    objectFit: "cover", display: "block" }} />
+                <div style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(to top, rgba(15,15,26,0.7) 0%, transparent 50%)",
                 }} />
-                <span className="absolute bottom-3 left-3 text-xs font-bold px-2.5 py-1 rounded-full"
-                  style={{ backgroundColor: "var(--gold)", color: "var(--bg-primary)" }}>
-                  {a.category}
-                </span>
               </div>
-              <div className="p-4">
-                <h3 className="font-bold text-sm mb-2 line-clamp-2 leading-[1.4]">{a.title}</h3>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{a.readTime}</p>
+              <div style={{ padding: "20px", flex: 1 }}>
+                <p style={{
+                  fontFamily: "var(--font-mono)", fontSize: "8px",
+                  letterSpacing: "0.16em", textTransform: "uppercase",
+                  color: "var(--gold)", marginBottom: "8px",
+                  display: "flex", alignItems: "center", gap: "5px",
+                }}>
+                  <span style={{ width: "4px", height: "4px",
+                    borderRadius: "50%", background: "var(--gold)",
+                    display: "inline-block", flexShrink: 0 }} />
+                  {latestArticles[0].category}
+                </p>
+                <h3 style={{
+                  fontFamily: "var(--font-serif)", fontSize: "26px",
+                  fontWeight: 400, lineHeight: 1.3,
+                  color: "var(--text-primary)", marginBottom: "8px",
+                }} className="discover-card-title">
+                  {latestArticles[0].title}
+                </h3>
+                <p style={{
+                  fontFamily: "var(--font-serif)", fontStyle: "italic",
+                  fontSize: "13px", lineHeight: 1.65,
+                  color: "var(--text-secondary)", marginBottom: "10px",
+                }}>{latestArticles[0].excerpt}</p>
+                <p style={{
+                  fontFamily: "var(--font-mono)", fontSize: "8px",
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                }}>Magazine · {latestArticles[0].readTime}</p>
+              </div>
+            </Link>
+          )}
+
+          {/* Article 2 — col 2, row 1 */}
+          {latestArticles[1] && (
+            <Link href={`/magazine/${latestArticles[1].id}`}
+              className="discover-card reveal-right"
+              style={{
+                gridColumn: "2", gridRow: "1",
+                background: "var(--bg-primary)",
+                textDecoration: "none", display: "block",
+                overflow: "hidden",
+              }}>
+              <div style={{ position: "relative", overflow: "hidden" }}>
+                <Image src={latestArticles[1].image}
+                  alt={latestArticles[1].title}
+                  width={480} height={240}
+                  className="discover-card-img"
+                  style={{ width: "100%", height: "160px",
+                    objectFit: "cover", display: "block" }} />
+              </div>
+              <div style={{ padding: "14px" }}>
+                <p style={{
+                  fontFamily: "var(--font-mono)", fontSize: "8px",
+                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  color: "var(--gold)", marginBottom: "6px",
+                  display: "flex", alignItems: "center", gap: "5px",
+                }}>
+                  <span style={{ width: "4px", height: "4px",
+                    borderRadius: "50%", background: "var(--gold)",
+                    display: "inline-block" }} />
+                  {latestArticles[1].category}
+                </p>
+                <h3 style={{
+                  fontFamily: "var(--font-serif)", fontSize: "17px",
+                  fontWeight: 400, lineHeight: 1.35,
+                  color: "var(--text-primary)",
+                }} className="discover-card-title">
+                  {latestArticles[1].title}
+                </h3>
+                <p style={{
+                  fontFamily: "var(--font-mono)", fontSize: "8px",
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--text-muted)", marginTop: "7px",
+                }}>Magazine · {latestArticles[1].readTime}</p>
+              </div>
+            </Link>
+          )}
+
+          {/* Releases — col 2, row 2 */}
+          {newReleases.length > 0 && (
+            <div className="reveal-right" style={{
+              gridColumn: "2", gridRow: "2",
+              background: "var(--bg-primary)",
+              display: "flex", flexDirection: "column",
+            }}>
+              <div style={{
+                padding: "12px 16px 10px",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                display: "flex", alignItems: "center", gap: "6px",
+              }}>
+                <span style={{ width: "4px", height: "4px",
+                  borderRadius: "50%", background: "var(--gold)",
+                  display: "inline-block", flexShrink: 0 }} />
+                <p style={{
+                  fontFamily: "var(--font-mono)", fontSize: "10px",
+                  letterSpacing: "0.16em", textTransform: "uppercase",
+                  color: "var(--gold)", margin: 0,
+                }}>New Releases</p>
+                <Link href="/nightwaves" style={{
+                  fontFamily: "var(--font-mono)", fontSize: "8px",
+                  letterSpacing: "0.08em", color: "var(--text-muted)",
+                  textDecoration: "none", marginLeft: "auto",
+                }}>Explore →</Link>
+              </div>
+
+              {newReleases.slice(0, 4).map((r: any, i: number) => {
+                const El = r.external ? "a" : Link;
+                const props = r.external
+                  ? { href: r.href, target: "_blank",
+                      rel: "noopener noreferrer" }
+                  : { href: r.href };
+                return (
+                  <El key={r.id} {...(props as any)}
+                    className="release-row-item"
+                    style={{
+                      display: "flex", gap: "12px",
+                      alignItems: "center",
+                      padding: "11px 16px",
+                      borderBottom: i < 3
+                        ? "1px solid rgba(255,255,255,0.04)"
+                        : "none",
+                      textDecoration: "none",
+                      transition: "background 0.2s",
+                    }}>
+                    <div style={{
+                      width: "44px", height: "44px",
+                      flexShrink: 0, position: "relative",
+                      overflow: "hidden",
+                      background: "var(--bg-surface)",
+                    }}>
+                      <Image src={r.cover_image || FALLBACK_IMAGE}
+                        alt={r.title} fill
+                        style={{ objectFit: "cover",
+                          transition: "transform 0.4s ease" }}
+                        className="release-thumb" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{
+                        fontFamily: "var(--font-sans)",
+                        fontSize: "13px", fontWeight: 500,
+                        color: "var(--text-primary)",
+                        whiteSpace: "nowrap", overflow: "hidden",
+                        textOverflow: "ellipsis", margin: "0 0 1px",
+                        transition: "color 0.2s",
+                      }} className="release-title">
+                        {r.artist || r.title}
+                      </p>
+                      <p style={{
+                        fontFamily: "var(--font-serif)",
+                        fontStyle: "italic", fontSize: "11px",
+                        color: "var(--text-secondary)",
+                        whiteSpace: "nowrap", overflow: "hidden",
+                        textOverflow: "ellipsis", margin: 0,
+                      }}>{r.artist ? r.title : ""}</p>
+                      <p style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "8px", letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "var(--text-muted)", marginTop: "2px",
+                      }}>{r.typeBadge}</p>
+                    </div>
+                  </El>
+                );
+              })}
+            </div>
+          )}
+
+        </div>
+      </section>
+
+      {/* ── MORE FROM THE MAGAZINE ── */}
+      <section style={{
+        padding: "0 32px 48px",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{
+          padding: "16px 0 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+        }}>
+          <div>
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "11px",
+              letterSpacing: "0.15em", textTransform: "uppercase",
+              color: "var(--text-muted)", margin: 0,
+            }}>More from the magazine</p>
+            <div style={{ width: "20px", height: "1px",
+              background: "var(--gold)", marginTop: "5px" }} />
+          </div>
+          <Link href="/magazine" style={{
+            fontFamily: "var(--font-mono)", fontSize: "9px",
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            color: "var(--text-muted)", textDecoration: "none",
+          }}>All articles →</Link>
+        </div>
+
+        <div className="magazine-grid-responsive" style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+          gap: "1px",
+          background: "rgba(255,255,255,0.04)",
+        }}>
+          {latestArticles.map((a: any, i: number) => (
+            <Link key={a.id}
+              href={`/magazine/${a.id}`}
+              className="discover-card reveal-up"
+              style={{
+                background: "var(--bg-primary)",
+                textDecoration: "none",
+                display: "block",
+                overflow: "hidden",
+                transitionDelay: `${i * 0.1}s`,
+              }}>
+              <div style={{ position: "relative", overflow: "hidden" }}>
+                <Image src={a.image} alt={a.title}
+                  width={480} height={200}
+                  className="discover-card-img"
+                  style={{ width: "100%", height: "160px",
+                    objectFit: "cover", display: "block" }} />
+              </div>
+              <div style={{ padding: "14px" }}>
+                <p style={{
+                  fontFamily: "var(--font-mono)", fontSize: "8px",
+                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  color: "var(--gold)", marginBottom: "6px",
+                  display: "flex", alignItems: "center", gap: "5px",
+                }}>
+                  <span style={{ width: "4px", height: "4px",
+                    borderRadius: "50%", background: "var(--gold)",
+                    display: "inline-block" }} />
+                  {a.category}
+                </p>
+                <h3 style={{
+                  fontFamily: "var(--font-serif)", fontSize: "17px",
+                  fontWeight: 400, lineHeight: 1.35,
+                  color: "var(--text-primary)",
+                }} className="discover-card-title">
+                  {a.title}
+                </h3>
+                <p style={{
+                  fontFamily: "var(--font-mono)", fontSize: "8px",
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--text-muted)", marginTop: "7px",
+                }}>Magazine · {a.readTime}</p>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          NEW RELEASES
-      ══════════════════════════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <span className="section-divider" />
-            <h2 className="text-2xl font-bold tracking-tight">New Releases</h2>
-            <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ backgroundColor: "var(--gold)", color: "var(--bg-primary)" }}>NEW</span>
+      {/* ── ON NIGHTWAVES ── */}
+      {(nightwavesItems.length > 0 || newReleases.length > 0) && (
+      <section style={{
+        padding: "0 32px 64px",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <div style={{
+          padding: "28px 0 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+        }}>
+          <div>
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "11px",
+              letterSpacing: "0.15em", textTransform: "uppercase",
+              color: "var(--text-muted)", margin: 0,
+            }}>On Nightwaves</p>
+            <div style={{ width: "20px", height: "1px",
+              background: "var(--gold)", marginTop: "5px" }} />
           </div>
-          <Link href="/nightwaves"
-            className="group flex items-center gap-1 text-sm font-medium transition-colors hover:text-white"
-            style={{ color: "var(--gold)" }}>
-            Explore
-            <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          <Link href="/nightwaves" style={{
+            fontFamily: "var(--font-mono)", fontSize: "9px",
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            color: "var(--text-muted)", textDecoration: "none",
+          }}>Explore →</Link>
         </div>
 
-        {newReleases.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {newReleases.map((r: any) => {
-              const isExternal = r.external === true;
-              const CardEl = isExternal ? "a" : Link;
-              const cardProps = isExternal
-                ? { href: r.href as string, target: "_blank" as const, rel: "noopener noreferrer" }
-                : { href: r.href as string };
-              return (
-                <CardEl key={r.id} {...cardProps}
-                  className="group block rounded-2xl overflow-hidden event-card"
-                  style={{ backgroundColor: "var(--bg-surface)" }}>
-                  <div className="relative aspect-square overflow-hidden">
-                    <Image src={r.cover_image || FALLBACK_IMAGE} alt={r.title} fill
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
-                    <div className="absolute inset-0" style={{
-                      background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)"
-                    }} />
-                    {r.is_promoted && (
-                      <span className="absolute top-2 left-2 text-xs font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ backgroundColor: "var(--gold)", color: "var(--bg-primary)" }}>⭐</span>
-                    )}
-                    <span className="absolute top-2 right-2 text-xs font-black px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: "var(--gold)", color: "var(--bg-primary)" }}>
-                      {r.typeBadge}
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    {r.artist && <p className="text-xs font-semibold truncate mb-0.5" style={{ color: "var(--gold)" }}>{r.artist}</p>}
-                    <h4 className="text-sm font-bold line-clamp-1">{r.title}</h4>
-                  </div>
-                </CardEl>
-              );
-            })}
-          </div>
-        ) : null}
-      </section>
-
-      {/* ══════════════════════════════════════════
-          PLANNING A PARTY CTA
-      ══════════════════════════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <div
-          className="relative rounded-3xl px-8 md:px-16 py-14 text-center"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--gold)" }}
-        >
-          <div className="relative z-10">
-            <p className="text-xs font-bold tracking-[0.4em] uppercase mb-4" style={{ color: "var(--gold)" }}>
-              For organizers
-            </p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
-              Make it happen.
-            </h2>
-            <p className="text-base md:text-lg mb-10 max-w-lg mx-auto leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              Find venues, DJs, photographers, sound & lighting — everything for your perfect event.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-8 mb-10">
-              {[["🏛️", "Venues"], ["🎧", "Artists"], ["💡", "Lighting"], ["📸", "Photography"]].map(([icon, label]) => (
-                <div key={label} className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                    style={{ backgroundColor: "var(--gold-subtle)", border: "1px solid var(--gold-border)" }}>
-                    {icon}
-                  </div>
-                  <span className="text-xs font-semibold tracking-wide" style={{ color: "var(--text-muted)" }}>{label}</span>
-                </div>
-              ))}
-            </div>
-
-            <Link
-              href="/party"
-              className="btn-gold-shimmer inline-block px-10 py-3.5 rounded-full font-bold text-sm tracking-wide"
-              style={{ color: "var(--bg-primary)" }}
-            >
-              Explore Professionals
-            </Link>
-          </div>
+        <div className="nightwaves-grid-responsive" style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0,1fr))",
+          gap: "1px",
+          background: "rgba(255,255,255,0.04)",
+        }}>
+          {(nightwavesItems.length > 0 ? nightwavesItems.map((item: any) => ({
+            id: String(item.id),
+            title: item.title,
+            artist: item.artist ?? "",
+            cover_image: item.cover_url,
+            typeBadge: item.subtitle || item.type,
+            href: "/nightwaves",
+            external: false,
+            soundcloudUrl: item.source === "soundcloud" ? item.source_url : undefined,
+            type: (item.type === "mix" ? "mix" : item.type === "playlist" ? "playlist" : "release") as "mix" | "release" | "playlist",
+          })) : newReleases.slice(0, 4).map((r: any) => ({
+            id: String(r.id),
+            title: r.title,
+            artist: r.artist ?? "",
+            cover_image: r.cover_image,
+            typeBadge: r.typeBadge,
+            href: r.href || "/nightwaves",
+            external: r.external ?? false,
+            soundcloudUrl: r._contentType === "mix" ? r.soundcloud_url : undefined,
+            type: (r._contentType === "mix" ? "mix" : r._contentType === "playlist" ? "playlist" : "release") as "mix" | "release" | "playlist",
+          }))).map((item, i) => (
+            <NightwavesHomeCard
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              artist={item.artist}
+              cover_image={item.cover_image}
+              typeBadge={item.typeBadge}
+              href={item.href}
+              external={item.external}
+              soundcloudUrl={item.soundcloudUrl}
+              type={item.type}
+              transitionDelay={`${i * 0.08}s`}
+            />
+          ))}
         </div>
       </section>
+      )}
 
     </div>
   );

@@ -1,40 +1,18 @@
 "use client";
 
-import { useRadio } from "../components/RadioContext";
-import Image from "next/image";
+import { useRadio, STATIONS } from "../components/RadioContext";
+import { useLanguage } from "../components/LanguageContext";
 
-interface Station {
-  id: string;
-  name: string;
-  genre: string;
-  streamUrl: string;
-  logo: string;
-  description: string;
-}
-
-interface Track {
-  time: string;
-  artist: string;
-  track: string;
-}
-
-export default function RadioClient({
-  stations,
-  tracklist,
-}: {
-  stations: Station[];
-  tracklist: Track[];
-}) {
-  const { currentStation, isPlaying, volume, playStation, togglePlay, setVolume } = useRadio();
-
-  const activeStation = currentStation;
+export default function RadioClient() {
+  const { t } = useLanguage();
+  const { currentStation, isPlaying, volume, streamError, playStation, togglePlay, setVolume } = useRadio();
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-semibold mb-3">Live from Athens.</h1>
-        <p className="text-gray-400">House. Techno. R&amp;B. Always on.</p>
+        <h1 className="text-4xl font-semibold mb-3">{t("radio_hero_title")}</h1>
+        <p className="text-gray-400">{t("radio_hero_body")}</p>
       </div>
 
       {/* Now Playing */}
@@ -43,8 +21,10 @@ export default function RadioClient({
         style={{ background: "linear-gradient(135deg, #1A1A2E, #16213E)", border: "1px solid #E8A020" }}
       >
         {/* Station Logo */}
-        <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden mb-4 ring-4" style={{ outlineColor: "#E8A020" }}>
-          <Image src={activeStation.logo} alt={activeStation.name} fill className="object-cover" />
+        <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden mb-4 flex items-center justify-center" style={{ outline: "3px solid #E8A020", background: "linear-gradient(135deg,#1a1a2e,#111120)" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: "#E8A020" }}>
+            {currentStation.name.split(" ").map((w: string) => w[0]).join("").slice(0, 3)}
+          </span>
         </div>
 
         {/* Visualizer */}
@@ -56,7 +36,7 @@ export default function RadioClient({
                 className="w-1 rounded-full"
                 style={{
                   backgroundColor: "#E8A020",
-                  animation: `visualizer ${0.6 + Math.random() * 0.8}s ease-in-out ${i * 0.05}s infinite`,
+                  animation: `visualizer ${0.6 + (i % 5) * 0.15}s ease-in-out ${i * 0.05}s infinite`,
                   minHeight: "4px",
                 }}
               />
@@ -64,24 +44,37 @@ export default function RadioClient({
           </div>
         )}
 
-        <p className="text-xs tracking-widest uppercase text-gray-400 mb-1">
-          {isPlaying && currentStation ? "● LIVE NOW" : "PAUSED"}
-        </p>
-        <h2 className="text-2xl font-bold mb-1">{activeStation.name}</h2>
-        <p className="text-sm text-gray-400 mb-6">{activeStation.genre}</p>
+        {/* Live / error badge */}
+        <div className="flex items-center justify-center gap-2 mb-2">
+          {streamError ? (
+            <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "#3a1010", color: "#f87171", border: "1px solid #f8717140" }}>
+              Stream temporarily unavailable
+            </span>
+          ) : isPlaying ? (
+            <span className="flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full" style={{ backgroundColor: "rgba(232,160,32,0.12)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.3)" }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-live-pulse" style={{ backgroundColor: "#E8A020" }} />
+              Live
+            </span>
+          ) : (
+            <span className="text-xs tracking-widest uppercase text-gray-500">{t("radio_paused")}</span>
+          )}
+        </div>
+
+        <h2 className="text-2xl font-bold mb-6">{currentStation.name}</h2>
 
         {/* Controls */}
         <div className="flex items-center justify-center gap-6 mb-6">
           <button
             onClick={() => {
-              const idx = stations.findIndex((s) => s.id === activeStation.id);
-              const prev = stations[(idx - 1 + stations.length) % stations.length];
-              playStation(prev);
+              const live = STATIONS.filter((s) => !s.comingSoon);
+              const idx = live.findIndex((s) => s.id === currentStation.id);
+              playStation(live[(idx - 1 + live.length) % live.length]);
             }}
             className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Previous station"
           >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+              <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
             </svg>
           </button>
 
@@ -89,6 +82,7 @@ export default function RadioClient({
             onClick={togglePlay}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-transform hover:scale-105"
             style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
               <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
@@ -103,14 +97,15 @@ export default function RadioClient({
 
           <button
             onClick={() => {
-              const idx = stations.findIndex((s) => s.id === activeStation.id);
-              const next = stations[(idx + 1) % stations.length];
-              playStation(next);
+              const live = STATIONS.filter((s) => !s.comingSoon);
+              const idx = live.findIndex((s) => s.id === currentStation.id);
+              playStation(live[(idx + 1) % live.length]);
             }}
             className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Next station"
           >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 18l8.5-6L6 6v12zm2.5-6l5.5 3.9V8.1L8.5 12zm7.5 6h2V6h-2v12z" />
+              <path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 3.9V8.1L8.5 12zM16 6h2v12h-2V6z" />
             </svg>
           </button>
         </div>
@@ -128,6 +123,7 @@ export default function RadioClient({
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
             className="w-32 accent-amber-500"
+            aria-label="Volume"
           />
           <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
             <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
@@ -135,12 +131,33 @@ export default function RadioClient({
         </div>
       </div>
 
-      {/* Stations */}
+      {/* All Stations */}
       <div className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">All Stations</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("radio_stations")}</h2>
         <div className="space-y-3">
-          {stations.map((s) => {
-            const active = currentStation?.id === s.id;
+          {STATIONS.map((s) => {
+            const active = currentStation.id === s.id;
+            if (s.comingSoon) {
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-4 p-4 rounded-xl opacity-40 cursor-default"
+                  style={{ backgroundColor: "#16213E", border: "1px solid #222" }}
+                >
+                  <div className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: "linear-gradient(135deg,#1a1a2e,#111120)", border: "1px solid rgba(232,160,32,0.15)" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8A020" }}>
+                      {s.name.split(" ").map((w: string) => w[0]).join("").slice(0, 3)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold">{s.name}</p>
+                  </div>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#2a2a3e", color: "#888" }}>
+                    {t("radio_coming_soon")}
+                  </span>
+                </div>
+              );
+            }
             return (
               <div
                 key={s.id}
@@ -151,14 +168,22 @@ export default function RadioClient({
                 }}
                 onClick={() => playStation(s)}
               >
-                <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                  <Image src={s.logo} alt={s.name} fill className="object-cover" />
+                <div className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: "linear-gradient(135deg,#1a1a2e,#111120)", border: `1px solid ${active ? "rgba(232,160,32,0.4)" : "rgba(232,160,32,0.1)"}` }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8A020" }}>
+                    {s.name.split(" ").map((w: string) => w[0]).join("").slice(0, 3)}
+                  </span>
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold">{s.name}</p>
-                  <p className="text-sm text-gray-400">{s.genre}</p>
-                  <p className="text-xs text-gray-500 line-clamp-1">{s.description}</p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="font-semibold">{s.name}</p>
+                    {active && isPlaying && (
+                      <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(232,160,32,0.12)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}>
+                        <span className="w-1 h-1 rounded-full animate-live-pulse" style={{ backgroundColor: "#E8A020" }} />
+                        LIVE
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex-shrink-0">
@@ -185,37 +210,6 @@ export default function RadioClient({
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Tracklist */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Recent Tracklist</h2>
-        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #1A1A2E" }}>
-          {tracklist.map((t, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 px-4 py-3 border-b transition-colors hover:opacity-80"
-              style={{
-                borderColor: "#1A1A2E",
-                backgroundColor: i === 0 ? "#1A1A2E" : i % 2 === 0 ? "#0D0D1F" : "#0F0F1A",
-              }}
-            >
-              <span className="text-xs text-gray-500 w-12 flex-shrink-0">{t.time}</span>
-              {i === 0 && (
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
-                  style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
-                >
-                  NOW
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium">{t.artist}</span>
-                <span className="text-sm text-gray-400"> · {t.track}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

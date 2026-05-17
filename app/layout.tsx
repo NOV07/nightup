@@ -11,19 +11,19 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const spectral = Spectral({
   weight: ["400", "600"],
   style: ["normal", "italic"],
-  subsets: ["latin", "greek"],
+  subsets: ["latin", "latin-ext"],
   variable: "--font-spectral",
 });
 
 const inter = Inter({
   weight: ["400", "500", "600"],
-  subsets: ["latin", "greek"],
+  subsets: ["latin", "latin-ext"],
   variable: "--font-inter",
 });
 
 const jetbrainsMono = JetBrains_Mono({
   weight: ["400"],
-  subsets: ["latin", "greek"],
+  subsets: ["latin"],
   variable: "--font-jetbrains",
 });
 

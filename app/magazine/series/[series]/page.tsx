@@ -25,9 +25,9 @@ export default async function SeriesPage({ params }: Props) {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("articles")
-    .select("id, title, category, excerpt, date, read_time, image_url, series_order")
+    .select("id, title, category, excerpt, published_at, read_time, hero_image, series_order")
     .eq("series", series)
-    .eq("status", "approved")
+    .eq("status", "published")
     .order("series_order", { ascending: true });
 
   if (error || !data || data.length === 0) notFound();
@@ -57,7 +57,7 @@ export default async function SeriesPage({ params }: Props) {
             >
               <div className="relative h-48 overflow-hidden">
                 <Image
-                  src={a.image_url || FALLBACK_IMAGE}
+                  src={a.hero_image || FALLBACK_IMAGE}
                   alt={a.title}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -73,7 +73,7 @@ export default async function SeriesPage({ params }: Props) {
                 <h3 className="font-semibold text-base mb-2 line-clamp-2 leading-snug">{a.title}</h3>
                 {a.excerpt && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{a.excerpt}</p>}
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{a.date ? new Date(a.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}</span>
+                  <span>{a.published_at ? new Date(a.published_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}</span>
                   {a.read_time && <span>{a.read_time} min read</span>}
                 </div>
               </div>
