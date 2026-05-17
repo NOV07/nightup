@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import AboutClient from "./AboutClient";
-import { getSupabase } from "../lib/supabase";
+import { getSupabaseAdmin } from "../lib/supabase";
 
 export const metadata: Metadata = {
   title: "About",
@@ -17,7 +17,7 @@ export interface LiveStats {
 }
 
 async function getLiveStats(): Promise<LiveStats> {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   try {
