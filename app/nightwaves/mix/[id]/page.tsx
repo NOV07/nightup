@@ -3,6 +3,19 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../../lib/supabase";
+
+function formatDuration(d: string | number | null | undefined): string | null {
+  if (!d) return null;
+  const n = Number(d);
+  if (isNaN(n)) return String(d);
+  if (n >= 60) {
+    const h = Math.floor(n / 60);
+    const m = n % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${n} min`;
+}
+
 import MixPlayButton from "./MixPlayButton";
 import SocialShare from "./SocialShare";
 import SoundCloudPlayer from "../../../components/SoundCloudPlayer";
@@ -48,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const mix = await getMix(id);
   if (!mix) return { title: "Mix not found" };
   return {
-    title: `${mix.artist} — ${mix.title} | Nightup`,
+    title: `${mix.artist} — ${mix.title} | Nightup.gr`,
     description: mix.description ?? `${mix.genre ?? ""} mix by ${mix.artist}`,
   };
 }
@@ -115,7 +128,7 @@ export default async function MixPage({ params }: Props) {
                 <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "#1A1A2E", color: "#E8A020", border: "1px solid #E8A02040" }}>{mix.genre}</span>
               )}
               {mix.duration && (
-                <span className="text-xs px-3 py-1 rounded-full font-mono" style={{ backgroundColor: "#1A1A2E", color: "#888", border: "1px solid #222" }}>{mix.duration}</span>
+                <span className="text-xs px-3 py-1 rounded-full font-mono" style={{ backgroundColor: "#1A1A2E", color: "#888", border: "1px solid #222" }}>{formatDuration(mix.duration)}</span>
               )}
             </div>
 
@@ -155,7 +168,7 @@ export default async function MixPage({ params }: Props) {
               )}
             </div>
 
-            <SocialShare title={mix.title} />
+            <SocialShare title={mix.title} artist={mix.artist} />
           </div>
 
           {/* Artist mini card */}
@@ -220,7 +233,7 @@ export default async function MixPage({ params }: Props) {
                     {m.genre && <p className="text-xs mt-0.5 truncate" style={{ color: "#555" }}>{m.genre}</p>}
                   </div>
                   {m.duration && (
-                    <span className="text-xs font-mono flex-shrink-0" style={{ color: "#444" }}>{m.duration}</span>
+                    <span className="text-xs font-mono flex-shrink-0" style={{ color: "#444" }}>{formatDuration(m.duration)}</span>
                   )}
                 </Link>
               ))}

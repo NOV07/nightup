@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Metadata } from 'next'
 import ContactPill from '@/app/components/ContactPill'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
@@ -29,6 +30,22 @@ async function getSupabaseClient() {
 
 interface Props {
   params: Promise<{ username: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { username } = await params
+  const supabase = await getSupabaseClient()
+  const { data } = await supabase.from('profiles').select('display_name, bio, avatar_url').eq('username', username).single()
+  if (!data) return { title: 'Profile | Nightup.gr' }
+  return {
+    title: `${data.display_name} | Nightup.gr`,
+    description: data.bio ? data.bio.slice(0, 155) : `${data.display_name} on Nightup.gr`,
+    openGraph: {
+      title: `${data.display_name} | Nightup.gr`,
+      description: data.bio?.slice(0, 155),
+      images: data.avatar_url ? [data.avatar_url] : [],
+    },
+  }
 }
 
 export default async function ProfilePage({ params }: Props) {
@@ -111,27 +128,40 @@ export default async function ProfilePage({ params }: Props) {
 
   const socialSource = profile.profile_type === 'professional' && professional ? professional : profile;
 
+  function normalizeSocial(handle: string | null | undefined, baseUrl: string): string | null {
+    if (!handle) return null;
+    if (handle.startsWith('http://') || handle.startsWith('https://')) return handle;
+    return `${baseUrl}/${handle.replace('@', '')}`;
+  }
+
   const socialLinks = [
-    { key: 'instagram',  label: 'Instagram',  url: socialSource.instagram ? (socialSource.instagram.startsWith('http') ? socialSource.instagram : `https://instagram.com/${socialSource.instagram.replace('@', '')}`) : null },
-    { key: 'facebook',   label: 'Facebook',   url: socialSource.facebook },
-    { key: 'tiktok',     label: 'TikTok',     url: socialSource.tiktok },
-    { key: 'youtube',    label: 'YouTube',    url: socialSource.youtube || socialSource.youtube_url },
-    { key: 'soundcloud', label: 'SoundCloud', url: socialSource.soundcloud || socialSource.soundcloud_url },
-    { key: 'spotify',    label: 'Spotify',    url: socialSource.spotify || socialSource.spotify_url },
-    { key: 'website',    label: 'Website',    url: socialSource.website },
-    { key: 'bandcamp',    label: 'Bandcamp',    url: profile.bandcamp_url },
-    { key: 'apple_music', label: 'Apple Music', url: profile.apple_music_url },
-    { key: 'beatport',    label: 'Beatport',    url: profile.beatport_url },
-    { key: 'mixcloud',    label: 'Mixcloud',    url: profile.mixcloud_url },
+    { key: 'instagram',  label: 'Instagram',  url: normalizeSocial(socialSource.instagram, 'https://instagram.com') },
+    { key: 'facebook',   label: 'Facebook',   url: normalizeSocial(socialSource.facebook, 'https://facebook.com') },
+    { key: 'tiktok',     label: 'TikTok',     url: normalizeSocial(socialSource.tiktok, 'https://tiktok.com/@') },
+    { key: 'youtube',    label: 'YouTube',    url: normalizeSocial(socialSource.youtube || socialSource.youtube_url, 'https://youtube.com/@') },
+    { key: 'soundcloud', label: 'SoundCloud', url: normalizeSocial(socialSource.soundcloud || socialSource.soundcloud_url, 'https://soundcloud.com') },
+    { key: 'spotify',    label: 'Spotify',    url: socialSource.spotify || socialSource.spotify_url || null },
+    { key: 'website',    label: 'Website',    url: socialSource.website || null },
+    { key: 'bandcamp',   label: 'Bandcamp',   url: profile.bandcamp_url || socialSource.bandcamp_url || null },
+    { key: 'apple_music',label: 'Apple Music',url: profile.apple_music_url || null },
+    { key: 'beatport',   label: 'Beatport',   url: profile.beatport_url || null },
+    { key: 'mixcloud',   label: 'Mixcloud',   url: normalizeSocial(profile.mixcloud_url || socialSource.mixcloud_url, 'https://mixcloud.com') },
   ].filter(s => s.url);
+
+  const coverSrc = profile.cover_url && !profile.cover_url.includes('picsum') ? profile.cover_url : null;
+  const avatarSrc = (profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) &&
+    !((profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ?? '').includes('pravatar') &&
+    !((profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ?? '').includes('picsum')
+      ? (profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url)
+      : null;
 
   return (
     <div style={{ backgroundColor: '#0F0F1A', minHeight: '100vh' }}>
 
       {/* BANNER */}
       <div className="relative w-full" style={{ height: '220px' }}>
-        {profile.cover_url ? (
-          <Image src={profile.cover_url} alt="Cover" fill className="object-cover" />
+        {coverSrc ? (
+          <Image src={coverSrc} alt="Cover" fill className="object-cover" />
         ) : (
           <div className="w-full h-full" style={{
             background: 'linear-gradient(135deg, #0e0e1c 0%, #1a1a2e 50%, #0e0e1c 100%)'
@@ -155,8 +185,8 @@ export default async function ProfilePage({ params }: Props) {
               overflow: 'hidden',
               backgroundColor: '#1A1A2E',
             }}>
-              {(profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ? (
-                <Image src={profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url)! : profile.avatar_url} alt={profile.display_name} fill className="object-cover" />
+              {avatarSrc ? (
+                <Image src={avatarSrc} alt={profile.display_name} fill className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-3xl font-bold" style={{ color: '#E8A020' }}>
                   {profile.display_name[0].toUpperCase()}

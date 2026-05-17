@@ -7,6 +7,18 @@ import { usePlayerStore } from "../../components/PlayerContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
+function formatDuration(d: string | number | null | undefined): string | null {
+  if (!d) return null;
+  const n = Number(d);
+  if (isNaN(n)) return String(d);
+  if (n >= 60) {
+    const h = Math.floor(n / 60);
+    const m = n % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${n} min`;
+}
+
 interface Mix {
   id: string;
   title: string;
@@ -105,7 +117,7 @@ export default function MixesClient({ mixes }: { mixes: Mix[] }) {
                       </div>
                     </div>
                     {mix.duration && (
-                      <span className="absolute bottom-2 right-2 text-xs px-1.5 py-0.5 rounded font-mono" style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#ccc" }}>{mix.duration}</span>
+                      <span className="absolute bottom-2 right-2 text-xs px-1.5 py-0.5 rounded font-mono" style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#ccc" }}>{formatDuration(mix.duration)}</span>
                     )}
                     {mix.genre && (
                       <span className="absolute bottom-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A02020", color: "#E8A020", border: "1px solid #E8A02040" }}>{mix.genre}</span>

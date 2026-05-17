@@ -112,7 +112,7 @@ export default async function MagazinePage() {
             {seriesList.map(({ slug, count }) => (
               <Link
                 key={slug}
-                href={`/magazine/series/${slug}`}
+                href={`/magazine/series/${encodeURIComponent(slug)}`}
                 className="group block rounded-2xl p-6 card-hover"
                 style={{ backgroundColor: "#1A1A2E", border: "1px solid rgba(232,160,32,0.1)" }}
               >

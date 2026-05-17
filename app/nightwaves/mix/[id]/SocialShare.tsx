@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-interface Props { title: string; }
+interface Props { title: string; artist?: string; }
 
-export default function SocialShare({ title }: Props) {
+export default function SocialShare({ title, artist }: Props) {
   const [copied, setCopied] = useState(false);
 
   const copyLink = () => {
@@ -14,7 +14,8 @@ export default function SocialShare({ title }: Props) {
     });
   };
 
-  const whatsapp = `https://wa.me/?text=${encodeURIComponent(title + " — " + (typeof window !== "undefined" ? window.location.href : ""))}`;
+  const shareText = artist ? `${artist} — ${title}` : title;
+  const whatsapp = `https://wa.me/?text=${encodeURIComponent(shareText + " " + (typeof window !== "undefined" ? window.location.href : ""))}`;
 
   return (
     <div className="flex items-center gap-2 flex-wrap">

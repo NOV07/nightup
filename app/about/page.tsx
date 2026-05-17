@@ -27,9 +27,9 @@ async function getLiveStats(): Promise<LiveStats> {
         .select("id", { count: "exact", head: true })
         .eq("status", "approved"),
       supabase
-        .from("professionals")
+        .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("status", "approved"),
+        .not("network_tab", "is", null),
       supabase
         .from("events")
         .select("city")
