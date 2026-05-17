@@ -27,7 +27,7 @@ interface Props {
 export default async function NetworkPage({ searchParams }: Props) {
   const params = await searchParams;
 
-  const tab = params.tab ? (TAB_SLUGS[params.tab] ?? null) : null;
+  const tab = TAB_SLUGS[params.tab ?? "plan-your-event"] ?? "Plan Your Event";
   const category = params.category ?? null;
   const subcategory = params.subcategory ?? null;
   const city = params.city ?? null;
@@ -44,7 +44,7 @@ export default async function NetworkPage({ searchParams }: Props) {
     .order("created_at", { ascending: false })
     .limit(60);
 
-  if (tab) query = query.eq("network_tab", tab);
+  query = query.eq("network_tab", tab);
   if (category) query = query.eq("network_category", category);
   if (subcategory) query = query.eq("network_subcategory", subcategory);
   if (city) query = query.ilike("location", `%${city}%`);

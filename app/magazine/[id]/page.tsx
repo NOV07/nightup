@@ -115,7 +115,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const article = await getArticle(id);
   if (!article) return { title: "Article not found" };
-  return { title: article.title, description: article.excerpt || article.title };
+  return {
+    title: `${article.title} | Nightup.gr`,
+    description: article.excerpt || article.title,
+    openGraph: {
+      title: article.title,
+      description: article.excerpt ?? '',
+      images: article.image ? [article.image] : [],
+    },
+  };
 }
 
 export default async function MagazineArticlePage({ params }: Props) {

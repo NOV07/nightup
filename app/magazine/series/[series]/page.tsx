@@ -14,7 +14,8 @@ function formatSlug(slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { series } = await params;
-  const title = formatSlug(series);
+  const seriesName = decodeURIComponent(series);
+  const title = formatSlug(seriesName);
   return { title: `${title} — Nightup Series`, description: `A Nightup series: ${title}` };
 }
 
@@ -22,17 +23,18 @@ export const dynamic = "force-dynamic";
 
 export default async function SeriesPage({ params }: Props) {
   const { series } = await params;
+  const seriesName = decodeURIComponent(series);
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("articles")
     .select("id, title, category, excerpt, published_at, read_time, hero_image, series_order")
-    .eq("series", series)
+    .eq("series", seriesName)
     .eq("status", "published")
     .order("series_order", { ascending: true });
 
   if (error || !data || data.length === 0) notFound();
 
-  const title = formatSlug(series);
+  const title = formatSlug(seriesName);
 
   return (
     <div style={{ minHeight: "100vh" }}>

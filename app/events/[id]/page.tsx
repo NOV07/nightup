@@ -1,3 +1,4 @@
+import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
@@ -6,6 +7,22 @@ export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
+  const supabase = getSupabase()
+  const { data } = await supabase.from('events').select('title, description, image_url').eq('id', id).single()
+  if (!data) return {}
+  return {
+    title: `${data.title} | Nightup.gr`,
+    description: data.description ?? `${data.title} — find tickets and info on Nightup.gr`,
+    openGraph: {
+      title: data.title,
+      description: data.description ?? '',
+      images: data.image_url ? [data.image_url] : [],
+    },
+  }
 }
 
 export default async function EventPage({ params }: Props) {
