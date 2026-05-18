@@ -217,17 +217,29 @@ export default function RadioStrip() {
         {/* Menu toggle button */}
         <button
           onClick={() => setIsOpen((o) => !o)}
+          aria-label={isOpen ? "Close radio menu" : "Open radio menu"}
           style={{
             width: "32px", height: "32px", borderRadius: "50%",
             display: "flex", alignItems: "center", justifyContent: "center",
             background: "rgba(232,160,32,0.08)",
             border: "1px solid rgba(232,160,32,0.25)",
-            color: "#E8A020", fontSize: "18px", fontWeight: 300,
-            cursor: "pointer", flexShrink: 0, lineHeight: 1,
+            color: "#E8A020",
+            cursor: "pointer", flexShrink: 0,
             position: "relative",
           }}
         >
-          {isOpen ? "×" : "+"}
+          {isOpen ? (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <line x1="2" y1="2" x2="10" y2="10" />
+              <line x1="10" y1="2" x2="2" y2="10" />
+            </svg>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <line x1="2" y1="3" x2="10" y2="3" />
+              <line x1="2" y1="6" x2="10" y2="6" />
+              <line x1="2" y1="9" x2="10" y2="9" />
+            </svg>
+          )}
         </button>
       </div>
     </div>

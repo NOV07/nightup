@@ -46,10 +46,11 @@ export default async function HomePage() {
   let nightwavesItems: any[] = [];
 
   const _now = new Date();
-  const today = _now.toISOString().split("T")[0];
-  const _twoWeeks = new Date(_now);
-  _twoWeeks.setDate(_now.getDate() + 14);
-  const twoWeeksFromNow = _twoWeeks.toISOString().split("T")[0];
+  // Use local date parts to avoid UTC-shift cutting off today's events
+  const _y = _now.getFullYear();
+  const _m = String(_now.getMonth() + 1).padStart(2, "0");
+  const _d = String(_now.getDate()).padStart(2, "0");
+  const today = `${_y}-${_m}-${_d}`;
 
   try {
     const supabase = getSupabase();
@@ -58,6 +59,7 @@ export default async function HomePage() {
         .from("events")
         .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick")
         .eq("status", "approved")
+        .gte("date", today)
         .order("date", { ascending: true })
         .limit(20),
       supabase
@@ -93,10 +95,7 @@ export default async function HomePage() {
         .slice(0, 2)
         .map((e: any) => toCard(e, "📈 Popular"));
       allThisWeekCards = evRes.data
-        .filter((e: any) => {
-          const d = e.date?.slice(0, 10);
-          return d >= today && d <= twoWeeksFromNow;
-        })
+        .slice(0, 8)
         .map((e: any) => toCard(e, ""));
     }
     if (artRes.data && artRes.data.length > 0) {
