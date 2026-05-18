@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: data.display_name,
       description: data.bio?.slice(0, 155),
-      images: data.avatar_url ? [data.avatar_url] : [],
+      images: data.avatar_url && !data.avatar_url.includes('pravatar') && !data.avatar_url.includes('picsum') ? [data.avatar_url] : [],
     },
   }
 }
@@ -150,7 +150,7 @@ export default async function ProfilePage({ params }: Props) {
     { key: 'mixcloud',   label: 'Mixcloud',   url: normalizeSocial(profile.mixcloud_url || socialSource.mixcloud_url, 'https://mixcloud.com') },
   ].filter(s => s.url);
 
-  const coverSrc = profile.cover_url && !profile.cover_url.includes('picsum') ? profile.cover_url : null;
+  const coverSrc = profile.cover_url && !profile.cover_url.includes('picsum') && !profile.cover_url.includes('pravatar') ? profile.cover_url : null;
   const avatarSrc = (profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) &&
     !((profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ?? '').includes('pravatar') &&
     !((profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ?? '').includes('picsum')

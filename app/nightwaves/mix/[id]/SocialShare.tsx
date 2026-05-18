@@ -15,7 +15,8 @@ export default function SocialShare({ title, artist }: Props) {
   };
 
   const shareText = artist ? `${artist} — ${title}` : title;
-  const whatsapp = `https://wa.me/?text=${encodeURIComponent(shareText + " " + (typeof window !== "undefined" ? window.location.href : ""))}`;
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const whatsapp = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`.trim())}`;
 
   return (
     <div className="flex items-center gap-2 flex-wrap">

@@ -46,13 +46,10 @@ export default async function HomePage() {
   let nightwavesItems: any[] = [];
 
   const _now = new Date();
-  const _day = _now.getDay();
-  const _mon = new Date(_now);
-  _mon.setDate(_now.getDate() - ((_day + 6) % 7));
-  const weekStart = _mon.toISOString().split("T")[0];
-  const _sun = new Date(_mon);
-  _sun.setDate(_mon.getDate() + 6);
-  const weekEnd = _sun.toISOString().split("T")[0];
+  const today = _now.toISOString().split("T")[0];
+  const _twoWeeks = new Date(_now);
+  _twoWeeks.setDate(_now.getDate() + 14);
+  const twoWeeksFromNow = _twoWeeks.toISOString().split("T")[0];
 
   try {
     const supabase = getSupabase();
@@ -98,7 +95,7 @@ export default async function HomePage() {
       allThisWeekCards = evRes.data
         .filter((e: any) => {
           const d = e.date?.slice(0, 10);
-          return d >= weekStart && d <= weekEnd;
+          return d >= today && d <= twoWeeksFromNow;
         })
         .map((e: any) => toCard(e, ""));
     }
@@ -168,7 +165,7 @@ export default async function HomePage() {
       <FadeInObserver />
 
       {/* ── HERO SLIDER ── */}
-      <HeroSlider slides={heroSlides} />
+      <HeroSlider slides={heroSlides.filter((s, i, a) => a.findIndex(x => x.id === s.id) === i)} />
 
       {/* ── EVENTS ── */}
       <section className="events" style={{ padding: "32px" }}>
