@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const mix = await getMix(id);
   if (!mix) return { title: "Mix not found" };
   return {
-    title: `${mix.artist} — ${mix.title} | Nightup.gr`,
+    title: `${mix.artist} — ${mix.title}`,
     description: mix.description ?? `${mix.genre ?? ""} mix by ${mix.artist}`,
   };
 }

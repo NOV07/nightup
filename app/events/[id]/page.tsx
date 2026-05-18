@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { data } = await supabase.from('events').select('title, description, image_url').eq('id', id).single()
   if (!data) return {}
   return {
-    title: `${data.title} | Nightup.gr`,
+    title: data.title,
     description: data.description ?? `${data.title} — find tickets and info on Nightup.gr`,
     openGraph: {
       title: data.title,

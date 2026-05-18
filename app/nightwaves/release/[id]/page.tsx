@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const release = await getRelease(id);
   if (!release) return { title: "Release not found" };
   return {
-    title: `${release.artist} — ${release.title} | Nightup`,
+    title: `${release.artist} — ${release.title}`,
     description: release.description ?? `${release.type} by ${release.artist}`,
   };
 }

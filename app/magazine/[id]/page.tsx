@@ -44,14 +44,6 @@ function extractSources(html: string): Array<{ url: string; domain: string }> {
   });
 }
 
-function generateSummaryBullets(excerpt: string, body: string, content: string): string[] {
-  const raw = excerpt || body || content;
-  const clean = raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const sentences = (clean.match(/[^.!?]+[.!?]+/g) || [])
-    .map((s) => s.trim())
-    .filter((s) => s.length > 25 && s.length < 250);
-  return sentences.slice(0, 3);
-}
 
 interface Article {
   id: string;
@@ -116,7 +108,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const article = await getArticle(id);
   if (!article) return { title: "Article not found" };
   return {
-    title: `${article.title} | Nightup.gr`,
+    title: article.title,
     description: article.excerpt || article.title,
     openGraph: {
       title: article.title,
@@ -187,8 +179,6 @@ export default async function MagazineArticlePage({ params }: Props) {
   const firstBlockquote = htmlContent ? extractFirstBlockquote(htmlContent) : null;
   const nightUpTip = htmlContent ? extractNightUpTip(htmlContent) : null;
   const sources = htmlContent ? extractSources(htmlContent) : [];
-  const summaryBullets = generateSummaryBullets(article.excerpt, "", htmlContent);
-
   const excerptDisplay = article.excerpt || "";
 
   return (
@@ -333,32 +323,6 @@ export default async function MagazineArticlePage({ params }: Props) {
 
           {/* Sidebar */}
           <aside className="space-y-5 lg:sticky lg:top-8 h-fit order-first lg:order-last">
-
-            {/* Summary box */}
-            {summaryBullets.length > 0 && (
-              <div
-                className="rounded-xl p-5"
-                style={{ backgroundColor: "rgba(232,160,32,0.06)", border: "1px solid rgba(232,160,32,0.2)" }}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020", flexShrink: 0 }} />
-                  <p className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
-                    Σύνοψη
-                  </p>
-                </div>
-                <ul className="space-y-3">
-                  {summaryBullets.map((bullet, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.6 }}>
-                      <span
-                        className="mt-2 flex-shrink-0 rounded-full"
-                        style={{ width: "6px", height: "6px", backgroundColor: "#E8A020", display: "block" }}
-                      />
-                      {bullet}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             {/* Category */}
             <div

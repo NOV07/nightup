@@ -38,10 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { data } = await supabase.from('profiles').select('display_name, bio, avatar_url').eq('username', username).single()
   if (!data) return { title: 'Profile | Nightup.gr' }
   return {
-    title: `${data.display_name} | Nightup.gr`,
+    title: data.display_name,
     description: data.bio ? data.bio.slice(0, 155) : `${data.display_name} on Nightup.gr`,
     openGraph: {
-      title: `${data.display_name} | Nightup.gr`,
+      title: data.display_name,
       description: data.bio?.slice(0, 155),
       images: data.avatar_url ? [data.avatar_url] : [],
     },
@@ -131,13 +131,15 @@ export default async function ProfilePage({ params }: Props) {
   function normalizeSocial(handle: string | null | undefined, baseUrl: string): string | null {
     if (!handle) return null;
     if (handle.startsWith('http://') || handle.startsWith('https://')) return handle;
-    return `${baseUrl}/${handle.replace('@', '')}`;
+    const cleanHandle = handle.replace(/^@/, '');
+    if (baseUrl.includes('tiktok.com')) return `${baseUrl}/@${cleanHandle}`;
+    return `${baseUrl}/${cleanHandle}`;
   }
 
   const socialLinks = [
     { key: 'instagram',  label: 'Instagram',  url: normalizeSocial(socialSource.instagram, 'https://instagram.com') },
     { key: 'facebook',   label: 'Facebook',   url: normalizeSocial(socialSource.facebook, 'https://facebook.com') },
-    { key: 'tiktok',     label: 'TikTok',     url: normalizeSocial(socialSource.tiktok, 'https://tiktok.com/@') },
+    { key: 'tiktok',     label: 'TikTok',     url: normalizeSocial(socialSource.tiktok, 'https://tiktok.com') },
     { key: 'youtube',    label: 'YouTube',    url: normalizeSocial(socialSource.youtube || socialSource.youtube_url, 'https://youtube.com/@') },
     { key: 'soundcloud', label: 'SoundCloud', url: normalizeSocial(socialSource.soundcloud || socialSource.soundcloud_url, 'https://soundcloud.com') },
     { key: 'spotify',    label: 'Spotify',    url: socialSource.spotify || socialSource.spotify_url || null },
