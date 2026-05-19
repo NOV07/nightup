@@ -219,7 +219,7 @@ export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
           maxWidth: "480px",
           margin: 0,
         }}>
-          Venues, DJs, sound engineers, photographers, studios — everyone you need to build your event or release your music.
+          Venues, DJs, sound engineers, photographers and studios. Everything you need to build your event or release your music.
         </p>
       </div>
 

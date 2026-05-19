@@ -67,6 +67,21 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
   };
   const goTo = (i: number) => slideTo(i);
 
+  const touchStartX = useRef<number | null>(null);
+  const MIN_SWIPE = 50;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(delta) < MIN_SWIPE) { touchStartX.current = null; return; }
+    if (delta > 0) { next(); resetTimer(); } else { prev(); resetTimer(); }
+    touchStartX.current = null;
+  };
+
   const resetTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(next, 5500);
@@ -80,12 +95,15 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
   const slide = slides[cur];
 
   return (
-    <section style={{
-      position: "relative",
-      height: "clamp(280px, 55vw, 480px)",
-      overflow: "hidden",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
-    }}>
+    <section
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        position: "relative",
+        height: "clamp(280px, 55vw, 480px)",
+        overflow: "hidden",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
 
       {/* Sliding track */}
       <div style={{

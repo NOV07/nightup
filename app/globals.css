@@ -555,6 +555,9 @@ section:hover .hero-arrow { opacity: 1 !important; }
     padding-left: 16px !important;
     padding-right: 16px !important;
   }
+  .events {
+    padding-bottom: 32px !important;
+  }
 
   /* Bottom padding for MobileNav */
   main {

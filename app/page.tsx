@@ -167,7 +167,7 @@ export default async function HomePage() {
       <HeroSlider slides={heroSlides.filter((s, i, a) => a.findIndex(x => x.id === s.id) === i)} />
 
       {/* ── EVENTS ── */}
-      <section className="events" style={{ padding: "32px" }}>
+      <section className="events" style={{ padding: "32px", paddingBottom: "48px" }}>
         <div style={{
           display: "flex", justifyContent: "space-between",
           alignItems: "flex-end", marginBottom: "14px",
