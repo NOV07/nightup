@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "../lib/supabase";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Learn about Nightup.gr — Greece's #1 nightlife and events discovery platform. Find out who we are and how to get in touch.",
+  description: "Nightup.gr is Greece's nightlife and music discovery platform. Learn about our mission and how to get in touch.",
 };
 
 export const dynamic = "force-dynamic";

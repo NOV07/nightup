@@ -21,11 +21,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const supabase = getSupabase();
 
-    const [evRes, artRes, mixRes, relRes] = await Promise.all([
+    const [evRes, artRes, mixRes, relRes, profRes] = await Promise.all([
       supabase.from("events").select("id, updated_at").eq("status", "approved"),
       supabase.from("articles").select("id, updated_at").eq("status", "published"),
       supabase.from("mixes").select("id, updated_at").eq("status", "approved"),
       supabase.from("music_releases").select("id, updated_at").eq("status", "approved"),
+      supabase.from("profiles").select("username, updated_at").not("network_tab", "is", null),
     ]);
 
     const eventRoutes: MetadataRoute.Sitemap = (evRes.data ?? []).map((e) => ({
@@ -56,7 +57,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }));
 
-    return [...staticRoutes, ...eventRoutes, ...articleRoutes, ...mixRoutes, ...releaseRoutes];
+    const profileRoutes: MetadataRoute.Sitemap = (profRes.data ?? []).map((p) => ({
+      url: `${base}/profile/${p.username}`,
+      lastModified: p.updated_at ? new Date(p.updated_at) : now,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    }));
+
+    return [...staticRoutes, ...eventRoutes, ...articleRoutes, ...mixRoutes, ...releaseRoutes, ...profileRoutes];
   } catch {
     return staticRoutes;
   }

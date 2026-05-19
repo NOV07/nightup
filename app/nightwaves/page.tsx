@@ -3,8 +3,13 @@ import NightwavesClient from "./NightwavesClient";
 import { getSupabase } from "../lib/supabase";
 
 export const metadata: Metadata = {
-  title: "Nightwaves – Live Radio, Mixes & Releases",
-  description: "Listen to Nightup's live radio stations, top DJ mixes, new music releases, and curated playlists from the Greek nightlife scene.",
+  title: "Nightwaves",
+  description: "Live radio, top DJ mixes, and the freshest music releases from the Greek night scene. Curated and always on.",
+  openGraph: {
+    title: "Nightwaves | Nightup.gr",
+    description: "Live radio, mixes and releases from the Greek night scene.",
+    images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
+  },
 };
 export const dynamic = "force-dynamic";
 

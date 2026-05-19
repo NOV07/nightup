@@ -3,9 +3,13 @@ import { getSupabase } from "../lib/supabase";
 import NetworkClient from "./NetworkClient";
 
 export const metadata: Metadata = {
-  title: "Network — Nightup",
-  description:
-    "Find venues, artists, photographers, and every professional you need for your event in Greece.",
+  title: "Network",
+  description: "Find venues, DJs, sound engineers, photographers, studios and every professional you need for your event or music career in Greece.",
+  openGraph: {
+    title: "Network | Nightup.gr",
+    description: "Every music professional you need in Greece.",
+    images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
+  },
 };
 
 export const dynamic = "force-dynamic";

@@ -6,7 +6,12 @@ import { getSupabase } from "../lib/supabase";
 
 export const metadata: Metadata = {
   title: "Magazine",
-  description: "Read the latest articles about Greek nightlife, music venues, artists, and culture from the Nightup Journal.",
+  description: "Interviews, reviews, features and stories from the Greek nightlife and electronic music scene.",
+  openGraph: {
+    title: "Magazine | Nightup.gr",
+    description: "Stories from the Greek nightlife and music scene.",
+    images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
+  },
 };
 export const dynamic = "force-dynamic";
 

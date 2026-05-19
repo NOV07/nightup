@@ -6,7 +6,12 @@ import { getSupabase } from "../lib/supabase";
 
 export const metadata: Metadata = {
   title: "Events",
-  description: "Discover the best club nights, festivals, and live music events across Greece. Filter by city, genre, and date.",
+  description: "Find the best nightlife events in Greece. Techno, house, R&B, jazz and more — from Athens to Thessaloniki.",
+  openGraph: {
+    title: "Events | Nightup.gr",
+    description: "Find the best nightlife events in Greece.",
+    images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
+  },
 };
 export const dynamic = "force-dynamic";
 

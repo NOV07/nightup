@@ -90,8 +90,40 @@ export default async function EventPage({ params }: Props) {
         background: 'linear-gradient(to bottom, #1a1a2e 0%, #0F0F1A 100%)',
       }
 
+  const eventJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": event.title,
+    "startDate": event.date,
+    "location": {
+      "@type": "Place",
+      "name": event.venue,
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": event.city,
+        "addressCountry": "GR",
+      },
+    },
+    "description": event.description ?? event.title,
+    "image": event.image_url ?? "https://nightup.gr/og-image.png",
+    ...(event.price ? {
+      "offers": {
+        "@type": "Offer",
+        "price": parseFloat(String(event.price).replace(/[^0-9.]/g, '')) || 0,
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock",
+      },
+    } : {}),
+    "organizer": {
+      "@type": "Organization",
+      "name": "Nightup.gr",
+      "url": "https://nightup.gr",
+    },
+  };
+
   return (
     <div style={{ backgroundColor: '#0F0F1A', minHeight: '100vh', color: '#fff' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }} />
 
       {/* Hero */}
       <div style={{ width: '100%', height: 'clamp(260px, 42vw, 440px)', ...heroStyle }} />

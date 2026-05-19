@@ -9,6 +9,19 @@ import NightwavesHomeCard from "./components/NightwavesHomeCard";
 
 export const dynamic = "force-dynamic";
 
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Nightup.gr",
+  "url": "https://nightup.gr",
+  "description": "Greece's nightlife and music discovery platform",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://nightup.gr/events?q={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+};
+
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
 /* ─── Section header component ──────────────────────────── */
@@ -161,6 +174,7 @@ export default async function HomePage() {
 
   return (
     <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <FadeInObserver />
 
       {/* ── HERO SLIDER ── */}

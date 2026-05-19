@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /api/admin
-
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /onboarding
+Disallow: /submit/
 Sitemap: https://nightup.gr/sitemap.xml
