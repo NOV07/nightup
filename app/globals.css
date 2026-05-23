@@ -581,3 +581,19 @@ section:hover .hero-arrow { opacity: 1 !important; }
 .mix-card:hover .mix-play-btn {
   opacity: 1;
 }
+
+.network-profile-btn:hover {
+  background: rgba(232,160,32,0.08);
+  border-color: rgba(232,160,32,0.7);
+}
+
+/* ── Tonight modal: blur το page content όταν είναι ανοιχτό ── */
+body.tonight-open .tonight-blurable {
+  filter: blur(18px) brightness(0.42) saturate(1.15);
+  transform: scale(1.04);
+  transition: filter 0.7s cubic-bezier(.22,.61,.36,1), transform 0.7s cubic-bezier(.22,.61,.36,1);
+  pointer-events: none;
+}
+.tonight-blurable {
+  transition: filter 0.7s cubic-bezier(.22,.61,.36,1), transform 0.7s cubic-bezier(.22,.61,.36,1);
+}
