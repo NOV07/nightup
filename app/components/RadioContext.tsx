@@ -21,7 +21,11 @@ export const STATIONS: Station[] = [
     genre: "",
     logo: "",
     description: "",
-    streamUrls: ["https://deeperlink.com:8022/deep"],
+    streamUrls: [
+      "https://stream.zeno.fm/f3wvbbqmdg8uv",
+      "https://stream.zeno.fm/yn65fueer88uv",
+      "https://stream.zeno.fm/0r0xa792kwzuv",
+    ],
   },
   {
     id: "techno",

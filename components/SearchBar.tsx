@@ -12,7 +12,7 @@ interface SearchResult {
   id: string;
   title: string;
   subtitle?: string;
-  type: "event" | "magazine" | "nightwaves";
+  type: "event" | "magazine" | "nightwaves" | "profile";
   href: string;
 }
 
@@ -31,6 +31,7 @@ const TYPE_LABEL: Record<SearchResult["type"], string> = {
   event: "Event",
   magazine: "Article",
   nightwaves: "Mix",
+  profile: "Profile",
 };
 
 function getBrowserClient() {
@@ -75,6 +76,21 @@ function SelectField({
     </select>
   );
 }
+
+const activeChipStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  padding: "3px 10px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontFamily: "var(--font-sans)",
+  color: "#E8A020",
+  background: "rgba(232,160,32,0.1)",
+  border: "1px solid rgba(232,160,32,0.3)",
+  cursor: "pointer",
+  userSelect: "none",
+};
 
 export default function SearchBar({ open, activeTab, onClose, onTabChange }: SearchBarProps) {
   const router = useRouter();
@@ -140,10 +156,11 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
     setLoading(true);
     const sb = getBrowserClient();
     const pattern = `%${q}%`;
-    const [evRes, artRes, mixRes] = await Promise.all([
+    const [evRes, artRes, mixRes, profRes] = await Promise.all([
       sb.from("events").select("id, title, venue, city").ilike("title", pattern).eq("status", "approved").limit(3),
       sb.from("articles").select("id, title, category").ilike("title", pattern).eq("status", "published").limit(3),
       sb.from("mixes").select("id, title, artist").ilike("title", pattern).eq("status", "approved").limit(2),
+      sb.from("profiles").select("id, username, display_name, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${q}%,network_subcategory.ilike.%${q}%`).limit(4),
     ]);
     const found: SearchResult[] = [];
     evRes.data?.forEach((e: any) =>
@@ -154,6 +171,9 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
     );
     mixRes.data?.forEach((m: any) =>
       found.push({ id: `mix-${m.id}`, title: m.title, subtitle: m.artist, type: "nightwaves", href: `/nightwaves/mix/${m.id}` })
+    );
+    profRes.data?.forEach((p: any) =>
+      found.push({ id: `prof-${p.id}`, title: p.display_name, subtitle: [p.network_subcategory, p.location].filter(Boolean).join(" · "), type: "profile", href: `/profile/${p.username}` })
     );
     setResults(found);
     setLoading(false);
@@ -431,6 +451,33 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                     minWidth: "130px",
                   }}
                 />
+              </div>
+              {(evCity !== CITIES[0] || evGenre !== GENRES[0] || evDate) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, marginBottom: 4, alignItems: "center" }}>
+                  {evCity !== CITIES[0] && (
+                    <span style={activeChipStyle} onClick={() => setEvCity(CITIES[0])}>
+                      📍 {evCity} ✕
+                    </span>
+                  )}
+                  {evGenre !== GENRES[0] && (
+                    <span style={activeChipStyle} onClick={() => setEvGenre(GENRES[0])}>
+                      🎵 {evGenre} ✕
+                    </span>
+                  )}
+                  {evDate && (
+                    <span style={activeChipStyle} onClick={() => setEvDate("")}>
+                      📅 {evDate} ✕
+                    </span>
+                  )}
+                  <span
+                    onClick={() => { setEvCity(CITIES[0]); setEvGenre(GENRES[0]); setEvDate(""); }}
+                    style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
+                  >
+                    Clear all
+                  </span>
+                </div>
+              )}
+              <div style={{ marginTop: 10 }}>
                 <button
                   onClick={handleEventsSearch}
                   style={{
@@ -445,7 +492,6 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                     textTransform: "uppercase",
                     border: "none",
                     cursor: "pointer",
-                    flexShrink: 0,
                   }}
                 >
                   Search Events
@@ -534,6 +580,33 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
               {/* City + CTA */}
               <div className="flex flex-wrap gap-2 items-end">
                 <SelectField value={netCity} onChange={setNetCity} options={CITIES} />
+              </div>
+              {(netCity !== CITIES[0] || netCategory || netSubcategory) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, marginBottom: 4, alignItems: "center" }}>
+                  {netCity !== CITIES[0] && (
+                    <span style={activeChipStyle} onClick={() => setNetCity(CITIES[0])}>
+                      📍 {netCity} ✕
+                    </span>
+                  )}
+                  {netCategory && (
+                    <span style={activeChipStyle} onClick={() => { setNetCategory(""); setNetSubcategory(""); }}>
+                      {netCategory} ✕
+                    </span>
+                  )}
+                  {netSubcategory && (
+                    <span style={activeChipStyle} onClick={() => setNetSubcategory("")}>
+                      {netSubcategory} ✕
+                    </span>
+                  )}
+                  <span
+                    onClick={() => { setNetCity(CITIES[0]); setNetSection("Plan Your Event"); setNetCategory(""); setNetSubcategory(""); }}
+                    style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
+                  >
+                    Clear all
+                  </span>
+                </div>
+              )}
+              <div style={{ marginTop: 10 }}>
                 <button
                   onClick={handleNetworkSearch}
                   style={{
@@ -548,7 +621,6 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                     textTransform: "uppercase",
                     border: "none",
                     cursor: "pointer",
-                    flexShrink: 0,
                   }}
                 >
                   Browse Network

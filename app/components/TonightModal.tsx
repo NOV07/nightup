@@ -122,7 +122,7 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
               <button onClick={closeModal} style={S.close} aria-label="Close">✕</button>
             </div>
 
-            <div style={S.scroll}>
+            <div style={S.scroll} className="tonight-modal-scroll">
               {/* ── TILES ── */}
               {view === "tiles" && (
                 <div>
@@ -221,7 +221,11 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
             {/* loader */}
             {loading && (
               <div style={S.loader}>
-                <div style={S.orbit}><div style={S.orbitCore}>🌙</div></div>
+                <div style={S.orbit}>
+                  <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#E8A020", borderRightColor: "#E8A020", animation: "spin 1s linear infinite" }} />
+                  <div style={{ position: "absolute", inset: 13, borderRadius: "50%", border: "2px solid transparent", borderBottomColor: "#F5B335", borderLeftColor: "#F5B335", animation: "spin 1.4s linear infinite reverse" }} />
+                  <div style={S.orbitCore}>🌙</div>
+                </div>
                 <div style={S.loadTxt}>Στήνουμε τη βραδιά σου…</div>
                 <div style={S.loadSub}>{LOAD_STEPS[loadStep]}</div>
               </div>
@@ -233,6 +237,9 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .tonight-reopen:hover { transform: translateX(-50%) translateY(-5px) !important; }
+        @media (max-width: 480px) {
+          .tonight-modal-scroll h2 { font-size: 28px !important; }
+        }
       `}</style>
     </>
   );
@@ -241,8 +248,8 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
 const G = "#E8A020";
 const S: Record<string, React.CSSProperties> = {
   reopen: { position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 60, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 14, padding: "14px 28px", border: "none", borderRadius: 40, cursor: "pointer", boxShadow: "0 18px 44px rgba(232,160,32,0.36)", transition: "transform .6s cubic-bezier(.34,1.56,.64,1)" },
-  scrim: { position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(3,3,5,0.5)", padding: 20 },
-  modal: { position: "relative", width: 452, maxWidth: "100%", maxHeight: "93vh", overflow: "hidden", background: "linear-gradient(180deg,#0c0c0e,#0A0A12)", borderRadius: 28, border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 60px 160px rgba(0,0,0,0.78)", display: "flex", flexDirection: "column" },
+  scrim: { position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(3,3,5,0.5)", padding: 12 },
+  modal: { position: "relative", width: 408, maxWidth: "100%", maxHeight: "88vh", overflow: "hidden", background: "linear-gradient(180deg,#0c0c0e,#0A0A12)", borderRadius: 24, border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 60px 160px rgba(0,0,0,0.78)", display: "flex", flexDirection: "column" },
   blob1: { position: "absolute", width: 300, height: 300, borderRadius: "50%", background: G, opacity: 0.1, filter: "blur(70px)", top: -200, left: -120, pointerEvents: "none" },
   blob2: { position: "absolute", width: 240, height: 240, borderRadius: "50%", background: "#16213E", opacity: 0.5, filter: "blur(70px)", bottom: -130, right: -90, pointerEvents: "none" },
   mtop: { position: "relative", zIndex: 5, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 4px", flexShrink: 0 },
@@ -253,8 +260,8 @@ const S: Record<string, React.CSSProperties> = {
   em: { fontStyle: "italic", fontWeight: 600, color: G },
   sub: { color: "#A1A1AA", fontSize: 14, marginTop: 13, lineHeight: 1.55 },
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 },
-  tile: { textAlign: "left", border: "1px solid rgba(255,255,255,0.055)", background: "#1A1A28", borderRadius: 6, padding: "16px 14px", minHeight: 104, display: "flex", flexDirection: "column", justifyContent: "space-between", cursor: "pointer", transition: "all .3s cubic-bezier(.22,.61,.36,1)", color: "#F4F4F5" },
-  tileLabel: { fontFamily: "var(--font-spectral),serif", fontWeight: 600, fontSize: 16 },
+  tile: { textAlign: "left", border: "1px solid rgba(255,255,255,0.055)", background: "#1A1A28", borderRadius: 6, padding: "16px 14px", minHeight: 104, display: "flex", flexDirection: "column", gap: 10, cursor: "pointer", transition: "all .3s cubic-bezier(.22,.61,.36,1)", color: "#F4F4F5" },
+  tileLabel: { fontFamily: "var(--font-spectral),serif", fontWeight: 600, fontSize: 16, marginTop: "auto" },
   tileSub: { fontSize: 10.5, color: "#71717A", marginTop: 4 },
   surprise: { marginTop: 18, width: "100%", border: "none", borderRadius: 14, padding: 18, fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 16.5, cursor: "pointer", color: "#1a1407", background: "linear-gradient(100deg,#b87d12,#E8A020 40%,#F5B335 60%,#E8A020)", boxShadow: "0 16px 42px rgba(232,160,32,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "transform .3s cubic-bezier(.22,.61,.36,1)" },
   skip: { background: "none", border: "none", color: "#71717A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter),sans-serif" },
@@ -274,7 +281,7 @@ const S: Record<string, React.CSSProperties> = {
   moodLabel: { fontFamily: "var(--font-spectral),serif", fontWeight: 600, fontSize: 15, marginTop: 9, color: "#F4F4F5" },
   moodDesc: { fontSize: 10.5, color: "#71717A", marginTop: 3 },
   loader: { position: "absolute", inset: 0, zIndex: 30, background: "rgba(7,7,8,0.94)", backdropFilter: "blur(16px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 28, textAlign: "center", padding: 40 },
-  orbit: { width: 84, height: 84, position: "relative", marginBottom: 26, borderRadius: "50%", border: "2px solid transparent", borderTopColor: G, borderRightColor: G, animation: "spin 1s linear infinite" },
+  orbit: { width: 84, height: 84, position: "relative", marginBottom: 26 },
   orbitCore: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 },
   loadTxt: { fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 18, color: "#F4F4F5" },
   loadSub: { color: "#A1A1AA", fontSize: 12.5, marginTop: 9 },

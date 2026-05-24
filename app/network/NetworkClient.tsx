@@ -1,5 +1,10 @@
 "use client";
 
+// MANUAL STEP: Run this SQL in Supabase SQL Editor if not already done:
+// UPDATE profiles
+// SET network_tab = NULL, network_category = NULL, network_subcategory = NULL
+// WHERE username IN ('organisertest1', 'djnovo');
+
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -128,11 +133,21 @@ function ProfileCard({ profile }: { profile: Profile }) {
 
         {/* CTA */}
         <div
-          className="w-full py-2 rounded-lg text-xs font-semibold text-center transition-opacity group-hover:opacity-90"
+          className="network-profile-btn"
           style={{
-            backgroundColor: featured ? AMBER : "rgba(245,158,11,0.08)",
-            color: featured ? "#09090f" : AMBER,
-            border: featured ? "none" : "1px solid rgba(245,158,11,0.25)",
+            display: "block",
+            width: "100%",
+            padding: "10px",
+            textAlign: "center",
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#E8A020",
+            border: "1px solid rgba(232,160,32,0.4)",
+            background: "transparent",
+            textDecoration: "none",
+            marginTop: 16,
+            transition: "background 0.15s, border-color 0.15s",
           }}
         >
           View Profile →
