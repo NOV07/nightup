@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import SpotCard from "./SpotCard";
-import { SPOT_CATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
+import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
@@ -31,8 +31,9 @@ const LOAD_STEPS = ["Βρίσκουμε πού να φας", "Ψάχνουμε �
 
 export default function TonightModal({ spots }: { spots: Spot[] }) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"tiles" | "results" | "night">("tiles");
+  const [view, setView] = useState<"tiles" | "subcats" | "results" | "night">("tiles");
   const [activeCat, setActiveCat] = useState<SpotCategory>("drink");
+  const [activeSub, setActiveSub] = useState<string | null>(null);
   const [moodOpen, setMoodOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
@@ -68,7 +69,8 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, closeModal]);
 
-  const goCategory = (c: SpotCategory) => { setActiveCat(c); setView("results"); };
+  const goCategory = (c: SpotCategory) => { setActiveCat(c); setActiveSub(null); setView("subcats"); };
+  const goResults = (sub: string | null) => { setActiveSub(sub); setView("results"); };
 
   const pickMood = (mood: string) => {
     setMoodOpen(false);
@@ -93,7 +95,9 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
     }, 1100);
   };
 
-  const catSpots = spots.filter((s) => s.category === activeCat);
+  const catSpots = spots.filter((s) =>
+    s.category === activeCat && (!activeSub || s.subcategory === activeSub)
+  );
   const now = new Date();
   const days = ["Κυριακή","Δευτέρα","Τρίτη","Τετάρτη","Πέμπτη","Παρασκευή","Σάββατο"];
   const kicker = `${days[now.getDay()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}  Αθήνα`;
@@ -154,15 +158,49 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
                 </div>
               )}
 
-              {/* ── RESULTS ── */}
-              {view === "results" && (
+              {/* ── SUBCATS ── */}
+              {view === "subcats" && (
                 <div>
                   <button onClick={() => setView("tiles")} style={S.back}>‹ Πίσω</button>
                   <div style={S.resHead}>
-                    {SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label} <em style={S.em}>· κοντά σου</em>
+                    {SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label} <em style={S.em}>· τι είδος;</em>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 18 }}>
+                    <button onClick={() => goResults(null)} style={S.subChip}>Όλα</button>
+                    {SUBCATEGORIES[activeCat].map((sub) => {
+                      const count = spots.filter((s) => s.category === activeCat && s.subcategory === sub.value).length;
+                      const disabled = count === 0;
+                      return (
+                        <button
+                          key={sub.value}
+                          onClick={() => !disabled && goResults(sub.value)}
+                          disabled={disabled}
+                          style={{
+                            ...S.subChip,
+                            opacity: disabled ? 0.4 : 1,
+                            cursor: disabled ? "default" : "pointer",
+                          }}
+                        >
+                          {sub.label}{disabled ? " · σύντομα" : ` · ${count}`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── RESULTS ── */}
+              {view === "results" && (
+                <div>
+                  <button onClick={() => setView("subcats")} style={S.back}>‹ Πίσω</button>
+                  <div style={S.resHead}>
+                    {activeSub
+                      ? SUBCATEGORIES[activeCat].find((x) => x.value === activeSub)?.label ?? activeSub
+                      : SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label}
+                    {" "}<em style={S.em}>· κοντά σου</em>
                   </div>
                   <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                    {catSpots.map((s) => <SpotCard key={s.id} spot={s} compact />)}
+                    {catSpots.map((s) => <SpotCard key={s.id} spot={s} compact onNavigate={closeModal} />)}
                   </div>
                 </div>
               )}
@@ -179,7 +217,7 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
                         <div style={{ fontSize: 11.5, color: "#E8A020", fontWeight: 700, letterSpacing: "0.7px", marginBottom: 6 }}>
                           {STOP_TIMES[i]} · {STOP_LABELS[s.category]}
                         </div>
-                        <SpotCard spot={s} compact />
+                        <SpotCard spot={s} compact onNavigate={closeModal} />
                         {i < night.length - 1 && (
                           <div style={{ fontSize: 11, color: "#E8A020", opacity: 0.82, margin: "8px 0 8px 6px" }}>
                             — {WALKS[i] ?? "λίγα λεπτά με τα πόδια"}
@@ -285,4 +323,5 @@ const S: Record<string, React.CSSProperties> = {
   orbitCore: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 },
   loadTxt: { fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 18, color: "#F4F4F5" },
   loadSub: { color: "#A1A1AA", fontSize: 12.5, marginTop: 9 },
+  subChip: { whiteSpace: "nowrap", fontSize: 13, fontWeight: 600, color: "#A1A1AA", background: "#1A1A28", border: "1px solid rgba(255,255,255,0.055)", padding: "9px 15px", borderRadius: 6, cursor: "pointer", transition: "all .2s" },
 };

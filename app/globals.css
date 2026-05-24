@@ -590,10 +590,10 @@ section:hover .hero-arrow { opacity: 1 !important; }
 /* ── Tonight modal: blur το page content όταν είναι ανοιχτό ── */
 body.tonight-open .tonight-blurable {
   filter: blur(18px) brightness(0.42) saturate(1.15);
-  transform: scale(1.04);
-  transition: filter 0.7s cubic-bezier(.22,.61,.36,1), transform 0.7s cubic-bezier(.22,.61,.36,1);
+  transition: filter 0.7s cubic-bezier(.22,.61,.36,1);
   pointer-events: none;
 }
 .tonight-blurable {
-  transition: filter 0.7s cubic-bezier(.22,.61,.36,1), transform 0.7s cubic-bezier(.22,.61,.36,1);
+  transition: filter 0.7s cubic-bezier(.22,.61,.36,1);
 }
+body.tonight-open { overflow: hidden !important; }
