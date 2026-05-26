@@ -55,7 +55,6 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
             display: 'grid',
             gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
             gap: '8px',
-            height: '280px',
           }}>
             {cards.slice(0, 4).map((e: any) => (
               <HotEventCard

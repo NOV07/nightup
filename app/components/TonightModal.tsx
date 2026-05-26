@@ -23,7 +23,8 @@ function buildNight(all: Spot[], mood: string): Spot[] {
 
 const STOP_LABELS: Record<SpotCategory, string> = {
   food: "ΦΑΓΗΤΟ", drink: "ΠΟΤΟ", nightlife: "ΝΥΧΤΑ",
-  show: "ΘΕΑΜΑ", chill: "ΧΑΛΑΡΑ", activity: "ΔΡΑΣΤΗΡΙΟΤΗΤΑ",
+  show: "ENTERTAINMENT", chill: "ΧΑΛΑΡΑ", activity: "ΔΡΑΣΤΗΡΙΟΤΗΤΑ",
+  art: "ΤΕΧΝΗ", wellness: "WELLNESS",
 };
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 const WALKS = ["2 λεπτά με τα πόδια", "4 λεπτά με τα πόδια"];
@@ -107,7 +108,7 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
       {/* reopen button */}
       {!open && (
         <button onClick={openModal} style={S.reopen} className="tonight-reopen">
-          ✨ Πού πάμε απόψε;
+          ✨ Plan your exit
         </button>
       )}
 
@@ -131,8 +132,8 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
               {view === "tiles" && (
                 <div>
                   <div style={S.kicker}>{kicker}</div>
-                  <h2 style={S.h2}>Πού πάμε <em style={S.em}>απόψε;</em></h2>
-                  <p style={S.sub}>Διάλεξε διάθεση — ή άσε μας να σου στήσουμε ολόκληρη τη βραδιά.</p>
+                  <h2 style={S.h2}>Plan your <em style={S.em}>exit</em></h2>
+                  <p style={S.sub}>Διάλεξε διάθεση ή άσε μας να σου στήσουμε ολόκληρη τη βραδιά.</p>
                   <div style={S.grid}>
                     {SPOT_CATEGORIES.map((c) => (
                       <button key={c.key} onClick={() => goCategory(c.key)} style={S.tile}
@@ -240,7 +241,7 @@ export default function TonightModal({ spots }: { spots: Spot[] }) {
                 <div style={S.sheet}>
                   <div style={S.grab} />
                   <h3 style={S.sheetH3}>Τι διάθεση έχεις;</h3>
-                  <p style={S.sheetP}>Μία ερώτηση — και σου στήνουμε τη βραδιά.</p>
+                  <p style={S.sheetP}>Μία ερώτηση και σου στήνουμε τη βραδιά.</p>
                   <div style={S.moods}>
                     {MOODS.map((m) => (
                       <button key={m.key} onClick={() => pickMood(m.key)} style={S.mood}

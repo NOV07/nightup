@@ -1,4 +1,4 @@
-export type SpotCategory = 'food' | 'drink' | 'nightlife' | 'show' | 'chill' | 'activity';
+export type SpotCategory = 'food' | 'drink' | 'nightlife' | 'show' | 'chill' | 'activity' | 'art' | 'wellness';
 
 export interface Spot {
   id: string;
@@ -26,19 +26,21 @@ export interface Spot {
 export const SPOT_CATEGORIES: {
   key: SpotCategory; emoji: string; label: string; sub: string;
 }[] = [
-  { key: 'drink',     emoji: '🍸', label: 'Ποτό',          sub: 'cocktails · wine · rooftop' },
-  { key: 'food',      emoji: '🍽️', label: 'Φαγητό',        sub: 'σουβλάκι · σούσι · ιταλικό' },
-  { key: 'nightlife', emoji: '🎶', label: 'Νύχτα',         sub: 'club · live · χορός' },
-  { key: 'show',      emoji: '🎭', label: 'Θέαμα',         sub: 'stand-up · live · σινεμά' },
-  { key: 'chill',     emoji: '☕', label: 'Χαλαρά',         sub: 'καφές · all-day · γλυκό' },
-  { key: 'activity',  emoji: '🎯', label: 'Δραστηριότητα', sub: 'bowling · escape · καρτ' },
+  { key: 'drink',     emoji: '🍸', label: 'Ποτό',              sub: 'cocktails · rooftop bar · wine & spirits · μπύρα' },
+  { key: 'food',      emoji: '🍽',  label: 'Φαγητό',            sub: 'street food · κινέζικο · brunch' },
+  { key: 'nightlife', emoji: '🎵', label: 'Νύχτα',             sub: 'club · bar hopping · live music' },
+  { key: 'show',      emoji: '🎬', label: 'Entertainment',     sub: 'stand-up comedy · σινεμά · θέατρο' },
+  { key: 'chill',     emoji: '☕', label: 'Χαλαρά',            sub: 'καφές · γλυκό / παγωτό · picnic vibes' },
+  { key: 'activity',  emoji: '🎯', label: 'Δραστηριότητα',     sub: 'bowling · escape room · επιτραπέζια' },
+  { key: 'art',       emoji: '🎨', label: 'Τέχνη & Κουλτούρα', sub: 'μουσείο · art gallery · βιβλιοπωλείο / reading' },
+  { key: 'wellness',  emoji: '🌿', label: 'Wellness',          sub: 'sunset spot · yoga / meditation · θαλασσινό μπάνιο · βόλτα φύση' },
 ];
 
 export const MOODS = [
-  { key: 'chill', emoji: '😌', label: 'Χαλαρά',         desc: 'ποτό & κουβέντα' },
-  { key: 'wild',  emoji: '🔥', label: 'Έξαλλα',         desc: 'χορός μέχρι πρωί' },
-  { key: 'food',  emoji: '🍽️', label: 'Φαγητό-κέντρικ', desc: 'καλό τραπέζι' },
-  { key: 'diff',  emoji: '🎭', label: 'Κάτι αλλιώς',    desc: 'θέαμα / εμπειρία' },
+  { key: 'chill', emoji: '😌', label: 'Χαλαρά',      desc: 'low key vibes' },
+  { key: 'wild',  emoji: '🔥', label: 'Έξαλλα',      desc: 'non stop μέχρι πρωί' },
+  { key: 'food',  emoji: '🍽',  label: 'Φαγητό',      desc: 'foodie night' },
+  { key: 'diff',  emoji: '🎭', label: 'Κάτι αλλιώς', desc: 'κάτι διαφορετικό' },
 ] as const;
 
 // Υποκατηγορίες ανά κατηγορία. Το "value" πρέπει να ταιριάζει με
@@ -93,5 +95,16 @@ export const SUBCATEGORIES: Record<SpotCategory, { label: string; value: string 
     { label: "Μπιλιάρδο", value: "μπιλιάρδο" },
     { label: "Καρτ", value: "καρτ" },
     { label: "Mini golf / Arcade", value: "arcade" },
+  ],
+  art: [
+    { label: "Μουσείο", value: "μουσείο" },
+    { label: "Art Gallery", value: "art gallery" },
+    { label: "Βιβλιοπωλείο / Reading", value: "βιβλιοπωλείο" },
+  ],
+  wellness: [
+    { label: "Sunset Spot", value: "sunset spot" },
+    { label: "Yoga / Meditation", value: "yoga" },
+    { label: "Θαλασσινό Μπάνιο", value: "θαλάσσια" },
+    { label: "Βόλτα Φύση", value: "φύση" },
   ],
 };

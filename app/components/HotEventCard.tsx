@@ -46,7 +46,7 @@ export default function HotEventCard({
     <Link
       href={`/events/${id}`}
       className="group relative block overflow-hidden rounded-xl hover:scale-[1.02] hover:-translate-y-0.5 transition-all duration-300"
-      style={isLarge ? { height: "480px" } : { height: "100%", minHeight: "200px" }}
+      style={isLarge ? { height: "480px" } : { height: "260px" }}
     >
       {/* Image */}
       {imgSrc.startsWith("data:") ? (
