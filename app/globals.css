@@ -559,20 +559,14 @@ section:hover .hero-arrow { opacity: 1 !important; }
     padding-bottom: 32px !important;
   }
 
-  /* Bottom padding for MobileNav */
   main {
-    padding-bottom: calc(56px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
   }
 
   /* Hide desktop-only radio strip on mobile */
   .radio-strip-desktop { display: none !important; }
 }
 
-@media (min-width: 769px) {
-  nav.mobile-nav-bar {
-    display: none !important;
-  }
-}
 
 .mix-play-btn {
   opacity: 0;

@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import SpotCard from "../components/SpotCard";
-import { SPOT_CATEGORIES, type Spot, type SpotCategory } from "./types";
+import { SPOT_CATEGORIES, SUBCATEGORIES, type Spot, type SpotCategory } from "./types";
 
 export default function SpotsClient({ spots }: { spots: Spot[] }) {
   const [active, setActive] = useState<SpotCategory>("drink");
+  const [subFilter, setSubFilter] = useState<Record<string, string | null>>({});
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const byCat = (c: SpotCategory) => spots.filter((s) => s.category === c);
@@ -82,8 +83,32 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                 <span style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 600, fontSize: 27, letterSpacing: "-0.5px" }}>{c.label}</span>
                 <span style={{ fontSize: 13, color: "#71717A", fontWeight: 500, marginLeft: "auto" }}>{items.length} spots</span>
               </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+                <button
+                  onClick={() => setSubFilter((p) => ({ ...p, [c.key]: null }))}
+                  style={subChipStyle(!subFilter[c.key])}
+                >
+                  Όλα
+                </button>
+                {SUBCATEGORIES[c.key].map((sub) => {
+                  const n = items.filter((s) => s.subcategory === sub.value).length;
+                  if (n === 0) return null;
+                  const on = subFilter[c.key] === sub.value;
+                  return (
+                    <button
+                      key={sub.value}
+                      onClick={() => setSubFilter((p) => ({ ...p, [c.key]: on ? null : sub.value }))}
+                      style={subChipStyle(on)}
+                    >
+                      {sub.label} · {n}
+                    </button>
+                  );
+                })}
+              </div>
               <div className="spots-grid">
-                {items.map((s) => <SpotCard key={s.id} spot={s} />)}
+                {items
+                  .filter((s) => !subFilter[c.key] || s.subcategory === subFilter[c.key])
+                  .map((s) => <SpotCard key={s.id} spot={s} />)}
               </div>
             </div>
           );
@@ -100,4 +125,14 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
       `}</style>
     </div>
   );
+}
+
+function subChipStyle(active: boolean): React.CSSProperties {
+  return {
+    whiteSpace: "nowrap", fontSize: 12.5, fontWeight: 600,
+    color: active ? "#F5B335" : "#A1A1AA",
+    background: active ? "rgba(232,160,32,0.12)" : "#1A1A28",
+    border: `1px solid ${active ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.05)"}`,
+    padding: "7px 13px", borderRadius: 6, cursor: "pointer", transition: "all .2s",
+  };
 }

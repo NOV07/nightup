@@ -24,6 +24,7 @@ const links = [
   { href: "/",          label: "Home" },
   { href: "/events",    label: "Events" },
   { href: "/network",   label: "Network" },
+  { href: "/spots",     label: "Spots" },
   { href: "/nightwaves",label: "Nightwaves", icon: <NightwavesIcon /> },
   { href: "/magazine",  label: "Magazine" },
   { href: "/about",     label: "About" },

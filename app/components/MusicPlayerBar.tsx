@@ -37,7 +37,7 @@ export default function MusicPlayerBar() {
 
   return (
     <div
-      className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+8px)] md:bottom-4 left-4 z-50 w-[calc(100vw-32px)] max-w-[560px] rounded-xl border overflow-hidden"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom)+8px)] left-4 z-50 w-[calc(100vw-32px)] max-w-[560px] rounded-xl border overflow-hidden"
       style={{
         backgroundColor: "#0A0A14",
         borderColor: "rgba(232,160,32,0.25)",

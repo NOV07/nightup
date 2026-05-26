@@ -5,7 +5,6 @@ import Navbar from "./Navbar";
 import Chatbot from "./Chatbot";
 import RadioStrip from "./RadioStrip";
 import MusicPlayerBar from "./MusicPlayerBar";
-import MobileNav from "./MobileNav";
 import { Footer } from "@/components/layout/Footer";
 
 // Routes that render full-screen with no nav/footer/players
@@ -27,7 +26,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <Chatbot />
       <RadioStrip />
       <MusicPlayerBar />
-      <MobileNav />
     </>
   );
 }
