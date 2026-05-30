@@ -1,8 +1,24 @@
 "use client";
+import { useState, useEffect, useRef } from "react";
 import { useTonightModal } from "./TonightContext";
 
 export default function TonightFAB() {
   const { open, isOpen } = useTonightModal();
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      if (y < 200) setHidden(false);
+      else if (y > lastY.current + 8) setHidden(true);
+      else if (y < lastY.current - 8) setHidden(false);
+      lastY.current = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <button
       onClick={open}
@@ -10,7 +26,6 @@ export default function TonightFAB() {
         position: "fixed",
         bottom: 28,
         left: "50%",
-        transform: "translateX(-50%)",
         zIndex: 200,
         display: "flex",
         alignItems: "center",
@@ -27,9 +42,12 @@ export default function TonightFAB() {
         cursor: "pointer",
         boxShadow: "0 4px 24px rgba(232,160,32,0.35)",
         whiteSpace: "nowrap",
-        opacity: isOpen ? 0 : 1,
-        pointerEvents: isOpen ? "none" : "auto",
-        transition: "opacity 0.3s ease",
+        opacity: isOpen || hidden ? 0 : 1,
+        pointerEvents: isOpen || hidden ? "none" : "auto",
+        transform: hidden
+          ? "translateX(-50%) translateY(120%)"
+          : "translateX(-50%) translateY(0)",
+        transition: "opacity 0.3s ease, transform 0.35s cubic-bezier(.22,.61,.36,1)",
       }}
       className="tonight-fab"
     >

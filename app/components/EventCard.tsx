@@ -30,6 +30,15 @@ interface EventCardProps {
   organizerSlug?: string;
 }
 
+function formatPrice(price: string | number | null | undefined): string {
+  if (price === 0 || price === null || price === undefined || price === "") return "Free";
+  const s = String(price).trim();
+  if (/^(free|δωρεάν)$/i.test(s)) return "Free";
+  const num = s.replace(/^[€$]/, "");
+  if (!/^\d/.test(num)) return num;
+  return `€${num}`;
+}
+
 const genreColors: Record<string, string> = {
   Techno:       "#E8A020",
   House:        "#A855F7",
@@ -50,10 +59,7 @@ export default function EventCard({
   const color  = genreColors[genre] ?? "#E8A020";
   const imgSrc = image_url || image || FALLBACK_IMAGE;
 
-  const displayPrice =
-    price === 0 || price === null || price === undefined || price === ""
-      ? "Free"
-      : `€${String(price).replace(/^€/, "")}`;
+  const displayPrice = formatPrice(price);
 
   const formattedDate = new Date(date).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short",

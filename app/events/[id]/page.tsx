@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
+import EventHeroImage from '../../components/EventHeroImage'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,15 +81,6 @@ export default async function EventPage({ params }: Props) {
     moreEvents = data ?? []
   }
 
-  const heroStyle: React.CSSProperties = event.image_url
-    ? {
-        backgroundImage: `linear-gradient(to bottom, rgba(15,15,26,0.3) 0%, rgba(15,15,26,0.7) 60%, #0F0F1A 100%), url(${event.image_url})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }
-    : {
-        background: 'linear-gradient(to bottom, #1a1a2e 0%, #0F0F1A 100%)',
-      }
 
   const eventJsonLd = {
     "@context": "https://schema.org",
@@ -126,7 +118,7 @@ export default async function EventPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }} />
 
       {/* Hero */}
-      <div style={{ width: '100%', height: 'clamp(260px, 42vw, 440px)', ...heroStyle }} />
+      <EventHeroImage imageUrl={event.image_url} title={event.title ?? ""} />
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 1.25rem 5rem', marginTop: -72, position: 'relative' }}>
 

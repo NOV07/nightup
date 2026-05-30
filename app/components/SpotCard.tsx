@@ -49,12 +49,16 @@ export default function SpotCard({
               height: 78,
               borderRadius: 6,
               flexShrink: 0,
-              backgroundImage: `url('${img}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
               position: "relative",
+              overflow: "hidden",
             }}
           >
+            <img
+              src={img}
+              alt={spot.name ?? ""}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => { (e.target as HTMLImageElement).src = PLACE; }}
+            />
             {spot.isSponsored && <SponsoredBadge />}
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
@@ -100,12 +104,16 @@ export default function SpotCard({
         <div
           style={{
             height: 170,
-            backgroundImage: `url('${img}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
             position: "relative",
+            overflow: "hidden",
           }}
         >
+          <img
+            src={img}
+            alt={spot.name ?? ""}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            onError={(e) => { (e.target as HTMLImageElement).src = PLACE; }}
+          />
           {spot.isSponsored && <SponsoredBadge />}
         </div>
         <div style={{ padding: "15px 16px 16px" }}>

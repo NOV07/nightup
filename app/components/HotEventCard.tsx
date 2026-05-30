@@ -9,6 +9,15 @@ import { RadarBadge } from "./RadarBadge";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
+function formatPrice(price: string | number | null | undefined): string {
+  if (price === 0 || price === null || price === undefined || price === "") return "Free";
+  const s = String(price).trim();
+  if (/^(free|δωρεάν)$/i.test(s)) return "Free";
+  const num = s.replace(/^[€$]/, "");
+  if (!/^\d/.test(num)) return num;
+  return `€${num}`;
+}
+
 interface HotEventCardProps {
   id: string;
   title: string;
@@ -31,10 +40,7 @@ export default function HotEventCard({
   const [saved, setSaved] = useState(false);
   const imgSrc = image || FALLBACK;
 
-  const displayPrice =
-    price === 0 || price === null || price === undefined || price === ""
-      ? "Free"
-      : `€${String(price).replace(/^€/, "")}`;
+  const displayPrice = formatPrice(price);
 
   const formattedDate = new Date(date).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short",
@@ -62,6 +68,7 @@ export default function HotEventCard({
           fill
           sizes={isLarge ? "(max-width: 1024px) 100vw, 50vw" : "(max-width: 1024px) 100vw, 25vw"}
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK; }}
         />
       )}
 
