@@ -591,3 +591,12 @@ body.tonight-open .tonight-blurable {
   transition: filter 0.7s cubic-bezier(.22,.61,.36,1);
 }
 body.tonight-open { overflow: hidden !important; }
+
+/* Tonight FAB — stays above page content but below players (z-200) */
+/* MusicPlayerBar is z-50, RadioStrip is z-500 — FAB at z-200 sits between */
+/* On mobile: shift up to avoid overlap with bottom nav if present */
+@media (max-width: 768px) {
+  .tonight-fab {
+    bottom: 80px !important;
+  }
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Spectral, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { RadioProvider } from "./components/RadioContext";
+import { TonightProvider } from "./components/TonightContext";
 import { LanguageProvider } from "./components/LanguageContext";
 import { PlayerProvider } from "./components/PlayerContext";
 import LayoutShell from "./components/LayoutShell";
@@ -56,11 +57,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col" style={{ backgroundColor: "#0F0F1A", color: "#fff" }}>
         <LanguageProvider>
           <RadioProvider>
-            <PlayerProvider>
-              <LayoutShell>
-                {children}
-              </LayoutShell>
-            </PlayerProvider>
+            <TonightProvider>
+              <PlayerProvider>
+                <LayoutShell>
+                  {children}
+                </LayoutShell>
+              </PlayerProvider>
+            </TonightProvider>
           </RadioProvider>
         </LanguageProvider>
       </body>

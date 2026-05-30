@@ -3,8 +3,6 @@ import Image from "next/image";
 import HeroSearch from "./components/HeroSearch";
 import EventTabs from "./components/EventsTabs";
 import { getSupabase } from "./lib/supabase";
-import { getAllSpots } from "./spots/data";
-import TonightModal from "./components/TonightModal";
 import FadeInObserver from "./components/FadeInObserver";
 import HeroSlider from "./components/HeroSlider";
 import NightwavesHomeCard from "./components/NightwavesHomeCard";
@@ -133,8 +131,6 @@ export default async function HomePage() {
     if (nwRes.data && nwRes.data.length > 0) nightwavesItems = nwRes.data;
   } catch {}
 
-  const spots = await getAllSpots();
-
   const hotPopularCards = [...hotCards, ...popularCards];
 
   const heroSlides = [
@@ -178,8 +174,6 @@ export default async function HomePage() {
 
   return (
     <>
-    <TonightModal spots={spots} />
-    <div className="tonight-blurable">
     <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <FadeInObserver />
@@ -523,7 +517,6 @@ export default async function HomePage() {
       </section>
       )}
 
-    </div>
     </div>
     </>
   );
