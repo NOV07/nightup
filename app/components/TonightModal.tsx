@@ -271,9 +271,9 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
 const G = "#E8A020";
 const S: Record<string, React.CSSProperties> = {
   scrim: { position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(3,3,5,0.5)", padding: 12 },
-  modal: { position: "relative", width: 408, maxWidth: "100%", maxHeight: "88vh", overflow: "hidden", background: "linear-gradient(180deg,#0c0c0e,#0A0A12)", borderRadius: 24, border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 60px 160px rgba(0,0,0,0.78)", display: "flex", flexDirection: "column" },
+  modal: { position: "relative", width: 408, maxWidth: "100%", maxHeight: "88vh", overflow: "clip", background: "linear-gradient(180deg,#0c0c0e,#0A0A12)", borderRadius: 24, border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 60px 160px rgba(0,0,0,0.78)", display: "flex", flexDirection: "column" },
   blob1: { position: "absolute", width: 300, height: 300, borderRadius: "50%", background: G, opacity: 0.1, filter: "blur(70px)", top: -200, left: -120, pointerEvents: "none" },
-  blob2: { position: "absolute", width: 240, height: 240, borderRadius: "50%", background: "#16213E", opacity: 0.5, filter: "blur(70px)", bottom: -130, right: -90, pointerEvents: "none" },
+  blob2: { position: "absolute", width: 240, height: 240, borderRadius: "50%", background: "#16213E", opacity: 0.5, filter: "blur(70px)", bottom: -130, right: 0, pointerEvents: "none" },
   mtop: { position: "relative", zIndex: 5, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 4px", flexShrink: 0 },
   close: { width: 34, height: 34, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.055)", background: "rgba(255,255,255,0.03)", color: "#A1A1AA", fontSize: 17, cursor: "pointer" },
   scroll: { position: "relative", zIndex: 5, overflowY: "auto", padding: "0 24px 26px" },

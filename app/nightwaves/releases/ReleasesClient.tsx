@@ -83,6 +83,7 @@ export default function ReleasesClient({ releases }: { releases: Release[] }) {
                     alt={r.title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK; }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                   {r.is_promoted && (
