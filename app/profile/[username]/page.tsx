@@ -187,12 +187,16 @@ export default async function ProfilePage({ params }: Props) {
               overflow: 'hidden',
               backgroundColor: '#1A1A2E',
             }}>
-              {avatarSrc ? (
-                <Image src={avatarSrc} alt={profile.display_name} fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl font-bold" style={{ color: '#E8A020' }}>
-                  {profile.display_name[0].toUpperCase()}
-                </div>
+              <div className="absolute inset-0 w-full h-full flex items-center justify-center text-3xl font-bold" style={{ color: '#E8A020' }}>
+                {profile.display_name[0].toUpperCase()}
+              </div>
+              {avatarSrc && (
+                <img
+                  src={avatarSrc}
+                  alt={profile.display_name}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
               )}
             </div>
 
@@ -350,7 +354,7 @@ export default async function ProfilePage({ params }: Props) {
                         backgroundColor: 'rgba(232,160,32,0.1)',
                         color: '#E8A020',
                         border: '0.5px solid rgba(232,160,32,0.2)'
-                      }}>lineup</span>
+                      }}>Συμμετέχει</span>
                     </Link>
                   ))}
                 </div>

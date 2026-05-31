@@ -29,11 +29,11 @@ export const SPOT_CATEGORIES: {
   { key: 'drink',     emoji: '🍸', label: 'Ποτό',              sub: 'cocktails · rooftop bar · wine & spirits · μπύρα' },
   { key: 'food',      emoji: '🍽',  label: 'Φαγητό',            sub: 'street food · κινέζικο · brunch' },
   { key: 'nightlife', emoji: '🎵', label: 'Νύχτα',             sub: 'club · bar hopping · live music' },
-  { key: 'show',      emoji: '🎬', label: 'Entertainment',     sub: 'stand-up comedy · σινεμά · θέατρο' },
+  { key: 'show',      emoji: '🎬', label: 'Διασκέδαση',         sub: 'stand-up comedy · σινεμά · θέατρο' },
   { key: 'chill',     emoji: '☕', label: 'Χαλαρά',            sub: 'καφές · γλυκό / παγωτό · picnic vibes' },
   { key: 'activity',  emoji: '🎯', label: 'Δραστηριότητα',     sub: 'bowling · escape room · επιτραπέζια' },
   { key: 'art',       emoji: '🎨', label: 'Τέχνη & Κουλτούρα', sub: 'μουσείο · art gallery · βιβλιοπωλείο / reading' },
-  { key: 'wellness',  emoji: '🌿', label: 'Wellness',          sub: 'sunset spot · yoga / meditation · θαλασσινό μπάνιο · βόλτα φύση' },
+  { key: 'wellness',  emoji: '🌿', label: 'Ευεξία',             sub: 'sunset spot · yoga / meditation · θαλασσινό μπάνιο · βόλτα φύση' },
 ];
 
 export const MOODS = [

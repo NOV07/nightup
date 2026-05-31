@@ -73,7 +73,7 @@ function SectionHeader({
       </div>
       {href && count !== undefined && count > 0 && (
         <a href={href} className="text-xs text-amber-400 hover:translate-x-1 transition-transform">
-          See all {count} →
+          Δες όλα {count} →
         </a>
       )}
     </div>
@@ -246,7 +246,7 @@ export default function EventsClient({
             <section className="animate-fade-up" style={{ animationDelay: `${0.05 + 0 * 0.1}s` }}>
               <SectionHeader
                 title={labels.hot}
-                subtitle={el ? "Επιλογές από το Nightup" : "Featured by Nightup"}
+                subtitle="Επιλογές από το Nightup"
                 count={allHot.length}
                 href="/events/all"
               />
@@ -291,7 +291,7 @@ export default function EventsClient({
             <section className="animate-fade-up" style={{ animationDelay: `${0.05 + 1 * 0.1}s` }}>
               <SectionHeader
                 title={labels.popular}
-                subtitle={el ? "Με βάση τα reactions" : "Trending by reactions"}
+                subtitle="Με βάση τις αντιδράσεις"
                 count={Math.min(allPopular.length, 20)}
                 href="/events/all?sort=popular"
               />
