@@ -15,6 +15,8 @@ export interface Station {
   streamUrls: string[];
   comingSoon?: boolean;
   zenoUuid?: string; // for Zeno SSE metadata: api.zeno.fm/mounts/metadata/subscribe/{uuid}
+  cover?: string;
+  banner?: string;
 }
 
 export const STATIONS: Station[] = [
@@ -27,6 +29,8 @@ export const STATIONS: Station[] = [
     streamUrls: [
       "https://radio4.vip-radios.fm:18015/stream-128kmp3-DeepHouseIbiza",
     ],
+    cover:  "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80",
+    banner: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80",
   },
   {
     id: "techno",
@@ -35,6 +39,8 @@ export const STATIONS: Station[] = [
     logo: "",
     description: "",
     streamUrls: ["https://listen.openstream.co/6521/audio"],
+    cover:  "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400&q=80",
+    banner: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=800&q=80",
   },
   {
     id: "rnb",
@@ -43,6 +49,8 @@ export const STATIONS: Station[] = [
     logo: "",
     description: "",
     streamUrls: ["https://playerservices.streamtheworld.com/api/livestream-redirect/977_JAMZ_SC"],
+    cover:  "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80",
+    banner: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80",
   },
 ];
 

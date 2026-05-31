@@ -194,110 +194,137 @@ export default function RadioStrip() {
           </div>
 
           {/* ── Now Playing hero ─────────────────────────────────────────── */}
-          <div style={{ padding: "16px 18px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-
-              {/* Artwork */}
-              <div style={{
-                position: "relative", width: 62, height: 62, flexShrink: 0,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #1A1A2E, #16213E)",
-                border: "1px solid rgba(232,160,32,0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                overflow: "hidden",
-              }}>
-                <span style={{ fontSize: 26, position: "relative", zIndex: 1 }}>{meta.emoji}</span>
-                {status === "playing" && (
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(135deg, rgba(232,160,32,0.1), transparent)",
-                    zIndex: 2,
-                  }} />
-                )}
-              </div>
-
-              {/* Station info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontFamily: "var(--font-spectral), Georgia, serif",
-                  fontSize: 18, fontWeight: 700,
-                  color: "#F4F4F5", letterSpacing: "-0.3px", lineHeight: 1.2,
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {currentStation.name}
-                </div>
-                <div style={{
-                  fontFamily: "var(--font-inter), sans-serif",
-                  fontSize: 10.5, color: "#71717A", marginTop: 4, letterSpacing: "0.02em",
-                }}>
-                  {meta.genre}
-                </div>
-                <div style={{
-                  fontFamily: "var(--font-inter), sans-serif",
-                  fontSize: 11, color: "#A1A1AA", marginTop: 3,
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {trackTitle ? `♪ ${trackTitle}` : meta.tagline}
-                </div>
-              </div>
-            </div>
-
-            {/* ── Transport ───────────────────────────────────────────── */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 18 }}>
-              <div style={{ position: "relative", flexShrink: 0 }}>
-                {/* Buffering ring */}
-                {status === "buffering" && (
-                  <div className="rs-spin-ring" style={{
-                    position: "absolute", inset: -5,
-                    borderRadius: "50%",
-                    border: "2px solid transparent",
-                    borderTopColor: "#E8A020",
-                    borderRightColor: "rgba(232,160,32,0.25)",
-                  }} />
-                )}
-                <button
-                  onClick={() => playStation(currentStation)}
-                  aria-label={transportLabel(status)}
+          <div style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ position: "relative", overflow: "hidden", borderRadius: 0 }}>
+              {/* Banner photo */}
+              {currentStation.banner && (
+                <img
+                  src={currentStation.banner}
+                  alt=""
+                  aria-hidden
                   style={{
-                    width: 52, height: 52, borderRadius: "50%", border: "none",
-                    background: status === "error"
-                      ? "rgba(239,68,68,0.18)"
-                      : "linear-gradient(135deg, #E8A020, #F5B335)",
-                    color: status === "error" ? "#EF4444" : "#1a1407",
-                    cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: status === "playing"
-                      ? "0 0 28px rgba(232,160,32,0.45)"
-                      : "0 4px 18px rgba(0,0,0,0.5)",
-                    transition: "box-shadow 0.3s, background 0.2s",
-                    flexShrink: 0,
+                    position: "absolute", inset: 0,
+                    width: "100%", height: "100%",
+                    objectFit: "cover",
+                    opacity: 0.35,
                   }}
-                >
-                  {status === "buffering" ? (
-                    <span style={{ fontSize: 18, opacity: 0.6, letterSpacing: "-1px" }}>···</span>
-                  ) : status === "error" ? (
-                    <span style={{ fontSize: 20, fontWeight: 700 }}>!</span>
-                  ) : status === "playing" ? (
-                    <PauseIcon />
-                  ) : (
-                    <PlayIcon />
-                  )}
-                </button>
-              </div>
-            </div>
+                />
+              )}
+              {/* Gradient overlay */}
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(to bottom, rgba(15,15,26,0.55) 0%, rgba(15,15,26,0.82) 100%)",
+              }} />
 
-            {/* Status message */}
-            <div style={{ textAlign: "center", marginTop: 8, minHeight: 16 }}>
-              {status === "buffering" && (
-                <span style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 10.5, color: "#71717A", letterSpacing: "0.04em" }}>
-                  Συντονισμός…
-                </span>
-              )}
-              {status === "error" && (
-                <span style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 10.5, color: "#EF4444" }}>
-                  Προσωρινά μη διαθέσιμο — tap to retry
-                </span>
-              )}
+              {/* Content */}
+              <div style={{ position: "relative", zIndex: 1, padding: "16px 16px 12px" }}>
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+
+                  {/* Artwork */}
+                  <div style={{
+                    position: "relative", width: 62, height: 62, flexShrink: 0,
+                    borderRadius: 10,
+                    border: "1px solid rgba(232,160,32,0.25)",
+                    overflow: "hidden",
+                  }}>
+                    <img
+                      src={currentStation.cover}
+                      alt={currentStation.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                    {status === "playing" && (
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        background: "linear-gradient(135deg, rgba(232,160,32,0.18), transparent)",
+                      }} />
+                    )}
+                  </div>
+
+                  {/* Station info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontFamily: "var(--font-spectral), Georgia, serif",
+                      fontSize: 18, fontWeight: 700,
+                      color: "#F4F4F5", letterSpacing: "-0.3px", lineHeight: 1.2,
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {currentStation.name}
+                    </div>
+                    <div style={{
+                      fontFamily: "var(--font-inter), sans-serif",
+                      fontSize: 10.5, color: "#71717A", marginTop: 4, letterSpacing: "0.02em",
+                    }}>
+                      {meta.genre}
+                    </div>
+                    <div style={{
+                      fontFamily: "var(--font-inter), sans-serif",
+                      fontSize: 11, color: "#A1A1AA", marginTop: 3,
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {trackTitle ? `♪ ${trackTitle}` : meta.tagline}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Transport ───────────────────────────────────────────── */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 18 }}>
+                  <div style={{ position: "relative", flexShrink: 0 }}>
+                    {/* Buffering ring */}
+                    {status === "buffering" && (
+                      <div className="rs-spin-ring" style={{
+                        position: "absolute", inset: -5,
+                        borderRadius: "50%",
+                        border: "2px solid transparent",
+                        borderTopColor: "#E8A020",
+                        borderRightColor: "rgba(232,160,32,0.25)",
+                      }} />
+                    )}
+                    <button
+                      onClick={() => playStation(currentStation)}
+                      aria-label={transportLabel(status)}
+                      style={{
+                        width: 52, height: 52, borderRadius: "50%", border: "none",
+                        background: status === "error"
+                          ? "rgba(239,68,68,0.18)"
+                          : "linear-gradient(135deg, #E8A020, #F5B335)",
+                        color: status === "error" ? "#EF4444" : "#1a1407",
+                        cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: status === "playing"
+                          ? "0 0 28px rgba(232,160,32,0.45)"
+                          : "0 4px 18px rgba(0,0,0,0.5)",
+                        transition: "box-shadow 0.3s, background 0.2s",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {status === "buffering" ? (
+                        <span style={{ fontSize: 18, opacity: 0.6, letterSpacing: "-1px" }}>···</span>
+                      ) : status === "error" ? (
+                        <span style={{ fontSize: 20, fontWeight: 700 }}>!</span>
+                      ) : status === "playing" ? (
+                        <PauseIcon />
+                      ) : (
+                        <PlayIcon />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status message */}
+                <div style={{ textAlign: "center", marginTop: 8, minHeight: 16 }}>
+                  {status === "buffering" && (
+                    <span style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 10.5, color: "#71717A", letterSpacing: "0.04em" }}>
+                      Συντονισμός…
+                    </span>
+                  )}
+                  {status === "error" && (
+                    <span style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 10.5, color: "#EF4444" }}>
+                      Προσωρινά μη διαθέσιμο — tap to retry
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -370,20 +397,22 @@ export default function RadioStrip() {
                 >
                   {/* Thumbnail */}
                   <div style={{
-                    position: "relative", width: 32, height: 32, flexShrink: 0,
-                    borderRadius: 7,
-                    background: "linear-gradient(135deg, #1A1A2E, #16213E)",
-                    border: `1px solid ${active ? "rgba(232,160,32,0.3)" : "rgba(255,255,255,0.07)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 14, overflow: "hidden",
+                    position: "relative", width: 44, height: 44, flexShrink: 0,
+                    borderRadius: 10,
+                    border: `1px solid ${active ? "rgba(232,160,32,0.3)" : "rgba(232,160,32,0.2)"}`,
+                    overflow: "hidden",
                   }}>
-                    <span style={{ position: "relative", zIndex: 1 }}>{sm.emoji}</span>
+                    <img
+                      src={station.cover}
+                      alt={station.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
                     {active && status === "playing" && (
                       <div style={{
                         position: "absolute", inset: 0,
-                        background: "rgba(232,160,32,0.14)",
+                        background: "rgba(10,10,18,0.55)",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        zIndex: 2,
                       }}>
                         <Equalizer animate bars={3} />
                       </div>
