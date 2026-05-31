@@ -138,6 +138,7 @@ export default function RadioStrip() {
       ══════════════════════════════════════════════════════════════════ */}
       {isOpen && (
         <div
+          className="rs-panel"
           style={{
             position: "absolute", bottom: "calc(100% + 10px)", right: 0,
             width: 308, maxWidth: "calc(100vw - 32px)",
@@ -482,6 +483,7 @@ export default function RadioStrip() {
           COLLAPSED PILL
       ══════════════════════════════════════════════════════════════════ */}
       <div
+        className="rs-pill"
         style={{
           position: "relative", height: 44,
           minWidth: 185,
