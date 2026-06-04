@@ -51,11 +51,13 @@ const SECTION_LABELS: Record<string, string> = {
 
 type Tab = 'profile' | 'content' | 'visibility' | 'settings'
 
-export default function DashboardClient({ profile, events, releases, professional }: {
+export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots }: {
   profile: any
   events: any[]
   releases: any[]
   professional: any
+  savedEvents?: any[]
+  savedSpots?: any[]
 }) {
   const router = useRouter()
   const supabase = createBrowserClient(
@@ -1021,20 +1023,77 @@ export default function DashboardClient({ profile, events, releases, professiona
 
                 {/* Saved spots */}
                 <div>
-                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Saved spots</h3>
-                  <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-2xl">📍</p>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει spots ακόμα</p>
-                  </div>
+                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    Saved spots {savedSpots && savedSpots.length > 0 && `(${savedSpots.length})`}
+                  </h3>
+                  {!savedSpots || savedSpots.length === 0 ? (
+                    <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-2xl">📍</p>
+                      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει spots ακόμα</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedSpots.map((spot: any) => (
+                        <Link
+                          key={spot.id}
+                          href={`/spots/${spot.slug}`}
+                          className="flex items-center gap-3 p-3 rounded-xl transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}
+                        >
+                          {spot.cover_image && (
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                              <Image src={spot.cover_image} alt={spot.name} fill className="object-cover" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">{spot.name}</p>
+                            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                              {[spot.category, spot.neighborhood].filter(Boolean).join(' · ')}
+                            </p>
+                          </div>
+                          {spot.rating && (
+                            <span className="text-xs flex-shrink-0" style={{ color: '#E8A020' }}>★ {spot.rating}</span>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Saved events */}
                 <div>
-                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Saved events</h3>
-                  <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-2xl">🎟️</p>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει events ακόμα</p>
-                  </div>
+                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    Saved events {savedEvents && savedEvents.length > 0 && `(${savedEvents.length})`}
+                  </h3>
+                  {!savedEvents || savedEvents.length === 0 ? (
+                    <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-2xl">🎟️</p>
+                      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει events ακόμα</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedEvents.map((event: any) => (
+                        <Link
+                          key={event.id}
+                          href={`/events/${event.id}`}
+                          className="flex items-center gap-3 p-3 rounded-xl transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}
+                        >
+                          {event.image_url && (
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                              <Image src={event.image_url} alt={event.title} fill className="object-cover" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">{event.title}</p>
+                            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                              {event.date ? new Date(event.date).toLocaleDateString('el-GR', { day: 'numeric', month: 'short' }) : ''}{event.venue ? ` · ${event.venue}` : ''}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
               </div>

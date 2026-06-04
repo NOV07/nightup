@@ -29,12 +29,39 @@ export default async function DashboardPage() {
     ? await supabase.from('professionals').select('*').eq('profile_id', profile.id).single()
     : { data: null }
 
+  const { data: savedEventsRaw } = profile.profile_type === 'user'
+    ? await supabase
+        .from('saved_events')
+        .select('event_id, events(id, title, image_url, date, venue, city, genre)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+    : { data: [] }
+
+  const savedEvents = (savedEventsRaw ?? [])
+    .map((r: any) => r.events)
+    .filter(Boolean)
+
+  const { data: savedSpotRows } = profile.profile_type === 'user'
+    ? await supabase.from('saved_spots').select('spot_id').eq('user_id', user.id)
+    : { data: [] }
+
+  const spotIds = (savedSpotRows ?? []).map((r: any) => r.spot_id)
+
+  const { data: savedSpots } = spotIds.length > 0
+    ? await supabase
+        .from('spots')
+        .select('id, name, slug, cover_image, category, neighborhood, rating')
+        .in('id', spotIds)
+    : { data: [] }
+
   return (
     <DashboardClient
       profile={profile}
       events={events ?? []}
       releases={releases ?? []}
       professional={professional}
+      savedEvents={savedEvents}
+      savedSpots={savedSpots ?? []}
     />
   )
 }

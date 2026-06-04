@@ -52,6 +52,20 @@ export interface Profile {
   plan_tier: string | null
 }
 
+export interface SavedEvent {
+  id: string
+  user_id: string
+  event_id: string
+  created_at: string
+}
+
+export interface SavedSpot {
+  id: string
+  user_id: string
+  spot_id: string
+  created_at: string
+}
+
 export interface Professional {
   id: string
   profile_id: string

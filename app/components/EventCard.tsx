@@ -28,6 +28,7 @@ interface EventCardProps {
   badge?: string;
   organizerName?: string;
   organizerSlug?: string;
+  initialSaved?: boolean;
 }
 
 function formatPrice(price: string | number | null | undefined): string {
@@ -54,8 +55,29 @@ const genreColors: Record<string, string> = {
 export default function EventCard({
   id, title, image, image_url, genre, price, date, venue, city,
   interestedCount, goingCount, featured, badge, organizerName, organizerSlug,
+  initialSaved,
 }: EventCardProps) {
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState(initialSaved ?? false);
+
+  async function handleSave(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = !saved;
+    setSaved(next);
+    try {
+      if (next) {
+        await fetch('/api/saved/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: id }),
+        });
+      } else {
+        await fetch(`/api/saved/events?event_id=${id}`, { method: 'DELETE' });
+      }
+    } catch {
+      setSaved(!next);
+    }
+  }
   const color  = genreColors[genre] ?? "#E8A020";
   const imgSrc = image_url || image || FALLBACK_IMAGE;
 
@@ -106,12 +128,7 @@ export default function EventCard({
         )}
         <button
           className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
-          onClick={(e: MouseEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setSaved((s) => !s);
-            // TODO: wire to user favorites table
-          }}
+          onClick={handleSave}
           aria-label="Save event"
         >
           {saved

@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { FiHeart } from "react-icons/fi";
+import { FaHeart } from "react-icons/fa";
 import type { Spot } from "../spots/types";
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80";
@@ -13,12 +16,35 @@ export default function SpotCard({
   spot,
   compact = false,
   onNavigate,
+  initialSaved,
 }: {
   spot: Spot;
   compact?: boolean;
   onNavigate?: () => void;
+  initialSaved?: boolean;
 }) {
+  const [saved, setSaved] = useState(initialSaved ?? false);
   const img = spot.coverImage || PLACE;
+
+  async function handleSave(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = !saved;
+    setSaved(next);
+    try {
+      if (next) {
+        await fetch('/api/saved/spots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ spot_id: String(spot.id) }),
+        });
+      } else {
+        await fetch(`/api/saved/spots?spot_id=${spot.id}`, { method: 'DELETE' });
+      }
+    } catch {
+      setSaved(!next);
+    }
+  }
 
   if (compact) {
     return (
@@ -115,6 +141,21 @@ export default function SpotCard({
             onError={(e) => { (e.target as HTMLImageElement).src = PLACE; }}
           />
           {spot.isSponsored && <SponsoredBadge />}
+          <button
+            onClick={handleSave}
+            aria-label="Save spot"
+            style={{
+              position: "absolute", top: 8, right: 8, zIndex: 3,
+              width: 32, height: 32, borderRadius: "50%",
+              backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+              border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            {saved
+              ? <FaHeart size={14} style={{ color: "#E8A020" }} />
+              : <FiHeart size={14} style={{ color: "rgba(255,255,255,0.9)" }} />}
+          </button>
         </div>
         <div style={{ padding: "15px 16px 16px" }}>
           <div style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 600, fontSize: 18, color: "#F4F4F5", letterSpacing: "-0.2px" }}>
