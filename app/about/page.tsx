@@ -5,6 +5,12 @@ import { getSupabaseAdmin } from "../lib/supabase";
 export const metadata: Metadata = {
   title: "About",
   description: "Nightup.gr is Greece's nightlife and music discovery platform. Learn about our mission and how to get in touch.",
+  twitter: {
+    card: "summary_large_image",
+    title: "About | Nightup.gr",
+    description: "Nightup.gr is Greece's nightlife and music discovery platform. Learn about our mission and how to get in touch.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 
 export const dynamic = "force-dynamic";

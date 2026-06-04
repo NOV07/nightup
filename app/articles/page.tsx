@@ -7,6 +7,12 @@ import { getSupabase } from "../lib/supabase";
 export const metadata: Metadata = {
   title: "Articles",
   description: "Read the latest articles about Greek nightlife, music venues, artists, and culture from the Nightup Journal.",
+  twitter: {
+    card: "summary_large_image",
+    title: "Articles | Nightup.gr",
+    description: "Read the latest articles about Greek nightlife, music venues, artists, and culture from the Nightup Journal.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 export const dynamic = "force-dynamic";
 

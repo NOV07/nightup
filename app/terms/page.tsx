@@ -3,6 +3,12 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description: "Terms and conditions for using Nightup.gr.",
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms of Service | Nightup.gr",
+    description: "Terms and conditions for using Nightup.gr.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 
 export default function TermsPage() {

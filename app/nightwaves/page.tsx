@@ -10,6 +10,12 @@ export const metadata: Metadata = {
     description: "Live radio, mixes and releases from the Greek night scene.",
     images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nightwaves | Nightup.gr",
+    description: "Live radio, mixes and releases from the Greek night scene.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 export const dynamic = "force-dynamic";
 

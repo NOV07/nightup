@@ -12,6 +12,12 @@ export const metadata: Metadata = {
     description: "Find the best nightlife events in Greece.",
     images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Events | Nightup.gr",
+    description: "Find the best nightlife events in Greece.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 export const dynamic = "force-dynamic";
 

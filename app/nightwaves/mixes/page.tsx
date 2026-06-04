@@ -5,6 +5,12 @@ import MixesClient from "./MixesClient";
 export const metadata: Metadata = {
   title: "All Mixes – Nightwaves",
   description: "Browse all DJ mixes from the Greek nightlife scene on Nightup.",
+  twitter: {
+    card: "summary_large_image",
+    title: "All Mixes – Nightwaves | Nightup.gr",
+    description: "Browse all DJ mixes from the Greek nightlife scene on Nightup.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 
 export const dynamic = "force-dynamic";

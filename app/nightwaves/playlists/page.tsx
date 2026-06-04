@@ -5,6 +5,12 @@ import PlaylistsClient from "./PlaylistsClient";
 export const metadata: Metadata = {
   title: "All Playlists – Nightwaves",
   description: "Browse all curated playlists from the Greek nightlife scene on Nightup.",
+  twitter: {
+    card: "summary_large_image",
+    title: "All Playlists – Nightwaves | Nightup.gr",
+    description: "Browse all curated playlists from the Greek nightlife scene on Nightup.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 
 export const dynamic = "force-dynamic";

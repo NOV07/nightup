@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import EventCard from "../../components/EventCard";
 
-const GENRES = ["All", "Techno", "House", "Deep House", "Hip-Hop", "R&B", "Latin", "Open Air", "Rock", "Laika", "Entechno", "Other"];
-const CITIES = ["All Cities", "Athens", "Thessaloniki", "Mykonos", "Santorini", "Heraklion", "Patras", "Rhodes", "Ios", "Corfu", "Zakynthos"];
+import { CITIES, GENRES } from "../../lib/searchConstants";
 const PAGE_SIZE = 12;
 
 interface Event {

@@ -60,9 +60,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const mix = await getMix(id);
   if (!mix) return { title: "Mix not found" };
+  const image = mix.cover_image ?? "https://nightup.gr/og-image.png";
+  const description = mix.description ?? `${mix.genre ?? ""} mix by ${mix.artist}`;
   return {
     title: `${mix.artist} — ${mix.title}`,
-    description: mix.description ?? `${mix.genre ?? ""} mix by ${mix.artist}`,
+    description,
+    openGraph: {
+      title: `${mix.artist} — ${mix.title}`,
+      description,
+      images: [{ url: image, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${mix.artist} — ${mix.title}`,
+      description,
+      images: [image],
+    },
   };
 }
 

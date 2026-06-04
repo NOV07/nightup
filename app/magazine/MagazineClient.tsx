@@ -4,8 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-const CATEGORIES = ["All", "Culture", "Events", "Artists", "Guides", "Music", "Venues", "Festivals"];
-
 interface Article {
   id: string;
   title: string;
@@ -18,6 +16,7 @@ interface Article {
 }
 
 export default function MagazineClient({ articles }: { articles: Article[] }) {
+  const categories = ["All", ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean))).sort()];
   const [activeCategory, setActiveCategory] = useState("All");
 
   const filtered = articles.filter(
@@ -27,7 +26,7 @@ export default function MagazineClient({ articles }: { articles: Article[] }) {
   return (
     <div>
       <div className="flex gap-2 overflow-x-auto pb-3 mb-8">
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}

@@ -38,6 +38,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [night, setNight] = useState<Spot[]>([]);
+  const [copied, setCopied] = useState(false);
 
   // Sync body class and reset view whenever open prop changes
   useEffect(() => {
@@ -77,6 +78,18 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
       setLoading(false);
       setView("night");
     }, 2150);
+  };
+
+  const keepNight = async () => {
+    const lines = night.map((s, i) =>
+      `${STOP_TIMES[i] ?? ""} · ${STOP_LABELS[s.category]}\n${s.name}${s.address ? ` — ${s.address}` : ""}${s.neighborhood ? `, ${s.neighborhood}` : ""}`
+    );
+    const text = `🌙 Η βραδιά μου στην Αθήνα\n\n${lines.join("\n\n")}\n\n— via nightup.gr`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
   };
 
   const reroll = () => {
@@ -215,7 +228,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
                 </div>
                 <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
                   <button onClick={reroll} style={S.btnGhost}>🔄 Άλλη πρόταση</button>
-                  <button style={S.btnGold}>Κράτα τη βραδιά</button>
+                  <button onClick={keepNight} style={S.btnGold}>{copied ? "Αντιγράφηκε!" : "Κράτα τη βραδιά"}</button>
                 </div>
               </div>
             )}

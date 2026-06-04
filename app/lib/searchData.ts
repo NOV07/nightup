@@ -1,31 +1,4 @@
-export const CITIES = [
-  "All Cities",
-  "Athens",
-  "Thessaloniki",
-  "Mykonos",
-  "Santorini",
-  "Ios",
-  "Patra",
-  "Crete",
-  "Rest of Greece",
-];
-
-export const GENRES = [
-  "All Genres",
-  "Techno",
-  "House",
-  "Hip-Hop / R&B",
-  "Pop",
-  "Rock",
-  "Jazz",
-  "Latin",
-  "Reggae",
-  "Classical",
-  "Entechno",
-  "Laïká",
-  "Rebetika",
-  "Other",
-];
+export { CITIES, GENRES } from "./searchConstants";
 
 export const NETWORK = {
   "Plan Your Event": {

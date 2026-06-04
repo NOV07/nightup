@@ -9,8 +9,7 @@ import HotEventCard from "../components/HotEventCard";
 import CompactEventItem from "../components/CompactEventItem";
 import { useLanguage } from "../components/LanguageContext";
 
-const GENRES = ["All", "Techno", "House", "Deep House", "Hip-Hop", "R&B", "Latin", "Open Air", "Rock", "Laika", "Entechno", "Other"];
-const CITIES = ["All Cities", "Athens", "Thessaloniki", "Mykonos", "Santorini", "Heraklion", "Patras", "Rhodes", "Ios", "Corfu", "Zakynthos"];
+import { CITIES, GENRES } from "../lib/searchConstants";
 
 interface Event {
   id: string;
@@ -98,9 +97,11 @@ export default function EventsClient({
     const q = searchParams.get("q");
     const c = searchParams.get("city");
     const g = searchParams.get("genre");
+    const d = searchParams.get("date");
     if (q) setQuery(q);
     if (c && CITIES.includes(c)) setCity(c);
     if (g && GENRES.includes(g)) setGenre(g);
+    if (d) setDateFilter(d);
   }, [searchParams]);
 
   const today = new Date().toISOString().split("T")[0];

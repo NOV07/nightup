@@ -10,6 +10,12 @@ export const metadata: Metadata = {
     description: "Every music professional you need in Greece.",
     images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Network | Nightup.gr",
+    description: "Every music professional you need in Greece.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 
 export const dynamic = "force-dynamic";

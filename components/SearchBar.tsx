@@ -12,7 +12,7 @@ interface SearchResult {
   id: string;
   title: string;
   subtitle?: string;
-  type: "event" | "magazine" | "nightwaves" | "profile";
+  type: "event" | "magazine" | "nightwaves" | "profile" | "spot" | "release";
   href: string;
 }
 
@@ -32,6 +32,8 @@ const TYPE_LABEL: Record<SearchResult["type"], string> = {
   magazine: "Article",
   nightwaves: "Mix",
   profile: "Profile",
+  spot: "Spot",
+  release: "Release",
 };
 
 function getBrowserClient() {
@@ -156,11 +158,13 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
     setLoading(true);
     const sb = getBrowserClient();
     const pattern = `%${q}%`;
-    const [evRes, artRes, mixRes, profRes] = await Promise.all([
+    const [evRes, artRes, mixRes, profRes, spotRes, relRes] = await Promise.all([
       sb.from("events").select("id, title, venue, city").ilike("title", pattern).eq("status", "approved").limit(3),
       sb.from("articles").select("id, title, category").ilike("title", pattern).eq("status", "published").limit(3),
       sb.from("mixes").select("id, title, artist").ilike("title", pattern).eq("status", "approved").limit(2),
       sb.from("profiles").select("id, username, display_name, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${q}%,network_subcategory.ilike.%${q}%`).limit(4),
+      sb.from("spots").select("id, name, slug, category, neighborhood").ilike("name", pattern).eq("is_published", true).limit(2),
+      sb.from("music_releases").select("id, title, artist, type").ilike("title", pattern).eq("status", "approved").limit(2),
     ]);
     const found: SearchResult[] = [];
     evRes.data?.forEach((e: any) =>
@@ -174,6 +178,12 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
     );
     profRes.data?.forEach((p: any) =>
       found.push({ id: `prof-${p.id}`, title: p.display_name, subtitle: [p.network_subcategory, p.location].filter(Boolean).join(" · "), type: "profile", href: `/profile/${p.username}` })
+    );
+    spotRes.data?.forEach((s: any) =>
+      found.push({ id: `spot-${s.id}`, title: s.name, subtitle: [s.category, s.neighborhood].filter(Boolean).join(" · "), type: "spot", href: `/spots/${s.slug}` })
+    );
+    relRes.data?.forEach((r: any) =>
+      found.push({ id: `rel-${r.id}`, title: r.title, subtitle: r.artist, type: "release", href: `/nightwaves/release/${r.id}` })
     );
     setResults(found);
     setLoading(false);
@@ -323,6 +333,12 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && query.trim()) {
+                      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+                      onClose();
+                    }
+                  }}
                   placeholder="Search events, articles, mixes..."
                   style={{
                     flex: 1,
@@ -361,54 +377,79 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
 
               {/* Results */}
               {results.length > 0 && (
-                <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                  {results.map((r) => (
-                    <Link
-                      key={r.id}
-                      href={r.href}
-                      onClick={onClose}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "10px 12px",
-                        borderRadius: "8px",
-                        textDecoration: "none",
-                        transition: "background 0.15s",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <span
+                <div style={{ marginTop: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                    {results.map((r) => (
+                      <Link
+                        key={r.id}
+                        href={r.href}
+                        onClick={onClose}
                         style={{
-                          fontSize: "9px",
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          color: AMBER,
-                          border: `1px solid ${AMBER}40`,
-                          borderRadius: "4px",
-                          padding: "2px 5px",
-                          flexShrink: 0,
-                          fontFamily: "var(--font-sans)",
-                          minWidth: "48px",
-                          textAlign: "center",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          textDecoration: "none",
+                          transition: "background 0.15s",
                         }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
-                        {TYPE_LABEL[r.type]}
-                      </span>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.85)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {r.title}
-                        </p>
-                        {r.subtitle && (
-                          <p style={{ margin: 0, fontSize: "11px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {r.subtitle}
+                        <span
+                          style={{
+                            fontSize: "9px",
+                            fontWeight: 700,
+                            letterSpacing: "0.1em",
+                            textTransform: "uppercase",
+                            color: AMBER,
+                            border: `1px solid ${AMBER}40`,
+                            borderRadius: "4px",
+                            padding: "2px 5px",
+                            flexShrink: 0,
+                            fontFamily: "var(--font-sans)",
+                            minWidth: "48px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {TYPE_LABEL[r.type]}
+                        </span>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.85)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {r.title}
                           </p>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
+                          {r.subtitle && (
+                            <p style={{ margin: 0, fontSize: "11px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {r.subtitle}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  <Link
+                    href={`/search?q=${encodeURIComponent(query)}`}
+                    onClick={onClose}
+                    style={{
+                      display: "block",
+                      marginTop: "10px",
+                      padding: "9px 12px",
+                      borderRadius: "8px",
+                      textAlign: "center",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      fontFamily: "var(--font-sans)",
+                      color: AMBER,
+                      border: `1px solid ${AMBER}30`,
+                      background: `${AMBER}0a`,
+                      textDecoration: "none",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = `${AMBER}18`)}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = `${AMBER}0a`)}
+                  >
+                    Δες όλα τα αποτελέσματα →
+                  </Link>
                 </div>
               )}
 
@@ -420,7 +461,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
 
               {!query && (
                 <p style={{ margin: "16px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.2)", fontFamily: "var(--font-sans)", textAlign: "center" }}>
-                  Search across Events · Magazine · Nightwaves
+                  Search across Events · Magazine · Nightwaves · Spots · Releases
                 </p>
               )}
             </div>

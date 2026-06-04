@@ -25,9 +25,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const pl = await getPlaylist(id);
   if (!pl) return { title: "Playlist not found" };
+  const image = pl.cover_image ?? "https://nightup.gr/og-image.png";
+  const description = `${pl.platform ?? "Playlist"} — curated on Nightup.`;
   return {
-    title: `${pl.title} | Nightup`,
-    description: `${pl.platform ?? "Playlist"} — curated on Nightup.`,
+    title: pl.title,
+    description,
+    openGraph: {
+      title: pl.title,
+      description,
+      images: [{ url: image, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pl.title,
+      description,
+      images: [image],
+    },
   };
 }
 

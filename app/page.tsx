@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import HeroSearch from "./components/HeroSearch";
@@ -9,6 +10,22 @@ import NightwavesHomeCard from "./components/NightwavesHomeCard";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: { absolute: "Nightup.gr – Find Your Night" },
+  description: "Greece's #1 nightlife and events discovery platform. Find events, venues, DJs, and everything you need for an unforgettable night out.",
+  openGraph: {
+    title: "Nightup.gr – Find Your Night",
+    description: "Greece's #1 nightlife and events discovery platform. Find events, venues, DJs, and everything you need for an unforgettable night out.",
+    images: [{ url: "https://nightup.gr/og-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nightup.gr – Find Your Night",
+    description: "Greece's #1 nightlife and events discovery platform. Find events, venues, DJs, and everything you need for an unforgettable night out.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
+};
+
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -17,7 +34,7 @@ const websiteJsonLd = {
   "description": "Greece's nightlife and music discovery platform",
   "potentialAction": {
     "@type": "SearchAction",
-    "target": "https://nightup.gr/events?q={search_term_string}",
+    "target": "https://nightup.gr/search?q={search_term_string}",
     "query-input": "required name=search_term_string",
   },
 };
@@ -56,7 +73,6 @@ export default async function HomePage() {
   let latestArticles: any[] = [];
   let newReleases: any[] = [];
   let allThisWeekCards: any[] = [];
-  let nightwavesItems: any[] = [];
 
   const _now = new Date();
   // Use local date parts to avoid UTC-shift cutting off today's events
@@ -67,7 +83,7 @@ export default async function HomePage() {
 
   try {
     const supabase = getSupabase();
-    const [evRes, artRes, relRes, mixFeedRes, playFeedRes, nwRes] = await Promise.all([
+    const [evRes, artRes, relRes, mixFeedRes, playFeedRes] = await Promise.all([
       supabase
         .from("events")
         .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick")
@@ -84,7 +100,6 @@ export default async function HomePage() {
       supabase.from("music_releases").select("id, title, artist, type, cover_image, spotify_url, soundcloud_url, is_promoted, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
       supabase.from("mixes").select("id, title, artist, genre, cover_image, soundcloud_url, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
       supabase.from("playlists").select("id, title, platform, embed_url, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
-      supabase.from("nightwaves_items").select("id, title, artist, subtitle, cover_url, type, source, source_url").eq("featured_on_home", true).order("order_index", { ascending: true }).limit(4),
     ]);
 
     const toCard = (e: any, badge: string) => ({
@@ -128,7 +143,6 @@ export default async function HomePage() {
       ...(playFeedRes.data ?? []).map((p: any) => ({ ...p, _contentType: "playlist", typeBadge: "Playlist", href: p.embed_url ?? "#", external: true })),
     ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
     if (combined.length > 0) newReleases = combined;
-    if (nwRes.data && nwRes.data.length > 0) nightwavesItems = nwRes.data;
   } catch {}
 
   const hotPopularCards = [...hotCards, ...popularCards];
@@ -437,7 +451,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── ON NIGHTWAVES ── */}
-      {(nightwavesItems.length > 0 || newReleases.length > 0) && (
+      {newReleases.length > 0 && (
       <section style={{
         padding: "0 32px 64px",
         borderTop: "1px solid rgba(255,255,255,0.06)",
@@ -470,21 +484,7 @@ export default async function HomePage() {
           gap: "1px",
           background: "rgba(255,255,255,0.04)",
         }}>
-          {(nightwavesItems.length > 0 ? nightwavesItems.map((item: any) => ({
-            id: String(item.id),
-            title: item.title,
-            artist: item.artist ?? "",
-            cover_image: item.cover_url,
-            typeBadge: item.subtitle || item.type,
-            href: item.type === "mix"
-              ? `/nightwaves/mix/${item.id}`
-              : item.type === "playlist"
-              ? `/nightwaves/playlist/${item.id}`
-              : `/nightwaves/release/${item.id}`,
-            external: false,
-            soundcloudUrl: item.source === "soundcloud" ? item.source_url : undefined,
-            type: (item.type === "mix" ? "mix" : item.type === "playlist" ? "playlist" : "release") as "mix" | "release" | "playlist",
-          })) : newReleases.slice(0, 4).map((r: any) => ({
+          {newReleases.slice(0, 4).map((r: any) => ({
             id: String(r.id),
             title: r.title,
             artist: r.artist ?? "",
@@ -498,7 +498,7 @@ export default async function HomePage() {
             external: false,
             soundcloudUrl: r._contentType === "mix" ? r.soundcloud_url : undefined,
             type: (r._contentType === "mix" ? "mix" : r._contentType === "playlist" ? "playlist" : "release") as "mix" | "release" | "playlist",
-          }))).map((item, i) => (
+          })).map((item, i) => (
             <NightwavesHomeCard
               key={item.id}
               id={item.id}

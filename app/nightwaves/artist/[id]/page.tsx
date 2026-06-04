@@ -49,9 +49,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const artistName = decodeURIComponent(id);
   const artist = await getArtist(id);
   const name = artist?.name ?? artistName;
+  const image = artist?.photo ?? "https://nightup.gr/og-image.png";
+  const description = artist?.about?.slice(0, 155) ?? `${name} on Nightup.`;
   return {
     title: name,
-    description: artist?.about?.slice(0, 155) ?? `${name} on Nightup.`,
+    description,
+    openGraph: {
+      title: name,
+      description,
+      images: [{ url: image, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: name,
+      description,
+      images: [image],
+    },
   };
 }
 

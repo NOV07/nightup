@@ -5,6 +5,12 @@ import EventsAllClient from "./EventsAllClient";
 export const metadata: Metadata = {
   title: "All Events",
   description: "Browse all nightlife events across Greece. Filter by city, date, genre, and price.",
+  twitter: {
+    card: "summary_large_image",
+    title: "All Events | Nightup.gr",
+    description: "Browse all nightlife events across Greece. Filter by city, date, genre, and price.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

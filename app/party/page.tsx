@@ -5,6 +5,12 @@ import { getSupabase } from "../lib/supabase";
 export const metadata: Metadata = {
   title: "Make Your Party",
   description: "Find venues, DJs, photographers, caterers, and everything you need to plan the perfect party in Greece.",
+  twitter: {
+    card: "summary_large_image",
+    title: "Make Your Party | Nightup.gr",
+    description: "Find venues, DJs, photographers, caterers, and everything you need to plan the perfect party in Greece.",
+    images: ["https://nightup.gr/og-image.png"],
+  },
 };
 export const dynamic = "force-dynamic";
 

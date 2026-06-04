@@ -119,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const org = await getOrganizer(slug);
   if (!org) return { title: "Organizer not found" };
   return {
-    title: `${org.name} — Nightup`,
+    title: org.name,
     description: org.bio ? org.bio.slice(0, 155) : `Events organized by ${org.name} on Nightup.`,
   };
 }

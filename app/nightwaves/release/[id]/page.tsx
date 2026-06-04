@@ -77,9 +77,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const release = await getRelease(id);
   if (!release) return { title: "Release not found" };
+  const image = release.cover_image ?? "https://nightup.gr/og-image.png";
+  const description = release.description ?? `${release.type} by ${release.artist}`;
   return {
     title: `${release.artist} — ${release.title}`,
-    description: release.description ?? `${release.type} by ${release.artist}`,
+    description,
+    openGraph: {
+      title: `${release.artist} — ${release.title}`,
+      description,
+      images: [{ url: image, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${release.artist} — ${release.title}`,
+      description,
+      images: [image],
+    },
   };
 }
 
