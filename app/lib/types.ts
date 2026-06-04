@@ -1,7 +1,7 @@
 // Hand-maintained types — no Supabase CLI generation is set up in this project.
 // Update these when adding or removing columns.
 
-export type ProfileType = 'organizer' | 'artist' | 'professional' | 'venue'
+export type ProfileType = 'user' | 'organizer' | 'artist' | 'professional' | 'venue'
 
 export type NetworkTab = 'Plan Your Event' | 'For Artists'
 

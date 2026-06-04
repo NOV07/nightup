@@ -3,15 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../../components/ui/ImageUpload'
 
-const profileTypes = [
-  { value: 'organizer', label: '🎪 Organizer', desc: 'Submit events & club nights' },
-  { value: 'artist', label: '🎵 Artist / DJ', desc: 'Submit releases & mixes' },
-  { value: 'professional', label: '📸 Professional', desc: 'Photography, lighting, etc.' },
-]
-
 export default function OnboardingClient() {
-  const [step, setStep] = useState(1)
-  const [profileType, setProfileType] = useState('')
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
@@ -31,7 +23,7 @@ export default function OnboardingClient() {
       body: JSON.stringify({
         username,
         display_name: displayName,
-        profile_type: profileType,
+        profile_type: 'user',
         ...(bio && { bio }),
         ...(instagram && { instagram }),
         ...(avatarUrl && { avatar_url: avatarUrl }),
@@ -60,91 +52,59 @@ export default function OnboardingClient() {
           <p className="text-white/50">Set up your profile to get started</p>
         </div>
 
-        <div className="flex gap-2 mb-8">
-          {[1, 2].map(s => (
-            <div key={s} className={`h-1 flex-1 rounded-full ${step >= s ? 'bg-[#E8A020]' : 'bg-white/10'}`} />
-          ))}
+        <div className="space-y-4">
+          <div>
+            <label className="text-white/60 text-sm mb-1.5 block">Profile Photo (optional)</label>
+            <ImageUpload
+              folder="avatars"
+              onUpload={(url) => setAvatarUrl(url)}
+            />
+          </div>
+
+          <div>
+            <input
+              placeholder="Username (e.g. djvoid)"
+              value={username}
+              onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
+              className={inputClass}
+            />
+            <p className="text-white/30 text-xs mt-1">nightup.gr/@{username || 'username'}</p>
+          </div>
+
+          <input
+            placeholder="Display Name (e.g. DJ Void)"
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            className={inputClass}
+          />
+
+          <textarea
+            placeholder="Bio (optional)"
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            rows={3}
+            className={`${inputClass} resize-none`}
+          />
+
+          <input
+            placeholder="Instagram handle (optional)"
+            value={instagram}
+            onChange={e => setInstagram(e.target.value)}
+            className={inputClass}
+          />
+
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+
+          <div className="pt-2">
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !username || !displayName}
+              className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
+            >
+              {loading ? 'Creating...' : 'Create Profile →'}
+            </button>
+          </div>
         </div>
-
-        {step === 1 && (
-          <div className="space-y-4">
-            <h2 className="text-white font-semibold text-lg mb-4">Who are you?</h2>
-            {profileTypes.map(pt => (
-              <button
-                key={pt.value}
-                onClick={() => { setProfileType(pt.value); setStep(2) }}
-                className="w-full text-left p-4 rounded-xl border border-white/10 bg-white/5 hover:border-[#E8A020]/50 hover:bg-[#E8A020]/5 transition"
-              >
-                <div className="text-white font-medium">{pt.label}</div>
-                <div className="text-white/50 text-sm mt-0.5">{pt.desc}</div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-4">
-            <h2 className="text-white font-semibold text-lg mb-4">Your details</h2>
-
-            <div>
-              <label className="text-white/60 text-sm mb-1.5 block">Profile Photo (optional)</label>
-              <ImageUpload
-                folder="avatars"
-                onUpload={(url) => setAvatarUrl(url)}
-              />
-            </div>
-
-            <div>
-              <input
-                placeholder="Username (e.g. djvoid)"
-                value={username}
-                onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
-                className={inputClass}
-              />
-              <p className="text-white/30 text-xs mt-1">nightup.gr/@{username || 'username'}</p>
-            </div>
-
-            <input
-              placeholder="Display Name (e.g. DJ Void)"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              className={inputClass}
-            />
-
-            <textarea
-              placeholder="Bio (optional)"
-              value={bio}
-              onChange={e => setBio(e.target.value)}
-              rows={3}
-              className={`${inputClass} resize-none`}
-            />
-
-            <input
-              placeholder="Instagram handle (optional)"
-              value={instagram}
-              onChange={e => setInstagram(e.target.value)}
-              className={inputClass}
-            />
-
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setStep(1)}
-                className="flex-1 border border-white/20 text-white py-3 rounded-lg hover:bg-white/5 transition"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !username || !displayName}
-                className="flex-1 bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Profile →'}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

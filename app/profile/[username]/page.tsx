@@ -1,5 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/app/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -8,33 +7,13 @@ import ContactPill from '@/app/components/ContactPill'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
 
-async function getSupabaseClient() {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
-        },
-      },
-    }
-  )
-}
-
 interface Props {
   params: Promise<{ username: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params
-  const supabase = await getSupabaseClient()
+  const supabase = await createClient()
   const { data } = await supabase.from('profiles').select('display_name, bio, avatar_url').eq('username', username).single()
   if (!data) return { title: 'Profile | Nightup.gr' }
   return {
@@ -50,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProfilePage({ params }: Props) {
   const { username } = await params
-  const supabase = await getSupabaseClient()
+  const supabase = await createClient()
 
   const { data: profile, error } = await supabase
     .from('profiles')

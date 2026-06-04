@@ -4,12 +4,13 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
 export default function AuthModal({ onClose }: { onClose: () => void }) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -31,7 +32,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
       if (error) { setError(error.message); setLoading(false); return }
       onClose()
       router.push('/onboarding')
-    } else {
+    } else if (mode === 'login') {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
 
@@ -43,14 +44,21 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
         .eq('id', data.user.id)
         .single()
 
-      if (!profile) {
-        router.push('/onboarding')
-      } else {
-        router.push('/dashboard')
-      }
+      router.push(profile ? '/dashboard' : '/onboarding')
     }
 
     setLoading(false)
+  }
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const redirectTo = `${window.location.origin}/auth/callback?next=/auth/reset`
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    setLoading(false)
+    if (error) { setError(error.message); return }
+    setResetSent(true)
   }
 
   const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[#E8A020]"
@@ -68,61 +76,118 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-white">
-            {mode === 'login' ? 'Welcome back' : 'Join Nightup'}
+            {mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Join Nightup' : 'Reset password'}
           </h2>
           <p className="text-white/50 text-sm mt-1">
-            {mode === 'login' ? 'Sign in to your account' : 'Create your free account'}
+            {mode === 'login' ? 'Sign in to your account' : mode === 'signup' ? 'Create your free account' : 'We\'ll send you a reset link'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className={inputClass}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className={inputClass}
-            required
-          />
-          {mode === 'signup' && (
-            <input
-              type="password"
-              placeholder="Confirm password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              className={inputClass}
-              required
-            />
-          )}
+        {mode === 'forgot' ? (
+          resetSent ? (
+            <div className="text-center py-4">
+              <p className="text-white/80 text-sm">Έλεγξε το email σου — στείλαμε ένα reset link.</p>
+              <button
+                onClick={() => { setMode('login'); setResetSent(false); setError('') }}
+                className="text-[#E8A020] hover:underline text-sm mt-4"
+              >
+                Πίσω στο login
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgot} className="space-y-4">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className={inputClass}
+                required
+              />
+              {error && <p className="text-red-400 text-sm">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
+              >
+                {loading ? 'Αποστολή...' : 'Αποστολή reset link →'}
+              </button>
+              <p className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setError('') }}
+                  className="text-white/50 hover:text-white text-sm transition"
+                >
+                  ← Πίσω
+                </button>
+              </p>
+            </form>
+          )
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className={inputClass}
+                required
+              />
+              <div className="space-y-1">
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className={inputClass}
+                  required
+                />
+                {mode === 'login' && (
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => { setMode('forgot'); setError('') }}
+                      className="text-white/40 hover:text-[#E8A020] text-xs transition"
+                    >
+                      Ξέχασα τον κωδικό μου
+                    </button>
+                  </div>
+                )}
+              </div>
+              {mode === 'signup' && (
+                <input
+                  type="password"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className={inputClass}
+                  required
+                />
+              )}
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+              {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
-          >
-            {loading ? 'Loading...' : mode === 'login' ? 'Sign In →' : 'Create Account →'}
-          </button>
-        </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
+              >
+                {loading ? 'Loading...' : mode === 'login' ? 'Sign In →' : 'Create Account →'}
+              </button>
+            </form>
 
-        <p className="text-white/50 text-sm text-center mt-4">
-          {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-          <button
-            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
-            className="text-[#E8A020] hover:underline"
-          >
-            {mode === 'login' ? 'Sign Up' : 'Sign In'}
-          </button>
-        </p>
+            <p className="text-white/50 text-sm text-center mt-4">
+              {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+              <button
+                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
+                className="text-[#E8A020] hover:underline"
+              >
+                {mode === 'login' ? 'Sign Up' : 'Sign In'}
+              </button>
+            </p>
+          </>
+        )}
 
       </div>
     </div>
