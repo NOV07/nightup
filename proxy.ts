@@ -37,7 +37,12 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/onboarding')
+  if (!user && isProtected) {
+    return NextResponse.redirect(new URL('/?message=signin_required', request.url))
+  }
 
   return supabaseResponse
 }
