@@ -27,6 +27,7 @@ const SOCIAL_FIELDS = [
 ]
 
 const VISIBILITY_SECTIONS: Record<string, string[]> = {
+  user: [],
   artist: ['upcoming_events', 'featured_track', 'releases', 'mixes', 'gallery'],
   organizer: ['upcoming_events', 'announcements', 'gallery', 'music_embed', 'booking_info'],
   venue: ['upcoming_events', 'announcements', 'gallery', 'music_embed', 'booking_info'],
@@ -255,6 +256,7 @@ export default function DashboardClient({ profile, events, releases, professiona
   const labelClass = "text-white/50 text-xs mb-1.5 block uppercase tracking-wider"
 
   const profileTypeLabel: Record<string, string> = {
+    user: 'Μέλος',
     organizer: 'Organizer',
     artist: 'Artist / DJ',
     venue: 'Venue',
@@ -330,6 +332,24 @@ export default function DashboardClient({ profile, events, releases, professiona
             )}
           </div>
         </div>
+
+        {/* Upgrade banner — user tier only */}
+        {profile.profile_type === 'user' && (
+          <div className="max-w-6xl mx-auto px-4 py-2.5">
+            <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ backgroundColor: '#0F0F1A', border: '1px solid rgba(232,160,32,0.35)' }}>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                <span style={{ color: '#E8A020', fontWeight: 600 }}>Γίνε Creator</span> — Submit events, network profile, releases
+              </p>
+              <button
+                onClick={() => {}}
+                className="flex-shrink-0 text-xs font-bold px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
+                style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+              >
+                Upgrade
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="max-w-6xl mx-auto px-4 flex gap-1">
@@ -983,6 +1003,40 @@ export default function DashboardClient({ profile, events, releases, professiona
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Consumer sections — user type */}
+            {profile.profile_type === 'user' && (
+              <div className="space-y-6">
+
+                {/* Τελευταία βραδιά */}
+                <div>
+                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Τελευταία βραδιά</h3>
+                  <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-2xl">🌙</p>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις φτιάξει βραδιά ακόμα</p>
+                  </div>
+                </div>
+
+                {/* Saved spots */}
+                <div>
+                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Saved spots</h3>
+                  <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-2xl">📍</p>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει spots ακόμα</p>
+                  </div>
+                </div>
+
+                {/* Saved events */}
+                <div>
+                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Saved events</h3>
+                  <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-2xl">🎟️</p>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει events ακόμα</p>
+                  </div>
+                </div>
+
               </div>
             )}
           </div>
