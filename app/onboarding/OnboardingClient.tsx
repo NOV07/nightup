@@ -47,9 +47,9 @@ export default function OnboardingClient() {
       <div className="w-full max-w-lg">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">
-            Welcome to <span className="text-[#E8A020]">Nightup</span>
+            Καλώς ήρθες στο <span className="text-[#E8A020]">Nightup</span>
           </h1>
-          <p className="text-white/50">Set up your profile to get started</p>
+          <p className="text-white/50">Φτιάξε το προφίλ σου για να ξεκινήσεις</p>
         </div>
 
         <div className="space-y-4">
@@ -63,7 +63,7 @@ export default function OnboardingClient() {
 
           <div>
             <input
-              placeholder="Username (e.g. djvoid)"
+              placeholder="Username (π.χ. djvoid)"
               value={username}
               onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
               className={inputClass}
@@ -72,14 +72,14 @@ export default function OnboardingClient() {
           </div>
 
           <input
-            placeholder="Display Name (e.g. DJ Void)"
+            placeholder="Εμφανιζόμενο όνομα (π.χ. DJ Void)"
             value={displayName}
             onChange={e => setDisplayName(e.target.value)}
             className={inputClass}
           />
 
           <textarea
-            placeholder="Bio (optional)"
+            placeholder="Bio (προαιρετικό)"
             value={bio}
             onChange={e => setBio(e.target.value)}
             rows={3}
@@ -87,7 +87,7 @@ export default function OnboardingClient() {
           />
 
           <input
-            placeholder="Instagram handle (optional)"
+            placeholder="Instagram handle (προαιρετικό)"
             value={instagram}
             onChange={e => setInstagram(e.target.value)}
             className={inputClass}
@@ -101,7 +101,7 @@ export default function OnboardingClient() {
               disabled={loading || !username || !displayName}
               className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Profile →'}
+              {loading ? 'Δημιουργία...' : 'Δημιούργησε προφίλ →'}
             </button>
           </div>
         </div>
