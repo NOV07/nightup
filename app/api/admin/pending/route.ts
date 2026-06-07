@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  const [events, professionals, articles, organizers, releases, mixes, playlists, artists, profiles] = await Promise.all([
+  const [events, professionals, articles, organizers, releases, mixes, playlists, artists, profiles, upgradeRequests] = await Promise.all([
     admin.from('events').select('id, title, venue, city, date, time, genre, price, description, lineup, contact_email, instagram, facebook, tiktok, website, image_url, nightup_pick, is_radar_pick, organizer_id, profile_id, status, created_at').order('created_at', { ascending: false }),
     admin.from('professionals').select('id, name, category, city, description, instagram, facebook, tiktok, website, phone, featured, status, created_at').order('created_at', { ascending: false }),
     admin.from('articles').select('id, title, category, published_at, excerpt, content, hero_image, read_time, series, series_order, slug, word_count, updated_at, tags, status, created_at').order('created_at', { ascending: false }),
@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     admin.from('playlists').select('id, title, platform, embed_url, cover_image, is_sponsored, status, created_at').order('created_at', { ascending: false }),
     admin.from('artists').select('id, name, origin, about, photo, genres, style_tags, spotify_url, soundcloud_url, instagram, website, status, created_at').order('created_at', { ascending: false }),
     admin.from('profiles').select('id, username, display_name, profile_type, avatar_url, is_verified, is_featured, plan_tier, created_at').order('created_at', { ascending: false }),
+    admin.from('upgrade_requests').select('id, user_id, username, email, specialty, bio, status, created_at').order('created_at', { ascending: false }),
   ])
 
   return NextResponse.json({
@@ -34,5 +35,6 @@ export async function GET(req: NextRequest) {
     playlists: playlists.data ?? [],
     artists: artists.data ?? [],
     profiles: profiles.data ?? [],
+    upgrade_requests: upgradeRequests.data ?? [],
   })
 }

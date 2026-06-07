@@ -21,7 +21,7 @@ const RELEASE_TYPES = ["Single", "EP", "Album"];
 const MUSIC_GENRES = ["Techno", "House", "Deep House", "Hip-Hop", "R&B", "Latin", "Afrobeats", "Pop", "Rock", "Laika", "Entechno", "Other"];
 const ORG_TYPES = ["Club", "Promoter", "Festival", "Bar", "Agency", "Venue", "Other"];
 
-type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users";
+type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users" | "upgrades";
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 
@@ -42,6 +42,7 @@ interface AllContent {
   playlists: ContentItem[];
   artists: ContentItem[];
   profiles: ContentItem[];
+  upgrade_requests: any[];
 }
 
 const defaultEventForm = { title: "", image_url: "", genre: "Techno", price: "", date: "", time: "23:00", venue: "", city: "Athens", lineup: "", description: "", ticket_url: "https://tickets.nightup.gr" };
@@ -57,7 +58,7 @@ export default function AdminClient() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("events");
   const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("releases");
-  const [allContent, setAllContent] = useState<AllContent>({ events: [], professionals: [], articles: [], organizers: [], releases: [], mixes: [], playlists: [], artists: [], profiles: [] });
+  const [allContent, setAllContent] = useState<AllContent>({ events: [], professionals: [], articles: [], organizers: [], releases: [], mixes: [], playlists: [], artists: [], profiles: [], upgrade_requests: [] });
   const [assignOrgId, setAssignOrgId] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -538,7 +539,7 @@ export default function AdminClient() {
 
       {/* Tabs */}
       <div className="flex gap-1 px-6 pt-5 pb-0 overflow-x-auto">
-        {(["events", "professionals", "articles", "organizers", "music", "users"] as Tab[]).map((tab) => {
+        {(["events", "professionals", "articles", "organizers", "music", "users", "upgrades"] as Tab[]).map((tab) => {
           const pendingCount = tab === "music" ? totalMusicPending : cnt(allContent[tab as keyof AllContent] as ContentItem[] ?? [], "pending");
           return (
             <button
@@ -622,6 +623,63 @@ export default function AdminClient() {
                   <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color: profile.is_featured ? "#E8A020" : "#555" }}>
                     {profile.is_featured ? "★ Featured" : "Not featured"}
                   </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === "upgrades" && (
+          <div className="space-y-4">
+            <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#666" }}>
+              Creator Upgrade Requests
+            </h2>
+            {allContent.upgrade_requests?.length === 0 && (
+              <p className="text-xs pl-1" style={{ color: "#3a3a4e" }}>No pending requests.</p>
+            )}
+            {allContent.upgrade_requests?.map((req: any) => (
+              <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor: "#111120", border: "1px solid rgba(232,160,32,0.12)" }}>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">@{req.username}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{req.email} · {req.specialty}</p>
+                  <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>{req.bio}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {req.status === 'pending' ? (
+                    <>
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/admin/approve-upgrade', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ request_id: req.id, action: 'approved' }),
+                          })
+                          await fetchContent()
+                        }}
+                        className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80"
+                        style={{ backgroundColor: "#14532d", color: "#86efac" }}
+                      >✅</button>
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/admin/approve-upgrade', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ request_id: req.id, action: 'rejected' }),
+                          })
+                          await fetchContent()
+                        }}
+                        className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80"
+                        style={{ backgroundColor: "#78350f", color: "#fbbf24" }}
+                      >❌</button>
+                    </>
+                  ) : (
+                    <span className="text-xs px-2 py-1 rounded-full" style={{
+                      backgroundColor: req.status === 'approved' ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)",
+                      color: req.status === 'approved' ? "#86efac" : "#fbbf24"
+                    }}>
+                      {req.status === 'approved' ? '✓ Approved' : '✗ Rejected'}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
