@@ -53,7 +53,6 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
   const handleClose = useCallback(() => {
     onClose();
     setMoodOpen(false);
-    try { localStorage.setItem(SEEN_KEY, String(Date.now())); } catch {}
   }, [onClose]);
 
   // Escape to close

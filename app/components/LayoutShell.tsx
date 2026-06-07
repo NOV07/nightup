@@ -13,9 +13,6 @@ import TonightFAB from "./TonightFAB";
 import { useTonightModal } from "./TonightContext";
 import type { Spot } from "../spots/types";
 
-const SEEN_KEY = "nightup_tonight_seen";
-const SEEN_HOURS = 12;
-
 const SPOT_COLS =
   "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, price_level, rating, instagram, is_sponsored";
 
@@ -64,14 +61,9 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       .then(({ data }) => { if (data) setSpots(data.map(mapSpot)); });
   }, []);
 
-  // Auto-open on first visit (or after SEEN_HOURS)
+  // Auto-open on every visit
   useEffect(() => {
-    try {
-      const last = localStorage.getItem(SEEN_KEY);
-      const stale = !last || Date.now() - Number(last) > SEEN_HOURS * 3600 * 1000;
-      if (stale) open();
-    } catch { open(); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    open();
   }, []);
 
   if (isStandalone) {
