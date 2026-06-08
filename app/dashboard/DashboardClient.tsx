@@ -216,7 +216,7 @@ export default function DashboardClient({ profile, events, releases, professiona
           location: form.location,
           avatar_url: form.avatar_url || null,
           cover_url: form.cover_url || null,
-          network_tab: 'Plan Your Event',
+          network_tab: 'Artists',
           network_category: form.network_category || null,
           network_subcategory: form.network_subcategory || null,
         })
@@ -421,7 +421,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   <label className={labelClass}>Network Listing</label>
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.12)', border: '0.5px solid rgba(232,160,32,0.3)', color: '#E8A020' }}>
-                      Plan Your Event
+                      Artists
                     </span>
                   </div>
                   <div>
@@ -433,27 +433,11 @@ export default function DashboardClient({ profile, events, releases, professiona
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                     >
                       <option value="">Select category</option>
-                      {Object.keys(NETWORK['Plan Your Event'])
+                      {Object.keys(NETWORK['Artists'])
                         .filter(c => c !== 'Venues' && c !== 'Music & Artists')
                         .map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
-                  {form.network_category && (
-                    <div>
-                      <label className={labelClass}>Specialization</label>
-                      <select
-                        value={form.network_subcategory}
-                        onChange={e => setForm(p => ({ ...p, network_subcategory: e.target.value }))}
-                        className={inputClass}
-                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
-                      >
-                        <option value="">Select specialization</option>
-                        {((NETWORK['Plan Your Event'] as Record<string, string[]>)[form.network_category] ?? []).map(s => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                   <div>
@@ -672,7 +656,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                     <label className={labelClass}>Network Listing</label>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.12)', border: '0.5px solid rgba(232,160,32,0.3)', color: '#E8A020' }}>
-                        Plan Your Event
+                        Artists
                       </span>
                       <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)' }}>
                         Venues
@@ -682,12 +666,12 @@ export default function DashboardClient({ profile, events, releases, professiona
                       <label className={labelClass}>What type of venue?</label>
                       <select
                         value={form.network_subcategory}
-                        onChange={e => setForm(p => ({ ...p, network_tab: 'Plan Your Event', network_category: 'Venues', network_subcategory: e.target.value }))}
+                        onChange={e => setForm(p => ({ ...p, network_tab: 'Venues', network_category: e.target.value, network_subcategory: '' }))}
                         className={inputClass}
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                       >
                         <option value="">Select venue type</option>
-                        {NETWORK['Plan Your Event']['Venues'].map(s => (
+                        {Object.keys(NETWORK['Venues']).map((s: string) => (
                           <option key={s} value={s}>{s}</option>
                         ))}
                       </select>
@@ -700,7 +684,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   <div className="space-y-3">
                     <label className={labelClass}>Network Listing</label>
                     <div className="flex gap-2">
-                      {(['Plan Your Event', 'For Artists'] as const).map(tab => (
+                      {(['Artists', 'Artists'] as const).map(tab => (
                         <button
                           key={tab}
                           type="button"
@@ -719,7 +703,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                       ))}
                     </div>
 
-                    {form.network_tab === 'Plan Your Event' && (
+                    {form.network_tab === 'Artists' && (
                       <>
                         <div className="flex items-center gap-2">
                           <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)' }}>
@@ -730,12 +714,12 @@ export default function DashboardClient({ profile, events, releases, professiona
                           <label className={labelClass}>Role</label>
                           <select
                             value={form.network_subcategory}
-                            onChange={e => setForm(p => ({ ...p, network_category: 'Music & Artists', network_subcategory: e.target.value }))}
+                            onChange={e => setForm(p => ({ ...p, network_tab: 'Artists', network_category: e.target.value, network_subcategory: '' }))}
                             className={inputClass}
                             style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                           >
                             <option value="">Select role</option>
-                            {NETWORK['Plan Your Event']['Music & Artists'].map(s => (
+                            {Object.keys(NETWORK['Artists']).map((s: string) => (
                               <option key={s} value={s}>{s}</option>
                             ))}
                           </select>
@@ -743,7 +727,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                       </>
                     )}
 
-                    {form.network_tab === 'For Artists' && (
+                    {form.network_tab === 'Artists' && (
                       <>
                         <div>
                           <label className={labelClass}>Category</label>
@@ -754,27 +738,11 @@ export default function DashboardClient({ profile, events, releases, professiona
                             style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                           >
                             <option value="">Select category</option>
-                            {Object.keys(NETWORK['For Artists']).map(c => (
+                            {Object.keys(NETWORK['Artists']).map(c => (
                               <option key={c} value={c}>{c}</option>
                             ))}
                           </select>
                         </div>
-                        {form.network_category && (
-                          <div>
-                            <label className={labelClass}>Specialization</label>
-                            <select
-                              value={form.network_subcategory}
-                              onChange={e => setForm(p => ({ ...p, network_subcategory: e.target.value }))}
-                              className={inputClass}
-                              style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
-                            >
-                              <option value="">Select specialization</option>
-                              {((NETWORK['For Artists'] as Record<string, string[]>)[form.network_category] ?? []).map(s => (
-                                <option key={s} value={s}>{s}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
                       </>
                     )}
                   </div>

@@ -21,8 +21,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const TAB_SLUGS: Record<string, string> = {
-  "plan-your-event": "Plan Your Event",
-  "for-artists": "For Artists",
+  "artists": "Artists",
+  "venues": "Venues",
+  "professionals": "Professionals",
 };
 
 interface Props {
@@ -37,7 +38,7 @@ interface Props {
 export default async function NetworkPage({ searchParams }: Props) {
   const params = await searchParams;
 
-  const tab = TAB_SLUGS[params.tab ?? "plan-your-event"] ?? "Plan Your Event";
+  const tab = TAB_SLUGS[params.tab ?? "artists"] ?? "Artists";
   const category = params.category ?? null;
   const subcategory = params.subcategory ?? null;
   const city = params.city ?? null;

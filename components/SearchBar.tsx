@@ -110,7 +110,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
 
   // Network filters
   const [netCity, setNetCity] = useState(CITIES[0]);
-  const [netSection, setNetSection] = useState<keyof typeof NETWORK>("Plan Your Event");
+  const [netSection, setNetSection] = useState<keyof typeof NETWORK>("Artists");
   const [netCategory, setNetCategory] = useState("");
   const [netSubcategory, setNetSubcategory] = useState("");
 
@@ -208,7 +208,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
 
   const handleNetworkSearch = () => {
     const params = new URLSearchParams();
-    params.set("tab", netSection === "Plan Your Event" ? "plan-your-event" : "for-artists");
+    params.set("tab", netSection === "Artists" ? "artists" : "for-artists");
     if (netCategory) params.set("category", netCategory);
     if (netSubcategory) params.set("subcategory", netSubcategory);
     if (netCity !== CITIES[0]) params.set("city", netCity);
@@ -640,7 +640,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                     </span>
                   )}
                   <span
-                    onClick={() => { setNetCity(CITIES[0]); setNetSection("Plan Your Event"); setNetCategory(""); setNetSubcategory(""); }}
+                    onClick={() => { setNetCity(CITIES[0]); setNetSection("Artists"); setNetCategory(""); setNetSubcategory(""); }}
                     style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
                   >
                     Clear all

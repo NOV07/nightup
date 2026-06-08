@@ -1,340 +1,190 @@
-"use client";
+'use client'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { NETWORK, CITIES } from '../lib/searchData'
 
-// MANUAL STEP: Run this SQL in Supabase SQL Editor if not already done:
-// UPDATE profiles
-// SET network_tab = NULL, network_category = NULL, network_subcategory = NULL
-// WHERE username IN ('organisertest1', 'djnovo');
-
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { NETWORK, CITIES } from "../lib/searchData";
-
-type NetworkTab = "Plan Your Event" | "For Artists";
+type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
 
 interface Profile {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string | null;
-  bio: string | null;
-  location: string | null;
-  network_tab: string | null;
-  network_category: string | null;
-  network_subcategory: string | null;
-  is_featured: boolean | null;
-  is_verified: boolean | null;
+  id: string
+  username: string
+  display_name: string
+  avatar_url: string | null
+  bio: string | null
+  location: string | null
+  network_tab: string | null
+  network_category: string | null
+  network_subcategory: string | null
+  is_featured: boolean | null
+  is_verified: boolean | null
 }
 
-const AMBER = "#F59E0B";
+const GOLD = '#E8A020'
+const SURFACE = '#111120'
+const BORDER = 'rgba(232,160,32,0.12)'
 
-// ─── Profile Card ────────────────────────────────────────────────────────────
+const TAB_META: Record<NetworkTab, { emoji: string; label: string }> = {
+  Artists:       { emoji: '🎵', label: 'Artists' },
+  Venues:        { emoji: '🏛', label: 'Venues' },
+  Professionals: { emoji: '🤝', label: 'Professionals' },
+}
 
 function ProfileCard({ profile }: { profile: Profile }) {
-  const featured = !!profile.is_featured;
+  const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
   return (
     <Link
       href={`/profile/${profile.username}`}
-      className="group block rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
+      className="flex flex-col gap-3 p-4 transition-all hover:opacity-90"
       style={{
-        backgroundColor: "#111120",
-        border: featured
-          ? `1px solid ${AMBER}`
-          : "1px solid rgba(232,160,32,0.12)",
-        boxShadow: featured ? "0 0 18px rgba(245,158,11,0.15)" : "none",
+        backgroundColor: SURFACE,
+        border: `1px solid ${profile.is_featured ? GOLD : BORDER}`,
+        borderRadius: 6,
       }}
     >
-      <div className="p-5">
-        {/* Avatar + name row */}
-        <div className="flex items-start gap-4 mb-3">
+      <div className="flex items-center gap-3">
+        {profile.avatar_url ? (
+          <Image
+            src={profile.avatar_url}
+            alt={profile.display_name}
+            width={48}
+            height={48}
+            className="rounded-full object-cover flex-shrink-0"
+            style={{ border: `1px solid ${BORDER}` }}
+          />
+        ) : (
           <div
-            className="relative flex-shrink-0 rounded-xl overflow-hidden"
-            style={{ width: 52, height: 52, border: `2px solid ${AMBER}` }}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+            style={{ backgroundColor: 'rgba(232,160,32,0.12)', color: GOLD }}
           >
-            {profile.avatar_url ? (
-              <Image
-                src={profile.avatar_url}
-                alt={profile.display_name}
-                fill
-                className="object-cover"
-              />
-            ) : (
-              <div
-                className="w-full h-full flex items-center justify-center text-lg font-bold"
-                style={{ backgroundColor: "#1A1A2E", color: AMBER }}
-              >
-                {profile.display_name[0]?.toUpperCase()}
-              </div>
-            )}
+            {initials}
           </div>
-
-          <div className="flex-1 min-w-0 pt-0.5">
-            <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <p className="font-semibold text-white text-sm leading-tight truncate">
-                {profile.display_name}
-              </p>
-              {profile.is_verified && (
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0"
-                  style={{
-                    backgroundColor: "rgba(232,160,32,0.15)",
-                    color: AMBER,
-                    border: "0.5px solid rgba(232,160,32,0.3)",
-                  }}
-                >
-                  ✓
-                </span>
-              )}
-              {featured && (
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 font-bold"
-                  style={{ backgroundColor: AMBER, color: "#09090f" }}
-                >
-                  ★
-                </span>
-              )}
-            </div>
-
-            {profile.network_subcategory && (
-              <span
-                className="inline-block text-xs px-2.5 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: "rgba(245,158,11,0.1)",
-                  color: AMBER,
-                  border: "0.5px solid rgba(245,158,11,0.25)",
-                }}
-              >
-                {profile.network_subcategory}
-              </span>
-            )}
+        )}
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold text-white text-sm truncate">{profile.display_name}</p>
+            {profile.is_verified && <span style={{ color: GOLD }} className="text-xs">✓</span>}
+            {profile.is_featured && <span style={{ color: GOLD }} className="text-xs">★</span>}
           </div>
-        </div>
-
-        {/* Location */}
-        {profile.location && (
-          <p
-            className="text-xs mb-2.5 flex items-center gap-1"
-            style={{ color: "rgba(255,255,255,0.4)" }}
-          >
-            <span>📍</span>
-            <span>{profile.location}</span>
-          </p>
-        )}
-
-        {/* Bio */}
-        {profile.bio && (
-          <p
-            className="text-xs leading-relaxed line-clamp-2 mb-4"
-            style={{ color: "rgba(255,255,255,0.5)" }}
-          >
-            {profile.bio}
-          </p>
-        )}
-
-        {/* CTA */}
-        <div
-          className="network-profile-btn"
-          style={{
-            display: "block",
-            width: "100%",
-            padding: "10px",
-            textAlign: "center",
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#E8A020",
-            border: "1px solid rgba(232,160,32,0.4)",
-            background: "transparent",
-            textDecoration: "none",
-            marginTop: 16,
-            transition: "background 0.15s, border-color 0.15s",
-          }}
-        >
-          View Profile →
+          {profile.network_subcategory && (
+            <p className="text-xs mt-0.5" style={{ color: GOLD }}>{profile.network_subcategory}</p>
+          )}
         </div>
       </div>
+      {profile.location && (
+        <p className="text-xs text-white/40">📍 {profile.location}</p>
+      )}
+      {profile.bio && (
+        <p className="text-xs text-white/50 line-clamp-2">{profile.bio}</p>
+      )}
+      <p className="text-xs font-medium mt-auto" style={{ color: GOLD }}>Δες προφίλ →</p>
     </Link>
-  );
+  )
 }
 
-// ─── Main client ─────────────────────────────────────────────────────────────
-
 export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const router = useRouter()
+  const params = useSearchParams()
 
-  // Derive filter state from URL — single source of truth
-  const tabSlug = searchParams.get("tab") ?? "plan-your-event";
-  const activeTab: NetworkTab =
-    tabSlug === "for-artists" ? "For Artists" : "Plan Your Event";
-  const activeCategory = searchParams.get("category") ?? "";
-  const activeSubcategory = searchParams.get("subcategory") ?? "";
-  const activeCity = searchParams.get("city") ?? "";
+  const slugToTab: Record<string, NetworkTab> = {
+    artists: 'Artists',
+    venues: 'Venues',
+    professionals: 'Professionals',
+  }
+  const activeTab: NetworkTab = slugToTab[params.get('tab') ?? 'artists'] ?? 'Artists'
+  const activeCategory = params.get('category') || ''
+  const activeCity = params.get('city') || ''
 
-  function pushFilters({
-    tab = activeTab,
-    category = activeCategory,
-    subcategory = activeSubcategory,
-    city = activeCity,
-  }: {
-    tab?: NetworkTab;
-    category?: string;
-    subcategory?: string;
-    city?: string;
-  }) {
-    const p = new URLSearchParams();
-    p.set("tab", tab === "Plan Your Event" ? "plan-your-event" : "for-artists");
-    if (category) p.set("category", category);
-    if (subcategory) p.set("subcategory", subcategory);
-    if (city) p.set("city", city);
-    router.push(`/network?${p}`);
+  function push(overrides: Record<string, string>) {
+    const p = new URLSearchParams()
+    const next = { tab: activeTab, category: activeCategory, city: activeCity, ...overrides }
+    if (next.tab) p.set('tab', next.tab.toLowerCase())
+    if (next.category) p.set('category', next.category)
+    if (next.city) p.set('city', next.city)
+    router.push(`/network?${p.toString()}`)
   }
 
-  const categories = Object.keys(NETWORK[activeTab]);
-  const subcategories = activeCategory
-    ? ((NETWORK[activeTab] as Record<string, string[]>)[activeCategory] ?? [])
-    : [];
-  const hasFilters = !!(activeCategory || activeSubcategory || activeCity);
+  const tabData = NETWORK[activeTab] as Record<string, unknown>
+  const subcategories = tabData ? Object.keys(tabData) : []
+  const hasSubcategories = subcategories.length > 0
 
-  // pill/chip shared style helper
   const pillStyle = (active: boolean) => ({
-    backgroundColor: active ? AMBER : "rgba(255,255,255,0.06)",
-    color: active ? "#09090f" : "rgba(255,255,255,0.5)",
-    border: `1px solid ${active ? AMBER : "rgba(255,255,255,0.1)"}`,
-    cursor: "pointer" as const,
-  });
-
-  const chipStyle = (active: boolean) => ({
-    backgroundColor: active ? "rgba(245,158,11,0.15)" : "transparent",
-    color: active ? AMBER : "rgba(255,255,255,0.4)",
-    border: `1px solid ${active ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.08)"}`,
-    cursor: "pointer" as const,
-  });
+    padding: '0.4rem 1rem',
+    borderRadius: 6,
+    fontSize: '0.8rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    backgroundColor: active ? GOLD : 'transparent',
+    color: active ? '#0F0F1A' : 'rgba(255,255,255,0.5)',
+    border: active ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.08)',
+  })
 
   return (
-    <div style={{ backgroundColor: "#09090f", minHeight: "100vh" }}>
-      {/* ── Hero ── */}
-      <div style={{ padding: "40px 32px 32px", maxWidth: "860px" }}>
-        <h1 style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: "clamp(28px, 4vw, 42px)",
-          fontWeight: 700,
-          color: "#F4F4F5",
-          lineHeight: 1.2,
-          marginBottom: "12px",
-          letterSpacing: "-0.02em",
-        }}>
-          The people behind the night.
+    <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
+
+      {/* Hero */}
+      <div className="max-w-6xl mx-auto px-4 pt-10 pb-6">
+        <h1 className="text-3xl font-semibold text-white mb-2">
+          Βρες τους <span style={{ color: GOLD }}>ανθρώπους της νύχτας</span>
         </h1>
-        <p style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: "15px",
-          color: "rgba(255,255,255,0.45)",
-          lineHeight: 1.6,
-          maxWidth: "480px",
-          margin: 0,
-        }}>
-          Venues, DJs, sound engineers, photographers and studios. Everything you need to build your event or release your music.
+        <p className="text-white/40 text-sm">
+          Artists, venues και professionals — όλοι εδώ.
         </p>
       </div>
 
-      {/* ── Sticky filter bar ── */}
+      {/* Sticky filter bar */}
       <div
-        className="sticky z-30 border-b"
-        style={{
-          top: "56px",
-          backgroundColor: "rgba(9,9,15,0.94)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderColor: "rgba(255,255,255,0.06)",
-        }}
+        className="sticky z-10 border-b"
+        style={{ top: 56, backgroundColor: 'rgba(15,15,26,0.95)', backdropFilter: 'blur(8px)', borderColor: BORDER }}
       >
-        <div className="max-w-7xl mx-auto px-4">
-          {/* Row 1: tab switcher + city dropdown */}
-          <div className="flex items-center justify-between gap-4 py-3">
-            <div className="flex gap-1.5 flex-shrink-0">
-              {(["Plan Your Event", "For Artists"] as NetworkTab[]).map((tab) => (
+        <div className="max-w-6xl mx-auto px-4 py-3 space-y-3">
+
+          {/* Row 1: tabs + city */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex gap-2">
+              {(Object.keys(TAB_META) as NetworkTab[]).map(tab => (
                 <button
                   key={tab}
-                  type="button"
-                  onClick={() =>
-                    pushFilters({ tab, category: "", subcategory: "" })
-                  }
-                  className="text-xs px-4 py-2 rounded-lg font-semibold transition-all"
+                  onClick={() => push({ tab, category: '', city: activeCity })}
                   style={pillStyle(activeTab === tab)}
                 >
-                  {tab}
+                  {TAB_META[tab].emoji} {TAB_META[tab].label}
                 </button>
               ))}
             </div>
-
             <select
               value={activeCity}
-              onChange={(e) =>
-                pushFilters({ city: e.target.value })
-              }
-              className="text-xs rounded-lg px-3 py-2 outline-none cursor-pointer flex-shrink-0"
+              onChange={e => push({ city: e.target.value })}
+              className="text-sm outline-none"
               style={{
-                backgroundColor: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: activeCity ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)",
-                colorScheme: "dark",
-                fontFamily: "var(--font-sans)",
+                backgroundColor: '#111120',
+                color: activeCity ? 'white' : 'rgba(255,255,255,0.4)',
+                border: `1px solid ${BORDER}`,
+                borderRadius: 6,
+                padding: '0.4rem 0.75rem',
               }}
             >
-              <option value="">All Cities</option>
-              {CITIES.slice(1).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              <option value="">Όλες οι πόλεις</option>
+              {CITIES.slice(1).map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
 
-          {/* Row 2: category pills */}
-          <div className="flex items-center gap-2 pb-3 overflow-x-auto no-scrollbar">
-            <button
-              type="button"
-              onClick={() =>
-                pushFilters({ category: "", subcategory: "" })
-              }
-              className="whitespace-nowrap text-xs px-4 py-1.5 rounded-full font-medium transition-all flex-shrink-0"
-              style={pillStyle(!activeCategory)}
-            >
-              All
-            </button>
-            {categories.map((cat) => (
+          {/* Row 2: subcategories */}
+          {hasSubcategories && (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
               <button
-                key={cat}
-                type="button"
-                onClick={() =>
-                  pushFilters({
-                    category: activeCategory === cat ? "" : cat,
-                    subcategory: "",
-                  })
-                }
-                className="whitespace-nowrap text-xs px-4 py-1.5 rounded-full font-medium transition-all flex-shrink-0"
-                style={pillStyle(activeCategory === cat)}
+                onClick={() => push({ category: '' })}
+                style={pillStyle(!activeCategory)}
               >
-                {cat}
+                Όλοι
               </button>
-            ))}
-          </div>
-
-          {/* Row 3: subcategory chips (conditional) */}
-          {activeCategory && subcategories.length > 0 && (
-            <div className="flex items-center gap-2 pb-3 overflow-x-auto no-scrollbar">
-              {subcategories.map((sub) => (
+              {subcategories.map(sub => (
                 <button
                   key={sub}
-                  type="button"
-                  onClick={() =>
-                    pushFilters({
-                      subcategory: activeSubcategory === sub ? "" : sub,
-                    })
-                  }
-                  className="whitespace-nowrap text-xs px-3 py-1 rounded-md transition-all flex-shrink-0"
-                  style={chipStyle(activeSubcategory === sub)}
+                  onClick={() => push({ category: sub })}
+                  style={pillStyle(activeCategory === sub)}
+                  className="whitespace-nowrap"
                 >
                   {sub}
                 </button>
@@ -344,65 +194,44 @@ export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
         </div>
       </div>
 
-      {/* ── Content ── */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Result count + active filter labels */}
-        <p className="text-xs mb-6" style={{ color: "rgba(255,255,255,0.3)" }}>
-          {profiles.length} profile{profiles.length !== 1 ? "s" : ""}
-          {activeCategory && (
-            <>
-              {" in "}
-              <span style={{ color: AMBER }}>{activeCategory}</span>
-            </>
-          )}
-          {activeSubcategory && (
-            <>
-              {" · "}
-              <span style={{ color: AMBER }}>{activeSubcategory}</span>
-            </>
-          )}
-          {activeCity && (
-            <>
-              {" · "}
-              <span style={{ color: AMBER }}>{activeCity}</span>
-            </>
-          )}
-        </p>
+      {/* Results */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+
+        {/* Count + Find button */}
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-xs text-white/30">
+            {profiles.length} {profiles.length === 1 ? 'αποτέλεσμα' : 'αποτελέσματα'}
+            {activeCategory && <span> · {activeCategory}</span>}
+            {activeCity && <span> · {activeCity}</span>}
+          </p>
+          <button
+            className="text-xs font-medium px-3 py-2 transition-opacity hover:opacity-80"
+            style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: GOLD, border: `1px solid rgba(232,160,32,0.25)`, borderRadius: 6 }}
+            onClick={() => {/* modal — coming soon */}}
+          >
+            ✨ Βρες τον κατάλληλο για σένα
+          </button>
+        </div>
 
         {profiles.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {profiles.map((p) => (
-              <ProfileCard key={p.id} profile={p} />
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {profiles.map(p => <ProfileCard key={p.id} profile={p} />)}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <p className="text-xl font-semibold text-white mb-2">
-              No profiles found
-            </p>
-            <p
-              className="text-sm mb-8 max-w-xs"
-              style={{ color: "rgba(255,255,255,0.35)" }}
-            >
-              {hasFilters
-                ? "No one matches these filters yet. Try a broader search."
-                : "No profiles have joined the network yet."}
-            </p>
-            {hasFilters && (
+          <div className="text-center py-20">
+            <p className="text-white/30 text-sm mb-2">Δεν βρέθηκαν αποτελέσματα</p>
+            {(activeCategory || activeCity) && (
               <button
-                type="button"
-                onClick={() =>
-                  pushFilters({ category: "", subcategory: "", city: "" })
-                }
-                className="text-sm px-6 py-2.5 rounded-xl font-medium transition-opacity hover:opacity-80"
-                style={{ backgroundColor: AMBER, color: "#09090f" }}
+                onClick={() => push({ category: '', city: '' })}
+                className="text-xs hover:underline mt-2"
+                style={{ color: GOLD }}
               >
-                Clear filters
+                Καθαρισμός φίλτρων
               </button>
             )}
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }
