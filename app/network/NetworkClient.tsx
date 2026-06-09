@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -97,17 +97,7 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
   const activeCategory = params.get('category') || ''
   const activeCity = params.get('city') || ''
 
-  const [showGuided, setShowGuided] = useState(false)
-
-  useEffect(() => {
-    try {
-      const seen = localStorage.getItem('nightup_network_guided_seen')
-      if (!seen) {
-        setShowGuided(true)
-        localStorage.setItem('nightup_network_guided_seen', '1')
-      }
-    } catch { setShowGuided(true) }
-  }, [])
+  const [showGuided, setShowGuided] = useState(true)
 
   function push(overrides: Record<string, string>) {
     const p = new URLSearchParams()
@@ -144,7 +134,7 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
 
       {/* Hero */}
       <div className="max-w-6xl mx-auto px-4 pt-10 pb-6">
-        <div className="flex items-end justify-between gap-4 mb-0">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-0">
           <div>
             <h1 className="text-3xl font-semibold text-white mb-2">
               The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
@@ -159,7 +149,7 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
               className="text-sm font-semibold px-4 py-2 transition-opacity hover:opacity-80 flex-shrink-0"
               style={{ backgroundColor: GOLD, color: '#0F0F1A', borderRadius: 6 }}
             >
-              ✦ Build your vibe
+              ✦ Τι ετοιμάζεις;
             </button>
           </div>
         </div>
@@ -174,7 +164,7 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
 
           {/* Row 1: tabs + city */}
           <div className="flex items-center justify-between gap-3">
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none flex-shrink-0">
               {(Object.keys(TAB_META) as NetworkTab[]).map(tab => (
                 <button
                   key={tab}
@@ -188,7 +178,7 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
             <select
               value={activeCity}
               onChange={e => push({ city: e.target.value })}
-              className="text-sm outline-none"
+              className="text-sm outline-none flex-shrink-0"
               style={{
                 backgroundColor: '#111120',
                 color: activeCity ? 'white' : 'rgba(255,255,255,0.4)',
@@ -229,20 +219,13 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
       {/* Results */}
       <div className="max-w-6xl mx-auto px-4 py-6">
 
-        {/* Count + Find button */}
-        <div className="flex items-center justify-between mb-5">
+        {/* Count */}
+        <div className="mb-5">
           <p className="text-xs text-white/30">
             {profiles.length} {profiles.length === 1 ? 'αποτέλεσμα' : 'αποτελέσματα'}
             {activeCategory && <span> · {activeCategory}</span>}
             {activeCity && <span> · {activeCity}</span>}
           </p>
-          <button
-            className="text-xs font-medium px-3 py-2 transition-opacity hover:opacity-80"
-            style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: GOLD, border: `1px solid rgba(232,160,32,0.25)`, borderRadius: 6 }}
-            onClick={() => {/* modal — coming soon */}}
-          >
-            ✨ Βρες τον κατάλληλο για σένα
-          </button>
         </div>
 
         {profiles.length > 0 ? (
