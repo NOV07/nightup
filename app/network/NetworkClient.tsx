@@ -1,10 +1,8 @@
 'use client'
-import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { NETWORK, CITIES } from '../lib/searchData'
-import NetworkGuidedModal from '@/components/network/NetworkGuidedModal'
 
 type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
 
@@ -84,7 +82,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
   )
 }
 
-export default function NetworkClient({ profiles, allProfiles }: { profiles: Profile[]; allProfiles: Profile[] }) {
+export default function NetworkClient({ profiles }: { profiles: Profile[]; allProfiles?: Profile[] }) {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -96,8 +94,6 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
   const activeTab: NetworkTab = slugToTab[params.get('tab') ?? 'artists'] ?? 'Artists'
   const activeCategory = params.get('category') || ''
   const activeCity = params.get('city') || ''
-
-  const [showGuided, setShowGuided] = useState(true)
 
   function push(overrides: Record<string, string>) {
     const p = new URLSearchParams()
@@ -142,15 +138,6 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
             <p className="text-white/40 text-sm">
               Artists, venues και professionals — όλοι εδώ.
             </p>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <button
-              onClick={() => setShowGuided(true)}
-              className="text-sm font-semibold px-4 py-2 transition-opacity hover:opacity-80 flex-shrink-0"
-              style={{ backgroundColor: GOLD, color: '#0F0F1A', borderRadius: 6 }}
-            >
-              ✦ Τι ετοιμάζεις;
-            </button>
           </div>
         </div>
       </div>
@@ -247,7 +234,6 @@ export default function NetworkClient({ profiles, allProfiles }: { profiles: Pro
           </div>
         )}
       </div>
-      {showGuided && <NetworkGuidedModal onClose={() => setShowGuided(false)} profiles={allProfiles} />}
     </div>
   )
 }

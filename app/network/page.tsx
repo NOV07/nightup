@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { getSupabase } from "../lib/supabase";
 import NetworkClient from "./NetworkClient";
+import { NetworkProfilesProvider } from "../components/NetworkProfilesContext";
 
 export const metadata: Metadata = {
   title: "Network",
@@ -70,5 +71,9 @@ export default async function NetworkPage({ searchParams }: Props) {
     .order("is_featured", { ascending: false, nullsFirst: false })
     .limit(300);
 
-  return <NetworkClient profiles={profiles ?? []} allProfiles={allProfiles ?? []} />;
+  return (
+    <NetworkProfilesProvider profiles={allProfiles ?? []}>
+      <NetworkClient profiles={profiles ?? []} allProfiles={allProfiles ?? []} />
+    </NetworkProfilesProvider>
+  );
 }

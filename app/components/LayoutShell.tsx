@@ -61,9 +61,16 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       .then(({ data }) => { if (data) setSpots(data.map(mapSpot)); });
   }, []);
 
-  // Auto-open on every visit
+  // Auto-open on first visit only
   useEffect(() => {
-    open();
+    try {
+      if (!localStorage.getItem('nightup_tonight_seen')) {
+        localStorage.setItem('nightup_tonight_seen', '1')
+        open()
+      }
+    } catch {
+      open()
+    }
   }, []);
 
   if (isStandalone) {
