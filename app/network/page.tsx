@@ -62,5 +62,13 @@ export default async function NetworkPage({ searchParams }: Props) {
 
   const { data: profiles } = await query;
 
-  return <NetworkClient profiles={profiles ?? []} />;
+  // Unfiltered fetch — all network profiles, for the guided modal
+  const { data: allProfiles } = await supabase
+    .from("profiles")
+    .select("id, username, display_name, avatar_url, bio, location, network_tab, network_category, network_subcategory, is_featured, is_verified")
+    .not("network_tab", "is", null)
+    .order("is_featured", { ascending: false, nullsFirst: false })
+    .limit(300);
+
+  return <NetworkClient profiles={profiles ?? []} allProfiles={allProfiles ?? []} />;
 }

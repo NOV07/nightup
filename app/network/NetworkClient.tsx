@@ -1,8 +1,10 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { NETWORK, CITIES } from '../lib/searchData'
+import NetworkGuidedModal from '@/components/network/NetworkGuidedModal'
 
 type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
 
@@ -82,7 +84,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
   )
 }
 
-export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
+export default function NetworkClient({ profiles, allProfiles }: { profiles: Profile[]; allProfiles: Profile[] }) {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -95,6 +97,18 @@ export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
   const activeCategory = params.get('category') || ''
   const activeCity = params.get('city') || ''
 
+  const [showGuided, setShowGuided] = useState(false)
+
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('nightup_network_guided_seen')
+      if (!seen) {
+        setShowGuided(true)
+        localStorage.setItem('nightup_network_guided_seen', '1')
+      }
+    } catch { setShowGuided(true) }
+  }, [])
+
   function push(overrides: Record<string, string>) {
     const p = new URLSearchParams()
     const next = { tab: activeTab, category: activeCategory, city: activeCity, ...overrides }
@@ -105,7 +119,12 @@ export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
   }
 
   const tabData = NETWORK[activeTab] as Record<string, unknown>
-  const subcategories = tabData ? Object.keys(tabData) : []
+
+  // For Professionals, flatten "For Events" and "For Artists" sub-groups into one list
+  const subcategories = activeTab === 'Professionals'
+    ? Object.values(tabData).flatMap(group => Object.keys(group as Record<string, unknown>))
+    : tabData ? Object.keys(tabData) : []
+
   const hasSubcategories = subcategories.length > 0
 
   const pillStyle = (active: boolean) => ({
@@ -125,12 +144,25 @@ export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
 
       {/* Hero */}
       <div className="max-w-6xl mx-auto px-4 pt-10 pb-6">
-        <h1 className="text-3xl font-semibold text-white mb-2">
-          Βρες τους <span style={{ color: GOLD }}>ανθρώπους της νύχτας</span>
-        </h1>
-        <p className="text-white/40 text-sm">
-          Artists, venues και professionals — όλοι εδώ.
-        </p>
+        <div className="flex items-end justify-between gap-4 mb-0">
+          <div>
+            <h1 className="text-3xl font-semibold text-white mb-2">
+              The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
+            </h1>
+            <p className="text-white/40 text-sm">
+              Artists, venues και professionals — όλοι εδώ.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={() => setShowGuided(true)}
+              className="text-sm font-semibold px-4 py-2 transition-opacity hover:opacity-80 flex-shrink-0"
+              style={{ backgroundColor: GOLD, color: '#0F0F1A', borderRadius: 6 }}
+            >
+              ✦ Build your vibe
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Sticky filter bar */}
@@ -232,6 +264,7 @@ export default function NetworkClient({ profiles }: { profiles: Profile[] }) {
           </div>
         )}
       </div>
+      {showGuided && <NetworkGuidedModal onClose={() => setShowGuided(false)} profiles={allProfiles} />}
     </div>
   )
 }

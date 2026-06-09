@@ -3,15 +3,24 @@ export { CITIES, GENRES } from "./searchConstants";
 export const NETWORK = {
   "Artists": {
     "DJ": [],
-    "Live Act": [],
-    "Singer": [],
-    "MC": [],
+    "Τραγουδιστής": [],
+    "Μπάντα": [],
+    "Οργανοπαίχτης": [],
   },
   "Venues": {},
   "Professionals": {
-    "Φωτογράφος / Videographer": [],
-    "Sound & Lighting": [],
-    "Catering": [],
-    "Decoration": [],
+    "For Events": {
+      "Φωτογράφος / Videographer": [],
+      "Sound & Lighting": [],
+      "Catering": [],
+      "Decoration": [],
+    },
+    "For Artists": {
+      "Studio / Rehearsal": [],
+      "Producer / Beatmaker": [],
+      "Mix & Master Engineer": [],
+      "Video Director": [],
+      "Booking Agent / Manager": [],
+    },
   },
 } as const
