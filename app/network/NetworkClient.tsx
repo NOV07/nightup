@@ -144,6 +144,9 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
               Artists, venues και professionals — όλοι εδώ.
             </p>
           </div>
+          <Link href="/network/listings" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+            Αγγελίες →
+          </Link>
         </div>
       </div>
 
