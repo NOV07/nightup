@@ -35,6 +35,15 @@ export const CITY_LABELS: Record<string, string> = {
   "Rest of Greece": "Υπόλοιπη Ελλάδα",
 };
 
+// Greek display labels for select GENRES values. Values stay in English
+// for DB matching/filtering — only the displayed text is translated.
+export const GENRE_LABELS: Record<string, string> = {
+  "Laïká": "Λαϊκά",
+  "Entechno": "Έντεχνο",
+  "Rebetika": "Ρεμπέτικα",
+  "Other": "Άλλο",
+};
+
 export const GENRES: string[] = [
   "All",
   "Techno",

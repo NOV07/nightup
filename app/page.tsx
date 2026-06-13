@@ -213,7 +213,7 @@ export default async function HomePage() {
             fontFamily: "var(--font-sans)", fontSize: "11px",
             color: "var(--text-muted)", letterSpacing: "0.05em",
             textDecoration: "none",
-          }}>View all →</Link>
+          }}>Δες όλα →</Link>
         </div>
         <EventTabs thisWeekCards={allThisWeekCards} hotPopularCards={hotPopularCards} />
       </section>

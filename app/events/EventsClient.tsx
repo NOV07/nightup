@@ -10,7 +10,7 @@ import CompactEventItem from "../components/CompactEventItem";
 import { useLanguage } from "../components/LanguageContext";
 import EventsFilterModal, { EventsFilterResult } from "@/components/EventsFilterModal";
 
-import { CITIES, GENRES, CITY_LABELS } from "../lib/searchConstants";
+import { CITIES, GENRES, CITY_LABELS, GENRE_LABELS } from "../lib/searchConstants";
 
 interface Event {
   id: string;
@@ -315,7 +315,7 @@ export default function EventsClient({
                 border: `1px solid ${genre === g ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.06)"}`,
               }}
             >
-              {g === "All" ? "Όλα" : g}
+              {g === "All" ? "Όλα" : GENRE_LABELS[g] ?? g}
             </button>
           ))}
         </div>
@@ -503,7 +503,7 @@ export default function EventsClient({
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--font-sans)" }}>
-                    {labels.near} · {nearbyCity}
+                    {labels.near} · {CITY_LABELS[nearbyCity] ?? nearbyCity}
                   </p>
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-sans)" }}>
                     {nearYouCount > 0

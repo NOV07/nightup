@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import EventCard from "../../components/EventCard";
 
-import { CITIES, GENRES } from "../../lib/searchConstants";
+import { CITIES, GENRES, GENRE_LABELS } from "../../lib/searchConstants";
 const PAGE_SIZE = 12;
 
 interface Event {
@@ -122,7 +122,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
                 border: `1px solid ${genre === g ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
               }}
             >
-              {g}
+              {g === "All" ? "Όλα" : GENRE_LABELS[g] ?? g}
             </button>
           ))}
         </div>
