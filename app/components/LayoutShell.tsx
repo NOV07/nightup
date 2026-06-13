@@ -40,9 +40,13 @@ function mapSpot(s: any): Spot {
 // Routes that render full-screen with no nav/footer/players
 const STANDALONE_ROUTES = ["/coming-soon"];
 
+// Routes that provide their own bottom FAB and hide the global TonightFAB
+const HIDE_TONIGHT_FAB_ROUTES = ["/events"];
+
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isStandalone = STANDALONE_ROUTES.some((r) => pathname.startsWith(r));
+  const hideTonightFAB = HIDE_TONIGHT_FAB_ROUTES.some((r) => pathname === r);
   const { isOpen, open, close } = useTonightModal();
   const [spots, setSpots] = useState<Spot[]>([]);
 
@@ -85,7 +89,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <Chatbot />
       <RadioStrip />
       <MusicPlayerBar />
-      <TonightFAB />
+      {!hideTonightFAB && <TonightFAB />}
       <TonightModal open={isOpen} onClose={close} spots={spots} />
     </>
   );

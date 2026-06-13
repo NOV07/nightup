@@ -11,7 +11,7 @@ export default function TonightFAB() {
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   const lastY = useRef(0);
   const pathname = usePathname();
-  const isNetwork = pathname === "/network" || pathname?.startsWith("/network");
+  const isNetwork = (pathname === "/network" || pathname?.startsWith("/network")) && !pathname?.startsWith("/network/listings");
   const networkProfiles = useNetworkProfiles();
 
   useEffect(() => {

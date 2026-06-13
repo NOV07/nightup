@@ -46,11 +46,12 @@ interface Props {
 }
 
 export default function NetworkGuidedModal({ onClose, profiles }: Props) {
-  const [step, setStep] = useState<'intent' | 'have' | 'missing' | 'results'>('intent')
+  const [step, setStep] = useState<'intent' | 'have' | 'missing' | 'location' | 'results'>('intent')
   const [intent, setIntent] = useState<'event' | 'artist' | null>(null)
   const [have, setHave] = useState<Set<string>>(new Set())
   const [missing, setMissing] = useState<Item[]>([])
   const [activeItem, setActiveItem] = useState<Item | null>(null)
+  const [selectedCity, setSelectedCity] = useState<string>('all')
 
   function selectIntent(i: 'event' | 'artist') {
     setIntent(i)
@@ -75,17 +76,31 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
 
   function selectMissingItem(item: Item) {
     setActiveItem(item)
+    setStep('location')
+  }
+
+  function selectCity(value: string) {
+    setSelectedCity(value)
     setStep('results')
   }
 
-  // Filter profiles for the selected item
+  // Filter profiles for the selected item, then sort by city match + featured
   const filteredProfiles = activeItem
-    ? profiles.filter(p => {
-        if (!p.network_tab) return false
-        if (p.network_tab !== activeItem.tab) return false
-        if (activeItem.category && p.network_category !== activeItem.category) return false
-        return true
-      })
+    ? profiles
+        .filter(p => {
+          if (!p.network_tab) return false
+          if (p.network_tab !== activeItem.tab) return false
+          if (activeItem.category && p.network_category !== activeItem.category) return false
+          return true
+        })
+        .sort((a, b) => {
+          const cityMatch = (p: Profile) =>
+            selectedCity === 'all' ? 0 :
+            p.location?.toLowerCase().includes(selectedCity.toLowerCase()) ? -1 : 1
+          const aScore = (a.is_featured ? -10 : 0) + cityMatch(a)
+          const bScore = (b.is_featured ? -10 : 0) + cityMatch(b)
+          return aScore - bScore
+        })
     : []
 
   const items = intent === 'event' ? EVENT_ITEMS : ARTIST_ITEMS
@@ -134,9 +149,9 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
 
           {/* Step indicator */}
           <div className="flex gap-2 mt-4 mb-6">
-            {['intent', 'have', 'missing', 'results'].map((s, i) => (
+            {['intent', 'have', 'missing', 'location', 'results'].map((s, i) => (
               <div key={s} className="h-1 flex-1 rounded-full" style={{
-                backgroundColor: ['intent', 'have', 'missing', 'results'].indexOf(step) >= i ? GOLD : 'rgba(255,255,255,0.1)'
+                backgroundColor: ['intent', 'have', 'missing', 'location', 'results'].indexOf(step) >= i ? GOLD : 'rgba(255,255,255,0.1)'
               }} />
             ))}
           </div>
@@ -236,10 +251,39 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
             </>
           )}
 
-          {/* STEP 4 — Results inside modal */}
-          {step === 'results' && activeItem && (
+          {/* STEP 4 — Location */}
+          {step === 'location' && (
             <>
               <button onClick={() => setStep('missing')} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
+                ← Πίσω
+              </button>
+              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Πού ψάχνεις;</h2>
+              <p className="text-white/40 text-sm mb-4">Θα δώσουμε προτεραιότητα σε προφίλ κοντά σου.</p>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Αθήνα', value: 'Athens' },
+                  { label: 'Θεσσαλονίκη', value: 'Thessaloniki' },
+                  { label: 'Όλη η Ελλάδα', value: 'all' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => selectCity(opt.value)}
+                    className="flex flex-col items-center text-center gap-2 py-5 px-3 transition-all"
+                    style={tileStyle(false)}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(232,160,32,0.15)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.055)' }}
+                  >
+                    <span className="text-white text-sm font-semibold">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* STEP 5 — Results inside modal */}
+          {step === 'results' && activeItem && (
+            <>
+              <button onClick={() => { setStep('location'); setSelectedCity('all') }} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
                 ← Πίσω
               </button>
               <div className="flex items-center gap-2 mb-1">

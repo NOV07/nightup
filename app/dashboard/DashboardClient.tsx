@@ -53,7 +53,7 @@ const SECTION_LABELS: Record<string, string> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
 
-export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings }: {
+export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests }: {
   profile: any
   events: any[]
   releases: any[]
@@ -63,6 +63,8 @@ export default function DashboardClient({ profile, events, releases, professiona
   upcomingEvents?: any[]
   followedProfiles?: any[]
   listings?: any[]
+  receivedInterests?: any[]
+  sentInterests?: any[]
 }) {
   const router = useRouter()
   const supabase = createBrowserClient(
@@ -1247,6 +1249,72 @@ export default function DashboardClient({ profile, events, releases, professiona
                 </button>
               )}
             </div>
+
+            {/* ── Ενδιαφερόμενοι ── */}
+            {(receivedInterests ?? []).length > 0 && (
+              <div>
+                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  Ενδιαφερόμενοι ({receivedInterests!.length})
+                </h3>
+                <div className="space-y-2">
+                  {receivedInterests!.map((interest: any) => {
+                    const actor = interest.profiles
+                    const listing = interest.listings
+                    const initials = (actor?.display_name ?? '?').slice(0, 2).toUpperCase()
+                    return (
+                      <div key={interest.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ backgroundColor: 'rgba(232,160,32,0.15)', color: '#E8A020' }}>
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white font-medium truncate">{actor?.display_name}</p>
+                          <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            Ενδιαφέρθηκε για «{listing?.title}»
+                          </p>
+                        </div>
+                        <a
+                          href={`/profile/${actor?.username}`}
+                          target="_blank"
+                          className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                        >
+                          Προφίλ →
+                        </a>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Έχω εκφράσει ενδιαφέρον ── */}
+            {(sentInterests ?? []).length > 0 && (
+              <div>
+                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  Έχω εκφράσει ενδιαφέρον ({sentInterests!.length})
+                </h3>
+                <div className="space-y-2">
+                  {sentInterests!.map((interest: any) => {
+                    const listing = interest.listings
+                    const owner = listing?.profiles
+                    return (
+                      <div key={interest.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white font-medium truncate">{listing?.title}</p>
+                          <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            {listing?.role && <span>{listing.role} · </span>}
+                            {owner?.display_name}
+                          </p>
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020' }}>
+                          ✓ Εστάλη
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

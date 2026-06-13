@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FiMapPin } from "react-icons/fi";
+import { FiMapPin, FiFilter } from "react-icons/fi";
 import EventCard from "../components/EventCard";
 import HotEventCard from "../components/HotEventCard";
 import CompactEventItem from "../components/CompactEventItem";
 import { useLanguage } from "../components/LanguageContext";
+import EventsFilterModal, { EventsFilterResult } from "@/components/EventsFilterModal";
 
 import { CITIES, GENRES } from "../lib/searchConstants";
 
@@ -41,6 +42,26 @@ function getWeekend(): { fri: string; sun: string } {
     sun: sun.toISOString().split("T")[0],
   };
 }
+
+function getTomorrow(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+}
+
+function getNearestSaturday(): string {
+  const now = new Date();
+  const day = now.getDay();
+  const sat = new Date(now);
+  sat.setDate(now.getDate() + ((6 - day + 7) % 7));
+  return sat.toISOString().split("T")[0];
+}
+
+const MODAL_CITY_MAP: Record<string, string> = {
+  "Αθήνα": "Athens",
+  "Θεσσαλονίκη": "Thessaloniki",
+  "Όλη η Ελλάδα": "All Cities",
+};
 
 function groupByDay(evts: Event[]): Record<string, Event[]> {
   const groups: Record<string, Event[]> = {};
@@ -92,6 +113,12 @@ export default function EventsClient({
   const [city, setCity]   = useState("All Cities");
   const [dateFilter, setDateFilter] = useState("");
   const [query, setQuery] = useState("");
+
+  // ── Filter modal ─────────────────────────────────────────────
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [modalWhen, setModalWhen] = useState<string | null>(null);
+  const [modalMood, setModalMood] = useState<string | null>(null);
+  const [modalCity, setModalCity] = useState<string | null>(null);
 
   useEffect(() => {
     const q = searchParams.get("q");
@@ -148,6 +175,41 @@ export default function EventsClient({
 
   const isFiltering = genre !== "All" || city !== "All Cities" || dateFilter || query;
 
+  // ── Filter modal handlers ────────────────────────────────────
+  function handleApplyFilters(result: EventsFilterResult) {
+    if (result.when === "Απόψε") setDateFilter(today);
+    else if (result.when === "Αύριο") setDateFilter(getTomorrow());
+    else if (result.when === "Σαββατοκύριακο") setDateFilter(getNearestSaturday());
+    setModalWhen(result.when);
+
+    setCity(MODAL_CITY_MAP[result.city] ?? "All Cities");
+    setModalCity(result.city === "Όλη η Ελλάδα" ? null : result.city);
+
+    setModalMood(result.mood);
+  }
+
+  function clearModalWhen() {
+    setDateFilter("");
+    setModalWhen(null);
+  }
+
+  function clearModalCity() {
+    setCity("All Cities");
+    setModalCity(null);
+  }
+
+  function clearModalMood() {
+    setModalMood(null);
+  }
+
+  function clearAllModalFilters() {
+    clearModalWhen();
+    clearModalCity();
+    clearModalMood();
+  }
+
+  const hasModalFilters = !!(modalWhen || modalMood || modalCity);
+
   const labels = {
     hot:     t("events_section_hot"),
     popular: t("events_section_popular"),
@@ -164,6 +226,46 @@ export default function EventsClient({
         <h1 className="text-3xl font-semibold mb-2">{t("events_hero_title")}</h1>
         <p className="text-gray-400">{t("events_hero_body")}</p>
       </div>
+
+      {/* ── Modal filter chips ───────────────────────────────── */}
+      {hasModalFilters && (
+        <div className="flex items-center gap-2 flex-wrap mb-6 animate-fade-up">
+          {modalWhen && (
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
+              style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}
+            >
+              {modalWhen}
+              <button onClick={clearModalWhen} aria-label="Καθαρισμός ημερομηνίας" className="leading-none">×</button>
+            </span>
+          )}
+          {modalMood && (
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
+              style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}
+            >
+              {modalMood}
+              <button onClick={clearModalMood} aria-label="Καθαρισμός mood" className="leading-none">×</button>
+            </span>
+          )}
+          {modalCity && (
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
+              style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}
+            >
+              {modalCity}
+              <button onClick={clearModalCity} aria-label="Καθαρισμός πόλης" className="leading-none">×</button>
+            </span>
+          )}
+          <button
+            onClick={clearAllModalFilters}
+            className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors hover:bg-white/5"
+            style={{ color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            Καθαρισμός
+          </button>
+        </div>
+      )}
 
       {/* ── Filters ───────────────────────────────────────── */}
       <div
@@ -427,6 +529,38 @@ export default function EventsClient({
             </Link>
           </div>
         </div>
+      )}
+
+      {/* ── Filter modal trigger ─────────────────────────────── */}
+      <button
+        onClick={() => setShowFilterModal(true)}
+        style={{
+          position: "fixed",
+          bottom: 28,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 150,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "12px 20px",
+          borderRadius: 6,
+          backgroundColor: "#E8A020",
+          color: "#0F0F1A",
+          fontWeight: 700,
+          fontSize: 13,
+          border: "none",
+          cursor: "pointer",
+          boxShadow: "0 4px 24px rgba(232,160,32,0.35)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <FiFilter size={15} />
+        Events
+      </button>
+
+      {showFilterModal && (
+        <EventsFilterModal onClose={() => setShowFilterModal(false)} onApply={handleApplyFilters} />
       )}
     </div>
   );

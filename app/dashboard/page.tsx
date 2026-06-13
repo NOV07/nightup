@@ -85,6 +85,24 @@ export default async function DashboardPage() {
     _interest_count: l.listing_interests?.[0]?.count ?? 0,
   }))
 
+  // Who expressed interest in my listings
+  const { data: receivedInterests } = profile.profile_type !== 'user'
+    ? await supabase
+        .from('listing_interests')
+        .select('id, created_at, listing_id, listings(title, role), profiles!profile_id(id, username, display_name, avatar_url, network_tab, network_category)')
+        .in('listing_id', (listings ?? []).map((l: any) => l.id))
+        .order('created_at', { ascending: false })
+    : { data: [] }
+
+  // Interests I have expressed on others' listings
+  const { data: sentInterests } = profile.profile_type !== 'user'
+    ? await supabase
+        .from('listing_interests')
+        .select('id, created_at, listing_id, listings(id, title, role, type, profiles(display_name, username))')
+        .eq('profile_id', profile.id)
+        .order('created_at', { ascending: false })
+    : { data: [] }
+
   const today = new Date().toISOString().split('T')[0]
   const upcomingEvents = (savedEvents ?? [])
     .filter((e: any) => e?.date && e.date >= today)
@@ -102,6 +120,8 @@ export default async function DashboardPage() {
       upcomingEvents={upcomingEvents}
       followedProfiles={followedProfiles}
       listings={listings ?? []}
+      receivedInterests={receivedInterests ?? []}
+      sentInterests={sentInterests ?? []}
     />
   )
 }
