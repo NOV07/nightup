@@ -7,7 +7,8 @@ import Image from 'next/image'
 import ImageUpload from '../../components/ui/ImageUpload'
 import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import UpgradeModal from '@/components/auth/UpgradeModal'
-import { NETWORK } from '../lib/searchData'
+import { NETWORK, CITIES } from '../lib/searchData'
+import ConsumerDashboard from './ConsumerDashboard'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance', 'Hip-Hop', 'R&B', 'Afrobeats', 'Reggaeton', 'Laika', 'Entechno', 'Rebetiko', 'Dimotika', 'Rock', 'Jazz', 'Classical', 'Blues', 'Electronic', 'Ambient', 'Experimental', 'Other']
 
@@ -50,15 +51,18 @@ const SECTION_LABELS: Record<string, string> = {
   booking_availability: 'Booking Availability',
 }
 
-type Tab = 'profile' | 'content' | 'visibility' | 'settings'
+type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
 
-export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots }: {
+export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings }: {
   profile: any
   events: any[]
   releases: any[]
   professional: any
   savedEvents?: any[]
   savedSpots?: any[]
+  upcomingEvents?: any[]
+  followedProfiles?: any[]
+  listings?: any[]
 }) {
   const router = useRouter()
   const supabase = createBrowserClient(
@@ -73,6 +77,20 @@ export default function DashboardClient({ profile, events, releases, professiona
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
+
+  // Listings state
+  const [listingItems, setListingItems] = useState<any[]>(listings ?? [])
+  const [showListingForm, setShowListingForm] = useState(false)
+  const [editingListingId, setEditingListingId] = useState<string | null>(null)
+  const [listingSubmitting, setListingSubmitting] = useState(false)
+  const [listingForm, setListingForm] = useState<{
+    type: 'seeking' | 'offering'
+    role: string
+    title: string
+    description: string
+    city: string
+    date_needed: string
+  }>({ type: 'seeking', role: '', title: '', description: '', city: '', date_needed: '' })
 
   // Shared profile form state (all user types)
   const [form, setForm] = useState({
@@ -256,6 +274,51 @@ export default function DashboardClient({ profile, events, releases, professiona
     }
   }
 
+  function handleListingEdit(listing: any) {
+    setEditingListingId(listing.id)
+    setListingForm({
+      type:        listing.type,
+      role:        listing.role,
+      title:       listing.title,
+      description: listing.description ?? '',
+      city:        listing.city        ?? '',
+      date_needed: listing.date_needed ?? '',
+    })
+    setShowListingForm(true)
+  }
+
+  async function handleListingDelete(id: string) {
+    const res = await fetch(`/api/listings/${id}`, { method: 'DELETE' })
+    if (res.ok) setListingItems(prev => prev.filter((l: any) => l.id !== id))
+  }
+
+  async function handleListingSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setListingSubmitting(true)
+
+    const method = editingListingId ? 'PATCH' : 'POST'
+    const url    = editingListingId ? `/api/listings/${editingListingId}` : '/api/listings'
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(listingForm),
+    })
+    const data = await res.json()
+    setListingSubmitting(false)
+
+    if (res.ok) {
+      if (editingListingId) {
+        setListingItems(prev => prev.map((l: any) => l.id === editingListingId ? data : l))
+      } else {
+        setListingItems(prev => [data, ...prev])
+      }
+      setShowListingForm(false)
+      setEditingListingId(null)
+      setListingForm({ type: 'seeking', role: '', title: '', description: '', city: '', date_needed: '' })
+    }
+  }
+
   const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[#E8A020] text-sm"
   const labelClass = "text-white/50 text-xs mb-1.5 block uppercase tracking-wider"
 
@@ -270,6 +333,7 @@ export default function DashboardClient({ profile, events, releases, professiona
   const tabs: { key: Tab; label: string }[] = [
     { key: 'profile', label: 'Profile' },
     ...(!isPro ? [{ key: 'content' as Tab, label: 'Content' }] : []),
+    { key: 'listings', label: 'Αγγελίες' },
     { key: 'visibility', label: 'Visibility' },
     { key: 'settings', label: 'Settings' },
   ]
@@ -294,6 +358,48 @@ export default function DashboardClient({ profile, events, releases, professiona
       {error && <span className="text-sm text-red-400">{error}</span>}
     </div>
   )
+
+  // Free users get the consumer view — no tabs
+  if (profile.profile_type === 'user') {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
+        <div className="border-b" style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: 'rgba(15,15,26,0.95)' }}>
+          <div className="px-4 py-4 flex items-center gap-4" style={{ maxWidth: 680, margin: '0 auto' }}>
+            {form.avatar_url ? (
+              <div className="relative w-9 h-9 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '2px solid #E8A020' }}>
+                <Image src={form.avatar_url} alt={form.display_name} fill className="object-cover" />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ backgroundColor: '#1A1A2E', border: '2px solid #E8A020', color: '#E8A020' }}>
+                {form.display_name[0]?.toUpperCase()}
+              </div>
+            )}
+            <div>
+              <p className="text-white text-sm font-medium">{form.display_name}</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username} · Μέλος</p>
+            </div>
+          </div>
+        </div>
+        <ConsumerDashboard
+          name={profile.display_name || profile.username || 'φίλε'}
+          savedEvents={savedEvents ?? []}
+          upcomingEvents={upcomingEvents ?? []}
+          savedSpots={savedSpots ?? []}
+          followedProfiles={followedProfiles ?? []}
+        />
+        <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px', marginTop: 40, borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>Είσαι επαγγελματίας; </span>
+          <button
+            onClick={() => setShowUpgrade(true)}
+            style={{ color: '#E8A020', fontSize: 13, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            Φτιάξε προφίλ creator →
+          </button>
+        </div>
+        {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
@@ -978,96 +1084,169 @@ export default function DashboardClient({ profile, events, releases, professiona
               </div>
             )}
 
-            {/* Consumer sections — user type */}
-            {profile.profile_type === 'user' && (
-              <div className="space-y-6">
+          </div>
+        )}
 
-                {/* Τελευταία βραδιά */}
-                <div>
-                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Τελευταία βραδιά</h3>
-                  <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-2xl">🌙</p>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις φτιάξει βραδιά ακόμα</p>
+        {/* ══ TAB: LISTINGS ══ */}
+        {activeTab === 'listings' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                Αγγελίες ({listingItems.length})
+              </h3>
+
+              {listingItems.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {listingItems.map((listing: any) => (
+                    <div key={listing.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{listing.title}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                          {[listing.role, listing.city].filter(Boolean).join(' · ')}
+                        </p>
+                      </div>
+                      <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
+                        backgroundColor: listing.is_active ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
+                        color: listing.is_active ? '#4ade80' : 'rgba(255,255,255,0.3)',
+                      }}>
+                        {listing.is_active ? 'Ενεργή' : 'Ανενεργή'}
+                      </span>
+                      {listing._interest_count > 0 && (
+                        <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020' }}>
+                          {listing._interest_count} ενδιαφέρον{listing._interest_count !== 1 ? 'τες' : ''}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleListingEdit(listing)}
+                        className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                      >
+                        Επεξεργασία
+                      </button>
+                      <button
+                        onClick={() => handleListingDelete(listing.id)}
+                        className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                      >
+                        Διαγραφή
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showListingForm && (
+                <form onSubmit={handleListingSubmit} className="p-5 rounded-2xl space-y-4 mb-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                  <h4 className="text-sm font-semibold text-white">
+                    {editingListingId ? 'Επεξεργασία αγγελίας' : 'Νέα αγγελία'}
+                  </h4>
+
+                  {/* Type toggle */}
+                  <div className="flex gap-2">
+                    {(['seeking', 'offering'] as const).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setListingForm(prev => ({ ...prev, type: t }))}
+                        className="text-xs px-3 py-2 rounded-lg transition-all"
+                        style={{
+                          backgroundColor: listingForm.type === t ? '#E8A020' : 'rgba(255,255,255,0.05)',
+                          color: listingForm.type === t ? '#0F0F1A' : 'rgba(255,255,255,0.45)',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {t === 'seeking' ? 'Ζητώ' : 'Προσφέρω'}
+                      </button>
+                    ))}
                   </div>
-                </div>
 
-                {/* Saved spots */}
-                <div>
-                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                    Saved spots {savedSpots && savedSpots.length > 0 && `(${savedSpots.length})`}
-                  </h3>
-                  {!savedSpots || savedSpots.length === 0 ? (
-                    <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-2xl">📍</p>
-                      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει spots ακόμα</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {savedSpots.map((spot: any) => (
-                        <Link
-                          key={spot.id}
-                          href={`/spots/${spot.slug}`}
-                          className="flex items-center gap-3 p-3 rounded-xl transition-opacity hover:opacity-80"
-                          style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}
-                        >
-                          {spot.cover_image && (
-                            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                              <Image src={spot.cover_image} alt={spot.name} fill className="object-cover" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{spot.name}</p>
-                            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                              {[spot.category, spot.neighborhood].filter(Boolean).join(' · ')}
-                            </p>
-                          </div>
-                          {spot.rating && (
-                            <span className="text-xs flex-shrink-0" style={{ color: '#E8A020' }}>★ {spot.rating}</span>
-                          )}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  <div>
+                    <label className={labelClass}>Ρόλος</label>
+                    <input
+                      value={listingForm.role}
+                      onChange={e => setListingForm(prev => ({ ...prev, role: e.target.value }))}
+                      placeholder="π.χ. DJ, Photographer, Sound Engineer"
+                      className={inputClass}
+                      required
+                    />
+                  </div>
 
-                {/* Saved events */}
-                <div>
-                  <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                    Saved events {savedEvents && savedEvents.length > 0 && `(${savedEvents.length})`}
-                  </h3>
-                  {!savedEvents || savedEvents.length === 0 ? (
-                    <div className="p-8 rounded-2xl text-center space-y-2" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-2xl">🎟️</p>
-                      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Δεν έχεις αποθηκεύσει events ακόμα</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {savedEvents.map((event: any) => (
-                        <Link
-                          key={event.id}
-                          href={`/events/${event.id}`}
-                          className="flex items-center gap-3 p-3 rounded-xl transition-opacity hover:opacity-80"
-                          style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}
-                        >
-                          {event.image_url && (
-                            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                              <Image src={event.image_url} alt={event.title} fill className="object-cover" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{event.title}</p>
-                            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                              {event.date ? new Date(event.date).toLocaleDateString('el-GR', { day: 'numeric', month: 'short' }) : ''}{event.venue ? ` · ${event.venue}` : ''}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  <div>
+                    <label className={labelClass}>Τίτλος</label>
+                    <input
+                      value={listingForm.title}
+                      onChange={e => setListingForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="π.χ. Ζητώ DJ για event στις 20 Ιουλίου"
+                      className={inputClass}
+                      required
+                    />
+                  </div>
 
-              </div>
-            )}
+                  <div>
+                    <label className={labelClass}>Περιγραφή</label>
+                    <textarea
+                      value={listingForm.description}
+                      onChange={e => setListingForm(prev => ({ ...prev, description: e.target.value }))}
+                      rows={3}
+                      className={`${inputClass} resize-none`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Πόλη</label>
+                    <select
+                      value={listingForm.city}
+                      onChange={e => setListingForm(prev => ({ ...prev, city: e.target.value }))}
+                      className={inputClass}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
+                    >
+                      <option value="">Επιλέξτε πόλη</option>
+                      {CITIES.slice(1).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Ημερομηνία (προαιρετικό)</label>
+                    <input
+                      type="date"
+                      value={listingForm.date_needed}
+                      onChange={e => setListingForm(prev => ({ ...prev, date_needed: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setShowListingForm(false); setEditingListingId(null) }}
+                      className="flex-1 py-2 rounded-lg text-sm"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', border: '0.5px solid rgba(255,255,255,0.1)' }}
+                    >
+                      Ακύρωση
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={listingSubmitting}
+                      className="flex-1 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
+                      style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+                    >
+                      {listingSubmitting ? 'Αποθήκευση...' : (editingListingId ? 'Αποθήκευση' : 'Δημοσίευση')}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {!showListingForm && (
+                <button
+                  onClick={() => { setEditingListingId(null); setListingForm({ type: 'seeking', role: '', title: '', description: '', city: '', date_needed: '' }); setShowListingForm(true) }}
+                  className="text-xs px-4 py-2.5 rounded-xl w-full transition-opacity hover:opacity-80"
+                  style={{ border: '1px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', backgroundColor: 'transparent', cursor: 'pointer' }}
+                >
+                  + Νέα αγγελία
+                </button>
+              )}
+            </div>
           </div>
         )}
 

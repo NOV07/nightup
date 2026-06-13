@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getSupabase } from "../lib/supabase";
 import NetworkClient from "./NetworkClient";
 import { NetworkProfilesProvider } from "../components/NetworkProfilesContext";
+import type { Listing } from "@/components/network/ListingsBar";
 
 export const metadata: Metadata = {
   title: "Network",
@@ -63,6 +64,17 @@ export default async function NetworkPage({ searchParams }: Props) {
 
   const { data: profiles } = await query;
 
+  // Listings bar — top 10 active, sponsored first
+  const { data: listingsRaw } = await supabase
+    .from("listings")
+    .select("*, profiles(display_name, username)")
+    .eq("is_active", true)
+    .order("is_sponsored", { ascending: false })
+    .order("created_at",   { ascending: false })
+    .limit(10);
+
+  const listings = (listingsRaw ?? []) as Listing[];
+
   // Unfiltered fetch — all network profiles, for the guided modal
   const { data: allProfiles } = await supabase
     .from("profiles")
@@ -73,7 +85,7 @@ export default async function NetworkPage({ searchParams }: Props) {
 
   return (
     <NetworkProfilesProvider profiles={allProfiles ?? []}>
-      <NetworkClient profiles={profiles ?? []} allProfiles={allProfiles ?? []} />
+      <NetworkClient profiles={profiles ?? []} allProfiles={allProfiles ?? []} listings={listings} />
     </NetworkProfilesProvider>
   );
 }

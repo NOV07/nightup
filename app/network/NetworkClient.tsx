@@ -3,6 +3,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { NETWORK, CITIES } from '../lib/searchData'
+import FollowButton from '@/components/ui/FollowButton'
+import ListingsBar, { type Listing } from '@/components/network/ListingsBar'
 
 type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
 
@@ -69,6 +71,9 @@ function ProfileCard({ profile }: { profile: Profile }) {
           {profile.network_subcategory && (
             <p className="text-xs mt-0.5" style={{ color: GOLD }}>{profile.network_subcategory}</p>
           )}
+          <div className="mt-2">
+            <FollowButton profileId={profile.id} />
+          </div>
         </div>
       </div>
       {profile.location && (
@@ -82,7 +87,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
   )
 }
 
-export default function NetworkClient({ profiles }: { profiles: Profile[]; allProfiles?: Profile[] }) {
+export default function NetworkClient({ profiles, listings = [] }: { profiles: Profile[]; allProfiles?: Profile[]; listings?: Listing[] }) {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -141,6 +146,13 @@ export default function NetworkClient({ profiles }: { profiles: Profile[]; allPr
           </div>
         </div>
       </div>
+
+      {/* Listings Bar */}
+      {listings.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 pb-6">
+          <ListingsBar listings={listings} />
+        </div>
+      )}
 
       {/* Sticky filter bar */}
       <div

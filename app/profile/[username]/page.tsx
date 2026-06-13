@@ -38,6 +38,7 @@ export default async function ProfilePage({ params }: Props) {
     .single()
 
   if (error || !profile) notFound()
+  if (profile.profile_type === 'user') notFound()
 
   const visibility = profile.section_visibility ?? {}
 

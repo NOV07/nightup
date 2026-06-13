@@ -10,6 +10,7 @@ import SignOutButton from '../../components/auth/SignOutButton'
 import NavSearch from "./NavSearch"
 import SearchBar, { type SearchTab } from "../../components/SearchBar"
 import { useTonightModal } from "./TonightContext"
+import NotificationBell from "../../components/ui/NotificationBell"
 
 function NightwavesIcon() {
   return (
@@ -102,6 +103,7 @@ export default function Navbar() {
           </Link>
           <div className="flex items-center gap-2">
             <LangToggle compact />
+            {user && <NotificationBell />}
             <button
               onClick={() => { handleTabClick("search"); setOpen(false); }}
               className="p-2 rounded-lg transition-colors"
@@ -171,6 +173,7 @@ export default function Navbar() {
             </div>
             {user ? (
               <div className="flex items-center gap-2 ml-2">
+                <NotificationBell />
                 <Link href="/dashboard" className="text-xs px-3 py-2 rounded-lg transition" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Dashboard
                 </Link>
