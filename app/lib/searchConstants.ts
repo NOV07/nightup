@@ -17,6 +17,24 @@ export const CITIES: string[] = [
   "Rest of Greece",
 ];
 
+// Greek display labels for CITIES values. Values stay in English for DB
+// matching/filtering — only the displayed text is translated.
+export const CITY_LABELS: Record<string, string> = {
+  "All Cities": "Όλες οι πόλεις",
+  "Athens": "Αθήνα",
+  "Thessaloniki": "Θεσσαλονίκη",
+  "Mykonos": "Μύκονος",
+  "Santorini": "Σαντορίνη",
+  "Heraklion": "Ηράκλειο",
+  "Patras": "Πάτρα",
+  "Rhodes": "Ρόδος",
+  "Ios": "Ίος",
+  "Corfu": "Κέρκυρα",
+  "Zakynthos": "Ζάκυνθος",
+  "Crete": "Κρήτη",
+  "Rest of Greece": "Υπόλοιπη Ελλάδα",
+};
+
 export const GENRES: string[] = [
   "All",
   "Techno",

@@ -132,7 +132,7 @@ function subChipStyle(active: boolean): React.CSSProperties {
     whiteSpace: "nowrap", fontSize: 12.5, fontWeight: 600,
     color: active ? "#F5B335" : "#A1A1AA",
     background: active ? "rgba(232,160,32,0.12)" : "#1A1A28",
-    border: `1px solid ${active ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.05)"}`,
-    padding: "7px 13px", borderRadius: 6, cursor: "pointer", transition: "all .2s",
+    border: `1px solid ${active ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.06)"}`,
+    padding: "7px 14px", borderRadius: 6, cursor: "pointer", transition: "all .2s",
   };
 }

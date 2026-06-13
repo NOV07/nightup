@@ -2,7 +2,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { NETWORK, CITIES } from '../lib/searchData'
+import { NETWORK, CITIES, CITY_LABELS } from '../lib/searchData'
 import FollowButton from '@/components/ui/FollowButton'
 import ListingsBar, { type Listing } from '@/components/network/ListingsBar'
 
@@ -119,15 +119,16 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
   const hasSubcategories = subcategories.length > 0
 
   const pillStyle = (active: boolean) => ({
-    padding: '0.4rem 1rem',
+    padding: '7px 14px',
     borderRadius: 6,
-    fontSize: '0.8rem',
-    fontWeight: 500,
+    fontSize: 12.5,
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
     cursor: 'pointer',
-    transition: 'all 0.15s',
-    backgroundColor: active ? GOLD : 'transparent',
-    color: active ? '#0F0F1A' : 'rgba(255,255,255,0.5)',
-    border: active ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.08)',
+    transition: 'all .2s',
+    backgroundColor: active ? 'rgba(232,160,32,0.12)' : '#1A1A28',
+    color: active ? '#F5B335' : '#A1A1AA',
+    border: active ? '1px solid rgba(232,160,32,0.15)' : '1px solid rgba(255,255,255,0.06)',
   })
 
   return (
@@ -180,17 +181,18 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
             <select
               value={activeCity}
               onChange={e => push({ city: e.target.value })}
-              className="text-sm outline-none flex-shrink-0"
+              className="outline-none flex-shrink-0"
               style={{
-                backgroundColor: '#111120',
+                backgroundColor: '#1A1A28',
                 color: activeCity ? 'white' : 'rgba(255,255,255,0.4)',
-                border: `1px solid ${BORDER}`,
+                border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: 6,
+                fontSize: '0.8rem',
                 padding: '0.4rem 0.75rem',
               }}
             >
               <option value="">Όλες οι πόλεις</option>
-              {CITIES.slice(1).map(c => <option key={c}>{c}</option>)}
+              {CITIES.slice(1).map(c => <option key={c} value={c}>{CITY_LABELS[c] ?? c}</option>)}
             </select>
           </div>
 

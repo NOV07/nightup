@@ -155,7 +155,7 @@ export default async function HomePage() {
       title: e.title,
       subtitle: `${e.venue} · ${e.city}`,
       meta: [new Date(e.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }), e.venue, e.price ? `From ${e.price}` : "Free entry"],
-      ctaLabel: "Get tickets",
+      ctaLabel: "Εισιτήρια",
       ctaHref: `/events/${e.id}`,
       image: e.image || undefined,
       bgColor: "linear-gradient(160deg,#0e1520,#080f18)",

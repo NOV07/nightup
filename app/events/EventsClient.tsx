@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FiMapPin, FiFilter } from "react-icons/fi";
+import { FiMapPin } from "react-icons/fi";
 import EventCard from "../components/EventCard";
 import HotEventCard from "../components/HotEventCard";
 import CompactEventItem from "../components/CompactEventItem";
 import { useLanguage } from "../components/LanguageContext";
 import EventsFilterModal, { EventsFilterResult } from "@/components/EventsFilterModal";
 
-import { CITIES, GENRES } from "../lib/searchConstants";
+import { CITIES, GENRES, CITY_LABELS } from "../lib/searchConstants";
 
 interface Event {
   id: string;
@@ -284,10 +284,10 @@ export default function EventsClient({
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="px-3 py-2 rounded-xl text-sm outline-none cursor-pointer focus-gold"
-            style={{ backgroundColor: "#0d0d1a", color: "#fff", border: "1px solid rgba(232,160,32,0.15)" }}
+            className="outline-none cursor-pointer focus-gold"
+            style={{ borderRadius: 6, padding: "0.4rem 0.75rem", fontSize: "0.8rem", backgroundColor: "#1A1A28", color: city !== "All Cities" ? "white" : "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}
           >
-            {CITIES.map((c) => <option key={c}>{c}</option>)}
+            {CITIES.map((c) => <option key={c} value={c}>{CITY_LABELS[c] ?? c}</option>)}
           </select>
           <input
             type="date"
@@ -302,14 +302,20 @@ export default function EventsClient({
             <button
               key={g}
               onClick={() => setGenre(g)}
-              className="whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all flex-shrink-0"
+              className="flex-shrink-0"
               style={{
-                backgroundColor: genre === g ? "#E8A020" : "#111120",
-                color: genre === g ? "#0F0F1A" : "rgba(255,255,255,0.45)",
-                border: `1px solid ${genre === g ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
+                borderRadius: 6,
+                padding: "7px 14px",
+                fontSize: 12.5,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                transition: "all .2s",
+                backgroundColor: genre === g ? "rgba(232,160,32,0.12)" : "#1A1A28",
+                color: genre === g ? "#F5B335" : "#A1A1AA",
+                border: `1px solid ${genre === g ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.06)"}`,
               }}
             >
-              {g}
+              {g === "All" ? "Όλα" : g}
             </button>
           ))}
         </div>
@@ -525,7 +531,7 @@ export default function EventsClient({
               className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105"
               style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
             >
-              View All Events →
+              Δες όλα τα events →
             </Link>
           </div>
         </div>
@@ -539,24 +545,25 @@ export default function EventsClient({
           bottom: 28,
           left: "50%",
           transform: "translateX(-50%)",
-          zIndex: 150,
+          zIndex: 200,
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "12px 20px",
-          borderRadius: 6,
-          backgroundColor: "#E8A020",
-          color: "#0F0F1A",
+          padding: "10px 22px",
+          borderRadius: 999,
+          background: "linear-gradient(135deg, #E8A020, #F5B335)",
+          color: "#0A0A12",
           fontWeight: 700,
           fontSize: 13,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
           border: "none",
           cursor: "pointer",
           boxShadow: "0 4px 24px rgba(232,160,32,0.35)",
           whiteSpace: "nowrap",
         }}
       >
-        <FiFilter size={15} />
-        Events
+        <span style={{ fontSize: 14 }}>✦</span> Βρες events
       </button>
 
       {showFilterModal && (

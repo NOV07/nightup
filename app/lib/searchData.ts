@@ -1,4 +1,4 @@
-export { CITIES, GENRES } from "./searchConstants";
+export { CITIES, GENRES, CITY_LABELS } from "./searchConstants";
 
 export const NETWORK = {
   "Artists": {

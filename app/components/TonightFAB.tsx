@@ -59,7 +59,7 @@ export default function TonightFAB() {
         }}
         className="tonight-fab"
       >
-        <span style={{ fontSize: 14 }}>✦</span> {isNetwork ? "Τι ετοιμάζεις;" : "Plan Your Exit"}
+        <span style={{ fontSize: 14 }}>✦</span> {isNetwork ? "Τι ετοιμάζεις;" : "Βρες τη βραδιά σου"}
       </button>
       {isNetwork && showNetworkModal && (
         <NetworkGuidedModal onClose={() => setShowNetworkModal(false)} profiles={networkProfiles} />
