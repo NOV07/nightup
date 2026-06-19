@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
+import { toast } from "sonner";
 import type { Spot } from "../spots/types";
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80";
@@ -24,6 +26,8 @@ export default function SpotCard({
   initialSaved?: boolean;
 }) {
   const [saved, setSaved] = useState(initialSaved ?? false);
+  const pathname = usePathname();
+  const router = useRouter();
   const img = spot.coverImage || PLACE;
 
   async function handleSave(e: React.MouseEvent) {
@@ -33,11 +37,22 @@ export default function SpotCard({
     setSaved(next);
     try {
       if (next) {
-        await fetch('/api/saved/spots', {
+        const res = await fetch('/api/saved/spots', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ spot_id: String(spot.id) }),
         });
+        if (res.status === 401) {
+          setSaved(false);
+          toast('Συνδέσου για να το αποθηκεύσεις', {
+            duration: 5000,
+            action: {
+              label: 'Σύνδεση',
+              onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
+            },
+          });
+          return;
+        }
       } else {
         await fetch(`/api/saved/spots?spot_id=${spot.id}`, { method: 'DELETE' });
       }

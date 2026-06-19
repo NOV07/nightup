@@ -7,6 +7,7 @@ import { getSupabase } from "./lib/supabase";
 import FadeInObserver from "./components/FadeInObserver";
 import HeroSlider from "./components/HeroSlider";
 import NightwavesHomeCard from "./components/NightwavesHomeCard";
+import { formatPrice } from "./lib/formatPrice";
 
 export const dynamic = "force-dynamic";
 
@@ -151,10 +152,10 @@ export default async function HomePage() {
     ...([...hotCards].slice(0, 2).map((e: any) => ({
       id: e.id,
       type: "event" as const,
-      eyebrow: "Event of the week",
+      eyebrow: "ΕΚΔΗΛΩΣΗ ΤΗΣ ΕΒΔΟΜΑΔΑΣ",
       title: e.title,
       subtitle: `${e.venue} · ${e.city}`,
-      meta: [new Date(e.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }), e.venue, e.price ? `From ${e.price}` : "Free entry"],
+      meta: [new Date(e.date).toLocaleDateString("el-GR", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).toUpperCase(), e.venue, formatPrice(e.price) || "είσοδος ελεύθερη"],
       ctaLabel: "Εισιτήρια",
       ctaHref: `/events/${e.id}`,
       image: e.image || undefined,
@@ -496,7 +497,8 @@ export default async function HomePage() {
               ? `/nightwaves/playlist/${r.id}`
               : `/nightwaves/release/${r.id}`,
             external: false,
-            soundcloudUrl: r._contentType === "mix" ? r.soundcloud_url : undefined,
+            soundcloudUrl: r._contentType !== "playlist" ? r.soundcloud_url : undefined,
+            spotifyUrl: r._contentType === "release" ? r.spotify_url : undefined,
             type: (r._contentType === "mix" ? "mix" : r._contentType === "playlist" ? "playlist" : "release") as "mix" | "release" | "playlist",
           })).map((item, i) => (
             <NightwavesHomeCard
@@ -509,6 +511,7 @@ export default async function HomePage() {
               href={item.href}
               external={item.external}
               soundcloudUrl={item.soundcloudUrl}
+              spotifyUrl={item.spotifyUrl}
               type={item.type}
               transitionDelay={`${i * 0.08}s`}
             />

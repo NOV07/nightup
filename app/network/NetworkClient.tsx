@@ -167,7 +167,7 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
 
           {/* Row 1: tabs + city */}
           <div className="flex items-center justify-between gap-3">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none flex-shrink-0">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none min-w-0 flex-1">
               {(Object.keys(TAB_META) as NetworkTab[]).map(tab => (
                 <button
                   key={tab}
@@ -198,23 +198,35 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
 
           {/* Row 2: subcategories */}
           {hasSubcategories && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              <button
-                onClick={() => push({ category: '' })}
-                style={pillStyle(!activeCategory)}
-              >
-                Όλοι
-              </button>
-              {subcategories.map(sub => (
+            <div className="relative">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <button
-                  key={sub}
-                  onClick={() => push({ category: sub })}
-                  style={pillStyle(activeCategory === sub)}
-                  className="whitespace-nowrap"
+                  onClick={() => push({ category: '' })}
+                  style={pillStyle(!activeCategory)}
                 >
-                  {sub}
+                  Όλοι
                 </button>
-              ))}
+                {subcategories.map(sub => (
+                  <button
+                    key={sub}
+                    onClick={() => push({ category: sub })}
+                    style={pillStyle(activeCategory === sub)}
+                    className="whitespace-nowrap"
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+              {/* Fade-out gradient indicating more content to scroll */}
+              <div
+                className="sm:hidden"
+                style={{
+                  position: 'absolute', top: 0, right: 0,
+                  width: 32, height: 'calc(100% - 4px)',
+                  background: 'linear-gradient(to right, transparent, rgba(15,15,26,0.95))',
+                  pointerEvents: 'none',
+                }}
+              />
             </div>
           )}
         </div>

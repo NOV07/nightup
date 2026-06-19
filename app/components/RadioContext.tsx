@@ -3,6 +3,7 @@
 import {
   createContext, useContext, useState, useRef, useCallback, useEffect, ReactNode,
 } from "react";
+import { radioPause, playerPause } from "./audioCoordinator";
 
 export type RadioStatus = "idle" | "buffering" | "playing" | "paused" | "error";
 
@@ -115,6 +116,23 @@ export function RadioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { stationRef.current = currentStation; }, [currentStation]);
   useEffect(() => { statusRef.current  = status;         }, [status]);
+
+  // Register this context's pause callback so PlayerContext can pause radio
+  // without a direct import of useRadio (which would be circular).
+  useEffect(() => {
+    radioPause.fn = () => {
+      if (globalTimerRef.current) { clearTimeout(globalTimerRef.current); globalTimerRef.current = null; }
+      if (urlTimerRef.current)    { clearTimeout(urlTimerRef.current);    urlTimerRef.current    = null; }
+      if (audioRef.current) {
+        const wasBuffering = statusRef.current === "buffering";
+        audioRef.current.pause();
+        // The "pause" DOM event only updates status when status === "playing".
+        // If we were still buffering we must set it manually.
+        if (wasBuffering) setStatus("paused");
+      }
+    };
+    return () => { radioPause.fn = () => {}; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     volumeRef.current = volume;
     if (audioRef.current) audioRef.current.volume = isMutedRef.current ? 0 : volume;
@@ -147,6 +165,9 @@ export function RadioProvider({ children }: { children: ReactNode }) {
 
   // ── Core play engine ──────────────────────────────────────────────────────
   const createAndPlay = useCallback((station: Station, urlIndex = 0) => {
+    // Pause any track playing in PlayerContext before starting radio.
+    if (urlIndex === 0) playerPause.fn();
+
     // Clear per-URL timer first (safe regardless of urlIndex)
     if (urlTimerRef.current) { clearTimeout(urlTimerRef.current); urlTimerRef.current = null; }
     closeSse();
@@ -261,6 +282,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
       if (statusRef.current === "playing") {
         audioRef.current?.pause();
       } else if (audioRef.current) {
+        playerPause.fn();
         setStatus("buffering");
         audioRef.current.play().catch(() => createAndPlay(station));
       } else {
@@ -282,6 +304,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
     if (statusRef.current === "playing") {
       audioRef.current?.pause();
     } else if (audioRef.current) {
+      playerPause.fn();
       setStatus("buffering");
       audioRef.current.play().catch(() => createAndPlay(station));
     } else {

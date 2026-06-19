@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
+import { formatPrice } from '../../lib/formatPrice'
 import EventHeroImage from '../../components/EventHeroImage'
 
 export const dynamic = 'force-dynamic'
@@ -46,9 +47,7 @@ export default async function EventPage({ params }: Props) {
     ? event.lineup.split(',').map((s: string) => s.trim()).filter(Boolean)
     : []
 
-  // Price: numeric display
-  const priceNum = event.price ? parseFloat(String(event.price).replace(/[^0-9.]/g, '')) : 0
-  const priceLabel = priceNum > 0 ? `€${priceNum}` : 'Free'
+  const priceLabel = formatPrice(event.price) || "είσοδος ελεύθερη"
 
   const formattedDate = event.date
     ? new Date(event.date).toLocaleDateString('en-GB', {

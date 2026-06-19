@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import SpotCard from "../components/SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, type Spot, type SpotCategory } from "./types";
+import { SpotCategoryIcon } from "../lib/spotIcons";
 
 export default function SpotsClient({ spots }: { spots: Spot[] }) {
   const [active, setActive] = useState<SpotCategory>("drink");
@@ -32,12 +33,11 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
   return (
     <div style={{ background: "#0F0F1A", minHeight: "100vh" }}>
       <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 24px" }}>
-        <div style={{ position: "relative", padding: "54px 0 30px", overflow: "hidden" }}>
-          <div style={{ position: "absolute", width: 340, height: 340, borderRadius: "50%", background: "#E8A020", opacity: 0.07, filter: "blur(80px)", top: -160, left: -80 }} />
-          <h1 style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 700, fontSize: 46, letterSpacing: "-1.4px", lineHeight: 1, position: "relative" }}>
-            Πού πάμε <em style={{ fontStyle: "italic", fontWeight: 600, color: "#E8A020" }}>απόψε;</em>
+        <div style={{ position: "relative", padding: "32px 0", overflow: "hidden" }}>
+<h1 style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 600, fontSize: 30, lineHeight: 1.25, marginBottom: 8, position: "relative" }}>
+            Πού πάμε <em style={{ fontStyle: "italic", color: "#E8A020" }}>απόψε;</em>
           </h1>
-          <p style={{ color: "#A1A1AA", fontSize: 16, marginTop: 14, maxWidth: 540, lineHeight: 1.55 }}>
+          <p style={{ color: "#9CA3AF", fontSize: 16, maxWidth: 540, lineHeight: 1.55 }}>
             Όλα τα spots της Αθήνας — φαγητό, ποτό, νύχτα, θέαμα και άλλα. Διάλεξε κατηγορία και βρες πού να πας.
           </p>
         </div>
@@ -61,7 +61,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                   transition: "all .25s cubic-bezier(.22,.61,.36,1)",
                 }}
               >
-                {c.emoji} {c.label}
+                <SpotCategoryIcon category={c.key} size={14} /> {c.label}
               </button>
             );
           })}
@@ -79,7 +79,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
               style={{ padding: "40px 0 8px", scrollMarginTop: 130 }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-                <span style={{ fontSize: 26 }}>{c.emoji}</span>
+                <SpotCategoryIcon category={c.key} size={22} />
                 <span style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 600, fontSize: 27, letterSpacing: "-0.5px" }}>{c.label}</span>
                 <span style={{ fontSize: 13, color: "#71717A", fontWeight: 500, marginLeft: "auto" }}>{items.length} spots</span>
               </div>

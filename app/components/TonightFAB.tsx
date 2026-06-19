@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useTonightModal } from "./TonightContext";
 import NetworkGuidedModal from "@/components/network/NetworkGuidedModal";
 import { useNetworkProfiles } from "./NetworkProfilesContext";
+import { usePlayerStore } from "./PlayerContext";
 
 export default function TonightFAB() {
   const { open, isOpen } = useTonightModal();
@@ -13,6 +14,7 @@ export default function TonightFAB() {
   const pathname = usePathname();
   const isNetwork = (pathname === "/network" || pathname?.startsWith("/network")) && !pathname?.startsWith("/network/listings");
   const networkProfiles = useNetworkProfiles();
+  const { currentTrack } = usePlayerStore();
 
   useEffect(() => {
     function onScroll() {
@@ -57,7 +59,7 @@ export default function TonightFAB() {
             : "translateX(-50%) translateY(0)",
           transition: "opacity 0.3s ease, transform 0.35s cubic-bezier(.22,.61,.36,1)",
         }}
-        className="tonight-fab"
+        className={`tonight-fab${currentTrack ? ' tonight-fab-has-track' : ''}`}
       >
         <span style={{ fontSize: 14 }}>✦</span> {isNetwork ? "Τι ετοιμάζεις;" : "Βρες τη βραδιά σου"}
       </button>

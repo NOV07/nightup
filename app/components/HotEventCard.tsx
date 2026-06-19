@@ -3,20 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
+import { toast } from "sonner";
 import { RadarBadge } from "./RadarBadge";
+import { formatPrice } from "../lib/formatPrice";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
-
-function formatPrice(price: string | number | null | undefined): string {
-  if (price === 0 || price === null || price === undefined || price === "") return "Free";
-  const s = String(price).trim();
-  if (/^(free|δωρεάν)$/i.test(s)) return "Free";
-  const num = s.replace(/^[€$]/, "");
-  if (!/^\d/.test(num)) return num;
-  return `€${num}`;
-}
 
 interface HotEventCardProps {
   id: string;
@@ -39,6 +33,8 @@ export default function HotEventCard({
   variant = "large", initialSaved,
 }: HotEventCardProps) {
   const [saved, setSaved] = useState(initialSaved ?? false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   async function handleSave(e: React.MouseEvent) {
     e.preventDefault();
@@ -47,11 +43,22 @@ export default function HotEventCard({
     setSaved(next);
     try {
       if (next) {
-        await fetch('/api/saved/events', {
+        const res = await fetch('/api/saved/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ event_id: id }),
         });
+        if (res.status === 401) {
+          setSaved(false);
+          toast('Συνδέσου για να το αποθηκεύσεις', {
+            duration: 5000,
+            action: {
+              label: 'Σύνδεση',
+              onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
+            },
+          });
+          return;
+        }
       } else {
         await fetch(`/api/saved/events?event_id=${id}`, { method: 'DELETE' });
       }
@@ -134,7 +141,7 @@ export default function HotEventCard({
             fontFamily: "var(--font-sans)",
           }}
         >
-          {formattedDate}{time ? ` · ${time}` : ""} · {venue} · {displayPrice}
+          {formattedDate}{time ? ` · ${time}` : ""} · {venue}{displayPrice ? ` · ${displayPrice}` : ""}
         </p>
       </div>
     </Link>

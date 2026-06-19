@@ -76,7 +76,7 @@ export default function HomeEventsSection({
         marginBottom: "20px",
       }}>
         {(["thisweek", "hotpopular"] as const).map((tab) => {
-          const label = tab === "thisweek" ? "This week" : "Hot & Popular";
+          const label = tab === "thisweek" ? "Αυτή την εβδομάδα" : "Πιο δημοφιλή";
           const isActive = activeTab === tab;
           return (
             <span

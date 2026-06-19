@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
-export default function AuthModal({ onClose }: { onClose: () => void }) {
+export default function AuthModal({ onClose, redirectTo }: { onClose: () => void; redirectTo?: string }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,20 +31,23 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
       onClose()
-      router.push('/onboarding')
+      router.push(redirectTo || '/onboarding')
     } else if (mode === 'login') {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
 
       onClose()
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', data.user.id)
-        .single()
-
-      router.push(profile ? '/dashboard' : '/onboarding')
+      if (redirectTo) {
+        router.push(redirectTo)
+      } else {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .single()
+        router.push(profile ? '/dashboard' : '/onboarding')
+      }
     }
 
     setLoading(false)

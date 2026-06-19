@@ -4,9 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MouseEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
+import { toast } from "sonner";
 import { RadarBadge } from "./RadarBadge";
+import { formatPrice } from "../lib/formatPrice";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -31,15 +34,6 @@ interface EventCardProps {
   initialSaved?: boolean;
 }
 
-function formatPrice(price: string | number | null | undefined): string {
-  if (price === 0 || price === null || price === undefined || price === "") return "Free";
-  const s = String(price).trim();
-  if (/^(free|δωρεάν)$/i.test(s)) return "Free";
-  const num = s.replace(/^[€$]/, "");
-  if (!/^\d/.test(num)) return num;
-  return `€${num}`;
-}
-
 const genreColors: Record<string, string> = {
   Techno:       "#E8A020",
   House:        "#A855F7",
@@ -58,6 +52,8 @@ export default function EventCard({
   initialSaved,
 }: EventCardProps) {
   const [saved, setSaved] = useState(initialSaved ?? false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   async function handleSave(e: MouseEvent) {
     e.preventDefault();
@@ -66,11 +62,22 @@ export default function EventCard({
     setSaved(next);
     try {
       if (next) {
-        await fetch('/api/saved/events', {
+        const res = await fetch('/api/saved/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ event_id: id }),
         });
+        if (res.status === 401) {
+          setSaved(false);
+          toast('Συνδέσου για να το αποθηκεύσεις', {
+            duration: 5000,
+            action: {
+              label: 'Σύνδεση',
+              onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
+            },
+          });
+          return;
+        }
       } else {
         await fetch(`/api/saved/events?event_id=${id}`, { method: 'DELETE' });
       }
@@ -148,10 +155,12 @@ export default function EventCard({
             }}>
             {genre}
           </span>
-          <span className="text-xs font-bold px-2.5 py-1 leading-none tabular-nums flex-shrink-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", backdropFilter: "blur(8px)", fontFamily: "var(--font-mono)" }}>
-            {displayPrice}
-          </span>
+          {displayPrice && (
+            <span className="text-xs font-bold px-2.5 py-1 leading-none tabular-nums flex-shrink-0"
+              style={{ backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", backdropFilter: "blur(8px)", fontFamily: "var(--font-mono)" }}>
+              {displayPrice}
+            </span>
+          )}
         </div>
       </div>
 

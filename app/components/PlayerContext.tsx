@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef, useCallback, useEffect, ReactNode } from "react";
+import { radioPause, playerPause } from "./audioCoordinator";
 
 export interface PlayerTrack {
   id?: string;
@@ -55,6 +56,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+
+  // Register this context's pause callback so RadioContext can pause the SC player
+  // without a direct import (which would be circular — RadioProvider is the ancestor).
+  useEffect(() => {
+    playerPause.fn = () => {
+      if (widgetRef.current && isReadyRef.current) widgetRef.current.pause();
+    };
+    return () => { playerPause.fn = () => {}; };
+  }, []);
 
   // Load SC Widget API script once
   useEffect(() => {
@@ -157,6 +167,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [bindPlayerEvents, handlePlaybackError]);
 
   const loadSoundcloudUrl = useCallback((rawUrl: string) => {
+    radioPause.fn();
     const url = normalizeSCUrl(rawUrl);
 
     if (!isReadyRef.current) {

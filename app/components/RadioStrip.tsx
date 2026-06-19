@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRadio, STATIONS } from "./RadioContext";
 import type { RadioStatus } from "./RadioContext";
+import { usePlayerStore } from "./PlayerContext";
 
 // ── Per-station visual metadata ───────────────────────────────────────────────
 const META: Record<string, { emoji: string; genre: string; tagline: string }> = {
@@ -80,6 +81,7 @@ export default function RadioStrip() {
     currentStation, status, isPlaying, isMuted,
     volume, currentTrack, playStation, togglePlay, setVolume, toggleMute,
   } = useRadio();
+  const { currentTrack: playerTrack } = usePlayerStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -122,7 +124,7 @@ export default function RadioStrip() {
   return (
     <div
       ref={ref}
-      className="radio-strip-desktop"
+      className={`radio-strip-desktop${playerTrack ? " rs-has-track" : ""}`}
       tabIndex={0}
       onKeyDown={onKeyDown}
       aria-label="Nightwaves Radio"
@@ -633,6 +635,15 @@ export default function RadioStrip() {
         }
         /* Focus rings */
         .rs-vol-slider:focus-visible { outline: 2px solid rgba(232,160,32,0.6); outline-offset: 3px; }
+
+        /* Lift pill above MusicPlayerBar on small screens when a track is loaded.
+           MusicPlayerBar: bottom = safe-area + 8px, height = 88px → top edge ≈ 96px+.
+           We use env(safe-area-inset-bottom) so notched phones are covered too. */
+        @media (max-width: 768px) {
+          .rs-has-track {
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 108px) !important;
+          }
+        }
       `}</style>
     </div>
   );

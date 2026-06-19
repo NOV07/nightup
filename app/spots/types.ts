@@ -19,6 +19,7 @@ export interface Spot {
   website?: string | null;
   instagram: string | null;
   isSponsored: boolean;
+  featured?: boolean;
   gallery?: string[];
   openingHours?: Record<string, string> | null;
 }

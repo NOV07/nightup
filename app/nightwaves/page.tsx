@@ -32,7 +32,7 @@ export default async function NightwavesPage() {
       supabase.from("music_releases").select("*").eq("status", "approved").order("created_at", { ascending: false }).limit(12),
       supabase.from("playlists").select("*").eq("status", "approved").order("created_at", { ascending: false }).limit(6),
       // For combined recent feed
-      supabase.from("music_releases").select("id, title, artist, type, cover_image, created_at, is_promoted").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
+      supabase.from("music_releases").select("id, title, artist, type, cover_image, created_at, is_promoted, soundcloud_url, spotify_url").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
       supabase.from("mixes").select("id, title, artist, genre, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
       supabase.from("playlists").select("id, title, platform, embed_url, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
     ]);

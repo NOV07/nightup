@@ -5,7 +5,7 @@ function isAdmin(req: NextRequest) {
   return req.cookies.get('admin_auth')?.value === process.env.ADMIN_PASSWORD
 }
 
-const VALID_TABLES = ['events', 'professionals', 'articles', 'organizers', 'music_releases', 'mixes', 'playlists', 'artists']
+const VALID_TABLES = ['events', 'professionals', 'articles', 'organizers', 'music_releases', 'mixes', 'playlists', 'artists', 'spots']
 
 export async function POST(req: NextRequest) {
   if (!isAdmin(req)) {

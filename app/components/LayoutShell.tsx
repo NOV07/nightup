@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import Navbar from "./Navbar";
-import Chatbot from "./Chatbot";
 import RadioStrip from "./RadioStrip";
 import MusicPlayerBar from "./MusicPlayerBar";
 import { Footer } from "@/components/layout/Footer";
@@ -86,7 +85,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <Navbar />
       <main className="tonight-blurable flex-1 pb-4">{children}</main>
       <Footer />
-      <Chatbot />
       <RadioStrip />
       <MusicPlayerBar />
       {!hideTonightFAB && <TonightFAB />}

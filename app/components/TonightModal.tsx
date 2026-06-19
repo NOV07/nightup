@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import SpotCard from "./SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
+import { SpotCategoryIcon } from "../lib/spotIcons";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
@@ -130,14 +131,14 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
             {view === "tiles" && (
               <div>
                 <div style={S.kicker}>{kicker}</div>
-                <h2 style={S.h2}>Plan your <em style={S.em}>exit</em></h2>
+                <h2 style={S.h2}>Τι κάνουμε <em style={S.em}>απόψε;</em></h2>
                 <p style={S.sub}>Διάλεξε διάθεση ή άσε μας να σου στήσουμε ολόκληρη τη βραδιά.</p>
                 <div style={S.grid}>
                   {SPOT_CATEGORIES.map((c) => (
                     <button key={c.key} onClick={() => goCategory(c.key)} style={S.tile}
                       onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.borderColor="rgba(232,160,32,0.15)";}}
                       onMouseLeave={(e)=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor="rgba(255,255,255,0.055)";}}>
-                      <div style={{ fontSize: 26 }}>{c.emoji}</div>
+                      <SpotCategoryIcon category={c.key} size={22} />
                       <div>
                         <div style={S.tileLabel}>{c.label}</div>
                         <div style={S.tileSub}>{c.sub}</div>

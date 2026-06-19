@@ -2,10 +2,10 @@ import Link from "next/link";
 import { SocialIcon } from "@/components/icons/SocialIcon";
 
 const SHORTCUTS = [
-  { kbd: "DISCOVER", title: "Find events", desc: "Tonight, this week, by genre", href: "/events" },
-  { kbd: "LISTEN", title: "Nightwaves", desc: "Mixes, releases, radio", href: "/nightwaves" },
-  { kbd: "NETWORK", title: "Network", desc: "Venues, sound, studios, producers", href: "/network" },
-  { kbd: "READ", title: "Magazine", desc: "Interviews, reviews, features", href: "/magazine" },
+  { kbd: "DISCOVER", title: "Βρες events", desc: "Tonight, this week, by genre", href: "/events" },
+  { kbd: "LISTEN", title: "Nightwaves", desc: "Μείγματα, κυκλοφορίες, ραδιόφωνο", href: "/nightwaves" },
+  { kbd: "NETWORK", title: "Network", desc: "Χώροι, ήχος, στούντιο, παραγωγοί", href: "/network" },
+  { kbd: "READ", title: "Magazine", desc: "Συνεντεύξεις, κριτικές, αφιερώματα", href: "/magazine" },
 ];
 
 const SOCIALS = [
@@ -49,7 +49,7 @@ export function Footer() {
               <span className="font-thin tracking-[0.2em] text-xl uppercase text-white">Night</span>
               <span className="font-thin tracking-[0.2em] text-xl uppercase" style={{ color: "#E8A020" }}>up</span>
             </div>
-            <p className="text-xs text-zinc-400 mt-2">Find your night.</p>
+            <p className="text-xs text-zinc-400 mt-2">Βρες τη βραδιά σου.</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -104,8 +104,9 @@ export function Footer() {
           </div>
 
           <FooterColumn label="SUBMIT" links={[
-            { label: "Submit event", href: "/submit/event" },
-            { label: "Submit profile", href: "/submit/professional" },
+            { label: "Καταχώρηση event", href: "/submit/event" },
+            { label: "Καταχώρηση προφίλ", href: "/submit/professional" },
+            { label: "Καταχώρηση μουσικής", href: "/submit/release" },
           ]} />
 
           <FooterColumn label="COMPANY" links={[

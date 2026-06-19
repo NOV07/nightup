@@ -15,23 +15,34 @@ interface Props {
   href: string;
   external: boolean;
   soundcloudUrl?: string;
+  spotifyUrl?: string;
   type: "mix" | "release" | "playlist";
   transitionDelay?: string;
 }
 
 export default function NightwavesHomeCard({
   id, title, artist, cover_image, typeBadge, href, external,
-  soundcloudUrl, type, transitionDelay,
+  soundcloudUrl, spotifyUrl, type, transitionDelay,
 }: Props) {
   const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore();
-  const isThis = !!soundcloudUrl && currentTrack?.soundcloudUrl === soundcloudUrl;
+  // Match by id (works for both SC and Spotify-fallback tracks)
+  const isThis = currentTrack?.id === id;
   const thisPlaying = isThis && isPlaying;
+  const hasPlayable = !!(soundcloudUrl || spotifyUrl);
 
   const handlePlay = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isThis) togglePlay();
-    else if (soundcloudUrl) setTrack({ id, title, artist: artist ?? "", cover: cover_image ?? undefined, soundcloudUrl, type });
+    else if (hasPlayable) setTrack({
+      id,
+      title,
+      artist: artist ?? "",
+      cover: cover_image ?? undefined,
+      soundcloudUrl: soundcloudUrl ?? undefined,
+      spotifyUrl: spotifyUrl ?? undefined,
+      type,
+    });
   };
 
   const inner = (
@@ -47,12 +58,12 @@ export default function NightwavesHomeCard({
           style={{ aspectRatio: "1" }}
           onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
         />
-        {soundcloudUrl && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/35 transition-colors duration-200">
+        {hasPlayable && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25 sm:bg-black/0 sm:group-hover:bg-black/35 transition-colors duration-200">
             <button
               aria-label={thisPlaying ? "Pause" : "Play"}
               onClick={handlePlay}
-              className="w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 flex items-center justify-center text-zinc-900 shadow-[0_4px_20px_rgba(0,0,0,0.55)] opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200"
+              className="w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 flex items-center justify-center text-zinc-900 shadow-[0_4px_20px_rgba(0,0,0,0.55)] opacity-100 sm:opacity-0 sm:group-hover:opacity-100 scale-100 sm:scale-90 sm:group-hover:scale-100 transition-all duration-200"
             >
               {thisPlaying ? (
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">

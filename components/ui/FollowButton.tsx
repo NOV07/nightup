@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function FollowButton({ profileId }: { profileId: string }) {
   const [following, setFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     fetch(`/api/follows?profile_id=${profileId}`)
@@ -26,10 +28,30 @@ export default function FollowButton({ profileId }: { profileId: string }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ profile_id: profileId }),
         })
-        if (res.status === 401) { setFollowing(false); router.push('/signin'); return }
+        if (res.status === 401) {
+          setFollowing(false)
+          toast('Συνδέσου για να ακολουθήσεις', {
+            duration: 5000,
+            action: {
+              label: 'Σύνδεση',
+              onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
+            },
+          })
+          return
+        }
       } else {
         const res = await fetch(`/api/follows?profile_id=${profileId}`, { method: 'DELETE' })
-        if (res.status === 401) { setFollowing(true); router.push('/signin'); return }
+        if (res.status === 401) {
+          setFollowing(true)
+          toast('Συνδέσου για να ακολουθήσεις', {
+            duration: 5000,
+            action: {
+              label: 'Σύνδεση',
+              onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
+            },
+          })
+          return
+        }
       }
     } catch {
       setFollowing(!next)

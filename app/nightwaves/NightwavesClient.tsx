@@ -42,11 +42,11 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 interface Mix { id: string; title: string; artist: string; genre?: string; cover_image?: string; soundcloud_url?: string; duration?: string; }
 interface Release { id: string; title: string; artist: string; type?: string; genre?: string; cover_image?: string; spotify_url?: string; soundcloud_url?: string; release_date?: string; is_promoted?: boolean; }
 interface Playlist { id: string; title: string; platform?: string; embed_url?: string; cover_image?: string; is_sponsored?: boolean; }
-interface RecentItem { id: string; title: string; artist?: string; typeBadge: string; cover_image?: string; href: string; external?: boolean; is_promoted?: boolean; _contentType: string; }
+interface RecentItem { id: string; title: string; artist?: string; typeBadge: string; cover_image?: string; href: string; external?: boolean; is_promoted?: boolean; _contentType: string; soundcloud_url?: string; spotify_url?: string; }
 
 export default function NightwavesClient({ mixes, releases, playlists, recentItems }: { mixes: Mix[]; releases: Release[]; playlists: Playlist[]; recentItems: RecentItem[] }) {
   const { currentStation, isPlaying, playStation } = useRadio();
-  const { currentTrack, isPlaying: trackPlaying, setTrack } = usePlayerStore();
+  const { currentTrack, isPlaying: trackPlaying, setTrack, togglePlay } = usePlayerStore();
   const liveStations = STATIONS.filter((s) => !s.comingSoon);
 
   return (
@@ -416,6 +416,42 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                       <span className="absolute top-2 right-2 text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
                         {item.typeBadge}
                       </span>
+                      {item._contentType === "release" && (item.soundcloud_url || item.spotify_url) && (() => {
+                        const isThis = currentTrack?.id === item.id;
+                        const thisPlaying = isThis && trackPlaying;
+                        return (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (isThis) togglePlay();
+                              else setTrack({
+                                id: item.id,
+                                title: item.title,
+                                artist: item.artist ?? "",
+                                cover: item.cover_image ?? undefined,
+                                soundcloudUrl: item.soundcloud_url ?? undefined,
+                                spotifyUrl: item.spotify_url ?? undefined,
+                                type: "release",
+                              });
+                            }}
+                            aria-label={thisPlaying ? "Pause" : "Play"}
+                            className="absolute inset-0 flex items-center justify-center"
+                            style={{ background: "transparent" }}
+                          >
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 scale-100 sm:scale-90 sm:group-hover:scale-100 transition-all duration-200"
+                              style={{ backgroundColor: "#E8A020", boxShadow: "0 0 20px rgba(232,160,32,0.45)" }}
+                            >
+                              {thisPlaying ? (
+                                <svg className="w-3.5 h-3.5" fill="#0F0F1A" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+                              ) : (
+                                <svg className="w-3.5 h-3.5 ml-0.5" fill="#0F0F1A" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })()}
                     </div>
                     <div className="p-3">
                       {item.artist && (

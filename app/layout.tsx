@@ -6,6 +6,7 @@ import { TonightProvider } from "./components/TonightContext";
 import { LanguageProvider } from "./components/LanguageContext";
 import { PlayerProvider } from "./components/PlayerContext";
 import LayoutShell from "./components/LayoutShell";
+import { Toaster } from "sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -66,6 +67,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </TonightProvider>
           </RadioProvider>
         </LanguageProvider>
+        <Toaster
+          position="bottom-center"
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: "#1A1A2E",
+              border: "1px solid rgba(232,160,32,0.25)",
+              color: "#fff",
+              fontFamily: "var(--font-geist-sans)",
+            },
+            actionButtonStyle: {
+              background: "transparent",
+              color: "#E8A020",
+              fontWeight: 600,
+              border: "none",
+              textDecoration: "underline",
+            },
+          }}
+        />
       </body>
     </html>
   );

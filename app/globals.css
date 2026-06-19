@@ -625,4 +625,7 @@ body.tonight-open { overflow: hidden !important; }
   .tonight-fab {
     bottom: 80px !important;
   }
+  .tonight-fab-has-track {
+    bottom: 170px !important;
+  }
 }

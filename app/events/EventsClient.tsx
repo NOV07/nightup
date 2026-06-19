@@ -563,7 +563,7 @@ export default function EventsClient({
           whiteSpace: "nowrap",
         }}
       >
-        <span style={{ fontSize: 14 }}>✦</span> Βρες events
+        <span style={{ fontSize: 14 }}>✦</span> Βρες τη βραδιά σου
       </button>
 
       {showFilterModal && (

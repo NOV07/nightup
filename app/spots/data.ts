@@ -19,11 +19,13 @@ function mapSpot(s: any): Spot {
     rating: s.rating,
     instagram: s.instagram,
     isSponsored: s.is_sponsored === true,
+    featured: s.featured === true,
   };
 }
 
+
 const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, price_level, rating, instagram, is_sponsored";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, price_level, rating, instagram, is_sponsored, featured";
 
 export async function getAllSpots(): Promise<Spot[]> {
   try {

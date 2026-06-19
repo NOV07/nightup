@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 interface Props {
   listingId: string
@@ -11,6 +12,7 @@ export default function InterestButton({ listingId, initialCount }: Props) {
   const [sent, setSent] = useState(false)
   const [count, setCount] = useState(initialCount)
   const router = useRouter()
+  const pathname = usePathname()
 
   async function handleClick(e: React.MouseEvent) {
     e.preventDefault()
@@ -25,7 +27,13 @@ export default function InterestButton({ listingId, initialCount }: Props) {
     if (res.status === 401) {
       setSent(false)
       setCount(c => c - 1)
-      router.push('/signin')
+      toast('Συνδέσου για να εκδηλώσεις ενδιαφέρον', {
+        duration: 5000,
+        action: {
+          label: 'Σύνδεση',
+          onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
+        },
+      })
       return
     }
     // 409 = already sent — keep sent state
