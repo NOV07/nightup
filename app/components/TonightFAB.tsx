@@ -9,6 +9,7 @@ import { usePlayerStore } from "./PlayerContext";
 export default function TonightFAB() {
   const { open, isOpen } = useTonightModal();
   const [hidden, setHidden] = useState(false);
+  const [fabOpacity, setFabOpacity] = useState(1);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   const lastY = useRef(0);
   const pathname = usePathname();
@@ -19,9 +20,15 @@ export default function TonightFAB() {
   useEffect(() => {
     function onScroll() {
       const y = window.scrollY;
+      const scrollingDown = y > lastY.current;
       if (y < 200) setHidden(false);
       else if (y > lastY.current + 8) setHidden(true);
       else if (y < lastY.current - 8) setHidden(false);
+      if (!scrollingDown || y < 100) {
+        setFabOpacity(1);
+      } else {
+        setFabOpacity(Math.max(0.3, 1 - (y - 100) / 200));
+      }
       lastY.current = y;
     }
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -52,7 +59,7 @@ export default function TonightFAB() {
           cursor: "pointer",
           boxShadow: "0 4px 24px rgba(232,160,32,0.35)",
           whiteSpace: "nowrap",
-          opacity: isOpen || showNetworkModal || hidden ? 0 : 1,
+          opacity: isOpen || showNetworkModal || hidden ? 0 : fabOpacity,
           pointerEvents: isOpen || showNetworkModal || hidden ? "none" : "auto",
           transform: hidden
             ? "translateX(-50%) translateY(120%)"

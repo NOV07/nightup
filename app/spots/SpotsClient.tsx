@@ -30,15 +30,90 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const segments: [string, boolean][] = [
+      ['Πού πάμε ', false],
+      ['απόψε;', true],
+    ]
+    const fullText = segments.map(s => s[0]).join('')
+    const goldStart = segments[0][0].length
+    const typed = document.getElementById('hero-typed')
+    const cursor = document.getElementById('hero-cursor')
+    const eyebrow = document.getElementById('hero-eyebrow')
+    if (!typed || !cursor || !eyebrow) return
+    let i = 0
+    const interval = setInterval(() => {
+      if (i >= fullText.length) {
+        clearInterval(interval)
+        setTimeout(() => { eyebrow.style.animation = 'cn-eyebrow 0.8s ease-out forwards' }, 200)
+        setTimeout(() => { if (cursor) cursor.style.display = 'none' }, 1700)
+        return
+      }
+      typed.innerHTML = ''
+      const before = fullText.slice(0, Math.min(i + 1, goldStart))
+      const after = i >= goldStart ? fullText.slice(goldStart, i + 1) : ''
+      before.split('\n').forEach((line, idx) => {
+        if (idx > 0) typed.appendChild(document.createElement('br'))
+        typed.appendChild(document.createTextNode(line))
+      })
+      if (after) {
+        const span = document.createElement('span')
+        span.style.cssText = 'color:#E8A020;font-style:italic'
+        span.textContent = after
+        typed.appendChild(span)
+      }
+      i++
+    }, 38)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <div style={{ background: "#0F0F1A", minHeight: "100vh" }}>
-      <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 24px" }}>
-        <div style={{ position: "relative", padding: "32px 0", overflow: "hidden" }}>
-<h1 style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 600, fontSize: 30, lineHeight: 1.25, marginBottom: 8, position: "relative" }}>
-            Πού πάμε <em style={{ fontStyle: "italic", color: "#E8A020" }}>απόψε;</em>
+      {/* ── Cinematic Hero ──────────────────────────────── */}
+      <div style={{ position: 'relative', background: '#080808', overflow: 'hidden', minHeight: '280px', display: 'flex', alignItems: 'flex-end', padding: '32px 0 48px' }}>
+        <style>{`
+          @keyframes cn-flash { 0%{opacity:1} 100%{opacity:0} }
+          @keyframes cn-float { from{transform:translateY(0) translateX(0);opacity:var(--op)} to{transform:translateY(-40px) translateX(var(--dx));opacity:calc(var(--op)*0.2)} }
+          @keyframes cn-trail { 0%{transform:translateY(0);opacity:0} 10%{opacity:1} 90%{opacity:0.5} 100%{transform:translateY(-100px);opacity:0} }
+          @keyframes cn-flare { 0%,100%{opacity:0.03;transform:scale(1)} 50%{opacity:0.08;transform:scale(1.12)} }
+          @keyframes cn-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+          @keyframes cn-eyebrow { from{opacity:0;letter-spacing:0.6em} to{opacity:1;letter-spacing:0.35em} }
+          @keyframes cn-particles-in { from{opacity:0} to{opacity:1} }
+        `}</style>
+
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 60% 80% at 20% 60%, rgba(232,160,32,0.35), transparent 60%)', animation: 'cn-flash 0.15s ease-out forwards', pointerEvents: 'none', zIndex: 20 }} />
+
+        {([[20,20,200],[45,50,280],[70,15,160],[85,60,220]] as [number,number,number][]).map(([l,t,s],i) => (
+          <div key={`f${i}`} style={{ position: 'absolute', width: s, height: s, left: `${l}%`, top: `${t}%`, transform: 'translate(-50%,-50%)', borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,160,32,0.06) 0%, transparent 70%)', animation: `cn-flare ${6+i*2}s ease-in-out infinite`, animationDelay: `${i*1.5}s`, pointerEvents: 'none', zIndex: 1 }} />
+        ))}
+
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, animation: 'cn-particles-in 2s ease-out forwards', animationDelay: '0.15s', opacity: 0, pointerEvents: 'none', zIndex: 1 }}>
+          {[...Array(50)].map((_, i) => {
+            const size = i%5===0 ? 2.5 : i%3===0 ? 1.5 : 1
+            const op = 0.15+(i%6)*0.08
+            const dx = ((i*7)%60)-30
+            const dur = 8+(i%5)*3
+            const blur = i%4===0
+            return (
+              <div key={`p${i}`} style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', background: i%7===0 ? '#E8A020' : '#ffffff', opacity: op, left: `${(i*13+7)%96}%`, top: `${(i*19+5)%90}%`, filter: blur ? 'blur(1px)' : 'none', ['--op' as any]: op, ['--dx' as any]: `${dx}px`, animation: `cn-float ${dur}s ease-in-out infinite alternate`, animationDelay: `${(i*0.3)%4}s` }} />
+            )
+          })}
+          {[...Array(14)].map((_,i) => (
+            <div key={`t${i}`} style={{ position: 'absolute', width: '1px', height: `${10+(i%4)*8}px`, left: `${(i*17+3)%95}%`, top: `${60+(i%4)*8}%`, background: `linear-gradient(to top, transparent, rgba(255,255,255,${0.1+(i%3)*0.08}), transparent)`, animation: `cn-trail ${4+(i%4)*1.5}s ease-in infinite`, animationDelay: `${(i*0.6)%5}s` }} />
+          ))}
+        </div>
+
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '160px', background: 'linear-gradient(to right, #0F0F1A, transparent)', pointerEvents: 'none', zIndex: 5 }} />
+
+        <div style={{ position: 'relative', zIndex: 10, maxWidth: '80rem', margin: '0 auto', padding: '0 24px' }}>
+          <div id="hero-eyebrow" style={{ fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#E8A020', marginBottom: '10px', opacity: 0, fontFamily: 'var(--font-sans)' }}>Spots</div>
+          <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0, minHeight: '4rem' }}>
+            <span id="hero-typed"></span>
+            <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: '#E8A020', verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
           </h1>
-          <p style={{ color: "#9CA3AF", fontSize: 16, maxWidth: 540, lineHeight: 1.55 }}>
-            Όλα τα spots της Αθήνας — φαγητό, ποτό, νύχτα, θέαμα και άλλα. Διάλεξε κατηγορία και βρες πού να πας.
+          <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
+            Όλα τα spots της Αθήνας — φαγητό, ποτό, νύχτα, θέαμα και άλλα.
           </p>
         </div>
       </div>
@@ -78,10 +153,19 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
               ref={(el) => { sectionRefs.current[c.key] = el; }}
               style={{ padding: "40px 0 8px", scrollMarginTop: 130 }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-                <SpotCategoryIcon category={c.key} size={22} />
-                <span style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 600, fontSize: 27, letterSpacing: "-0.5px" }}>{c.label}</span>
-                <span style={{ fontSize: 13, color: "#71717A", fontWeight: 500, marginLeft: "auto" }}>{items.length} spots</span>
+              <div style={{ marginBottom: '22px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <SpotCategoryIcon category={c.key} size={14} />
+                      {c.label}
+                    </p>
+                    <div style={{ width: '24px', height: '1px', background: '#E8A020', marginTop: '6px' }} />
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em' }}>
+                    {items.length} spots
+                  </span>
+                </div>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
                 <button

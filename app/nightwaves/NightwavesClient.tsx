@@ -29,12 +29,22 @@ function LiveDot() {
   return <span className="w-2 h-2 rounded-full inline-block animate-live-pulse mr-1.5 flex-shrink-0" style={{ backgroundColor: "#E8A020" }} />;
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, href, linkLabel }: { children: React.ReactNode; href?: string; linkLabel?: string }) {
   return (
-    <div className="flex items-center gap-3 mb-7">
-      <span className="section-divider" />
-      <h2 className="text-2xl font-bold tracking-tight">{children}</h2>
-      <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(232,160,32,0.2), transparent)" }} />
+    <div style={{ marginBottom: '28px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {children}
+          </p>
+          <div style={{ width: '24px', height: '1px', background: '#E8A020', marginTop: '6px' }} />
+        </div>
+        {href && (
+          <a href={href} style={{ color: '#E8A020', fontSize: '11px', letterSpacing: '0.05em', textDecoration: 'none' }}>
+            {linkLabel} →
+          </a>
+        )}
+      </div>
     </div>
   );
 }
