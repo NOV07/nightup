@@ -524,7 +524,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "12px" }}>
                   <input
                     type="text"
                     placeholder="Όνομα"

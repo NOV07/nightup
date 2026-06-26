@@ -87,7 +87,7 @@ export default async function HomePage() {
     const [evRes, artRes, relRes, mixFeedRes, playFeedRes] = await Promise.all([
       supabase
         .from("events")
-        .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick")
+        .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick, type")
         .eq("status", "approved")
         .gte("date", today)
         .order("date", { ascending: true })
@@ -109,6 +109,7 @@ export default async function HomePage() {
       venue: e.venue, city: e.city,
       interestedCount: e.interested_count ?? 0, goingCount: e.going_count ?? 0,
       featured: e.featured ?? false,
+      type: e.type ?? null,
       badge: e.is_radar_pick ? "Nightup Radar" : badge,
     });
     if (evRes.data && evRes.data.length > 0) {

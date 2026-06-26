@@ -15,47 +15,72 @@ interface EventsFilterModalProps {
   onApply: (result: EventsFilterResult) => void
 }
 
+const WHAT_OPTIONS = [
+  { emoji: '🎵', label: 'Μουσική & Club' },
+  { emoji: '🎭', label: 'Θέαμα & Τέχνη' },
+  { emoji: '🍹', label: 'Ποτό & Παρέα' },
+  { emoji: '✨', label: 'Έκπληξέ με' },
+]
+
 const WHEN_OPTIONS = ['Απόψε', 'Αύριο', 'Σαββατοκύριακο']
-const MOOD_OPTIONS = ['Μουσική & Club', 'Ποτό & Παρέα', 'Θέαμα', 'Έκπληξέ με']
+
+const MOOD_OPTIONS = [
+  { emoji: '🔥', label: 'Έντονο' },
+  { emoji: '😌', label: 'Χαλαρό' },
+  { emoji: '👥', label: 'Παρέα' },
+  { emoji: '💃', label: 'Dance' },
+]
+
 const CITY_OPTIONS = ['Αθήνα', 'Θεσσαλονίκη', 'Όλη η Ελλάδα']
 
-const STEP_SUBTITLES: Record<number, string> = {
-  1: 'Πότε θες να βγεις;',
-  2: 'Τι mood;',
-  3: 'Πού;',
+const STEP_TITLES: Record<number, string> = {
+  1: 'Τι ψάχνεις;',
+  2: 'Πότε;',
+  3: 'Τι mood;',
+  4: 'Πού;',
 }
 
 export default function EventsFilterModal({ onClose, onApply }: EventsFilterModalProps) {
   const [step, setStep] = useState(1)
+  const [what, setWhat] = useState<string | null>(null)
   const [when, setWhen] = useState<string | null>(null)
   const [mood, setMood] = useState<string | null>(null)
   const [city, setCity] = useState<string | null>(null)
 
-  const tileStyle = (active: boolean): React.CSSProperties => ({
-    padding: '18px 10px',
-    borderRadius: 6,
-    border: `1px solid ${active ? GOLD : 'rgba(255,255,255,0.08)'}`,
-    backgroundColor: active ? 'rgba(232,160,32,0.08)' : '#1A1A28',
-    color: active ? GOLD : 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    fontWeight: 600,
-    textAlign: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    fontFamily: 'var(--font-sans), Inter, sans-serif',
-  })
-
-  const canContinue = step === 1 ? !!when : step === 2 ? !!mood : !!city
+  const currentSelection = step === 1 ? what : step === 2 ? when : step === 3 ? mood : city
 
   function handlePrimary() {
-    if (step < 3) {
+    if (!currentSelection) return
+    if (step < 4) {
       setStep(step + 1)
       return
     }
-    if (when && mood && city) {
-      onApply({ when, mood, city })
-    }
+    onApply({
+      when: when ?? '',
+      mood: what ?? '',
+      city: city ?? '',
+    })
     onClose()
+  }
+
+  function handleBack() {
+    if (step > 1) setStep(step - 1)
+  }
+
+  const tileBase: React.CSSProperties = {
+    backgroundColor: '#1A1A28',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: 6,
+    padding: '20px 16px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  }
+
+  const tileActive: React.CSSProperties = {
+    ...tileBase,
+    border: `1px solid ${GOLD}`,
+    backgroundColor: 'rgba(232,160,32,0.08)',
   }
 
   return (
@@ -65,118 +90,163 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
         position: 'fixed',
         inset: 0,
         zIndex: 300,
-        backgroundColor: 'rgba(10,10,18,0.7)',
+        backgroundColor: 'rgba(0,0,0,0.72)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'center',
-        padding: 16,
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: '#0F0F1A',
-          border: '0.5px solid rgba(232,160,32,0.25)',
-          borderRadius: 6,
-          maxWidth: 420,
+          borderRadius: '12px 12px 0 0',
+          maxWidth: 480,
           width: '100%',
-          padding: 28,
+          padding: '24px 24px 40px',
         }}
       >
-        {/* Progress dots */}
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 20 }}>
-          {[1, 2, 3].map((i) => (
-            <span
-              key={i}
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: i <= step ? GOLD : 'rgba(255,255,255,0.12)',
-                transition: 'background-color 0.2s ease',
-              }}
-            />
-          ))}
+        {/* Top bar: back · dots · close */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <button
+            onClick={handleBack}
+            style={{
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: step > 1 ? GOLD : 'transparent',
+              background: 'none',
+              border: 'none',
+              cursor: step > 1 ? 'pointer' : 'default',
+              padding: 0,
+              fontFamily: 'var(--font-sans), Inter, sans-serif',
+            }}
+          >
+            ← Πίσω
+          </button>
+
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[1, 2, 3, 4].map((i) => (
+              <span
+                key={i}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: i <= step ? GOLD : 'rgba(255,255,255,0.15)',
+                  transition: 'background-color 0.2s ease',
+                  display: 'block',
+                }}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={onClose}
+            style={{
+              fontSize: 20,
+              lineHeight: 1,
+              color: 'rgba(255,255,255,0.35)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            ×
+          </button>
         </div>
 
-        {/* Title */}
+        {/* Step title */}
         <h2
           style={{
             fontFamily: 'var(--font-spectral), Georgia, serif',
+            fontStyle: 'italic',
             fontSize: 22,
-            fontWeight: 500,
-            color: '#F4F4F5',
-            textAlign: 'center',
-            marginBottom: 6,
-          }}
-        >
-          Βρες την βραδιά σου
-        </h2>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), Inter, sans-serif',
-            fontSize: 13,
-            color: 'rgba(255,255,255,0.4)',
-            textAlign: 'center',
+            fontWeight: 400,
+            color: '#fff',
             marginBottom: 24,
           }}
         >
-          {STEP_SUBTITLES[step]}
-        </p>
+          {STEP_TITLES[step]}
+        </h2>
 
-        {/* Step 1 — Πότε */}
+        {/* Step 1 — Τι ψάχνεις */}
         {step === 1 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+            {WHAT_OPTIONS.map((opt) => (
+              <div key={opt.label} style={{ ...(what === opt.label ? tileActive : tileBase), padding: '14px 10px' }} onClick={() => setWhat(opt.label)}>
+                <div style={{ fontSize: 26, marginBottom: 8 }}>{opt.emoji}</div>
+                <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: what === opt.label ? GOLD : '#fff' }}>
+                  {opt.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Step 2 — Πότε */}
+        {step === 2 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
             {WHEN_OPTIONS.map((opt) => (
-              <div key={opt} style={tileStyle(when === opt)} onClick={() => setWhen(opt)}>
-                {opt}
+              <div key={opt} style={{ ...(when === opt ? tileActive : tileBase), padding: '12px 8px' }} onClick={() => setWhen(opt)}>
+                <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: when === opt ? GOLD : '#fff' }}>
+                  {opt}
+                </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Step 2 — Mood */}
-        {step === 2 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 24 }}>
-            {MOOD_OPTIONS.map((opt) => (
-              <div key={opt} style={tileStyle(mood === opt)} onClick={() => setMood(opt)}>
-                {opt}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Step 3 — Πού */}
+        {/* Step 3 — Mood */}
         {step === 3 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+            {MOOD_OPTIONS.map((opt) => (
+              <div key={opt.label} style={{ ...(mood === opt.label ? tileActive : tileBase), padding: '14px 10px' }} onClick={() => setMood(opt.label)}>
+                <div style={{ fontSize: 26, marginBottom: 8 }}>{opt.emoji}</div>
+                <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: mood === opt.label ? GOLD : '#fff' }}>
+                  {opt.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Step 4 — Πού */}
+        {step === 4 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
             {CITY_OPTIONS.map((opt) => (
-              <div key={opt} style={tileStyle(city === opt)} onClick={() => setCity(opt)}>
-                {opt}
+              <div key={opt} style={{ ...(city === opt ? tileActive : tileBase), padding: '12px 8px' }} onClick={() => setCity(opt)}>
+                <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: city === opt ? GOLD : '#fff' }}>
+                  {opt}
+                </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Primary action */}
+        {/* CTA */}
         <button
           onClick={handlePrimary}
-          disabled={!canContinue}
+          disabled={!currentSelection}
           style={{
             width: '100%',
-            padding: '12px 0',
+            padding: '13px 0',
             borderRadius: 6,
             border: 'none',
             backgroundColor: GOLD,
-            color: '#0F0F1A',
-            fontSize: 14,
+            color: '#0A0A12',
+            fontSize: 13,
             fontWeight: 700,
             fontFamily: 'var(--font-sans), Inter, sans-serif',
-            cursor: canContinue ? 'pointer' : 'not-allowed',
-            opacity: canContinue ? 1 : 0.5,
+            textTransform: 'uppercase',
+            letterSpacing: '0.10em',
+            cursor: currentSelection ? 'pointer' : 'not-allowed',
+            opacity: currentSelection ? 1 : 0.38,
             transition: 'opacity 0.15s ease',
           }}
         >
-          {step < 3 ? 'Συνέχεια →' : 'Δες events →'}
+          {step < 4 ? 'Επόμενο →' : 'Βρες events →'}
         </button>
       </div>
     </div>

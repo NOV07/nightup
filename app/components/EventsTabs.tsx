@@ -1,12 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import HotEventCard from './HotEventCard'
 
-const MUSIC_GENRES = [
-  'Techno', 'House', 'Hip-Hop', 'R&B', 'Drum & Bass', 'Disco',
-  'Funk', 'Jazz', 'Rock', 'Metal', 'Pop', 'Electronic', 'Ambient',
-  'Reggae', 'Soul', 'Latin',
-]
+function getBorderColor(e: any): string {
+  if (e.type === 'culture') return '#7C3AED'
+  if (e.type === 'sports')  return '#2563EB'
+  if (e.type === 'other')   return '#059669'
+  return '#E8A020'
+}
 
 interface EventTabsProps {
   thisWeekCards: any[]
@@ -16,6 +17,22 @@ interface EventTabsProps {
 export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsProps) {
   const [activeTab, setActiveTab] = useState<'week' | 'hot'>('week')
   const cards = activeTab === 'week' ? thisWeekCards : hotPopularCards
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+
+  function updateScrollState() {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 0)
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+  }
+
+  useEffect(() => { updateScrollState() }, [cards])
+
+  function scrollBy(dx: number) {
+    scrollRef.current?.scrollBy({ left: dx, behavior: 'smooth' })
+  }
 
   return (
     <div>
@@ -43,6 +60,29 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
         @media (max-width: 640px) {
           .ev-card { width: calc(70% - 9px); }
         }
+        .ev-arrow {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #1A1A28;
+          border: 1px solid rgba(255,255,255,0.15);
+          color: #E8A020;
+          font-size: 16px;
+          cursor: pointer;
+          z-index: 20;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s, color 0.2s;
+          padding: 0;
+        }
+        .ev-arrow:hover { background: #E8A020; color: #0A0A12; }
+        .ev-arrow-left  { left: -16px; }
+        .ev-arrow-right { right: -16px; }
+        @media (max-width: 640px) { .ev-arrow { display: none; } }
         .ev-fade {
           position: absolute;
           right: 0;
@@ -52,21 +92,6 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
           background: linear-gradient(to left, #0F0F1A, transparent);
           pointer-events: none;
           z-index: 10;
-        }
-        .ev-badge {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          z-index: 20;
-          background: rgba(0,0,0,0.75);
-          color: #fff;
-          font-size: 9px;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          padding: 4px 8px;
-          border-radius: 4px;
-          pointer-events: none;
-          font-family: var(--font-mono), monospace;
         }
       `}</style>
 
@@ -104,32 +129,38 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
       {/* Cards */}
       {cards.length > 0 ? (
         <div key={activeTab} className="ev-tab-anim" style={{ position: 'relative' }}>
-          <div className="ev-scroll">
-            {cards.slice(0, 8).map((e: any) => {
-              const isMusic = MUSIC_GENRES.includes(e.genre)
-              const showBadge = !isMusic && Boolean(e.category)
-              return (
-                <div key={e.id} className="ev-card">
-                  <HotEventCard
-                    id={e.id}
-                    title={e.title}
-                    image={e.image_url || e.image}
-                    genre={e.genre}
-                    price={e.price}
-                    date={e.date}
-                    time={e.time}
-                    venue={e.venue}
-                    city={e.city}
-                    isRadarPick={e.isRadarPick || e.badge === 'Nightup Radar'}
-                    showHotBadge={activeTab === 'hot'}
-                    variant="compact"
-                  />
-                  {showBadge && (
-                    <span className="ev-badge">{e.category}</span>
-                  )}
-                </div>
-              )
-            })}
+          {canScrollLeft && (
+            <button className="ev-arrow ev-arrow-left" onClick={() => scrollBy(-300)} aria-label="Previous">‹</button>
+          )}
+          {canScrollRight && (
+            <button className="ev-arrow ev-arrow-right" onClick={() => scrollBy(300)} aria-label="Next">›</button>
+          )}
+          <div className="ev-scroll" ref={scrollRef} onScroll={updateScrollState}>
+            {cards.slice(0, 8).map((e: any) => (
+              <div
+                key={e.id}
+                className="ev-card"
+                style={{
+                  borderBottom: `2px solid ${getBorderColor(e)}`,
+                  borderRadius: '0 0 6px 6px',
+                }}
+              >
+                <HotEventCard
+                  id={e.id}
+                  title={e.title}
+                  image={e.image_url || e.image}
+                  genre={e.genre}
+                  price={e.price}
+                  date={e.date}
+                  time={e.time}
+                  venue={e.venue}
+                  city={e.city}
+                  isRadarPick={e.isRadarPick || e.badge === 'Nightup Radar'}
+                  showHotBadge={activeTab === 'hot'}
+                  variant="compact"
+                />
+              </div>
+            ))}
           </div>
           <div className="ev-fade" />
         </div>

@@ -46,7 +46,7 @@ export default async function EventsPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick")
+      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
       .eq("status", "approved")
       .order("date", { ascending: true });
 
@@ -65,6 +65,7 @@ export default async function EventsPage() {
         goingCount: e.going_count ?? 0,
         featured: e.featured_until ? new Date(e.featured_until) > new Date() : false,
         isRadarPick: (e as any).is_radar_pick === true,
+        type: e.type ?? null,
       }));
     }
   } catch (e) { console.error("Events fetch error:", e); }

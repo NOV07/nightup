@@ -67,7 +67,7 @@ export default function SubmitEventForm() {
             <textarea name="description" placeholder="Tell us about your event..." onChange={handleChange} rows={4} className={`${inputClass} resize-none`} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Venue *</label>
               <input name="venue" placeholder="e.g. Club Void" onChange={handleChange} className={inputClass} required />
@@ -78,7 +78,7 @@ export default function SubmitEventForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-white/60 text-sm mb-1.5 block">Date *</label>
               <input name="date" type="date" onChange={handleChange} className={inputClass} required />

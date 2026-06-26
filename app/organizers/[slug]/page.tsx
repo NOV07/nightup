@@ -232,7 +232,7 @@ export default async function OrganizerPage({ params }: Props) {
         {gallery.length > 0 && (
           <div className="mb-12">
             <h2 className="text-lg font-semibold text-white mb-4">Gallery</h2>
-            <div className="grid grid-cols-3 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
               {gallery.map((src, i) => (
                 <div key={i} className="relative aspect-square rounded-xl overflow-hidden">
                   {src.startsWith("data:") ? (

@@ -547,7 +547,7 @@ export default async function ProfilePage({ params }: Props) {
                 <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   Gallery
                 </h2>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {(professional.gallery as string[]).map((url: string, i: number) => (
                     <div key={i} className="relative aspect-square rounded-xl overflow-hidden">
                       <Image src={url} alt={`Gallery ${i + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-300" />

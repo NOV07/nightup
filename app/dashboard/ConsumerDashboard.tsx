@@ -216,7 +216,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
           savedEvents.length === 0
             ? <EmptyState emoji="🎵" title="Καμία αποθήκευση ακόμα" text="Πάτα save σε events που σε ενδιαφέρουν" href="/events" cta="Εξερεύνησε events →" />
             : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
                 {savedEvents.map((event: any) => (
                   <GridCard
                     key={event.id}
@@ -237,7 +237,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
           savedSpots.length === 0
             ? <EmptyState emoji="🏛" title="Δεν έχεις spots ακόμα" text="Εξερεύνησε μαγαζιά και σώσε τα αγαπημένα σου" href="/spots" cta="Εξερεύνησε spots →" />
             : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
                 {savedSpots.map((spot: any) => (
                   <GridCard
                     key={spot.id}
@@ -255,7 +255,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
           followedProfiles.length === 0
             ? <EmptyState emoji="🎤" title="Κανένας artist ακόμα" text="Ακολούθησε artists, DJs και venues" href="/network" cta="Εξερεύνησε το Network →" />
             : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
                 {followedProfiles.map((p: any) => (
                   <GridCard
                     key={p.id}
