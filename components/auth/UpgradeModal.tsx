@@ -85,13 +85,13 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
                 </button>
               )}
               <h2 className="text-xl font-bold text-white">
-                {step === 'type' && 'Γίνε Creator'}
+                {step === 'type' && t("upgrade_become_creator")}
                 {step === 'sub' && currentType?.label}
-                {step === 'bio' && 'Σχεδόν έτοιμος'}
+                {step === 'bio' && t("upgrade_almost_ready")}
               </h2>
               <p className="text-white/40 text-sm mt-1">
-                {step === 'type' && 'Τι τύπος creator είσαι;'}
-                {step === 'sub' && 'Επίλεξε ειδικότητα'}
+                {step === 'type' && t("upgrade_creator_type_q")}
+                {step === 'sub' && t("upgrade_choose_specialty")}
                 {step === 'bio' && `${currentType?.label}${selectedSub ? ` · ${selectedSub}` : ''}`}
               </p>
             </div>
@@ -157,7 +157,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
             {step === 'bio' && (
               <div className="space-y-4">
                 <textarea
-                  placeholder="Πες μας λίγα λόγια για σένα..."
+                  placeholder={t("upgrade_bio_placeholder")}
                   value={bio}
                   onChange={e => setBio(e.target.value)}
                   rows={4}
@@ -179,7 +179,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
                   className="w-full font-bold py-3 transition-opacity disabled:opacity-50"
                   style={{ backgroundColor: gold, color: '#0F0F1A', borderRadius: 6 }}
                 >
-                  {loading ? 'Αποστολή...' : 'Αποστολή αίτησης →'}
+                  {loading ? t("auth_sending") : t("upgrade_send_request")}
                 </button>
               </div>
             )}

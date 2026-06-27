@@ -268,6 +268,29 @@ const translations = {
   common_loading:     { el: "Φόρτωση...", en: "Loading..." },
   common_free:        { el: "Δωρεάν", en: "Free" },
   common_close:       { el: "Κλείσιμο", en: "Close" },
+
+  // ── i18n cleanup — remaining Greek strings ───────────
+  home_event_of_week:        { el: "ΕΚΔΗΛΩΣΗ ΤΗΣ ΕΒΔΟΜΑΔΑΣ", en: "EVENT OF THE WEEK" },
+  fab_tonight:               { el: "Απόψε", en: "Tonight" },
+  tonight_what_doing:        { el: "Τι κάνουμε", en: "What's on" },
+  tonight_walk_2:            { el: "2 λεπτά με τα πόδια", en: "2 min walk" },
+  tonight_walk_4:            { el: "4 λεπτά με τα πόδια", en: "4 min walk" },
+  filter_what_music:         { el: "Μουσική & Club", en: "Music & Club" },
+  filter_what_show:          { el: "Θέαμα & Τέχνη", en: "Shows & Art" },
+  filter_what_drinks:        { el: "Ποτό & Παρέα", en: "Drinks & Company" },
+  filter_what_surprise:      { el: "Έκπληξέ με", en: "Surprise me" },
+  filter_mood_intense:       { el: "Έντονο", en: "Intense" },
+  filter_mood_chill:         { el: "Χαλαρό", en: "Chill" },
+  filter_mood_company:       { el: "Παρέα", en: "Social" },
+  about_card_label:          { el: "Καταχώρηση", en: "Submit" },
+  about_card_event_desc:     { el: "Διοργανώνεις party, live, festival; Το προσθέτεις στον χάρτη της νύχτας.", en: "Throwing a party, live show or festival? Put it on the night map." },
+  about_card_profile_desc:   { el: "DJ, artist, venue, sound engineer — γίνε μέρος του network.", en: "DJ, artist, venue, sound engineer — join the network." },
+  upgrade_become_creator:    { el: "Γίνε Creator", en: "Become a Creator" },
+  upgrade_almost_ready:      { el: "Σχεδόν έτοιμος", en: "Almost ready" },
+  upgrade_creator_type_q:    { el: "Τι τύπος creator είσαι;", en: "What kind of creator are you?" },
+  upgrade_choose_specialty:  { el: "Επίλεξε ειδικότητα", en: "Choose specialty" },
+  upgrade_bio_placeholder:   { el: "Πες μας λίγα λόγια για σένα...", en: "Tell us a bit about yourself..." },
+  upgrade_send_request:      { el: "Αποστολή αίτησης →", en: "Send request →" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

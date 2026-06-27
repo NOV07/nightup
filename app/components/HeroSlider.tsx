@@ -7,7 +7,7 @@ import { useLanguage } from "./LanguageContext";
 interface Slide {
   id: string;
   type: "event" | "article" | "release";
-  eyebrow: string;
+  eyebrow: string | { el: string; en: string };
   title: string;
   subtitle: string;
   meta: string[];
@@ -183,7 +183,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
             background: "var(--gold)",
             display: "inline-block", flexShrink: 0,
           }} />
-          {slide.eyebrow}
+          {typeof slide.eyebrow === "object" ? slide.eyebrow[lang] : slide.eyebrow}
         </p>
         <h1
           className="hero-slide-title"

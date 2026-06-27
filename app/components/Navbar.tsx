@@ -49,6 +49,7 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const { open: openTonight } = useTonightModal();
   const [open, setOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -228,7 +229,7 @@ export default function Navbar() {
               className="flex items-center gap-3 py-3 px-4 text-sm font-semibold w-full text-left"
               style={{ color: "#F5B335", backgroundColor: "rgba(232,160,32,0.06)" }}
             >
-              <span>✦</span> Απόψε
+              <span>✦</span> {t("fab_tonight")}
             </button>
             <div className="px-4 py-3 border-t mt-1" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
               <LangToggle />

@@ -216,29 +216,29 @@ function SubmitMusicSection() {
   return null;
 }
 
-const CARDS: Array<{ label: string; title: React.ReactNode; desc: string; href: string }> = [
-  {
-    label: "Καταχώρηση",
-    title: <>Πρόσθεσε <em style={{ fontStyle: "italic", color: "#E8A020" }}>event</em></>,
-    desc: "Διοργανώνεις party, live, festival; Το προσθέτεις στον χάρτη της νύχτας.",
-    href: "/submit/event",
-  },
-  {
-    label: "Καταχώρηση",
-    title: <>Φτιάξε <em style={{ fontStyle: "italic", color: "#E8A020" }}>προφίλ</em></>,
-    desc: "DJ, artist, venue, sound engineer — γίνε μέρος του network.",
-    href: "/submit/professional",
-  },
-  {
-    label: "Καταχώρηση",
-    title: <>Στείλε <em style={{ fontStyle: "italic", color: "#E8A020" }}>μουσική</em></>,
-    desc: "Νέο release ή mix; Στείλ' το για το Nightwaves.",
-    href: "/submit/release",
-  },
-];
-
 export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
   const { t } = useLanguage();
+
+  const CARDS: Array<{ label: string; title: React.ReactNode; desc: string; href: string }> = [
+    {
+      label: t("about_card_label"),
+      title: <>Πρόσθεσε <em style={{ fontStyle: "italic", color: "#E8A020" }}>event</em></>,
+      desc: t("about_card_event_desc"),
+      href: "/submit/event",
+    },
+    {
+      label: t("about_card_label"),
+      title: <>Φτιάξε <em style={{ fontStyle: "italic", color: "#E8A020" }}>προφίλ</em></>,
+      desc: t("about_card_profile_desc"),
+      href: "/submit/professional",
+    },
+    {
+      label: t("about_card_label"),
+      title: <>Στείλε <em style={{ fontStyle: "italic", color: "#E8A020" }}>μουσική</em></>,
+      desc: "Νέο release ή mix; Στείλ' το για το Nightwaves.",
+      href: "/submit/release",
+    },
+  ];
 
   // ── Form state — kept for backward compat ──
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
@@ -352,8 +352,6 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
     fontSize: "14px", backgroundColor: "#0F0F1A", color: "#fff",
     border: "1px solid rgba(255,255,255,0.1)",
   };
-
-  void t;
 
   useEffect(() => {
     const segments: [string, boolean][] = [

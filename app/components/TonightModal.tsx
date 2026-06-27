@@ -24,10 +24,9 @@ function buildNight(all: Spot[], mood: string): Spot[] {
 }
 
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
-const WALKS = ["2 λεπτά με τα πόδια", "4 λεπτά με τα πόδια"];
-
 export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; open: boolean; onClose: () => void }) {
   const { t } = useLanguage();
+  const WALKS = [t("tonight_walk_2"), t("tonight_walk_4")];
   const SPOT_CAT_LABELS: Record<SpotCategory, string> = {
     food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
     show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
@@ -133,7 +132,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
             {view === "tiles" && (
               <div>
                 <div style={S.kicker}>{kicker}</div>
-                <h2 style={S.h2}>Τι κάνουμε <em style={S.em}>απόψε;</em></h2>
+                <h2 style={S.h2}>{t("tonight_what_doing")} <em style={S.em}>{t("spots_hero_em")}</em></h2>
                 <p style={S.sub}>{t("tonight_sub")}</p>
                 <div style={S.grid}>
                   {SPOT_CATEGORIES.map((c) => (

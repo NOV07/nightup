@@ -17,18 +17,18 @@ interface EventsFilterModalProps {
 }
 
 const WHAT_OPTIONS = [
-  { emoji: '🎵', label: 'Μουσική & Club' },
-  { emoji: '🎭', label: 'Θέαμα & Τέχνη' },
-  { emoji: '🍹', label: 'Ποτό & Παρέα' },
-  { emoji: '✨', label: 'Έκπληξέ με' },
-]
+  { emoji: '🎵', key: 'filter_what_music' },
+  { emoji: '🎭', key: 'filter_what_show' },
+  { emoji: '🍹', key: 'filter_what_drinks' },
+  { emoji: '✨', key: 'filter_what_surprise' },
+] as const
 
 const WHEN_OPTIONS = ['Απόψε', 'Αύριο', 'Σαββατοκύριακο']
 
-const MOOD_OPTIONS = [
-  { emoji: '🔥', label: 'Έντονο' },
-  { emoji: '😌', label: 'Χαλαρό' },
-  { emoji: '👥', label: 'Παρέα' },
+const MOOD_OPTIONS: Array<{ emoji: string; key?: string; label?: string }> = [
+  { emoji: '🔥', key: 'filter_mood_intense' },
+  { emoji: '😌', key: 'filter_mood_chill' },
+  { emoji: '👥', key: 'filter_mood_company' },
   { emoji: '💃', label: 'Dance' },
 ]
 
@@ -43,6 +43,11 @@ const STEP_TITLES: Record<number, string> = {
 
 export default function EventsFilterModal({ onClose, onApply }: EventsFilterModalProps) {
   const { t } = useLanguage()
+  const WHEN_LABELS: Record<string, string> = {
+    'Απόψε': t('filter_tonight'),
+    'Αύριο': t('filter_tomorrow'),
+    'Σαββατοκύριακο': t('filter_weekend'),
+  }
   const [step, setStep] = useState(1)
   const [what, setWhat] = useState<string | null>(null)
   const [when, setWhen] = useState<string | null>(null)
@@ -177,10 +182,10 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
         {step === 1 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
             {WHAT_OPTIONS.map((opt) => (
-              <div key={opt.label} style={{ ...(what === opt.label ? tileActive : tileBase), padding: '14px 10px' }} onClick={() => setWhat(opt.label)}>
+              <div key={opt.key} style={{ ...(what === opt.key ? tileActive : tileBase), padding: '14px 10px' }} onClick={() => setWhat(opt.key)}>
                 <div style={{ fontSize: 26, marginBottom: 8 }}>{opt.emoji}</div>
-                <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: what === opt.label ? GOLD : '#fff' }}>
-                  {opt.label}
+                <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: what === opt.key ? GOLD : '#fff' }}>
+                  {t(opt.key)}
                 </div>
               </div>
             ))}
@@ -193,7 +198,7 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
             {WHEN_OPTIONS.map((opt) => (
               <div key={opt} style={{ ...(when === opt ? tileActive : tileBase), padding: '12px 8px' }} onClick={() => setWhen(opt)}>
                 <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: when === opt ? GOLD : '#fff' }}>
-                  {opt}
+                  {WHEN_LABELS[opt]}
                 </div>
               </div>
             ))}
@@ -203,14 +208,17 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
         {/* Step 3 — Mood */}
         {step === 3 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
-            {MOOD_OPTIONS.map((opt) => (
-              <div key={opt.label} style={{ ...(mood === opt.label ? tileActive : tileBase), padding: '14px 10px' }} onClick={() => setMood(opt.label)}>
-                <div style={{ fontSize: 26, marginBottom: 8 }}>{opt.emoji}</div>
-                <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: mood === opt.label ? GOLD : '#fff' }}>
-                  {opt.label}
+            {MOOD_OPTIONS.map((opt) => {
+              const optId = opt.key ?? opt.label ?? ''
+              return (
+                <div key={optId} style={{ ...(mood === optId ? tileActive : tileBase), padding: '14px 10px' }} onClick={() => setMood(optId)}>
+                  <div style={{ fontSize: 26, marginBottom: 8 }}>{opt.emoji}</div>
+                  <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: mood === optId ? GOLD : '#fff' }}>
+                    {opt.key ? t(opt.key as any) : opt.label}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 

@@ -154,7 +154,7 @@ export default async function HomePage() {
     ...([...hotCards].slice(0, 2).map((e: any) => ({
       id: e.id,
       type: "event" as const,
-      eyebrow: "ΕΚΔΗΛΩΣΗ ΤΗΣ ΕΒΔΟΜΑΔΑΣ",
+      eyebrow: { el: "ΕΚΔΗΛΩΣΗ ΤΗΣ ΕΒΔΟΜΑΔΑΣ", en: "EVENT OF THE WEEK" } as { el: string; en: string },
       title: e.title,
       subtitle: `${e.venue} · ${e.city}`,
       meta: [new Date(e.date).toLocaleDateString("el-GR", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).toUpperCase(), e.venue, formatPrice(e.price) || "είσοδος ελεύθερη"],
