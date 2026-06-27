@@ -82,6 +82,7 @@ function SectionHeader({
   count?: number;
   href?: string;
 }) {
+  const { t } = useLanguage();
   return (
     <div style={{ marginBottom: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
@@ -93,7 +94,7 @@ function SectionHeader({
         </div>
         {href && count !== undefined && count > 0 && (
           <a href={href} style={{ color: '#E8A020', fontSize: '11px', letterSpacing: '0.05em', textDecoration: 'none' }}>
-            Δες όλα {count} →
+            {t("events_view_all")} {count} →
           </a>
         )}
       </div>
@@ -311,7 +312,6 @@ export default function EventsClient({
             <span id="hero-typed"></span>
             <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: '#E8A020', verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
           </h1>
-          <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>{t("events_hero_body")}</p>
         </div>
       </div>
 
@@ -438,7 +438,7 @@ export default function EventsClient({
                 border: `1px solid ${genre === g ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.06)"}`,
               }}
             >
-              {g === "All" ? "Όλα" : GENRE_LABELS[g] ?? g}
+              {g === "All" ? t("events_filter_all") : GENRE_LABELS[g] ?? g}
             </button>
           ))}
         </div>
@@ -554,10 +554,10 @@ export default function EventsClient({
                   {tonightEvents.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 text-center">
                       <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-                        {el ? "Ήσυχη βραδιά απόψε" : "Quiet night tonight"}
+                        {t("events_quiet_tonight")}
                       </p>
                       <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
-                        {el ? "Δες το σαββατοκύριακο →" : "Check the weekend →"}
+                        {t("events_check_weekend")}
                       </p>
                     </div>
                   ) : (
@@ -570,7 +570,7 @@ export default function EventsClient({
                           className="mt-4 p-3 rounded-lg text-xs text-center"
                           style={{ border: "1px solid rgba(255,255,255,0.05)", backgroundColor: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.35)" }}
                         >
-                          {el ? "Λίγα events απόψε — δες το σαββατοκύριακο →" : "Slow night — see the weekend →"}
+                          {t("events_slow_night")}
                         </div>
                       )}
                     </>
@@ -628,8 +628,8 @@ export default function EventsClient({
                   </p>
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-sans)" }}>
                     {nearYouCount > 0
-                      ? `${nearYouCount} ${el ? "events κοντά σου" : "events near you"}`
-                      : el ? "Δεν υπάρχουν events αυτή τη στιγμή" : "No events right now"}
+                      ? `${nearYouCount} ${t("events_near_count")}`
+                      : t("events_none_now")}
                   </p>
                 </div>
               </div>
@@ -639,7 +639,7 @@ export default function EventsClient({
                   className="text-xs font-medium whitespace-nowrap transition-colors hover:bg-amber-500/10 px-3 py-1.5 rounded-md flex-shrink-0"
                   style={{ color: "var(--gold)", border: "1px solid rgba(232,160,32,0.4)", fontFamily: "var(--font-sans)" }}
                 >
-                  {el ? "Εξερεύνηση" : "Explore"} →
+                  {t("events_explore")} →
                 </a>
               )}
             </div>
@@ -652,7 +652,7 @@ export default function EventsClient({
               className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105"
               style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
             >
-              Δες όλα τα events →
+              {t("events_view_all_arrow")}
             </Link>
           </div>
         </div>
@@ -684,7 +684,7 @@ export default function EventsClient({
           whiteSpace: "nowrap",
         }}
       >
-        <span style={{ fontSize: 14 }}>✦</span> Βρες τη βραδιά σου
+        <span style={{ fontSize: 14 }}>✦</span> {t("events_find")}
       </button>
 
       {showFilterModal && (

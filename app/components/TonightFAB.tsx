@@ -5,8 +5,10 @@ import { useTonightModal } from "./TonightContext";
 import NetworkGuidedModal from "@/components/network/NetworkGuidedModal";
 import { useNetworkProfiles } from "./NetworkProfilesContext";
 import { usePlayerStore } from "./PlayerContext";
+import { useLanguage } from "./LanguageContext";
 
 export default function TonightFAB() {
+  const { t } = useLanguage();
   const { open, isOpen } = useTonightModal();
   const [hidden, setHidden] = useState(false);
   const [fabOpacity, setFabOpacity] = useState(1);
@@ -68,7 +70,7 @@ export default function TonightFAB() {
         }}
         className={`tonight-fab${currentTrack ? ' tonight-fab-has-track' : ''}`}
       >
-        <span style={{ fontSize: 14 }}>✦</span> {isNetwork ? "Τι ετοιμάζεις;" : "Βρες τη βραδιά σου"}
+        <span style={{ fontSize: 14 }}>✦</span> {isNetwork ? t("fab_plan_event") : t("fab_find_night")}
       </button>
       {isNetwork && showNetworkModal && (
         <NetworkGuidedModal onClose={() => setShowNetworkModal(false)} profiles={networkProfiles} />

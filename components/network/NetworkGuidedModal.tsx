@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 const GOLD = '#E8A020'
 const SURFACE = '#1A1A2E'
@@ -46,6 +47,7 @@ interface Props {
 }
 
 export default function NetworkGuidedModal({ onClose, profiles }: Props) {
+  const { t } = useLanguage()
   const [step, setStep] = useState<'intent' | 'have' | 'missing' | 'location' | 'results'>('intent')
   const [intent, setIntent] = useState<'event' | 'artist' | null>(null)
   const [have, setHave] = useState<Set<string>>(new Set())
@@ -160,11 +162,11 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
           {step === 'intent' && (
             <>
               <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Τι ετοιμάζεις;</h2>
-              <p className="text-white/40 text-sm mb-5">Πες μας και βρίσκουμε αυτό που σου λείπει.</p>
+              <p className="text-white/40 text-sm mb-5">{t("guided_intro_sub")}</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { id: 'event' as const,  emoji: '🎪', label: 'Φτιάχνω event',      desc: 'Βρες artists, venue, επαγγελματίες' },
-                  { id: 'artist' as const, emoji: '🎵', label: 'Είμαι καλλιτέχνης', desc: 'Βρες studio, producer, booking agent' },
+                  { id: 'event' as const,  emoji: '🎪', label: t("guided_event_label"),  desc: t("guided_event_desc") },
+                  { id: 'artist' as const, emoji: '🎵', label: t("guided_artist_label"), desc: t("guided_artist_desc") },
                 ].map(opt => (
                   <button
                     key={opt.id}
@@ -181,7 +183,7 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
                 ))}
               </div>
               <button onClick={onClose} className="w-full mt-4 text-white/30 hover:text-white/50 text-xs transition text-center">
-                Θέλω να κάνω browse μόνος μου →
+                {t("guided_browse")}
               </button>
             </>
           )}
@@ -190,10 +192,10 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
           {step === 'have' && (
             <>
               <button onClick={() => { setStep('intent'); setHave(new Set()) }} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
-                ← Πίσω
+                {t("guided_back")}
               </button>
               <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Τι έχεις ήδη;</h2>
-              <p className="text-white/40 text-sm mb-4">Τσέκαρε αυτά που έχεις — θα βρούμε αυτό που λείπει.</p>
+              <p className="text-white/40 text-sm mb-4">{t("guided_checklist_sub")}</p>
               <div className="space-y-2 mb-5">
                 {items.map(item => {
                   const checked = have.has(item.id)
@@ -220,7 +222,7 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
                 className="w-full"
                 style={{ background: 'linear-gradient(100deg,#E8A020,#F5B335)', color: '#1a1407', borderRadius: 12, padding: 15, fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 14.5, cursor: 'pointer', border: 'none', boxShadow: '0 14px 34px rgba(232,160,32,0.3)' }}
               >
-                {currentMissing.length === 0 ? 'Τα έχεις όλα! 🎉' : `Δες τι λείπει (${currentMissing.length}) →`}
+                {currentMissing.length === 0 ? t("tonight_have_all") : `${t("guided_whats_missing")} (${currentMissing.length}) →`}
               </button>
             </>
           )}
@@ -229,10 +231,10 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
           {step === 'missing' && (
             <>
               <button onClick={() => setStep('have')} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
-                ← Πίσω
+                {t("guided_back")}
               </button>
               <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Αυτά σου λείπουν</h2>
-              <p className="text-white/40 text-sm mb-4">Πάτα ό,τι θέλεις να βρεις.</p>
+              <p className="text-white/40 text-sm mb-4">{t("guided_what_need_sub")}</p>
               <div className="grid grid-cols-2 gap-3">
                 {missing.map(item => (
                   <button
@@ -255,15 +257,15 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
           {step === 'location' && (
             <>
               <button onClick={() => setStep('missing')} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
-                ← Πίσω
+                {t("guided_back")}
               </button>
               <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Πού ψάχνεις;</h2>
-              <p className="text-white/40 text-sm mb-4">Θα δώσουμε προτεραιότητα σε προφίλ κοντά σου.</p>
+              <p className="text-white/40 text-sm mb-4">{t("guided_city_sub")}</p>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Αθήνα', value: 'Athens' },
-                  { label: 'Θεσσαλονίκη', value: 'Thessaloniki' },
-                  { label: 'Όλη η Ελλάδα', value: 'all' },
+                  { label: t("guided_city_athens"), value: 'Athens' },
+                  { label: t("guided_city_thess"), value: 'Thessaloniki' },
+                  { label: t("guided_city_all"), value: 'all' },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -284,18 +286,18 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
           {step === 'results' && activeItem && (
             <>
               <button onClick={() => { setStep('location'); setSelectedCity('all') }} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
-                ← Πίσω
+                {t("guided_back")}
               </button>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">{activeItem.emoji}</span>
                 <h2 style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>{activeItem.label}</h2>
               </div>
               <p className="text-white/40 text-sm mb-4">
-                {filteredProfiles.length} {filteredProfiles.length === 1 ? 'αποτέλεσμα' : 'αποτελέσματα'}
+                {filteredProfiles.length} {filteredProfiles.length === 1 ? t("network_results_one") : t("network_results_many")}
               </p>
 
               {filteredProfiles.length === 0 ? (
-                <p className="text-white/30 text-sm text-center py-8">Δεν βρέθηκαν προφίλ ακόμα.</p>
+                <p className="text-white/30 text-sm text-center py-8">{t("guided_no_profiles")}</p>
               ) : (
                 <div className="space-y-3 flex-1">
                   {filteredProfiles.map(profile => (
@@ -332,7 +334,7 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
                 className="block w-full text-center mt-4 text-xs font-semibold py-2 transition-opacity hover:opacity-80"
                 style={{ color: GOLD, border: `1px solid rgba(232,160,32,0.25)`, borderRadius: 6 }}
               >
-                Δες όλους →
+                {t("guided_view_all")}
               </Link>
             </>
           )}

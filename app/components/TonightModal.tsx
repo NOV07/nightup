@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import SpotCard from "./SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
+import { useLanguage } from "./LanguageContext";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
@@ -22,16 +23,17 @@ function buildNight(all: Spot[], mood: string): Spot[] {
   return seq.map(pick).filter(Boolean) as Spot[];
 }
 
-const STOP_LABELS: Record<SpotCategory, string> = {
-  food: "ΦΑΓΗΤΟ", drink: "ΠΟΤΟ", nightlife: "ΝΥΧΤΑ",
-  show: "ENTERTAINMENT", chill: "ΧΑΛΑΡΑ", activity: "ΔΡΑΣΤΗΡΙΟΤΗΤΑ",
-  art: "ΤΕΧΝΗ", wellness: "WELLNESS",
-};
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 const WALKS = ["2 λεπτά με τα πόδια", "4 λεπτά με τα πόδια"];
-const LOAD_STEPS = ["Βρίσκουμε πού να φας", "Ψάχνουμε ποτό δίπλα", "Κλείνουμε με χορό", "Μετράμε αποστάσεις…"];
 
 export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; open: boolean; onClose: () => void }) {
+  const { t } = useLanguage();
+  const SPOT_CAT_LABELS: Record<SpotCategory, string> = {
+    food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
+    show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
+    art: t("tonight_cat_art"), wellness: t("tonight_cat_wellness"),
+  };
+  const LOAD_STEPS = [t("tonight_load_1"), t("tonight_load_2"), t("tonight_load_3"), t("tonight_load_4")];
   const [view, setView] = useState<"tiles" | "subcats" | "results" | "night">("tiles");
   const [activeCat, setActiveCat] = useState<SpotCategory>("drink");
   const [activeSub, setActiveSub] = useState<string | null>(null);
@@ -82,9 +84,9 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
 
   const keepNight = async () => {
     const lines = night.map((s, i) =>
-      `${STOP_TIMES[i] ?? ""} · ${STOP_LABELS[s.category]}\n${s.name}${s.address ? ` — ${s.address}` : ""}${s.neighborhood ? `, ${s.neighborhood}` : ""}`
+      `${STOP_TIMES[i] ?? ""} · ${SPOT_CAT_LABELS[s.category]}\n${s.name}${s.address ? ` — ${s.address}` : ""}${s.neighborhood ? `, ${s.neighborhood}` : ""}`
     );
-    const text = `🌙 Η βραδιά μου στην Αθήνα\n\n${lines.join("\n\n")}\n\n— via nightup.gr`;
+    const text = `${t("tonight_share_text")}\n\n${lines.join("\n\n")}\n\n— via nightup.gr`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -105,7 +107,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
     s.category === activeCat && (!activeSub || s.subcategory === activeSub)
   );
   const now = new Date();
-  const days = ["Κυριακή","Δευτέρα","Τρίτη","Τετάρτη","Πέμπτη","Παρασκευή","Σάββατο"];
+  const days = t("tonight_days").split(",");
   const kicker = `${days[now.getDay()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}  Αθήνα`;
 
   if (!open) return null;
@@ -132,7 +134,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
               <div>
                 <div style={S.kicker}>{kicker}</div>
                 <h2 style={S.h2}>Τι κάνουμε <em style={S.em}>απόψε;</em></h2>
-                <p style={S.sub}>Διάλεξε διάθεση ή άσε μας να σου στήσουμε ολόκληρη τη βραδιά.</p>
+                <p style={S.sub}>{t("tonight_sub")}</p>
                 <div style={S.grid}>
                   {SPOT_CATEGORIES.map((c) => (
                     <button key={c.key} onClick={() => goCategory(c.key)} style={S.tile}
@@ -150,10 +152,10 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
                   onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-3px)";}}
                   onMouseLeave={(e)=>{e.currentTarget.style.transform="none";}}>
                   <span style={{ fontSize: 20 }}>✨</span>
-                  <span>Εξέπληξέ με<br/><span style={{ fontWeight: 400, fontSize: 10.5, opacity: 0.7 }}>Ολόκληρη βραδιά σε 2 taps</span></span>
+                  <span>{t("tonight_surprise")}<br/><span style={{ fontWeight: 400, fontSize: 10.5, opacity: 0.7 }}>{t("tonight_surprise_sub")}</span></span>
                 </button>
                 <div style={{ textAlign: "center", marginTop: 16 }}>
-                  <button onClick={handleClose} style={S.skip}>Όχι τώρα — δες την αρχική →</button>
+                  <button onClick={handleClose} style={S.skip}>{t("tonight_skip")}</button>
                 </div>
               </div>
             )}
@@ -161,12 +163,12 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
             {/* ── SUBCATS ── */}
             {view === "subcats" && (
               <div>
-                <button onClick={() => setView("tiles")} style={S.back}>‹ Πίσω</button>
+                <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_back")}</button>
                 <div style={S.resHead}>
-                  {SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label} <em style={S.em}>· τι είδος;</em>
+                  {SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label} <em style={S.em}>· {t("tonight_vibe_q")}</em>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 18 }}>
-                  <button onClick={() => goResults(null)} style={S.subChip}>Όλα</button>
+                  <button onClick={() => goResults(null)} style={S.subChip}>{t("tonight_all_sub")}</button>
                   {SUBCATEGORIES[activeCat].map((sub) => {
                     const count = spots.filter((s) => s.category === activeCat && s.subcategory === sub.value).length;
                     const disabled = count === 0;
@@ -181,7 +183,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
                           cursor: disabled ? "default" : "pointer",
                         }}
                       >
-                        {sub.label}{disabled ? " · σύντομα" : ` · ${count}`}
+                        {sub.label}{disabled ? ` · ${t("tonight_coming_soon")}` : ` · ${count}`}
                       </button>
                     );
                   })}
@@ -192,12 +194,12 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
             {/* ── RESULTS ── */}
             {view === "results" && (
               <div>
-                <button onClick={() => setView("subcats")} style={S.back}>‹ Πίσω</button>
+                <button onClick={() => setView("subcats")} style={S.back}>{t("tonight_back")}</button>
                 <div style={S.resHead}>
                   {activeSub
                     ? SUBCATEGORIES[activeCat].find((x) => x.value === activeSub)?.label ?? activeSub
                     : SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label}
-                  {" "}<em style={S.em}>· κοντά σου</em>
+                  {" "}<em style={S.em}>· {t("tonight_near")}</em>
                 </div>
                 <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
                   {catSpots.map((s) => <SpotCard key={s.id} spot={s} compact onNavigate={handleClose} />)}
@@ -208,27 +210,27 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
             {/* ── NIGHT ── */}
             {view === "night" && (
               <div>
-                <button onClick={() => setView("tiles")} style={S.back}>‹ Νέα αναζήτηση</button>
-                <div style={S.nightKicker}>Η βραδιά σου · στημένη</div>
-                <div style={S.nightTitle}>Η βραδιά <em style={S.em}>ανεβαίνει</em></div>
+                <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_new_search")}</button>
+                <div style={S.nightKicker}>{t("tonight_kicker")}</div>
+                <div style={S.nightTitle}>{t("tonight_title")} <em style={S.em}>{t("tonight_title_em")}</em></div>
                 <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 6 }}>
                   {night.map((s, i) => (
                     <div key={s.id}>
                       <div style={{ fontSize: 11.5, color: "#E8A020", fontWeight: 700, letterSpacing: "0.7px", marginBottom: 6 }}>
-                        {STOP_TIMES[i]} · {STOP_LABELS[s.category]}
+                        {STOP_TIMES[i]} · {SPOT_CAT_LABELS[s.category]}
                       </div>
                       <SpotCard spot={s} compact onNavigate={handleClose} />
                       {i < night.length - 1 && (
                         <div style={{ fontSize: 11, color: "#E8A020", opacity: 0.82, margin: "8px 0 8px 6px" }}>
-                          — {WALKS[i] ?? "λίγα λεπτά με τα πόδια"}
+                          — {WALKS[i] ?? t("tonight_walk_min")}
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
                 <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-                  <button onClick={reroll} style={S.btnGhost}>🔄 Άλλη πρόταση</button>
-                  <button onClick={keepNight} style={S.btnGold}>{copied ? "Αντιγράφηκε!" : "Κράτα τη βραδιά"}</button>
+                  <button onClick={reroll} style={S.btnGhost}>{t("tonight_reroll")}</button>
+                  <button onClick={keepNight} style={S.btnGold}>{copied ? t("tonight_copied") : t("tonight_keep")}</button>
                 </div>
               </div>
             )}
@@ -239,8 +241,8 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
             <div style={S.overlay} onClick={(e)=>{if(e.target===e.currentTarget)setMoodOpen(false);}}>
               <div style={S.sheet}>
                 <div style={S.grab} />
-                <h3 style={S.sheetH3}>Τι διάθεση έχεις;</h3>
-                <p style={S.sheetP}>Μία ερώτηση και σου στήνουμε τη βραδιά.</p>
+                <h3 style={S.sheetH3}>{t("tonight_sheet_h")}</h3>
+                <p style={S.sheetP}>{t("tonight_sheet_p")}</p>
                 <div style={S.moods}>
                   {MOODS.map((m) => (
                     <button key={m.key} onClick={() => pickMood(m.key)} style={S.mood}
@@ -264,7 +266,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
                 <div style={{ position: "absolute", inset: 13, borderRadius: "50%", border: "2px solid transparent", borderBottomColor: "#F5B335", borderLeftColor: "#F5B335", animation: "spin 1.4s linear infinite reverse" }} />
                 <div style={S.orbitCore}>🌙</div>
               </div>
-              <div style={S.loadTxt}>Στήνουμε τη βραδιά σου…</div>
+              <div style={S.loadTxt}>{t("tonight_building")}</div>
               <div style={S.loadSub}>{LOAD_STEPS[loadStep]}</div>
             </div>
           )}

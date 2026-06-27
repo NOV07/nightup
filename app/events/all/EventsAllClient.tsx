@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import EventCard from "../../components/EventCard";
 
 import { CITIES, GENRES, GENRE_LABELS } from "../../lib/searchConstants";
+import { useLanguage } from "../../components/LanguageContext";
 const PAGE_SIZE = 12;
 
 interface Event {
@@ -15,6 +16,7 @@ interface Event {
 }
 
 export default function EventsAllClient({ initialEvents }: { initialEvents: Event[] }) {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -122,7 +124,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
                 border: `1px solid ${genre === g ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
               }}
             >
-              {g === "All" ? "Όλα" : GENRE_LABELS[g] ?? g}
+              {g === "All" ? t("events_filter_all") : GENRE_LABELS[g] ?? g}
             </button>
           ))}
         </div>

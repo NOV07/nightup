@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import TranslatedArticleBody from "../../components/TranslatedArticleBody";
+import T from "../../components/T";
 
 interface Props { params: Promise<{ id: string }>; }
 
@@ -330,7 +331,7 @@ export default async function MagazineArticlePage({ params }: Props) {
               style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.08)" }}
             >
               <p className="text-xs uppercase mb-3" style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
-                Κατηγορία
+                <T k="article_category" />
               </p>
               <span
                 className="inline-block text-sm font-semibold px-3 py-1 rounded-full"
@@ -351,7 +352,7 @@ export default async function MagazineArticlePage({ params }: Props) {
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
                 <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
-                  <span style={{ color: "#fff", fontWeight: 600 }}>{article.read_time}</span> min ανάγνωση
+                  <span style={{ color: "#fff", fontWeight: 600 }}>{article.read_time}</span> <T k="article_min_read" />
                 </p>
               </div>
             )}
@@ -403,7 +404,7 @@ export default async function MagazineArticlePage({ params }: Props) {
           <div className="flex items-center gap-3 mb-5">
             <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
             <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
-              Πηγές
+              <T k="article_sources" />
             </h2>
           </div>
           <div className="space-y-2">
@@ -438,7 +439,7 @@ export default async function MagazineArticlePage({ params }: Props) {
           <div className="flex items-center gap-3 mb-6">
             <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
             <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
-              Περισσότερα από τη σειρά — {article.series ? formatSlug(article.series) : ""}
+              <T k="article_more_series" /> — {article.series ? formatSlug(article.series) : ""}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">
@@ -471,7 +472,7 @@ export default async function MagazineArticlePage({ params }: Props) {
                           className="inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-2"
                           style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
                         >
-                          Διαβάζεις τώρα
+                          <T k="article_reading_now" />
                         </span>
                       )}
                       <p
@@ -498,7 +499,7 @@ export default async function MagazineArticlePage({ params }: Props) {
           <div className="flex items-center gap-3 mb-8">
             <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
             <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
-              Περισσότερα από {article.category}
+              <T k="article_more_from" /> {article.category}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
@@ -562,7 +563,7 @@ export default async function MagazineArticlePage({ params }: Props) {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div>
             <p className="text-xs uppercase mb-3" style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>
-              Μοιράσου το άρθρο
+              <T k="article_share" />
             </p>
             <div className="flex flex-wrap gap-3">
               <a
@@ -596,7 +597,7 @@ export default async function MagazineArticlePage({ params }: Props) {
             className="text-sm transition-colors"
             style={{ color: "rgba(255,255,255,0.4)" }}
           >
-            ← Πίσω στο Magazine
+            <T k="article_back" />
           </Link>
         </div>
       </div>

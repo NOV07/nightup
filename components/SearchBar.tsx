@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
 import { CITIES, GENRES, NETWORK } from "../app/lib/searchData";
+import { useLanguage } from "../app/components/LanguageContext";
 
 export type SearchTab = "search" | "events" | "network";
 
@@ -95,6 +96,7 @@ const activeChipStyle: React.CSSProperties = {
 };
 
 export default function SearchBar({ open, activeTab, onClose, onTabChange }: SearchBarProps) {
+  const { t } = useLanguage();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -448,7 +450,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                     onMouseEnter={(e) => (e.currentTarget.style.background = `${AMBER}18`)}
                     onMouseLeave={(e) => (e.currentTarget.style.background = `${AMBER}0a`)}
                   >
-                    Δες όλα τα αποτελέσματα →
+                    {t("searchbar_view_all")}
                   </Link>
                 </div>
               )}

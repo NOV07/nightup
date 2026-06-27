@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import SpotCard from "../components/SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, type Spot, type SpotCategory } from "./types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
+import { useLanguage } from "../components/LanguageContext";
 
 export default function SpotsClient({ spots }: { spots: Spot[] }) {
+  const { t } = useLanguage();
   const [active, setActive] = useState<SpotCategory>("drink");
   const [subFilter, setSubFilter] = useState<Record<string, string | null>>({});
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -32,8 +34,8 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
 
   useEffect(() => {
     const segments: [string, boolean][] = [
-      ['Πού πάμε ', false],
-      ['απόψε;', true],
+      [t("spots_hero_title") + ' ', false],
+      [t("spots_hero_em"), true],
     ]
     const fullText = segments.map(s => s[0]).join('')
     const goldStart = segments[0][0].length
@@ -113,7 +115,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
             <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: '#E8A020', verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
           </h1>
           <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
-            Όλα τα spots της Αθήνας — φαγητό, ποτό, νύχτα, θέαμα και άλλα.
+            {t("spots_subtitle")}
           </p>
         </div>
       </div>
@@ -172,7 +174,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                   onClick={() => setSubFilter((p) => ({ ...p, [c.key]: null }))}
                   style={subChipStyle(!subFilter[c.key])}
                 >
-                  Όλα
+                  {t("spots_all")}
                 </button>
                 {SUBCATEGORIES[c.key].map((sub) => {
                   const n = items.filter((s) => s.subcategory === sub.value).length;

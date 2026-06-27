@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import InterestButton from '@/components/ui/InterestButton'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 interface Profile {
   id: string
@@ -29,6 +30,7 @@ interface Listing {
 const GOLD = '#E8A020'
 
 export default function ListingsPageClient({ listings }: { listings: Listing[] }) {
+  const { t } = useLanguage()
   const [typeFilter, setTypeFilter] = useState<'all' | 'seeking' | 'offering'>('all')
   const [cityFilter, setCityFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
@@ -60,10 +62,10 @@ export default function ListingsPageClient({ listings }: { listings: Listing[] }
             NETWORK
           </p>
           <h1 style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 36, fontWeight: 500, color: '#F4F4F5', lineHeight: 1.2, marginBottom: 12 }}>
-            Αγγελίες
+            {t("listings_title")}
           </h1>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', maxWidth: 500 }}>
-            Βρες συνεργάτες για events, εκδηλώσεις και μουσικά projects σε όλη την Ελλάδα.
+            {t("listings_subtitle")}
           </p>
         </div>
 
@@ -73,7 +75,7 @@ export default function ListingsPageClient({ listings }: { listings: Listing[] }
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Αναζήτηση..."
+            placeholder={t("listings_search")}
             style={{
               backgroundColor: '#1A1A28',
               border: '1px solid rgba(255,255,255,0.08)',
@@ -87,20 +89,20 @@ export default function ListingsPageClient({ listings }: { listings: Listing[] }
           />
           {/* Type filter */}
           <div style={{ display: 'flex', gap: 6 }}>
-            {(['all', 'seeking', 'offering'] as const).map(t => (
-              <button key={t} onClick={() => setTypeFilter(t)}
+            {(['all', 'seeking', 'offering'] as const).map(tab => (
+              <button key={tab} onClick={() => setTypeFilter(tab)}
                 style={{
                   padding: '7px 14px',
                   borderRadius: 6,
                   fontSize: 12,
                   fontWeight: 600,
-                  border: `1px solid ${typeFilter === t ? GOLD : 'rgba(255,255,255,0.1)'}`,
-                  backgroundColor: typeFilter === t ? 'rgba(232,160,32,0.1)' : 'transparent',
-                  color: typeFilter === t ? GOLD : 'rgba(255,255,255,0.45)',
+                  border: `1px solid ${typeFilter === tab ? GOLD : 'rgba(255,255,255,0.1)'}`,
+                  backgroundColor: typeFilter === tab ? 'rgba(232,160,32,0.1)' : 'transparent',
+                  color: typeFilter === tab ? GOLD : 'rgba(255,255,255,0.45)',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                 }}>
-                {t === 'all' ? 'Όλες' : t === 'seeking' ? 'Ζητώ' : 'Προσφέρω'}
+                {tab === 'all' ? t("listings_all") : tab === 'seeking' ? t("listings_seeking") : t("listings_offering")}
               </button>
             ))}
           </div>
@@ -116,17 +118,17 @@ export default function ListingsPageClient({ listings }: { listings: Listing[] }
               outline: 'none',
               cursor: 'pointer',
             }}>
-            {cities.map(c => <option key={c} value={c}>{c === 'all' ? 'Όλες οι πόλεις' : c}</option>)}
+            {cities.map(c => <option key={c} value={c}>{c === 'all' ? t("listings_all_cities") : c}</option>)}
           </select>
           {/* Count */}
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginLeft: 'auto' }}>
-            {filtered.length} αγγελί{filtered.length === 1 ? 'α' : 'ες'}
+            {filtered.length} {filtered.length === 1 ? t("listings_count_one") : t("listings_count_many")}
           </span>
         </div>
 
         {/* Grid */}
         {filtered.length === 0 ? (
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', paddingTop: 40 }}>Δεν βρέθηκαν αγγελίες.</p>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', paddingTop: 40 }}>{t("listings_none")}</p>
         ) : (
           <div style={{
             display: 'grid',
@@ -144,6 +146,7 @@ export default function ListingsPageClient({ listings }: { listings: Listing[] }
 }
 
 function ListingCard({ listing }: { listing: Listing }) {
+  const { t } = useLanguage()
   const [expanded, setExpanded] = useState(false)
 
   const initials = (name: string) => name.slice(0, 2).toUpperCase()
@@ -178,7 +181,7 @@ function ListingCard({ listing }: { listing: Listing }) {
             border: `1px solid ${listing.type === 'seeking' ? 'rgba(96,165,250,0.25)' : 'rgba(52,211,153,0.25)'}`,
             borderRadius: 4, padding: '2px 7px',
           }}>
-            {listing.type === 'seeking' ? 'Ζητώ' : 'Προσφέρω'}
+            {listing.type === 'seeking' ? t("listings_seeking") : t("listings_offering")}
           </span>
           {listing.is_sponsored && (
             <span style={{

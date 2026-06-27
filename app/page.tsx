@@ -8,6 +8,7 @@ import FadeInObserver from "./components/FadeInObserver";
 import HeroSlider from "./components/HeroSlider";
 import NightwavesHomeCard from "./components/NightwavesHomeCard";
 import { formatPrice } from "./lib/formatPrice";
+import T from "./components/T";
 
 export const dynamic = "force-dynamic";
 
@@ -157,7 +158,7 @@ export default async function HomePage() {
       title: e.title,
       subtitle: `${e.venue} · ${e.city}`,
       meta: [new Date(e.date).toLocaleDateString("el-GR", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).toUpperCase(), e.venue, formatPrice(e.price) || "είσοδος ελεύθερη"],
-      ctaLabel: "Εισιτήρια",
+      ctaLabel: { el: "Εισιτήρια", en: "Tickets" } as { el: string; en: string },
       ctaHref: `/events/${e.id}`,
       image: e.image || undefined,
       bgColor: "linear-gradient(160deg,#0e1520,#080f18)",
@@ -215,7 +216,7 @@ export default async function HomePage() {
             fontFamily: "var(--font-sans)", fontSize: "11px",
             color: "var(--text-muted)", letterSpacing: "0.05em",
             textDecoration: "none",
-          }}>Δες όλα →</Link>
+          }}><T k="home_view_all" /></Link>
         </div>
         <EventTabs thisWeekCards={allThisWeekCards} hotPopularCards={hotPopularCards} />
       </section>

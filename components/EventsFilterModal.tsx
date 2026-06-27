@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 const GOLD = '#E8A020'
 
@@ -41,6 +42,7 @@ const STEP_TITLES: Record<number, string> = {
 }
 
 export default function EventsFilterModal({ onClose, onApply }: EventsFilterModalProps) {
+  const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [what, setWhat] = useState<string | null>(null)
   const [when, setWhen] = useState<string | null>(null)
@@ -122,7 +124,7 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
               fontFamily: 'var(--font-sans), Inter, sans-serif',
             }}
           >
-            ← Πίσω
+            {t("auth_back")}
           </button>
 
           <div style={{ display: 'flex', gap: 6 }}>
@@ -246,7 +248,7 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
             transition: 'opacity 0.15s ease',
           }}
         >
-          {step < 4 ? 'Επόμενο →' : 'Βρες events →'}
+          {step < 4 ? t("filter_next") : t("filter_see_events")}
         </button>
       </div>
     </div>

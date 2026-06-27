@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getSupabase } from "../lib/supabase";
+import T from "../components/T";
+import { SearchResultCount } from "./SearchResultCount";
 
 export const dynamic = "force-dynamic";
 
@@ -144,27 +146,27 @@ export default async function SearchPage({ searchParams }: Props) {
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24">
             <path d="M15 19l-7-7 7-7" />
           </svg>
-          Αρχική
+          <T k="search_breadcrumb" />
         </Link>
 
         {/* Heading */}
         <div style={{ marginBottom: 36 }}>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: GOLD, marginBottom: 10 }}>
-            Αναζήτηση
+            <T k="search_title" />
           </p>
           {query ? (
             <h1 style={{ fontFamily: "var(--font-spectral, Georgia, serif)", fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 700, letterSpacing: "-0.03em", color: "#F4F4F5", lineHeight: 1.1, margin: 0 }}>
-              Αποτελέσματα για{" "}
+              <T k="search_results_for" />{" "}
               <em style={{ fontStyle: "italic", color: GOLD }}>&ldquo;{query}&rdquo;</em>
             </h1>
           ) : (
             <h1 style={{ fontFamily: "var(--font-spectral, Georgia, serif)", fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 700, letterSpacing: "-0.03em", color: "#F4F4F5", lineHeight: 1.1, margin: 0 }}>
-              Τι ψάχνεις;
+              <T k="search_placeholder" />
             </h1>
           )}
           {query && (
             <p style={{ marginTop: 10, fontSize: 13, color: "#555" }}>
-              {total > 0 ? `${total} αποτέλεσμα${total !== 1 ? "τα" : ""}` : "Δεν βρέθηκαν αποτελέσματα"}
+              <SearchResultCount total={total} />
             </p>
           )}
         </div>
@@ -174,7 +176,7 @@ export default async function SearchPage({ searchParams }: Props) {
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <p style={{ fontSize: 32, marginBottom: 16 }}>🔍</p>
             <p style={{ color: "#555", fontSize: 14 }}>
-              Χρησιμοποίησε την αναζήτηση στο navbar για να βρεις events, spots, mixes και άλλα.
+              <T k="search_hint" />
             </p>
           </div>
         )}
@@ -184,9 +186,9 @@ export default async function SearchPage({ searchParams }: Props) {
           <div style={{ textAlign: "center", padding: "60px 0" }}>
             <p style={{ fontSize: 32, marginBottom: 16 }}>😶</p>
             <p style={{ color: "#A1A1AA", fontSize: 15, marginBottom: 8 }}>
-              Δεν βρέθηκε τίποτα για &ldquo;{query}&rdquo;
+              <T k="search_nothing_for" /> &ldquo;{query}&rdquo;
             </p>
-            <p style={{ color: "#555", fontSize: 13 }}>Δοκίμασε διαφορετικές λέξεις ή έλεγξε την ορθογραφία.</p>
+            <p style={{ color: "#555", fontSize: 13 }}><T k="search_try_again" /></p>
           </div>
         )}
 

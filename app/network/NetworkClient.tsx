@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { NETWORK, CITIES, CITY_LABELS } from '../lib/searchData'
 import FollowButton from '@/components/ui/FollowButton'
 import ListingsBar, { type Listing } from '@/components/network/ListingsBar'
+import { useLanguage } from '../components/LanguageContext'
 
 type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
 
@@ -34,6 +35,7 @@ const TAB_META: Record<NetworkTab, { emoji: string; label: string }> = {
 }
 
 function ProfileCard({ profile }: { profile: Profile }) {
+  const { t } = useLanguage()
   const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
   return (
     <Link
@@ -83,12 +85,13 @@ function ProfileCard({ profile }: { profile: Profile }) {
       {profile.bio && (
         <p className="text-xs text-white/50 line-clamp-2">{profile.bio}</p>
       )}
-      <p className="text-xs font-medium mt-auto" style={{ color: GOLD }}>Δες προφίλ →</p>
+      <p className="text-xs font-medium mt-auto" style={{ color: GOLD }}>{t("network_view_profile")}</p>
     </Link>
   )
 }
 
 export default function NetworkClient({ profiles, listings = [] }: { profiles: Profile[]; allProfiles?: Profile[]; listings?: Listing[] }) {
+  const { t } = useLanguage()
   const router = useRouter()
   const params = useSearchParams()
 
@@ -219,11 +222,11 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
               </h1>
             </div>
             <Link href="/network/listings" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-              Αγγελίες →
+              {t("network_listings")}
             </Link>
           </div>
           <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
-            Artists, venues και professionals — όλοι εδώ.
+            {t("network_tagline")}
           </p>
         </div>
       </div>
@@ -268,7 +271,7 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
                 padding: '0.4rem 0.75rem',
               }}
             >
-              <option value="">Όλες οι πόλεις</option>
+              <option value="">{t("network_all_cities")}</option>
               {CITIES.slice(1).map(c => <option key={c} value={c}>{CITY_LABELS[c] ?? c}</option>)}
             </select>
           </div>
@@ -281,7 +284,7 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
                   onClick={() => push({ category: '' })}
                   style={pillStyle(!activeCategory)}
                 >
-                  Όλοι
+                  {t("network_all")}
                 </button>
                 {subcategories.map(sub => (
                   <button
@@ -315,7 +318,7 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
         {/* Count */}
         <div className="mb-5">
           <p className="text-xs text-white/30">
-            {profiles.length} {profiles.length === 1 ? 'αποτέλεσμα' : 'αποτελέσματα'}
+            {profiles.length} {profiles.length === 1 ? t("network_results_one") : t("network_results_many")}
             {activeCategory && <span> · {activeCategory}</span>}
             {activeCity && <span> · {activeCity}</span>}
           </p>
@@ -327,14 +330,14 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
           </div>
         ) : (
           <div className="text-center py-20">
-            <p className="text-white/30 text-sm mb-2">Δεν βρέθηκαν αποτελέσματα</p>
+            <p className="text-white/30 text-sm mb-2">{t("network_no_results")}</p>
             {(activeCategory || activeCity) && (
               <button
                 onClick={() => push({ category: '', city: '' })}
                 className="text-xs hover:underline mt-2"
                 style={{ color: GOLD }}
               >
-                Καθαρισμός φίλτρων
+                {t("network_clear")}
               </button>
             )}
           </div>

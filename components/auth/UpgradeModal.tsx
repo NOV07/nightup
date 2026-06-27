@@ -1,14 +1,20 @@
 'use client'
 import { useState } from 'react'
+import { useLanguage } from '@/app/components/LanguageContext'
 
-const TYPES = [
-  { id: 'organiser', emoji: '🎪', label: 'Event Organiser', sub: null },
+const TYPES_BASE = [
+  { id: 'organiser', emoji: '🎪', label: 'Event Organiser', sub: null as string[] | null },
   { id: 'artist',    emoji: '🎵', label: 'Artist',          sub: ['DJ', 'Live Act', 'Singer', 'MC'] },
-  { id: 'spot',      emoji: '📍', label: 'Spot',            sub: null },
-  { id: 'professional', emoji: '🤝', label: 'Professional', sub: ['Φωτογράφος / Videographer', 'Sound & Lighting', 'Catering', 'Decoration'] },
+  { id: 'spot',      emoji: '📍', label: 'Spot',            sub: null as string[] | null },
+  { id: 'professional', emoji: '🤝', label: 'Professional', sub: null as string[] | null },
 ]
 
 export default function UpgradeModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage()
+  const profSubs = t("upgrade_prof_cat").split(",")
+  const TYPES = TYPES_BASE.map(type =>
+    type.id === 'professional' ? { ...type, sub: profSubs } : type
+  )
   const [step, setStep] = useState<'type' | 'sub' | 'bio'>('type')
   const [selectedType, setSelectedType] = useState<string>('')
   const [selectedSub, setSelectedSub] = useState<string>('')
@@ -65,9 +71,9 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
         {done ? (
           <div className="text-center py-6">
             <div className="text-4xl mb-4">🎯</div>
-            <h2 className="text-xl font-bold text-white mb-2">Η αίτησή σου στάλθηκε!</h2>
-            <p className="text-white/50 text-sm">Θα σου απαντήσουμε σύντομα στο email σου.</p>
-            <button onClick={onClose} className="mt-6 text-sm hover:underline" style={{ color: gold }}>Κλείσιμο</button>
+            <h2 className="text-xl font-bold text-white mb-2">{t("upgrade_submitted")}</h2>
+            <p className="text-white/50 text-sm">{t("upgrade_reply")}</p>
+            <button onClick={onClose} className="mt-6 text-sm hover:underline" style={{ color: gold }}>{t("upgrade_close")}</button>
           </div>
         ) : (
           <>
@@ -75,7 +81,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
             <div className="mb-6">
               {step !== 'type' && (
                 <button onClick={handleBack} className="text-white/40 hover:text-white text-sm mb-3 flex items-center gap-1 transition">
-                  ← Πίσω
+                  {t("upgrade_back")}
                 </button>
               )}
               <h2 className="text-xl font-bold text-white">

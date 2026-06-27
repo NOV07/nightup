@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRadio, STATIONS } from "./RadioContext";
 import type { RadioStatus } from "./RadioContext";
 import { usePlayerStore } from "./PlayerContext";
+import { useLanguage } from "./LanguageContext";
 
 // ── Per-station visual metadata ───────────────────────────────────────────────
 const META: Record<string, { emoji: string; genre: string; tagline: string }> = {
@@ -77,6 +78,7 @@ function transportLabel(status: RadioStatus) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function RadioStrip() {
+  const { t } = useLanguage();
   const {
     currentStation, status, isPlaying, isMuted,
     volume, currentTrack, playStation, togglePlay, setVolume, toggleMute,
@@ -318,12 +320,12 @@ export default function RadioStrip() {
                 <div style={{ textAlign: "center", marginTop: 8, minHeight: 16 }}>
                   {status === "buffering" && (
                     <span style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 10.5, color: "#71717A", letterSpacing: "0.04em" }}>
-                      Συντονισμός…
+                      {t("radio_buffering")}
                     </span>
                   )}
                   {status === "error" && (
                     <span style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 10.5, color: "#EF4444" }}>
-                      Προσωρινά μη διαθέσιμο — tap to retry
+                      {t("radio_retry")}
                     </span>
                   )}
                 </div>
@@ -448,7 +450,7 @@ export default function RadioStrip() {
                       padding: "2px 7px", borderRadius: 20, flexShrink: 0,
                       textTransform: "uppercase",
                     }}>
-                      ΣΎΝΤΟΜΑ
+                      {t("radio_coming_soon")}
                     </span>
                   ) : active && (
                     <div style={{ flexShrink: 0 }}>
@@ -529,8 +531,8 @@ export default function RadioStrip() {
                : "#71717A",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
-          {status === "buffering" ? "Συντονισμός…"
-         : status === "error"     ? "Μη διαθέσιμο"
+          {status === "buffering" ? t("radio_buffering")
+         : status === "error"     ? t("radio_unavailable")
          : isPlaying              ? currentStation.name
          : "Nightwaves"}
         </span>

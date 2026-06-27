@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRadio, STATIONS } from "../components/RadioContext";
 import { usePlayerStore } from "../components/PlayerContext";
+import { useLanguage } from "../components/LanguageContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -55,6 +56,7 @@ interface Playlist { id: string; title: string; platform?: string; embed_url?: s
 interface RecentItem { id: string; title: string; artist?: string; typeBadge: string; cover_image?: string; href: string; external?: boolean; is_promoted?: boolean; _contentType: string; soundcloud_url?: string; spotify_url?: string; }
 
 export default function NightwavesClient({ mixes, releases, playlists, recentItems }: { mixes: Mix[]; releases: Release[]; playlists: Playlist[]; recentItems: RecentItem[] }) {
+  const { t } = useLanguage();
   const { currentStation, isPlaying, playStation } = useRadio();
   const { currentTrack, isPlaying: trackPlaying, setTrack, togglePlay } = usePlayerStore();
   const liveStations = STATIONS.filter((s) => !s.comingSoon);
@@ -224,7 +226,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
         <section id="nightwaves-live-radio" className="mb-16">
           <div className="flex items-center gap-3 mb-7">
             <span className="section-divider" />
-            <h2 className="text-2xl font-bold tracking-tight">Live Radio</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t("nightwaves_live_radio")}</h2>
             <LiveDot />
             <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(232,160,32,0.2), transparent)" }} />
           </div>
@@ -264,7 +266,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       {active ? (
-                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>LIVE</span>
+                        <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>{t("nightwaves_live")}</span>
                       ) : (
                         <span className="text-xs font-black px-2.5 py-1 rounded-full tracking-widest" style={{ backgroundColor: "#1A1A2E", color: "rgba(255,255,255,0.25)", border: "1px solid rgba(255,255,255,0.08)" }}>RADIO</span>
                       )}
@@ -305,7 +307,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
 
         {/* TOP MIXES */}
         <section className="mb-16">
-          <SectionLabel>Top Mixes</SectionLabel>
+          <SectionLabel>{t("nightwaves_top_mixes")}</SectionLabel>
           {mixes.length === 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
               {[1, 2, 3, 4].map((i) => (
@@ -385,7 +387,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
 
         {/* NEW RELEASES — combined latest feed */}
         <section className="mb-16">
-          <SectionLabel>New Releases</SectionLabel>
+          <SectionLabel>{t("nightwaves_new_releases")}</SectionLabel>
           {recentItems.length === 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-5">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -421,7 +423,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                       {item.is_promoted && (
-                        <span className="absolute top-2 left-2 text-[9px] font-black px-2 py-0.5 rounded-full tracking-wider uppercase" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>Pick</span>
+                        <span className="absolute top-2 left-2 text-[9px] font-black px-2 py-0.5 rounded-full tracking-wider uppercase" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>{t("nightwaves_pick")}</span>
                       )}
                       <span className="absolute top-2 right-2 text-xs font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
                         {item.typeBadge}
@@ -487,7 +489,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
 
         {/* PLAYLISTS */}
         <section className="mb-10">
-          <SectionLabel>Playlists</SectionLabel>
+          <SectionLabel>{t("nightwaves_playlists")}</SectionLabel>
           {playlists.length === 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {[1, 2, 3].map((i) => (
@@ -524,7 +526,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                             {pl.title}
                           </Link>
                           {pl.is_sponsored && (
-                            <span className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>Sponsored</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>{t("nightwaves_sponsored")}</span>
                           )}
                         </div>
                         {pl.platform && <p className="text-xs mb-2" style={{ color: "#666" }}>{pl.platform}</p>}

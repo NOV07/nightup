@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import type { Spot } from "../types";
+import { useLanguage } from "../../components/LanguageContext";
 
 type FullSpot = Spot & { gallery: string[]; openingHours: Record<string, string> | null };
 
-const CAT_LABEL: Record<string, string> = {
-  food: "Φαγητό", drink: "Ποτό", nightlife: "Νύχτα", show: "Θέαμα", chill: "Χαλαρά", activity: "Δραστηριότητα",
-};
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80";
 
 export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
+  const { t } = useLanguage();
+  const CAT_LABEL: Record<string, string> = {
+    food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
+    show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
+  };
   const cover = spot.coverImage || PLACE;
   const price = spot.priceLevel ? "€".repeat(spot.priceLevel) : null;
   const mapUrl = spot.lat && spot.lng
@@ -60,8 +63,8 @@ export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
 
         {/* Info grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: 14 }}>
-          {spot.address && <InfoCard label="Διεύθυνση" value={spot.address} />}
-          {spot.phone && <InfoCard label="Τηλέφωνο" value={spot.phone} href={`tel:${spot.phone}`} />}
+          {spot.address && <InfoCard label={t("spots_address")} value={spot.address} />}
+          {spot.phone && <InfoCard label={t("spots_phone")} value={spot.phone} href={`tel:${spot.phone}`} />}
           {spot.website && <InfoCard label="Website" value={spot.website.replace(/^https?:\/\//, "")} href={spot.website} />}
           {spot.instagram && <InfoCard label="Instagram" value={`@${spot.instagram}`} href={`https://instagram.com/${spot.instagram}`} />}
         </div>
@@ -69,7 +72,7 @@ export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
         {/* Opening hours */}
         {spot.openingHours && Object.keys(spot.openingHours).length > 0 && (
           <div>
-            <h2 style={sectionTitle}>Ωράριο</h2>
+            <h2 style={sectionTitle}>{t("spots_hours")}</h2>
             <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6, maxWidth: 320 }}>
               {Object.entries(spot.openingHours).map(([day, hrs]) => (
                 <div key={day} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#A1A1AA", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
@@ -84,7 +87,7 @@ export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
         {mapUrl && (
           <a href={mapUrl} target="_blank" rel="noopener noreferrer"
             style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, maxWidth: 280, boxShadow: "0 12px 30px rgba(232,160,32,0.25)" }}>
-            📍 Άνοιξε στον χάρτη
+            {t("spots_map")}
           </a>
         )}
       </div>

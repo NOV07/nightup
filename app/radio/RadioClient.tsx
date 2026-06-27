@@ -11,8 +11,8 @@ export default function RadioClient() {
     <div className="max-w-4xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-semibold mb-3">{t("radio_hero_title")}</h1>
-        <p className="text-gray-400">{t("radio_hero_body")}</p>
+        <h1 className="text-4xl font-semibold mb-3">Nightwaves Radio</h1>
+        <p className="text-gray-400">Listen live.</p>
       </div>
 
       {/* Now Playing */}
@@ -56,7 +56,7 @@ export default function RadioClient() {
               Live
             </span>
           ) : (
-            <span className="text-xs tracking-widest uppercase text-gray-500">{t("radio_paused")}</span>
+            <span className="text-xs tracking-widest uppercase text-gray-500">Paused</span>
           )}
         </div>
 
@@ -133,7 +133,7 @@ export default function RadioClient() {
 
       {/* All Stations */}
       <div className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">{t("radio_stations")}</h2>
+        <h2 className="text-lg font-semibold mb-4">Stations</h2>
         <div className="space-y-3">
           {STATIONS.map((s) => {
             const active = currentStation.id === s.id;

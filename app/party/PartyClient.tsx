@@ -135,9 +135,9 @@ export default function PartyClient({ professionals }: { professionals: Professi
           style={{ backgroundColor: "#E8A020" }}
         />
         <div className="relative z-10">
-          <h1 className="text-4xl md:text-5xl font-semibold mb-4">{t("party_hero_title")}</h1>
+          <h1 className="text-4xl md:text-5xl font-semibold mb-4">Party</h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            {t("party_hero_body")}
+            The best parties in Greece.
           </p>
         </div>
       </section>

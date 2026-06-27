@@ -1,12 +1,7 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { SocialIcon } from "@/components/icons/SocialIcon";
-
-const SHORTCUTS = [
-  { kbd: "DISCOVER", title: "Βρες events", desc: "Tonight, this week, by genre", href: "/events" },
-  { kbd: "LISTEN", title: "Nightwaves", desc: "Μείγματα, κυκλοφορίες, ραδιόφωνο", href: "/nightwaves" },
-  { kbd: "NETWORK", title: "Network", desc: "Χώροι, ήχος, στούντιο, παραγωγοί", href: "/network" },
-  { kbd: "READ", title: "Magazine", desc: "Συνεντεύξεις, κριτικές, αφιερώματα", href: "/magazine" },
-];
+import T from "@/app/components/T";
 
 const SOCIALS = [
   { name: "Instagram", href: "https://instagram.com/nightup.gr", icon: "instagram" },
@@ -18,7 +13,7 @@ const SOCIALS = [
   { name: "SoundCloud", href: "https://soundcloud.com/nightup", icon: "soundcloud" },
 ];
 
-function FooterColumn({ label, links }: { label: string; links: { label: string; href: string }[] }) {
+function FooterColumn({ label, links }: { label: string; links: { label: ReactNode; href: string }[] }) {
   return (
     <div>
       <div className="text-[11px] tracking-widest text-zinc-500 mb-2">{label}</div>
@@ -49,7 +44,7 @@ export function Footer() {
               <span className="font-thin tracking-[0.2em] text-xl uppercase text-white">Night</span>
               <span className="font-thin tracking-[0.2em] text-xl uppercase" style={{ color: "#E8A020" }}>up</span>
             </div>
-            <p className="text-xs text-zinc-400 mt-2">Βρες τη βραδιά σου.</p>
+            <p className="text-xs text-zinc-400 mt-2"><T k="footer_tagline" /></p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -70,15 +65,20 @@ export function Footer() {
 
         {/* Shortcut cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {SHORTCUTS.map((s) => (
+          {[
+            { kbd: "DISCOVER", titleKey: "footer_discover_t" as const, descKey: "footer_discover_d" as const, href: "/events" },
+            { kbd: "NETWORK", titleKey: "footer_network_t" as const, descKey: "footer_network_d" as const, href: "/network" },
+            { kbd: "NIGHTWAVES", titleKey: "footer_listen_t" as const, descKey: "footer_listen_d" as const, href: "/nightwaves" },
+            { kbd: "MAGAZINE", titleKey: "footer_read_t" as const, descKey: "footer_read_d" as const, href: "/magazine" },
+          ].map((s) => (
             <Link
               key={s.kbd}
               href={s.href}
               className="group bg-amber-500/5 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/10 rounded-xl p-4 transition-all"
             >
               <div className="text-[11px] tracking-widest text-amber-400 mb-1">{s.kbd}</div>
-              <div className="text-sm font-medium text-white mb-0.5">{s.title}</div>
-              <div className="text-[11px] text-zinc-500">{s.desc}</div>
+              <div className="text-sm font-medium text-white mb-0.5"><T k={s.titleKey} /></div>
+              <div className="text-[11px] text-zinc-500"><T k={s.descKey} /></div>
             </Link>
           ))}
         </div>
@@ -104,9 +104,9 @@ export function Footer() {
           </div>
 
           <FooterColumn label="SUBMIT" links={[
-            { label: "Καταχώρηση event", href: "/submit/event" },
-            { label: "Καταχώρηση προφίλ", href: "/submit/professional" },
-            { label: "Καταχώρηση μουσικής", href: "/submit/release" },
+            { label: <T k="footer_submit_event" />, href: "/submit/event" },
+            { label: <T k="footer_submit_prof" />, href: "/submit/professional" },
+            { label: <T k="footer_submit_music" />, href: "/submit/release" },
           ]} />
 
           <FooterColumn label="COMPANY" links={[
@@ -122,7 +122,7 @@ export function Footer() {
         </div>
 
         <div className="pt-4 text-[11px] text-zinc-500 text-center">
-          © {new Date().getFullYear()} Nightup. Made for the nightlife.
+          © {new Date().getFullYear()} Nightup. <T k="footer_copyright" />
         </div>
       </div>
     </footer>

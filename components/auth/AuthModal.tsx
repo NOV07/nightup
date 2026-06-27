@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function AuthModal({ onClose, redirectTo }: { onClose: () => void; redirectTo?: string }) {
+  const { t } = useLanguage()
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -89,12 +91,12 @@ export default function AuthModal({ onClose, redirectTo }: { onClose: () => void
         {mode === 'forgot' ? (
           resetSent ? (
             <div className="text-center py-4">
-              <p className="text-white/80 text-sm">Έλεγξε το email σου — στείλαμε ένα reset link.</p>
+              <p className="text-white/80 text-sm">{t("auth_check_email")}</p>
               <button
                 onClick={() => { setMode('login'); setResetSent(false); setError('') }}
                 className="text-[#E8A020] hover:underline text-sm mt-4"
               >
-                Πίσω στο login
+                {t("auth_back_login")}
               </button>
             </div>
           ) : (
@@ -113,7 +115,7 @@ export default function AuthModal({ onClose, redirectTo }: { onClose: () => void
                 disabled={loading}
                 className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
               >
-                {loading ? 'Αποστολή...' : 'Αποστολή reset link →'}
+                {loading ? t("auth_sending") : t("auth_send_reset")}
               </button>
               <p className="text-center">
                 <button
@@ -121,7 +123,7 @@ export default function AuthModal({ onClose, redirectTo }: { onClose: () => void
                   onClick={() => { setMode('login'); setError('') }}
                   className="text-white/50 hover:text-white text-sm transition"
                 >
-                  ← Πίσω
+                  {t("auth_back")}
                 </button>
               </p>
             </form>
@@ -153,7 +155,7 @@ export default function AuthModal({ onClose, redirectTo }: { onClose: () => void
                       onClick={() => { setMode('forgot'); setError('') }}
                       className="text-white/40 hover:text-[#E8A020] text-xs transition"
                     >
-                      Ξέχασα τον κωδικό μου
+                      {t("auth_forgot")}
                     </button>
                   </div>
                 )}

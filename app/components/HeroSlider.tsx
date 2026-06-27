@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "./LanguageContext";
 
 interface Slide {
   id: string;
@@ -10,7 +11,7 @@ interface Slide {
   title: string;
   subtitle: string;
   meta: string[];
-  ctaLabel: string;
+  ctaLabel: string | { el: string; en: string };
   ctaHref: string;
   image?: string;
   bgColor: string;
@@ -19,6 +20,7 @@ interface Slide {
 const GRADIENT = "linear-gradient(to top, rgba(15,15,26,1) 0%, rgba(15,15,26,0.6) 45%, rgba(15,15,26,0.1) 100%)";
 
 export default function HeroSlider({ slides }: { slides: Slide[] }) {
+  const { lang } = useLanguage();
   if (!slides || slides.length === 0) return null;
   const total = slides.length;
   // We clone: [...slides, slides[0]] for seamless loop
@@ -239,7 +241,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
           transition: "opacity 0.45s ease",
         }}
       >
-        {slide.ctaLabel}
+        {typeof slide.ctaLabel === "object" ? slide.ctaLabel[lang] : slide.ctaLabel}
       </Link>
 
       {/* Left arrow */}
