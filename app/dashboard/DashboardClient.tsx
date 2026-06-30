@@ -93,6 +93,8 @@ export default function DashboardClient({ profile, events, releases, professiona
     city: string
     date_needed: string
   }>({ type: 'seeking', role: '', title: '', description: '', city: '', date_needed: '' })
+  const [listingRoleGroup, setListingRoleGroup] = useState('')
+  const [listingRoleSubgroup, setListingRoleSubgroup] = useState('')
 
   // Shared profile form state (all user types)
   const [form, setForm] = useState({
@@ -278,9 +280,20 @@ export default function DashboardClient({ profile, events, releases, professiona
 
   function handleListingEdit(listing: any) {
     setEditingListingId(listing.id)
+    const r: string = listing.role ?? ''
+    const g = Object.keys(NETWORK.Artists).includes(r) ? 'Artists'
+      : r === 'Venues' ? 'Venues'
+      : Object.keys(NETWORK.Professionals['For Events']).includes(r) ? 'Professionals'
+      : Object.keys(NETWORK.Professionals['For Artists']).includes(r) ? 'Professionals'
+      : ''
+    const sg = Object.keys(NETWORK.Professionals['For Events']).includes(r) ? 'For Events'
+      : Object.keys(NETWORK.Professionals['For Artists']).includes(r) ? 'For Artists'
+      : ''
+    setListingRoleGroup(g)
+    setListingRoleSubgroup(sg)
     setListingForm({
       type:        listing.type,
-      role:        listing.role,
+      role:        listing.role ?? '',
       title:       listing.title,
       description: listing.description ?? '',
       city:        listing.city        ?? '',
@@ -1163,15 +1176,70 @@ export default function DashboardClient({ profile, events, releases, professiona
                     ))}
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <label className={labelClass}>Ρόλος</label>
-                    <input
-                      value={listingForm.role}
-                      onChange={e => setListingForm(prev => ({ ...prev, role: e.target.value }))}
-                      placeholder="π.χ. DJ, Photographer, Sound Engineer"
+                    <select
+                      value={listingRoleGroup}
+                      onChange={e => {
+                        const g = e.target.value
+                        setListingRoleGroup(g)
+                        setListingRoleSubgroup('')
+                        setListingForm(prev => ({ ...prev, role: g === 'Venues' ? 'Venues' : '' }))
+                      }}
                       className={inputClass}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                       required
-                    />
+                    >
+                      <option value="">Επιλέξτε κατηγορία</option>
+                      <option value="Artists">Artists</option>
+                      <option value="Venues">Venues</option>
+                      <option value="Professionals">Professionals</option>
+                    </select>
+
+                    {listingRoleGroup === 'Professionals' && (
+                      <select
+                        value={listingRoleSubgroup}
+                        onChange={e => {
+                          setListingRoleSubgroup(e.target.value)
+                          setListingForm(prev => ({ ...prev, role: '' }))
+                        }}
+                        className={inputClass}
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
+                        required
+                      >
+                        <option value="">Επιλέξτε υποκατηγορία</option>
+                        <option value="For Events">For Events</option>
+                        <option value="For Artists">For Artists</option>
+                      </select>
+                    )}
+
+                    {listingRoleGroup === 'Artists' && (
+                      <select
+                        value={listingForm.role}
+                        onChange={e => setListingForm(prev => ({ ...prev, role: e.target.value }))}
+                        className={inputClass}
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
+                        required
+                      >
+                        <option value="">Επιλέξτε ρόλο</option>
+                        {Object.keys(NETWORK.Artists).map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    )}
+
+                    {listingRoleGroup === 'Professionals' && listingRoleSubgroup && (
+                      <select
+                        value={listingForm.role}
+                        onChange={e => setListingForm(prev => ({ ...prev, role: e.target.value }))}
+                        className={inputClass}
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
+                        required
+                      >
+                        <option value="">Επιλέξτε ρόλο</option>
+                        {Object.keys(NETWORK.Professionals[listingRoleSubgroup as 'For Events' | 'For Artists']).map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -1221,7 +1289,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={() => { setShowListingForm(false); setEditingListingId(null) }}
+                      onClick={() => { setShowListingForm(false); setEditingListingId(null); setListingRoleGroup(''); setListingRoleSubgroup('') }}
                       className="flex-1 py-2 rounded-lg text-sm"
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', border: '0.5px solid rgba(255,255,255,0.1)' }}
                     >
@@ -1241,7 +1309,7 @@ export default function DashboardClient({ profile, events, releases, professiona
 
               {!showListingForm && (
                 <button
-                  onClick={() => { setEditingListingId(null); setListingForm({ type: 'seeking', role: '', title: '', description: '', city: '', date_needed: '' }); setShowListingForm(true) }}
+                  onClick={() => { setEditingListingId(null); setListingRoleGroup(''); setListingRoleSubgroup(''); setListingForm({ type: 'seeking', role: '', title: '', description: '', city: '', date_needed: '' }); setShowListingForm(true) }}
                   className="text-xs px-4 py-2.5 rounded-xl w-full transition-opacity hover:opacity-80"
                   style={{ border: '1px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', backgroundColor: 'transparent', cursor: 'pointer' }}
                 >

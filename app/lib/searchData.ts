@@ -24,3 +24,12 @@ export const NETWORK = {
     },
   },
 } as const
+
+export function getListingCategory(role: string | null): { group: string; subgroup?: string } | null {
+  if (!role) return null
+  if (Object.keys(NETWORK.Artists).includes(role)) return { group: "Artists" }
+  if (role === "Venues") return { group: "Venues" }
+  if (Object.keys(NETWORK.Professionals["For Events"]).includes(role)) return { group: "Professionals", subgroup: "For Events" }
+  if (Object.keys(NETWORK.Professionals["For Artists"]).includes(role)) return { group: "Professionals", subgroup: "For Artists" }
+  return null
+}
