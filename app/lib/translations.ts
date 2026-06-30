@@ -306,6 +306,11 @@ const translations = {
   upgrade_choose_specialty:  { el: "Επίλεξε ειδικότητα", en: "Choose specialty" },
   upgrade_bio_placeholder:   { el: "Πες μας λίγα λόγια για σένα...", en: "Tell us a bit about yourself..." },
   upgrade_send_request:      { el: "Αποστολή αίτησης →", en: "Send request →" },
+
+  // ── Event categories ─────────────────────────────────────
+  event_cat_culture:   { el: "Κουλτούρα", en: "Culture" },
+  event_cat_sports:    { el: "Αθλητισμός", en: "Sports" },
+  event_cat_other:     { el: "Άλλα", en: "Other" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

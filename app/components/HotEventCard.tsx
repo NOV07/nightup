@@ -9,6 +9,7 @@ import { FaHeart } from "react-icons/fa";
 import { toast } from "sonner";
 import { RadarBadge } from "./RadarBadge";
 import { formatPrice } from "../lib/formatPrice";
+import { useLanguage } from "./LanguageContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -17,6 +18,7 @@ interface HotEventCardProps {
   title: string;
   image?: string;
   genre: string;
+  type?: string | null;
   price: string | number | null | undefined;
   date: string;
   time?: string;
@@ -29,12 +31,28 @@ interface HotEventCardProps {
 }
 
 export default function HotEventCard({
-  id, title, image, price, date, time, venue, isRadarPick, showHotBadge = false,
+  id, title, image, genre, type, price, date, time, venue, isRadarPick, showHotBadge = false,
   variant = "large", initialSaved,
 }: HotEventCardProps) {
   const [saved, setSaved] = useState(initialSaved ?? false);
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const CATEGORY_LABEL_KEYS: Record<string, string> = {
+    culture: "event_cat_culture",
+    sports:  "event_cat_sports",
+    other:   "event_cat_other",
+  };
+  const categoryLabel = type && CATEGORY_LABEL_KEYS[type] ? t(CATEGORY_LABEL_KEYS[type] as any) : genre;
+  const CATEGORY_COLORS: Record<string, string> = {
+    culture: "rgba(124,58,237,0.85)",
+    sports:  "rgba(37,99,235,0.85)",
+    other:   "rgba(5,150,105,0.85)",
+  };
+  const categoryBadgeTop = isRadarPick && showHotBadge
+    ? "top-[4.25rem]"
+    : (isRadarPick || showHotBadge) ? "top-10" : "top-3";
 
   async function handleSave(e: React.MouseEvent) {
     e.preventDefault();
@@ -112,6 +130,16 @@ export default function HotEventCard({
         >
           <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0 animate-pulse-dot" />
           <span className="text-[10px] font-bold tracking-[0.12em] uppercase text-white">Hot</span>
+        </div>
+      )}
+
+      {/* Top-left: category label (culture / sports / other only) */}
+      {(type && CATEGORY_LABEL_KEYS[type]) && (
+        <div
+          className={`absolute ${categoryBadgeTop} left-3 z-10 flex items-center rounded-full px-2.5 py-1 backdrop-blur-sm`}
+          style={{ backgroundColor: CATEGORY_COLORS[type] ?? "rgba(0,0,0,0.60)" }}
+        >
+          <span className="text-[10px] font-bold tracking-[0.12em] uppercase text-white">{categoryLabel}</span>
         </div>
       )}
 
