@@ -24,7 +24,7 @@ export default async function EventsAllPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, organizer_id")
+      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, organizer_id, type")
       .eq("status", "approved")
       .order("date", { ascending: true });
 
@@ -41,6 +41,7 @@ export default async function EventsAllPage() {
         city: e.city,
         interestedCount: e.interested_count ?? 0,
         goingCount: e.going_count ?? 0,
+        type: e.type ?? 'music',
       }));
     }
   } catch {}

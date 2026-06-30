@@ -320,7 +320,7 @@ export default function EventsClient({
       {/* ── Category tabs ─────────────────────────────────── */}
       <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: "24px", display: "flex" }}>
         {(['music', 'culture', 'sports', 'other'] as const).map((key) => {
-          const labels = { music: 'Μουσική', culture: 'Κουλτούρα', sports: 'Αθλητισμός', other: 'Άλλα' };
+          const catLabels = { music: t('event_cat_music'), culture: t('event_cat_culture'), sports: t('event_cat_sports'), other: t('event_cat_other') };
           const isActive = activeCategory === key;
           return (
             <button
@@ -342,7 +342,7 @@ export default function EventsClient({
                 marginBottom: "-1px",
               }}
             >
-              {labels[key]}
+              {catLabels[key]}
             </button>
           );
         })}

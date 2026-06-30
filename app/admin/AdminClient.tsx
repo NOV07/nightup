@@ -21,7 +21,10 @@ const RELEASE_TYPES = ["Single","EP","Album"];
 const MUSIC_GENRES = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Afrobeats","Pop","Rock","Laika","Entechno","Other"];
 const ORG_TYPES = ["Club","Promoter","Festival","Bar","Agency","Venue","Other"];
 const SPOT_CATS = ["food","drink","nightlife","show","chill","activity","art","wellness"];
-const EVENT_TYPES = ["Μουσική","Κουλτούρα","Αθλητισμός","Άλλα"];
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  music: "Μουσική", culture: "Κουλτούρα", sports: "Αθλητισμός", other: "Άλλα",
+};
+const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
 type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users" | "upgrades" | "queue" | "spots";
@@ -56,7 +59,7 @@ interface AllContent {
   spots: ContentItem[];
 }
 
-const defaultEventForm = { title:"",image_url:"",genre:"Techno",event_type:"Μουσική",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",featured:false };
+const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",featured:false };
 const defaultProForm = { name:"",avatar:"",category:"Venues",rating:"5",reviews_count:"0",city:"",description:"" };
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
 const defaultOrgForm = { name:"",type:"Club",city:"Athens",about:"",cover_image:"",avatar:"",instagram:"",facebook:"",tiktok:"",website:"" };
@@ -962,12 +965,12 @@ export default function AdminClient() {
                       {activeTab === "events" && (
                         <form onSubmit={handleAddEvent} className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div><label className={labelCls}>Event Type</label><select className={inputCls} style={inputStyle} value={eventForm.event_type} onChange={e => setEventForm(f => ({ ...f, event_type:e.target.value }))}>{EVENT_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
+                            <div><label className={labelCls}>Event Type</label><select className={inputCls} style={inputStyle} value={eventForm.type} onChange={e => setEventForm(f => ({ ...f, type:e.target.value }))}>{EVENT_TYPE_VALUES.map(v => <option key={v} value={v}>{EVENT_TYPE_LABELS[v]}</option>)}</select></div>
                             <div><label className={labelCls}>Title *</label><input required className={inputCls} style={inputStyle} value={eventForm.title} onChange={e => setEventForm(f => ({ ...f, title:e.target.value }))} /></div>
                             <div><label className={labelCls}>Venue *</label><input required className={inputCls} style={inputStyle} value={eventForm.venue} onChange={e => setEventForm(f => ({ ...f, venue:e.target.value }))} /></div>
                             <div><label className={labelCls}>Date *</label><input required type="date" className={inputCls} style={inputStyle} value={eventForm.date} onChange={e => setEventForm(f => ({ ...f, date:e.target.value }))} /></div>
                             <div><label className={labelCls}>Time</label><input className={inputCls} style={inputStyle} value={eventForm.time} onChange={e => setEventForm(f => ({ ...f, time:e.target.value }))} placeholder="23:00" /></div>
-                            {eventForm.event_type === "Μουσική" && (
+                            {eventForm.type === "music" && (
                               <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={eventForm.genre} onChange={e => setEventForm(f => ({ ...f, genre:e.target.value }))}>{MUSIC_GENRES_CREATE.map(g => <option key={g}>{g}</option>)}</select></div>
                             )}
                             <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={eventForm.city} onChange={e => setEventForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>

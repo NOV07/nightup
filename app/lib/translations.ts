@@ -308,6 +308,7 @@ const translations = {
   upgrade_send_request:      { el: "Αποστολή αίτησης →", en: "Send request →" },
 
   // ── Event categories ─────────────────────────────────────
+  event_cat_music:     { el: "Μουσική", en: "Music" },
   event_cat_culture:   { el: "Κουλτούρα", en: "Culture" },
   event_cat_sports:    { el: "Αθλητισμός", en: "Sports" },
   event_cat_other:     { el: "Άλλα", en: "Other" },

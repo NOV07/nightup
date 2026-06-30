@@ -12,7 +12,7 @@ interface Event {
   id: string; title: string; image: string; genre: string; price: string;
   date: string; time: string; venue: string; city: string;
   interestedCount: number; goingCount: number; featured?: boolean;
-  isRadarPick?: boolean;
+  isRadarPick?: boolean; type?: string | null;
 }
 
 export default function EventsAllClient({ initialEvents }: { initialEvents: Event[] }) {
@@ -24,7 +24,17 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
   const [city, setCity]       = useState(searchParams.get("city")  || "All Cities");
   const [genre, setGenre]     = useState(searchParams.get("genre") || "All");
   const [dateFrom, setDateFrom] = useState(searchParams.get("from") || "");
+  const [activeType, setActiveType] = useState<string>("All");
   const [page, setPage]       = useState(1);
+
+  const TYPE_LABELS: Record<string, string> = {
+    All: t("events_filter_all"),
+    music: t("event_cat_music"),
+    culture: t("event_cat_culture"),
+    sports: t("event_cat_sports"),
+    other: t("event_cat_other"),
+  };
+  const TYPE_OPTIONS = ["All", "music", "culture", "sports", "other"];
 
   const activeFilters: { key: string; label: string }[] = [];
   if (query)                activeFilters.push({ key: "q",    label: `"${query}"` });
@@ -50,6 +60,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
   }, [query, city, genre, dateFrom, router]);
 
   const filtered = initialEvents.filter((e) => {
+    if (activeType !== "All" && (e.type ?? "music") !== activeType) return false;
     if (genre !== "All" && e.genre?.toLowerCase() !== genre.toLowerCase()) return false;
     if (city !== "All Cities" && e.city?.toLowerCase() !== city.toLowerCase()) return false;
     if (dateFrom && e.date < dateFrom) return false;
@@ -111,7 +122,25 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
           />
         </div>
 
-        {/* Row 2: genre pills */}
+        {/* Row 2: category type pills */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-2">
+          {TYPE_OPTIONS.map((v) => (
+            <button
+              key={v}
+              onClick={() => { setActiveType(v); setPage(1); }}
+              className="whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all flex-shrink-0"
+              style={{
+                backgroundColor: activeType === v ? "#E8A020" : "#111120",
+                color: activeType === v ? "#0F0F1A" : "rgba(255,255,255,0.45)",
+                border: `1px solid ${activeType === v ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
+              }}
+            >
+              {TYPE_LABELS[v]}
+            </button>
+          ))}
+        </div>
+
+        {/* Row 3: genre pills */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {GENRES.map((g) => (
             <button
