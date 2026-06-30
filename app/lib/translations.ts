@@ -70,6 +70,10 @@ const translations = {
   filter_all_greece:         { el: "Όλη η Ελλάδα", en: "All of Greece" },
   filter_next:               { el: "Συνέχεια →", en: "Next →" },
   filter_see_events:         { el: "Δες events →", en: "See events →" },
+  filter_step_what:          { el: "Τι ψάχνεις;", en: "What are you after?" },
+  filter_step_when:          { el: "Πότε;", en: "When?" },
+  filter_step_mood:          { el: "Τι mood;", en: "What mood?" },
+  filter_step_where:         { el: "Πού;", en: "Where?" },
 
   // ── Network ──────────────────────────────────────────────
   network_tagline:       { el: "Artists, venues και professionals — όλοι εδώ.", en: "Artists, venues and professionals — all here." },
@@ -238,6 +242,17 @@ const translations = {
   about_profile_tab:    { el: "Submit Profile", en: "Submit Profile" },
   about_send:           { el: "Αποστολή Μηνύματος", en: "Send Message" },
   about_get_in_touch:   { el: "Επικοινωνήστε μαζί μας", en: "Get in Touch" },
+  about_sec_contribute:     { el: "Συνέβαλε", en: "Contribute" },
+  about_sec_contribute_sub: { el: "Είσαι μέρος της σκηνής.", en: "You're part of the scene." },
+  about_sec_tellus:         { el: "Πες μας", en: "Tell us" },
+  about_sec_tellus_sub:     { el: "Σχόλιο, ιδέα, παράπονο — όλα μετράνε.", en: "Feedback, ideas, complaints — all count." },
+  about_sec_follow:         { el: "Ακολούθησε", en: "Follow" },
+  about_sec_follow_sub:     { el: "Παντού όπου ζει η νύχτα.", en: "Everywhere the night lives." },
+  about_form_name:          { el: "Όνομα", en: "Name" },
+  about_form_send:          { el: "Αποστολή →", en: "Send →" },
+  about_form_message:       { el: "Μήνυμα...", en: "Message..." },
+  about_form_received:      { el: "Ελήφθη. Θα επικοινωνήσουμε σύντομα.", en: "Received. We'll be in touch soon." },
+  about_form_reply24:       { el: "Απαντάμε εντός 24 ωρών.", en: "We reply within 24 hours." },
 
   // ── Footer ──────────────────────────────────────────────
   footer_tagline:     { el: "Find your night.", en: "Find your night." },

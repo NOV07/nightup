@@ -477,7 +477,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
 
         {/* ── Section i — Συνέβαλε ────────────────────────── */}
         <div style={{ marginTop: "48px", marginBottom: "64px" }}>
-          <SectionHeader num="i." title="Συνέβαλε" sub="Είσαι μέρος της σκηνής." />
+          <SectionHeader num="i." title={t("about_sec_contribute")} sub={t("about_sec_contribute_sub")} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {CARDS.map((card) => (
               <Link
@@ -511,21 +511,21 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
 
         {/* ── Section ii — Πες μας ────────────────────────── */}
         <div style={{ marginBottom: "64px" }}>
-          <SectionHeader num="ii." title="Πες μας" sub="Σχόλιο, ιδέα, παράπονο — όλα μετράνε." />
+          <SectionHeader num="ii." title={t("about_sec_tellus")} sub={t("about_sec_tellus_sub")} />
           <div style={{ maxWidth: "620px" }}>
             {submitted ? (
               <div
                 className={spectral.className}
                 style={{ fontStyle: "italic", fontSize: "16px", color: "#5A5A6A", padding: "32px 0" }}
               >
-                Ελήφθη. Θα επικοινωνήσουμε σύντομα.
+                {t("about_form_received")}
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "12px" }}>
                   <input
                     type="text"
-                    placeholder="Όνομα"
+                    placeholder={t("about_form_name")}
                     required
                     value={contactForm.name}
                     onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
@@ -543,7 +543,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
                   />
                 </div>
                 <textarea
-                  placeholder="Μήνυμα..."
+                  placeholder={t("about_form_message")}
                   required
                   rows={5}
                   value={contactForm.message}
@@ -556,7 +556,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
                     className={spectral.className}
                     style={{ fontStyle: "italic", fontSize: "13px", color: "#5A5A6A" }}
                   >
-                    Απαντάμε εντός 24 ωρών.
+                    {t("about_form_reply24")}
                   </p>
                   <button
                     type="submit"
@@ -566,7 +566,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
                       border: "none", cursor: "pointer",
                     }}
                   >
-                    Αποστολή →
+                    {t("about_form_send")}
                   </button>
                 </div>
               </form>
@@ -576,7 +576,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
 
         {/* ── Section iii — Ακολούθησε ────────────────────── */}
         <div style={{ marginBottom: "32px" }}>
-          <SectionHeader num="iii." title="Ακολούθησε" sub="Παντού όπου ζει η νύχτα." />
+          <SectionHeader num="iii." title={t("about_sec_follow")} sub={t("about_sec_follow_sub")} />
           <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             {socials.map((s) => (
               <a

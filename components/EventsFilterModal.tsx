@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useLanguage } from '@/app/components/LanguageContext'
+import type { TranslationKey } from '@/app/lib/translations'
 
 const GOLD = '#E8A020'
 
@@ -34,15 +35,20 @@ const MOOD_OPTIONS: Array<{ emoji: string; key?: string; label?: string }> = [
 
 const CITY_OPTIONS = ['Αθήνα', 'Θεσσαλονίκη', 'Όλη η Ελλάδα']
 
-const STEP_TITLES: Record<number, string> = {
-  1: 'Τι ψάχνεις;',
-  2: 'Πότε;',
-  3: 'Τι mood;',
-  4: 'Πού;',
+const STEP_TITLE_KEYS: Record<number, TranslationKey> = {
+  1: 'filter_step_what',
+  2: 'filter_step_when',
+  3: 'filter_step_mood',
+  4: 'filter_step_where',
 }
 
 export default function EventsFilterModal({ onClose, onApply }: EventsFilterModalProps) {
   const { t } = useLanguage()
+  const CITY_LABELS: Record<string, string> = {
+    'Αθήνα': t('filter_athens'),
+    'Θεσσαλονίκη': t('filter_thessaloniki'),
+    'Όλη η Ελλάδα': t('filter_all_greece'),
+  }
   const WHEN_LABELS: Record<string, string> = {
     'Απόψε': t('filter_tonight'),
     'Αύριο': t('filter_tomorrow'),
@@ -175,7 +181,7 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
             marginBottom: 24,
           }}
         >
-          {STEP_TITLES[step]}
+          {t(STEP_TITLE_KEYS[step])}
         </h2>
 
         {/* Step 1 — Τι ψάχνεις */}
@@ -228,7 +234,7 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
             {CITY_OPTIONS.map((opt) => (
               <div key={opt} style={{ ...(city === opt ? tileActive : tileBase), padding: '12px 8px' }} onClick={() => setCity(opt)}>
                 <div style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 14, color: city === opt ? GOLD : '#fff' }}>
-                  {opt}
+                  {CITY_LABELS[opt]}
                 </div>
               </div>
             ))}
