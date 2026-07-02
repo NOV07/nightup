@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import Navbar from "./Navbar";
 import RadioStrip from "./RadioStrip";
@@ -48,9 +48,13 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const hideTonightFAB = HIDE_TONIGHT_FAB_ROUTES.some((r) => pathname === r);
   const { isOpen, open, close } = useTonightModal();
   const [spots, setSpots] = useState<Spot[]>([]);
+  const hasFetchedSpots = useRef(false);
 
-  // Fetch spots once on mount for TonightModal
+  // Fetch spots only on first Tonight modal open
   useEffect(() => {
+    if (!isOpen || hasFetchedSpots.current) return;
+    hasFetchedSpots.current = true;
+
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -62,7 +66,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       .order("is_sponsored", { ascending: false })
       .order("rating", { ascending: false })
       .then(({ data }) => { if (data) setSpots(data.map(mapSpot)); });
-  }, []);
+  }, [isOpen]);
 
   // Auto-open on first visit only
   useEffect(() => {
