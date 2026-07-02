@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     images: ["https://nightup.gr/og-image.png"],
   },
 };
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function NightwavesPage() {
   let mixes: any[] = [];

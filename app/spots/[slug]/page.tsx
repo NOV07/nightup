@@ -4,7 +4,7 @@ import { getSupabase } from "../../lib/supabase";
 import type { Spot } from "../types";
 import SpotProfileClient from "./SpotProfileClient";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const COLS =
   "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, gallery, price_level, rating, phone, website, instagram, opening_hours, is_sponsored";

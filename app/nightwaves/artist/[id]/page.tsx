@@ -6,7 +6,7 @@ import { getSupabase } from "../../../lib/supabase";
 
 interface Props { params: Promise<{ id: string }>; }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 

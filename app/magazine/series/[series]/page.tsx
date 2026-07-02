@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${title} — Nightup Series`, description: `A Nightup series: ${title}` };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function SeriesPage({ params }: Props) {
   const { series } = await params;

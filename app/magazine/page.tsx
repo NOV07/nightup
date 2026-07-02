@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     images: ["https://nightup.gr/og-image.png"],
   },
 };
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&q=80";
 
