@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
       { source: "/radio/:path*", destination: "/nightwaves/:path*", permanent: true },
       { source: "/articles", destination: "/magazine", permanent: true },
       { source: "/articles/:path*", destination: "/magazine/:path*", permanent: true },
+      { source: "/party", destination: "/network", permanent: true },
+      { source: "/party/:path*", destination: "/network/:path*", permanent: true },
     ];
   },
   async headers() {

@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/spots`,                   lastModified: now, changeFrequency: "weekly",  priority: 0.8 },
     { url: `${base}/magazine`,                lastModified: now, changeFrequency: "weekly",  priority: 0.8 },
     { url: `${base}/network`,                 lastModified: now, changeFrequency: "weekly",  priority: 0.8 },
+    { url: `${base}/network/listings`,        lastModified: now, changeFrequency: "daily",   priority: 0.7 },
     { url: `${base}/nightwaves`,              lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
     { url: `${base}/nightwaves/mixes`,        lastModified: now, changeFrequency: "weekly",  priority: 0.6 },
     { url: `${base}/nightwaves/releases`,     lastModified: now, changeFrequency: "weekly",  priority: 0.6 },

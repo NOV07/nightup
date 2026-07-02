@@ -20,12 +20,20 @@ const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w
 export default async function EventsAllPage() {
   let events: any[] = [];
 
+  const _now = new Date();
+  // Use local date parts to avoid UTC-shift cutting off today's events
+  const _y = _now.getFullYear();
+  const _m = String(_now.getMonth() + 1).padStart(2, "0");
+  const _d = String(_now.getDate()).padStart(2, "0");
+  const today = `${_y}-${_m}-${_d}`;
+
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
       .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, organizer_id, type")
       .eq("status", "approved")
+      .gte("date", today)
       .order("date", { ascending: true });
 
     if (data && data.length > 0) {

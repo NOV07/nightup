@@ -42,12 +42,20 @@ async function getNearbyCity(): Promise<string> {
 export default async function EventsPage() {
   let eventsData: any[] = [];
 
+  const _now = new Date();
+  // Use local date parts to avoid UTC-shift cutting off today's events
+  const _y = _now.getFullYear();
+  const _m = String(_now.getMonth() + 1).padStart(2, "0");
+  const _d = String(_now.getDate()).padStart(2, "0");
+  const today = `${_y}-${_m}-${_d}`;
+
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
       .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
       .eq("status", "approved")
+      .gte("date", today)
       .order("date", { ascending: true });
 
     if (!error && data) {
