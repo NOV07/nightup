@@ -9,6 +9,7 @@ import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES } from '../lib/searchData'
 import ConsumerDashboard from './ConsumerDashboard'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance', 'Hip-Hop', 'R&B', 'Afrobeats', 'Reggaeton', 'Laika', 'Entechno', 'Rebetiko', 'Dimotika', 'Rock', 'Jazz', 'Classical', 'Blues', 'Electronic', 'Ambient', 'Experimental', 'Other']
 
@@ -67,6 +68,7 @@ export default function DashboardClient({ profile, events, releases, professiona
   sentInterests?: any[]
 }) {
   const router = useRouter()
+  const { t } = useLanguage()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -338,25 +340,25 @@ export default function DashboardClient({ profile, events, releases, professiona
   const labelClass = "text-white/50 text-xs mb-1.5 block uppercase tracking-wider"
 
   const profileTypeLabel: Record<string, string> = {
-    user: 'Μέλος',
-    organizer: 'Organizer',
-    artist: 'Artist / DJ',
-    venue: 'Venue',
-    professional: 'Professional',
+    user: t('dashboard_type_user'),
+    organizer: t('dashboard_type_organizer'),
+    artist: t('dashboard_type_artist'),
+    venue: t('dashboard_type_venue'),
+    professional: t('dashboard_type_professional'),
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'profile', label: 'Profile' },
-    ...(!isPro ? [{ key: 'content' as Tab, label: 'Content' }] : []),
-    { key: 'listings', label: 'Αγγελίες' },
-    { key: 'visibility', label: 'Visibility' },
-    { key: 'settings', label: 'Settings' },
+    { key: 'profile', label: t('dashboard_tab_profile') },
+    ...(!isPro ? [{ key: 'content' as Tab, label: t('dashboard_tab_content') }] : []),
+    { key: 'listings', label: t('listings_title') },
+    { key: 'visibility', label: t('dashboard_tab_visibility') },
+    { key: 'settings', label: t('dashboard_tab_settings') },
   ]
 
   const submitLink: Record<string, { href: string; label: string }> = {
-    organizer: { href: '/dashboard/events/new', label: '+ New Event' },
-    artist: { href: '/submit/release', label: '+ New Release' },
-    venue: { href: '/dashboard/events/new', label: '+ New Event' },
+    organizer: { href: '/dashboard/events/new', label: t('dashboard_new_event') },
+    artist: { href: '/submit/release', label: t('dashboard_new_release') },
+    venue: { href: '/dashboard/events/new', label: t('dashboard_new_event') },
   }
 
   const saveButton = (onClick: () => void) => (
@@ -367,9 +369,9 @@ export default function DashboardClient({ profile, events, releases, professiona
         className="px-8 py-3 rounded-xl font-bold text-sm transition-opacity disabled:opacity-50"
         style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
       >
-        {saving ? 'Saving...' : 'Save Profile'}
+        {saving ? t('dashboard_saving') : t('dashboard_save_profile')}
       </button>
-      {saved && <span className="text-sm" style={{ color: '#4ade80' }}>✓ Saved!</span>}
+      {saved && <span className="text-sm" style={{ color: '#4ade80' }}>{t('dashboard_saved')}</span>}
       {error && <span className="text-sm text-red-400">{error}</span>}
     </div>
   )
@@ -391,24 +393,24 @@ export default function DashboardClient({ profile, events, releases, professiona
             )}
             <div>
               <p className="text-white text-sm font-medium">{form.display_name}</p>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username} · Μέλος</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username} · {t('dashboard_type_user')}</p>
             </div>
           </div>
         </div>
         <ConsumerDashboard
-          name={profile.display_name || profile.username || 'φίλε'}
+          name={profile.display_name || profile.username || t('dashboard_friend_fallback')}
           savedEvents={savedEvents ?? []}
           upcomingEvents={upcomingEvents ?? []}
           savedSpots={savedSpots ?? []}
           followedProfiles={followedProfiles ?? []}
         />
         <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px', marginTop: 40, borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>Είσαι επαγγελματίας; </span>
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>{t('dashboard_are_you_pro')}</span>
           <button
             onClick={() => setShowUpgrade(true)}
             style={{ color: '#E8A020', fontSize: 13, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            Φτιάξε προφίλ creator →
+            {t('dashboard_create_pro_profile')}
           </button>
         </div>
         {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
@@ -444,7 +446,7 @@ export default function DashboardClient({ profile, events, releases, professiona
               className="text-xs px-3 py-2 rounded-lg transition-opacity hover:opacity-80"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
             >
-              View Profile ↗
+              {t('dashboard_view_profile')}
             </Link>
             {!isPro && submitLink[profile.profile_type] && (
               <Link
@@ -463,14 +465,14 @@ export default function DashboardClient({ profile, events, releases, professiona
           <div className="max-w-6xl mx-auto px-4 py-2.5">
             <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ backgroundColor: '#0F0F1A', border: '1px solid rgba(232,160,32,0.35)' }}>
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                <span style={{ color: '#E8A020', fontWeight: 600 }}>Γίνε Creator</span> — Submit events, network profile, releases
+                <span style={{ color: '#E8A020', fontWeight: 600 }}>{t('upgrade_become_creator')}</span> — {t('dashboard_upgrade_banner_desc')}
               </p>
               <button
                 onClick={() => setShowUpgrade(true)}
                 className="flex-shrink-0 text-xs font-bold px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
                 style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
               >
-                Upgrade
+                {t('dashboard_upgrade_btn')}
               </button>
             </div>
           </div>
@@ -503,9 +505,9 @@ export default function DashboardClient({ profile, events, releases, professiona
 
               {/* Photos */}
               <div className="p-6 rounded-2xl space-y-5" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Photos</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_photos')}</h2>
                 <div>
-                  <label className={labelClass}>Banner Photo</label>
+                  <label className={labelClass}>{t('dashboard_banner_photo')}</label>
                   <ImageUpload
                     folder="banners"
                     onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url }))}
@@ -513,7 +515,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Profile Photo</label>
+                  <label className={labelClass}>{t('dashboard_profile_photo')}</label>
                   <ImageUpload
                     folder="avatars"
                     onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url }))}
@@ -524,36 +526,36 @@ export default function DashboardClient({ profile, events, releases, professiona
 
               {/* Basic Info */}
               <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Basic Info</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_basic_info')}</h2>
                 <div>
-                  <label className={labelClass}>Display Name</label>
+                  <label className={labelClass}>{t('dashboard_display_name')}</label>
                   <input name="display_name" value={form.display_name} onChange={handleChange} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Bio</label>
-                  <textarea name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder="Tell your story..." className={`${inputClass} resize-none`} />
+                  <label className={labelClass}>{t('dashboard_bio')}</label>
+                  <textarea name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder={t('dashboard_bio_placeholder')} className={`${inputClass} resize-none`} />
                 </div>
                 <div>
-                  <label className={labelClass}>City</label>
-                  <input name="location" value={form.location} onChange={handleChange} placeholder="e.g. Athens" className={inputClass} />
+                  <label className={labelClass}>{t('listings_city')}</label>
+                  <input name="location" value={form.location} onChange={handleChange} placeholder={t('dashboard_city_placeholder')} className={inputClass} />
                 </div>
                 {/* Network Listing — professional */}
                 <div className="space-y-3">
-                  <label className={labelClass}>Network Listing</label>
+                  <label className={labelClass}>{t('dashboard_network_listing')}</label>
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.12)', border: '0.5px solid rgba(232,160,32,0.3)', color: '#E8A020' }}>
-                      Artists
+                      {t('listings_cat_artists')}
                     </span>
                   </div>
                   <div>
-                    <label className={labelClass}>Category</label>
+                    <label className={labelClass}>{t('listings_category')}</label>
                     <select
                       value={form.network_category}
                       onChange={e => setForm(p => ({ ...p, network_category: e.target.value, network_subcategory: '' }))}
                       className={inputClass}
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                     >
-                      <option value="">Select category</option>
+                      <option value="">{t('dashboard_select_category')}</option>
                       {Object.keys(NETWORK['Artists'])
                         .filter(c => c !== 'Venues' && c !== 'Music & Artists')
                         .map(c => <option key={c} value={c}>{c}</option>)}
@@ -562,8 +564,8 @@ export default function DashboardClient({ profile, events, releases, professiona
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                   <div>
-                    <p className="text-sm text-white font-medium">Available for booking</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Show availability status on your profile</p>
+                    <p className="text-sm text-white font-medium">{t('dashboard_available_for_booking')}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_availability_desc')}</p>
                   </div>
                   <button
                     type="button"
@@ -575,11 +577,11 @@ export default function DashboardClient({ profile, events, releases, professiona
                   </button>
                 </div>
                 <div>
-                  <label className={labelClass}>Tags (comma-separated)</label>
+                  <label className={labelClass}>{t('dashboard_tags_label')}</label>
                   <input
                     value={proForm.tags}
                     onChange={e => setProForm(p => ({ ...p, tags: e.target.value }))}
-                    placeholder="e.g. photographer, events, Athens"
+                    placeholder={t('dashboard_tags_placeholder')}
                     className={inputClass}
                   />
                 </div>
@@ -587,24 +589,24 @@ export default function DashboardClient({ profile, events, releases, professiona
 
               {/* Contact */}
               <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Contact</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_contact')}</h2>
                 <div>
-                  <label className={labelClass}>Email</label>
+                  <label className={labelClass}>{t('dashboard_email')}</label>
                   <input type="email" value={proForm.email} onChange={e => setProForm(p => ({ ...p, email: e.target.value }))} placeholder="booking@..." className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Phone</label>
+                  <label className={labelClass}>{t('dashboard_phone')}</label>
                   <input type="tel" value={proForm.phone} onChange={e => setProForm(p => ({ ...p, phone: e.target.value }))} placeholder="+30 69..." className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Website</label>
+                  <label className={labelClass}>{t('dashboard_website')}</label>
                   <input type="url" value={proForm.website} onChange={e => setProForm(p => ({ ...p, website: e.target.value }))} placeholder="https://..." className={inputClass} />
                 </div>
               </div>
 
               {/* Social Links */}
               <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Social Links</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_social_links')}</h2>
                 {[
                   { key: 'instagram', label: 'Instagram', placeholder: '@handle' },
                   { key: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...' },
@@ -627,8 +629,8 @@ export default function DashboardClient({ profile, events, releases, professiona
 
               {/* Gallery */}
               <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Gallery</h2>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Add up to 10 photos to showcase your work</p>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_gallery')}</h2>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_gallery_desc')}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {proForm.gallery.map((url, i) => (
                     <div key={i} className="relative aspect-square rounded-xl overflow-hidden group" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
@@ -660,7 +662,7 @@ export default function DashboardClient({ profile, events, releases, professiona
             {/* Profile Preview */}
             <div className="hidden lg:block">
               <div className="sticky top-6">
-                <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Profile Preview</p>
+                <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_profile_preview')}</p>
                 <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a0a14', border: '0.5px solid rgba(255,255,255,0.08)' }}>
                   <div className="relative h-24" style={{ backgroundColor: '#1a1a2e' }}>
                     {form.cover_url && <Image src={form.cover_url} alt="Banner" fill className="object-cover" />}
@@ -675,7 +677,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         </div>
                       )}
                     </div>
-                    <p className="font-bold text-white text-sm">{form.display_name || 'Display Name'}</p>
+                    <p className="font-bold text-white text-sm">{form.display_name || t('dashboard_display_name')}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {(form.network_category || proForm.category) && (
@@ -690,7 +692,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         backgroundColor: proForm.availability === 'available' ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
                         color: proForm.availability === 'available' ? '#4ade80' : 'rgba(255,255,255,0.3)',
                       }}>
-                        {proForm.availability === 'available' ? '● Available' : '○ Busy'}
+                        {proForm.availability === 'available' ? t('dashboard_available_status') : t('dashboard_busy_status')}
                       </span>
                     </div>
                     {form.bio && (
@@ -704,7 +706,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   className="mt-3 block text-center text-xs py-2.5 rounded-xl transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
                 >
-                  View Full Profile ↗
+                  {t('dashboard_view_full_profile')}
                 </Link>
               </div>
             </div>
