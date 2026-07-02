@@ -52,6 +52,7 @@ const translations = {
   events_none_now:           { el: "Δεν υπάρχουν events αυτή τη στιγμή", en: "No events right now" },
   events_explore:            { el: "Εξερεύνηση", en: "Explore" },
   events_find:               { el: "Βρες events", en: "Find events" },
+  events_free_entry_fallback:{ el: "είσοδος ελεύθερη", en: "free entry" },
 
   // ── Events filter modal ──────────────────────────────────
   filter_title:              { el: "Βρες τη βραδιά σου", en: "Find your night" },
@@ -155,6 +156,14 @@ const translations = {
   article_share:      { el: "Μοιράσου το άρθρο", en: "Share article" },
   article_back:       { el: "← Πίσω στο Magazine", en: "← Back to Magazine" },
 
+  // ── Magazine listing ──────────────────────────────────────
+  magazine_hero_body:     { el: "Συνεντεύξεις, κριτικές, features και ιστορίες από την ελληνική νυχτερινή σκηνή.", en: "Interviews, reviews, features and stories from the Greek nightlife scene." },
+  magazine_empty:         { el: "Δεν υπάρχουν άρθρα σε αυτή την κατηγορία.", en: "No articles in this category." },
+  magazine_read_more:     { el: "Διάβασε →", en: "Read →" },
+  magazine_series_title:  { el: "Σειρές", en: "Series" },
+  magazine_article_one:   { el: "άρθρο", en: "article" },
+  magazine_articles_many: { el: "άρθρα", en: "articles" },
+
   // ── Search ───────────────────────────────────────────────
   search_title:       { el: "Αναζήτηση", en: "Search" },
   search_breadcrumb:  { el: "Αρχική", en: "Home" },
@@ -216,6 +225,17 @@ const translations = {
   auth_send_reset:    { el: "Αποστολή reset link →", en: "Send reset link →" },
   auth_back:          { el: "← Πίσω", en: "← Back" },
   auth_forgot:        { el: "Ξέχασα τον κωδικό μου", en: "Forgot my password" },
+
+  // ── Auth Reset ──────────────────────────────────────────
+  reset_mismatch:                  { el: "Οι κωδικοί δεν ταιριάζουν", en: "Passwords don't match" },
+  reset_too_short:                 { el: "Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες", en: "Password must be at least 8 characters" },
+  reset_title:                     { el: "Νέος κωδικός", en: "New password" },
+  reset_subtitle:                  { el: "Επέλεξε έναν νέο κωδικό για τον λογαριασμό σου", en: "Choose a new password for your account" },
+  reset_success:                   { el: "Ο κωδικός άλλαξε — ανακατεύθυνση...", en: "Password changed — redirecting..." },
+  reset_new_password_placeholder:  { el: "Νέος κωδικός", en: "New password" },
+  reset_confirm_placeholder:       { el: "Επιβεβαίωση κωδικού", en: "Confirm password" },
+  reset_saving:                    { el: "Αποθήκευση...", en: "Saving..." },
+  reset_submit:                    { el: "Αλλαγή κωδικού →", en: "Change password →" },
 
   // ── UpgradeModal ─────────────────────────────────────────
   upgrade_submitted:  { el: "Η αίτησή σου στάλθηκε!", en: "Your request was sent!" },
@@ -321,6 +341,11 @@ const translations = {
   upgrade_choose_specialty:  { el: "Επίλεξε ειδικότητα", en: "Choose specialty" },
   upgrade_bio_placeholder:   { el: "Πες μας λίγα λόγια για σένα...", en: "Tell us a bit about yourself..." },
   upgrade_send_request:      { el: "Αποστολή αίτησης →", en: "Send request →" },
+
+  // ── Profile ──────────────────────────────────────────────
+  profile_participates:      { el: "Συμμετέχει", en: "Participating" },
+  profile_listings_heading:  { el: "Αγγελίες", en: "Listings" },
+  profile_express_interest:  { el: "Ενδιαφέρομαι →", en: "I'm interested →" },
 
   // ── Event categories ─────────────────────────────────────
   event_cat_music:     { el: "Μουσική", en: "Music" },

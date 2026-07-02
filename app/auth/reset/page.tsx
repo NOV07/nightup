@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function ResetPasswordPage() {
+  const { t } = useLanguage()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -19,8 +21,8 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (password !== confirm) { setError('Οι κωδικοί δεν ταιριάζουν'); return }
-    if (password.length < 8) { setError('Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες'); return }
+    if (password !== confirm) { setError(t('reset_mismatch')); return }
+    if (password.length < 8) { setError(t('reset_too_short')); return }
 
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password })
@@ -36,18 +38,18 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[#0A0A12] flex items-center justify-center p-4">
       <div className="bg-[#0F0F1A] border border-[#E8A020]/30 rounded-xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-white mb-2">Νέος κωδικός</h2>
-        <p className="text-white/50 text-sm mb-6">Επέλεξε έναν νέο κωδικό για τον λογαριασμό σου</p>
+        <h2 className="text-2xl font-bold text-white mb-2">{t('reset_title')}</h2>
+        <p className="text-white/50 text-sm mb-6">{t('reset_subtitle')}</p>
 
         {done ? (
           <p className="text-green-400 text-sm text-center py-4">
-            Ο κωδικός άλλαξε — ανακατεύθυνση...
+            {t('reset_success')}
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="password"
-              placeholder="Νέος κωδικός"
+              placeholder={t('reset_new_password_placeholder')}
               value={password}
               onChange={e => setPassword(e.target.value)}
               className={inputClass}
@@ -55,7 +57,7 @@ export default function ResetPasswordPage() {
             />
             <input
               type="password"
-              placeholder="Επιβεβαίωση κωδικού"
+              placeholder={t('reset_confirm_placeholder')}
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
               className={`${inputClass} ${confirm && confirm !== password ? 'border-red-500' : ''}`}
@@ -67,7 +69,7 @@ export default function ResetPasswordPage() {
               disabled={loading}
               className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
             >
-              {loading ? 'Αποθήκευση...' : 'Αλλαγή κωδικού →'}
+              {loading ? t('reset_saving') : t('reset_submit')}
             </button>
           </form>
         )}

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Metadata } from 'next'
 import ContactPill from '@/app/components/ContactPill'
+import T from '@/app/components/T'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
 
@@ -342,7 +343,7 @@ export default async function ProfilePage({ params }: Props) {
                         backgroundColor: 'rgba(232,160,32,0.1)',
                         color: '#E8A020',
                         border: '0.5px solid rgba(232,160,32,0.2)'
-                      }}>Συμμετέχει</span>
+                      }}><T k="profile_participates" /></span>
                     </Link>
                   ))}
                 </div>
@@ -620,7 +621,7 @@ export default async function ProfilePage({ params }: Props) {
         {(profileListings ?? []).length > 0 && (
           <div style={{ marginTop: 40 }}>
             <h2 style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 20, fontWeight: 500, color: '#F4F4F5', marginBottom: 16 }}>
-              Αγγελίες
+              <T k="profile_listings_heading" />
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {(profileListings ?? []).map((listing: any) => (
@@ -648,7 +649,7 @@ export default async function ProfilePage({ params }: Props) {
                         border: `1px solid ${listing.type === 'seeking' ? 'rgba(96,165,250,0.2)' : 'rgba(52,211,153,0.2)'}`,
                         borderRadius: 4, padding: '2px 6px',
                       }}>
-                        {listing.type === 'seeking' ? 'Ζητώ' : 'Προσφέρω'}
+                        <T k={listing.type === 'seeking' ? 'listings_seeking' : 'listings_offering'} />
                       </span>
                     </div>
                     <p style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 16, fontWeight: 500, color: '#F4F4F5', marginBottom: 4 }}>
@@ -662,7 +663,7 @@ export default async function ProfilePage({ params }: Props) {
                     )}
                   </div>
                   <a href="/network/listings" style={{ fontSize: 12, color: '#E8A020', textDecoration: 'none', flexShrink: 0, paddingTop: 2 }}>
-                    Ενδιαφέρομαι →
+                    <T k="profile_express_interest" />
                   </a>
                 </div>
               ))}

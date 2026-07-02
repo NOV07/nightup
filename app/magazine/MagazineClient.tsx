@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Spectral } from "next/font/google";
+import { useLanguage } from "@/app/components/LanguageContext";
 
 const spectral = Spectral({
   subsets: ["latin", "latin-ext"],
@@ -42,6 +43,7 @@ export default function MagazineClient({
   series: SeriesItem[];
   fallbackImage: string;
 }) {
+  const { t } = useLanguage();
   const categories = ["All", ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean))).sort()];
   const [activeCategory, setActiveCategory] = useState("All");
 
@@ -146,7 +148,7 @@ export default function MagazineClient({
             <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: '#E8A020', verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
           </h1>
           <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
-            Συνεντεύξεις, κριτικές, features και ιστορίες από την ελληνική νυχτερινή σκηνή.
+            {t("magazine_hero_body")}
           </p>
         </div>
       </div>
@@ -173,7 +175,7 @@ export default function MagazineClient({
 
       {filtered.length === 0 ? (
         <p className="text-center py-20" style={{ color: "rgba(255,255,255,0.3)" }}>
-          Δεν υπάρχουν άρθρα σε αυτή την κατηγορία.
+          {t("magazine_empty")}
         </p>
       ) : (
         <>
@@ -215,7 +217,7 @@ export default function MagazineClient({
                   className="text-sm font-semibold hover:underline"
                   style={{ color: "#E8A020" }}
                 >
-                  Διάβασε →
+                  {t("magazine_read_more")}
                 </Link>
               </div>
             </div>
@@ -276,7 +278,7 @@ export default function MagazineClient({
                 className="text-xs font-bold uppercase mb-4"
                 style={{ color: "rgba(255,255,255,0.40)", letterSpacing: "0.15em" }}
               >
-                Σειρές
+                {t("magazine_series_title")}
               </p>
               <div className="flex gap-4 overflow-x-auto pb-3">
                 {series.map(({ slug, count }) => (
@@ -290,7 +292,7 @@ export default function MagazineClient({
                       {formatSlug(slug)}
                     </p>
                     <p className="text-xs" style={{ color: "rgba(255,255,255,0.50)" }}>
-                      {count} {count === 1 ? "άρθρο" : "άρθρα"}
+                      {count} {count === 1 ? t("magazine_article_one") : t("magazine_articles_many")}
                     </p>
                   </Link>
                 ))}

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/formatPrice'
 import EventHeroImage from '../../components/EventHeroImage'
+import T from '../../components/T'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +48,7 @@ export default async function EventPage({ params }: Props) {
     ? event.lineup.split(',').map((s: string) => s.trim()).filter(Boolean)
     : []
 
-  const priceLabel = formatPrice(event.price) || "είσοδος ελεύθερη"
+  const priceLabel = formatPrice(event.price)
 
   const formattedDate = event.date
     ? new Date(event.date).toLocaleDateString('en-GB', {
@@ -155,7 +156,7 @@ export default async function EventPage({ params }: Props) {
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
             <span style={{ color: '#E8A020' }}>🎟</span>
-            <span>{priceLabel}</span>
+            <span>{priceLabel || <T k="events_free_entry_fallback" />}</span>
           </div>
         </div>
 
