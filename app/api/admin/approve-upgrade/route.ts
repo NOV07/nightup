@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
+import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
-  const adminCookie = req.cookies.get('admin_auth')
-  if (adminCookie?.value !== process.env.ADMIN_PASSWORD) {
+  if (!verifyAdminToken(req.cookies.get('admin_auth')?.value)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

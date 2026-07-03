@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAdminToken } from '@/app/lib/adminAuth'
 
 function getSupabase() {
   return createClient(
@@ -11,8 +12,9 @@ function getSupabase() {
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
-  const adminAuth = cookieStore.get('admin_auth')
-  if (!adminAuth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!verifyAdminToken(cookieStore.get('admin_auth')?.value)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const supabase = getSupabase()
 

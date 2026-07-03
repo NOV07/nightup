@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAdminToken } from '@/app/lib/adminAuth'
 
 function getSupabase() {
   return createClient(
@@ -27,8 +28,9 @@ export async function PATCH(
 ) {
   const { id } = await params
   const cookieStore = await cookies()
-  const adminAuth = cookieStore.get('admin_auth')
-  if (!adminAuth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!verifyAdminToken(cookieStore.get('admin_auth')?.value)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const supabase = getSupabase()
   const body = await req.json()
@@ -73,8 +75,9 @@ export async function DELETE(
 ) {
   const { id } = await params
   const cookieStore = await cookies()
-  const adminAuth = cookieStore.get('admin_auth')
-  if (!adminAuth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!verifyAdminToken(cookieStore.get('admin_auth')?.value)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const supabase = getSupabase()
   const { error } = await supabase.from('articles').delete().eq('id', id)

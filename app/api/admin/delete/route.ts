@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
+import { verifyAdminToken } from '@/app/lib/adminAuth'
 
 function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_auth')?.value === process.env.ADMIN_PASSWORD
+  return verifyAdminToken(req.cookies.get('admin_auth')?.value)
 }
 
 const VALID_TABLES = ['events', 'professionals', 'articles', 'organizers', 'music_releases', 'mixes', 'playlists', 'artists', 'spots']
