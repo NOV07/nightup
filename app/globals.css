@@ -38,7 +38,7 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   background: #0F0F1A;
@@ -46,6 +46,7 @@ body {
   font-family: var(--font-sans);
   min-height: 100vh;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 /* ── Transitions ─────────────────────────────────────────── */
@@ -655,6 +656,11 @@ section:hover .hero-arrow { opacity: 1 !important; }
     right:  0 !important;
     left:   0 !important;
     max-width: 100% !important;
+  }
+  /* Lift above MusicPlayerBar when a track is loaded, so the two bars don't overlap.
+     MusicPlayerBar: bottom = safe-area + 8px, height = 88px → top edge ≈ 96px+. */
+  .radio-strip-desktop.rs-has-track {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 108px) !important;
   }
   .radio-strip-desktop .rs-pill {
     border-radius: 0 !important;

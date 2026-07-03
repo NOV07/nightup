@@ -637,15 +637,6 @@ export default function RadioStrip() {
         }
         /* Focus rings */
         .rs-vol-slider:focus-visible { outline: 2px solid rgba(232,160,32,0.6); outline-offset: 3px; }
-
-        /* Lift pill above MusicPlayerBar on small screens when a track is loaded.
-           MusicPlayerBar: bottom = safe-area + 8px, height = 88px → top edge ≈ 96px+.
-           We use env(safe-area-inset-bottom) so notched phones are covered too. */
-        @media (max-width: 768px) {
-          .rs-has-track {
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 108px) !important;
-          }
-        }
       `}</style>
     </div>
   );
