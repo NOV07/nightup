@@ -1,13 +1,21 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useLanguage } from '@/app/components/LanguageContext'
+import type { Lang, TranslationKey } from '../lib/translations'
 
 const GOLD = '#E8A020'
 const SURFACE = '#1A1A28'
 const BORDER = 'rgba(255,255,255,0.06)'
 
-const GREEK_MONTHS = ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μαϊ', 'Ιουν', 'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ']
-const GREEK_DAYS   = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο']
+const MONTHS: Record<Lang, string[]> = {
+  el: ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μαϊ', 'Ιουν', 'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+}
+const DAYS: Record<Lang, string[]> = {
+  el: ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'],
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+}
 
 type LibraryTab = 'events' | 'spots' | 'artists'
 
@@ -17,12 +25,12 @@ function daysUntil(dateStr: string): number {
   return Math.round((d.getTime() - today.getTime()) / 86_400_000)
 }
 
-function upcomingLabel(dateStr: string): string {
+function upcomingLabel(dateStr: string, lang: Lang, t: (key: TranslationKey) => string): string {
   const n = daysUntil(dateStr)
-  if (n === 0) return 'Σήμερα'
-  if (n === 1) return 'Αύριο'
-  if (n <= 6)  return GREEK_DAYS[new Date(dateStr).getDay()]
-  return `σε ${n} μέρες`
+  if (n === 0) return t('dashboard_today')
+  if (n === 1) return t('dashboard_tomorrow')
+  if (n <= 6)  return DAYS[lang][new Date(dateStr).getDay()]
+  return `${t('dashboard_in_days_prefix')} ${n} ${t('dashboard_days_suffix')}`
 }
 
 function SectionTitle({ before, italicWord }: { before: string; italicWord: string }) {
@@ -46,6 +54,7 @@ function EmptyState({ emoji, title, text, href, cta }: { emoji: string; title: s
 
 function UpcomingRow({ event, isLast }: { event: any; isLast: boolean }) {
   const [hovered, setHovered] = useState(false)
+  const { t, lang } = useLanguage()
   const d = new Date(event.date)
   return (
     <Link
@@ -69,7 +78,7 @@ function UpcomingRow({ event, isLast }: { event: any; isLast: boolean }) {
           {d.getDate()}
         </div>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2, letterSpacing: '0.05em' }}>
-          {GREEK_MONTHS[d.getMonth()]}
+          {MONTHS[lang][d.getMonth()]}
         </div>
       </div>
 
@@ -98,7 +107,7 @@ function UpcomingRow({ event, isLast }: { event: any; isLast: boolean }) {
         backgroundColor: 'rgba(232,160,32,0.06)',
         whiteSpace: 'nowrap',
       }}>
-        {upcomingLabel(event.date)}
+        {upcomingLabel(event.date, lang, t)}
       </div>
     </Link>
   )
@@ -147,6 +156,7 @@ interface Props {
 
 export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, savedSpots, followedProfiles }: Props) {
   const [activeTab, setActiveTab] = useState<LibraryTab>('events')
+  const { t, lang } = useLanguage()
 
   const pillStyle = (active: boolean): React.CSSProperties => ({
     padding: '0.35rem 1rem',
@@ -166,25 +176,25 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
       {/* Greeting */}
       <div style={{ marginBottom: 34 }}>
         <h1 style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 26, fontWeight: 700, color: '#F4F4F5', lineHeight: 1.25, marginBottom: 8 }}>
-          Καλησπέρα,{' '}
+          {t('dashboard_greeting')},{' '}
           <em style={{ color: GOLD, fontStyle: 'italic' }}>{name}</em>
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
-          {savedEvents.length} saved events · {savedSpots.length} spots · {followedProfiles.length} artists
+          {savedEvents.length} {t('dashboard_stat_saved_events')} · {savedSpots.length} {t('dashboard_stat_spots')} · {followedProfiles.length} {t('dashboard_stat_artists')}
         </p>
       </div>
 
       {/* ── Έρχονται σύντομα ── */}
       <section>
-        <SectionTitle before="Έρχονται" italicWord="σύντομα" />
+        <SectionTitle before={t('dashboard_upcoming_before')} italicWord={t('dashboard_upcoming_italic')} />
 
         {upcomingEvents.length === 0 ? (
           <EmptyState
             emoji="🎫"
-            title="Τίποτα μπροστά σου"
-            text="Σώσε events για να τα βλέπεις εδώ"
+            title={t('dashboard_empty_upcoming_title')}
+            text={t('dashboard_empty_upcoming_text')}
             href="/events"
-            cta="Εξερεύνησε events →"
+            cta={t('dashboard_explore_events_cta')}
           />
         ) : (
           <div style={{ backgroundColor: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6, overflow: 'hidden' }}>
@@ -197,14 +207,14 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
 
       {/* ── Η βιβλιοθήκη μου ── */}
       <section style={{ marginTop: 34 }}>
-        <SectionTitle before="Η βιβλιοθήκη" italicWord="μου" />
+        <SectionTitle before={t('dashboard_library_before')} italicWord={t('dashboard_library_italic')} />
 
         {/* Tab pills */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           {([
-            { key: 'events'  as LibraryTab, label: `Events (${savedEvents.length})` },
-            { key: 'spots'   as LibraryTab, label: `Spots (${savedSpots.length})` },
-            { key: 'artists' as LibraryTab, label: `Artists (${followedProfiles.length})` },
+            { key: 'events'  as LibraryTab, label: `${t('events_title')} (${savedEvents.length})` },
+            { key: 'spots'   as LibraryTab, label: `${t('nav_spots')} (${savedSpots.length})` },
+            { key: 'artists' as LibraryTab, label: `${t('listings_cat_artists')} (${followedProfiles.length})` },
           ]).map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={pillStyle(activeTab === tab.key)}>
               {tab.label}
@@ -214,7 +224,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
 
         {activeTab === 'events' && (
           savedEvents.length === 0
-            ? <EmptyState emoji="🎵" title="Καμία αποθήκευση ακόμα" text="Πάτα save σε events που σε ενδιαφέρουν" href="/events" cta="Εξερεύνησε events →" />
+            ? <EmptyState emoji="🎵" title={t('dashboard_empty_saved_events_title')} text={t('dashboard_empty_saved_events_text')} href="/events" cta={t('dashboard_explore_events_cta')} />
             : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
                 {savedEvents.map((event: any) => (
@@ -223,7 +233,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
                     href={`/events/${event.id}`}
                     title={event.title}
                     sub={[
-                      event.date ? new Date(event.date).toLocaleDateString('el-GR', { day: 'numeric', month: 'short' }) : '',
+                      event.date ? new Date(event.date).toLocaleDateString(lang === 'el' ? 'el-GR' : 'en-US', { day: 'numeric', month: 'short' }) : '',
                       event.venue,
                     ].filter(Boolean).join(' · ')}
                     accent={event.genre}
@@ -235,7 +245,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
 
         {activeTab === 'spots' && (
           savedSpots.length === 0
-            ? <EmptyState emoji="🏛" title="Δεν έχεις spots ακόμα" text="Εξερεύνησε μαγαζιά και σώσε τα αγαπημένα σου" href="/spots" cta="Εξερεύνησε spots →" />
+            ? <EmptyState emoji="🏛" title={t('dashboard_empty_saved_spots_title')} text={t('dashboard_empty_saved_spots_text')} href="/spots" cta={t('dashboard_explore_spots_cta')} />
             : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
                 {savedSpots.map((spot: any) => (
@@ -253,7 +263,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
 
         {activeTab === 'artists' && (
           followedProfiles.length === 0
-            ? <EmptyState emoji="🎤" title="Κανένας artist ακόμα" text="Ακολούθησε artists, DJs και venues" href="/network" cta="Εξερεύνησε το Network →" />
+            ? <EmptyState emoji="🎤" title={t('dashboard_empty_artists_title')} text={t('dashboard_empty_artists_text')} href="/network" cta={t('dashboard_explore_network_cta')} />
             : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
                 {followedProfiles.map((p: any) => (
