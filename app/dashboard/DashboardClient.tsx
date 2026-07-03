@@ -10,6 +10,7 @@ import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES } from '../lib/searchData'
 import ConsumerDashboard from './ConsumerDashboard'
 import { useLanguage } from '@/app/components/LanguageContext'
+import type { TranslationKey } from '../lib/translations'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance', 'Hip-Hop', 'R&B', 'Afrobeats', 'Reggaeton', 'Laika', 'Entechno', 'Rebetiko', 'Dimotika', 'Rock', 'Jazz', 'Classical', 'Blues', 'Electronic', 'Ambient', 'Experimental', 'Other']
 
@@ -37,19 +38,19 @@ const VISIBILITY_SECTIONS: Record<string, string[]> = {
   professional: ['portfolio', 'testimonials', 'price_range', 'booking_availability'],
 }
 
-const SECTION_LABELS: Record<string, string> = {
-  upcoming_events: 'Upcoming Events',
-  featured_track: 'Featured Track',
-  releases: 'Releases',
-  mixes: 'Mixes',
-  gallery: 'Gallery',
-  announcements: 'Announcements',
-  music_embed: 'Music / Sound Identity',
-  booking_info: 'Booking Info',
-  portfolio: 'Portfolio',
-  testimonials: 'Testimonials',
-  price_range: 'Price Range',
-  booking_availability: 'Booking Availability',
+const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
+  upcoming_events: 'dashboard_section_upcoming_events',
+  featured_track: 'dashboard_section_featured_track',
+  releases: 'dashboard_releases_label',
+  mixes: 'dashboard_section_mixes',
+  gallery: 'dashboard_gallery',
+  announcements: 'dashboard_announcements',
+  music_embed: 'dashboard_section_music_embed',
+  booking_info: 'dashboard_booking_info',
+  portfolio: 'dashboard_section_portfolio',
+  testimonials: 'dashboard_section_testimonials',
+  price_range: 'dashboard_section_price_range',
+  booking_availability: 'dashboard_section_booking_availability',
 }
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
@@ -1109,7 +1110,7 @@ export default function DashboardClient({ profile, events, releases, professiona
           <div className="space-y-6">
             <div>
               <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                Αγγελίες ({listingItems.length})
+                {t('listings_title')} ({listingItems.length})
               </h3>
 
               {listingItems.length > 0 && (
@@ -1126,11 +1127,11 @@ export default function DashboardClient({ profile, events, releases, professiona
                         backgroundColor: listing.is_active ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
                         color: listing.is_active ? '#4ade80' : 'rgba(255,255,255,0.3)',
                       }}>
-                        {listing.is_active ? 'Ενεργή' : 'Ανενεργή'}
+                        {listing.is_active ? t('dashboard_listing_active') : t('dashboard_listing_inactive')}
                       </span>
                       {listing._interest_count > 0 && (
                         <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020' }}>
-                          {listing._interest_count} ενδιαφέρον{listing._interest_count !== 1 ? 'τες' : ''}
+                          {listing._interest_count} {listing._interest_count !== 1 ? t('dashboard_interest_plural') : t('dashboard_interest_singular')}
                         </span>
                       )}
                       <button
@@ -1138,14 +1139,14 @@ export default function DashboardClient({ profile, events, releases, professiona
                         className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
                         style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
                       >
-                        Επεξεργασία
+                        {t('dashboard_edit')}
                       </button>
                       <button
                         onClick={() => handleListingDelete(listing.id)}
                         className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
                         style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
                       >
-                        Διαγραφή
+                        {t('dashboard_delete')}
                       </button>
                     </div>
                   ))}
@@ -1155,31 +1156,31 @@ export default function DashboardClient({ profile, events, releases, professiona
               {showListingForm && (
                 <form onSubmit={handleListingSubmit} className="p-5 rounded-2xl space-y-4 mb-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                   <h4 className="text-sm font-semibold text-white">
-                    {editingListingId ? 'Επεξεργασία αγγελίας' : 'Νέα αγγελία'}
+                    {editingListingId ? t('dashboard_edit_listing') : t('dashboard_new_listing')}
                   </h4>
 
                   {/* Type toggle */}
                   <div className="flex gap-2">
-                    {(['seeking', 'offering'] as const).map(t => (
+                    {(['seeking', 'offering'] as const).map(lt => (
                       <button
-                        key={t}
+                        key={lt}
                         type="button"
-                        onClick={() => setListingForm(prev => ({ ...prev, type: t }))}
+                        onClick={() => setListingForm(prev => ({ ...prev, type: lt }))}
                         className="text-xs px-3 py-2 rounded-lg transition-all"
                         style={{
-                          backgroundColor: listingForm.type === t ? '#E8A020' : 'rgba(255,255,255,0.05)',
-                          color: listingForm.type === t ? '#0F0F1A' : 'rgba(255,255,255,0.45)',
+                          backgroundColor: listingForm.type === lt ? '#E8A020' : 'rgba(255,255,255,0.05)',
+                          color: listingForm.type === lt ? '#0F0F1A' : 'rgba(255,255,255,0.45)',
                           border: 'none',
                           cursor: 'pointer',
                         }}
                       >
-                        {t === 'seeking' ? 'Ζητώ' : 'Προσφέρω'}
+                        {lt === 'seeking' ? t('listings_seeking') : t('listings_offering')}
                       </button>
                     ))}
                   </div>
 
                   <div className="space-y-2">
-                    <label className={labelClass}>Ρόλος</label>
+                    <label className={labelClass}>{t('dashboard_role')}</label>
                     <select
                       value={listingRoleGroup}
                       onChange={e => {
@@ -1192,10 +1193,10 @@ export default function DashboardClient({ profile, events, releases, professiona
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                       required
                     >
-                      <option value="">Επιλέξτε κατηγορία</option>
-                      <option value="Artists">Artists</option>
-                      <option value="Venues">Venues</option>
-                      <option value="Professionals">Professionals</option>
+                      <option value="">{t('dashboard_select_category')}</option>
+                      <option value="Artists">{t('listings_cat_artists')}</option>
+                      <option value="Venues">{t('listings_cat_venues')}</option>
+                      <option value="Professionals">{t('listings_cat_professionals')}</option>
                     </select>
 
                     {listingRoleGroup === 'Professionals' && (
@@ -1209,9 +1210,9 @@ export default function DashboardClient({ profile, events, releases, professiona
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                         required
                       >
-                        <option value="">Επιλέξτε υποκατηγορία</option>
-                        <option value="For Events">For Events</option>
-                        <option value="For Artists">For Artists</option>
+                        <option value="">{t('dashboard_select_subcategory')}</option>
+                        <option value="For Events">{t('dashboard_for_events')}</option>
+                        <option value="For Artists">{t('dashboard_for_artists')}</option>
                       </select>
                     )}
 
@@ -1223,7 +1224,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                         required
                       >
-                        <option value="">Επιλέξτε ρόλο</option>
+                        <option value="">{t('dashboard_select_role')}</option>
                         {Object.keys(NETWORK.Artists).map(r => <option key={r} value={r}>{r}</option>)}
                       </select>
                     )}
@@ -1236,7 +1237,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                         required
                       >
-                        <option value="">Επιλέξτε ρόλο</option>
+                        <option value="">{t('dashboard_select_role')}</option>
                         {Object.keys(NETWORK.Professionals[listingRoleSubgroup as 'For Events' | 'For Artists']).map(r => (
                           <option key={r} value={r}>{r}</option>
                         ))}
@@ -1245,18 +1246,18 @@ export default function DashboardClient({ profile, events, releases, professiona
                   </div>
 
                   <div>
-                    <label className={labelClass}>Τίτλος</label>
+                    <label className={labelClass}>{t('dashboard_title_label')}</label>
                     <input
                       value={listingForm.title}
                       onChange={e => setListingForm(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="π.χ. Ζητώ DJ για event στις 20 Ιουλίου"
+                      placeholder={t('dashboard_listing_title_placeholder')}
                       className={inputClass}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className={labelClass}>Περιγραφή</label>
+                    <label className={labelClass}>{t('dashboard_description')}</label>
                     <textarea
                       value={listingForm.description}
                       onChange={e => setListingForm(prev => ({ ...prev, description: e.target.value }))}
@@ -1266,20 +1267,20 @@ export default function DashboardClient({ profile, events, releases, professiona
                   </div>
 
                   <div>
-                    <label className={labelClass}>Πόλη</label>
+                    <label className={labelClass}>{t('listings_city')}</label>
                     <select
                       value={listingForm.city}
                       onChange={e => setListingForm(prev => ({ ...prev, city: e.target.value }))}
                       className={inputClass}
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                     >
-                      <option value="">Επιλέξτε πόλη</option>
+                      <option value="">{t('dashboard_select_city')}</option>
                       {CITIES.slice(1).map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className={labelClass}>Ημερομηνία (προαιρετικό)</label>
+                    <label className={labelClass}>{t('dashboard_date_optional')}</label>
                     <input
                       type="date"
                       value={listingForm.date_needed}
@@ -1295,7 +1296,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                       className="flex-1 py-2 rounded-lg text-sm"
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', border: '0.5px solid rgba(255,255,255,0.1)' }}
                     >
-                      Ακύρωση
+                      {t('dashboard_cancel')}
                     </button>
                     <button
                       type="submit"
@@ -1303,7 +1304,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                       className="flex-1 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
                       style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
                     >
-                      {listingSubmitting ? 'Αποθήκευση...' : (editingListingId ? 'Αποθήκευση' : 'Δημοσίευση')}
+                      {listingSubmitting ? t('dashboard_saving') : (editingListingId ? t('dashboard_save') : t('dashboard_publish'))}
                     </button>
                   </div>
                 </form>
@@ -1315,7 +1316,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   className="text-xs px-4 py-2.5 rounded-xl w-full transition-opacity hover:opacity-80"
                   style={{ border: '1px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', backgroundColor: 'transparent', cursor: 'pointer' }}
                 >
-                  + Νέα αγγελία
+                  + {t('dashboard_new_listing')}
                 </button>
               )}
             </div>
@@ -1324,7 +1325,7 @@ export default function DashboardClient({ profile, events, releases, professiona
             {(receivedInterests ?? []).length > 0 && (
               <div>
                 <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  Ενδιαφερόμενοι ({receivedInterests!.length})
+                  {t('dashboard_interested_parties')} ({receivedInterests!.length})
                 </h3>
                 <div className="space-y-2">
                   {receivedInterests!.map((interest: any) => {
@@ -1339,7 +1340,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-white font-medium truncate">{actor?.display_name}</p>
                           <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                            Ενδιαφέρθηκε για «{listing?.title}»
+                            {t('dashboard_interested_in')} «{listing?.title}»
                           </p>
                         </div>
                         <a
@@ -1348,7 +1349,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                           className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
                           style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
                         >
-                          Προφίλ →
+                          {t('dashboard_profile_arrow')}
                         </a>
                       </div>
                     )
@@ -1361,7 +1362,7 @@ export default function DashboardClient({ profile, events, releases, professiona
             {(sentInterests ?? []).length > 0 && (
               <div>
                 <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  Έχω εκφράσει ενδιαφέρον ({sentInterests!.length})
+                  {t('dashboard_sent_interest_heading')} ({sentInterests!.length})
                 </h3>
                 <div className="space-y-2">
                   {sentInterests!.map((interest: any) => {
@@ -1377,7 +1378,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                           </p>
                         </div>
                         <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020' }}>
-                          ✓ Εστάλη
+                          {t('dashboard_sent_check')}
                         </span>
                       </div>
                     )
@@ -1392,14 +1393,14 @@ export default function DashboardClient({ profile, events, releases, professiona
         {activeTab === 'visibility' && (
           <div className="max-w-xl space-y-4">
             <div>
-              <h2 className="text-lg font-bold text-white mb-1">Section Visibility</h2>
+              <h2 className="text-lg font-bold text-white mb-1">{t('dashboard_section_visibility')}</h2>
               <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                Control which sections appear on your public profile. Sections with no data are always hidden.
+                {t('dashboard_visibility_desc')}
               </p>
             </div>
             {(VISIBILITY_SECTIONS[profile.profile_type] ?? []).map(section => (
               <div key={section} className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <p className="text-sm text-white">{SECTION_LABELS[section]}</p>
+                <p className="text-sm text-white">{t(SECTION_LABEL_KEYS[section])}</p>
                 <button
                   type="button"
                   onClick={() => toggleVisibility(section)}
@@ -1416,48 +1417,48 @@ export default function DashboardClient({ profile, events, releases, professiona
               className="mt-4 px-8 py-3 rounded-xl font-bold text-sm disabled:opacity-50"
               style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? t('dashboard_saving') : t('dashboard_save_changes')}
             </button>
-            {saved && <span className="text-sm ml-3" style={{ color: '#4ade80' }}>✓ Saved!</span>}
+            {saved && <span className="text-sm ml-3" style={{ color: '#4ade80' }}>{t('dashboard_saved')}</span>}
           </div>
         )}
 
         {/* ══ TAB: SETTINGS ══ */}
         {activeTab === 'settings' && (
           <div className="max-w-xl space-y-6">
-            <h2 className="text-lg font-bold text-white">Account Settings</h2>
+            <h2 className="text-lg font-bold text-white">{t('dashboard_account_settings')}</h2>
             <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
               <div>
-                <label className={labelClass}>Username</label>
+                <label className={labelClass}>{t('dashboard_username')}</label>
                 <p className="text-sm text-white">@{profile.username}</p>
-                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Username cannot be changed</p>
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_username_immutable')}</p>
               </div>
               <div>
-                <label className={labelClass}>Profile Type</label>
+                <label className={labelClass}>{t('dashboard_profile_type')}</label>
                 <p className="text-sm text-white">{profileTypeLabel[profile.profile_type]}</p>
-                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>To change your role, contact support</p>
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_contact_support_role')}</p>
               </div>
               <div>
-                <label className={labelClass}>Account Status</label>
+                <label className={labelClass}>{t('dashboard_account_status')}</label>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{
                     backgroundColor: profile.is_verified ? 'rgba(232,160,32,0.15)' : 'rgba(255,255,255,0.05)',
                     color: profile.is_verified ? '#E8A020' : 'rgba(255,255,255,0.4)',
                   }}>
-                    {profile.is_verified ? '✓ Verified' : 'Not verified'}
+                    {profile.is_verified ? t('dashboard_verified') : t('dashboard_not_verified')}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{
                     backgroundColor: 'rgba(255,255,255,0.05)',
                     color: 'rgba(255,255,255,0.4)',
                   }}>
-                    {profile.plan_tier ?? 'free'} plan
+                    {profile.plan_tier ?? 'free'} {t('dashboard_plan_suffix')}
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Change Password</h3>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_change_password')}</h3>
               <ChangePasswordForm />
             </div>
           </div>
