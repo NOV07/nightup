@@ -10,6 +10,7 @@ import { FaHeart } from "react-icons/fa";
 import { toast } from "sonner";
 import { RadarBadge } from "./RadarBadge";
 import { formatPrice } from "../lib/formatPrice";
+import { useLanguage } from "./LanguageContext";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -19,6 +20,7 @@ interface EventCardProps {
   image?: string;
   image_url?: string;
   genre: string;
+  type?: string | null;
   price: string | number | null | undefined;
   date: string;
   venue: string;
@@ -47,13 +49,26 @@ const genreColors: Record<string, string> = {
 };
 
 export default function EventCard({
-  id, title, image, image_url, genre, price, date, venue, city,
+  id, title, image, image_url, genre, type, price, date, venue, city,
   interestedCount, goingCount, featured, badge, organizerName, organizerSlug,
   initialSaved,
 }: EventCardProps) {
   const [saved, setSaved] = useState(initialSaved ?? false);
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const CATEGORY_LABEL_KEYS: Record<string, string> = {
+    culture: "event_cat_culture",
+    sports:  "event_cat_sports",
+    other:   "event_cat_other",
+  };
+  const categoryLabel = type && CATEGORY_LABEL_KEYS[type] ? t(CATEGORY_LABEL_KEYS[type] as any) : null;
+  const CATEGORY_COLORS: Record<string, string> = {
+    culture: "rgba(220,38,38,0.85)",
+    sports:  "rgba(37,99,235,0.85)",
+    other:   "rgba(5,150,105,0.85)",
+  };
 
   async function handleSave(e: MouseEvent) {
     e.preventDefault();
@@ -117,6 +132,15 @@ export default function EventCard({
         <div className="absolute inset-0" style={{
           background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.12) 75%, transparent 100%)"
         }} />
+
+        {(type && CATEGORY_LABEL_KEYS[type]) && (
+          <div className="absolute top-3 left-3 z-20">
+            <span className="text-xs font-black px-2.5 py-1 leading-none rounded"
+              style={{ backgroundColor: CATEGORY_COLORS[type] ?? "rgba(0,0,0,0.60)", color: "#fff" }}>
+              {categoryLabel}
+            </span>
+          </div>
+        )}
 
         {/* Top-left: Radar badge */}
         {badge === "Nightup Radar" && <RadarBadge />}
