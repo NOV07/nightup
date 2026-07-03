@@ -1,15 +1,17 @@
 'use client'
 import { useState, useRef } from 'react'
+import { useLanguage } from '@/app/components/LanguageContext'
+import type { TranslationKey } from '@/app/lib/translations'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Hip-Hop', 'R&B', 'Laika', 'Entechno', 'Rock', 'Open Air', 'Other']
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
 
-const STEPS = [
-  { n: 1, title: 'Event Basics' },
-  { n: 2, title: 'Date & Venue' },
-  { n: 3, title: 'Entry & Lineup' },
-  { n: 4, title: 'Publish' },
+const STEPS: { n: number; titleKey: TranslationKey }[] = [
+  { n: 1, titleKey: 'event_form_step_basics' },
+  { n: 2, titleKey: 'event_form_step_date_venue' },
+  { n: 3, titleKey: 'event_form_step_entry_lineup' },
+  { n: 4, titleKey: 'dashboard_publish' },
 ]
 
 // ── Style tokens (module-level — no state dependency) ─────────────────────
@@ -76,6 +78,7 @@ function Err({ stepErrors, k }: { stepErrors: Record<string, string>; k: string 
 }
 
 function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) => void }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 36 }}>
       {STEPS.map((s, i) => (
@@ -95,7 +98,7 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
             <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
               color: step === s.n ? '#E8A020' : s.n < step ? 'rgba(232,160,32,0.6)' : 'rgba(255,255,255,0.25)',
               whiteSpace: 'nowrap' }}>
-              {s.title}
+              {t(s.titleKey)}
             </span>
           </div>
           {i < STEPS.length - 1 && (
@@ -114,28 +117,29 @@ function Step1({ form, set, toggleGenre, stepErrors }: {
   toggleGenre: (g: string) => void
   stepErrors: Record<string, string>
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Event Title *</label>
-        <input style={inp} value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Warehouse Techno Night" />
+        <label style={lbl}>{t('event_form_title_label')} *</label>
+        <input style={inp} value={form.title} onChange={e => set('title', e.target.value)} placeholder={t('event_form_title_placeholder')} />
         <Err stepErrors={stepErrors} k="title" />
       </div>
 
       <div>
-        <label style={lbl}>Event Type</label>
+        <label style={lbl}>{t('event_form_type_label')}</label>
         <div style={{ position: 'relative' }}>
           <select style={{ ...inp, appearance: 'none', cursor: 'pointer', backgroundColor: '#0F0F1A' }}
             value={form.type} onChange={e => set('type', e.target.value)}>
-            <option value="">Select type...</option>
-            {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            <option value="">{t('event_form_select_type')}</option>
+            {EVENT_TYPES.map(et => <option key={et} value={et}>{et}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#E8A020', pointerEvents: 'none' }}>▾</span>
         </div>
       </div>
 
       <div>
-        <label style={lbl}>Genres</label>
+        <label style={lbl}>{t('dashboard_genres')}</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {GENRES.map(g => (
             <button key={g} type="button" onClick={() => toggleGenre(g)}
@@ -152,18 +156,18 @@ function Step1({ form, set, toggleGenre, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>Short Description * <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.short_description.length}/160</span></label>
+        <label style={lbl}>{t('event_form_short_desc_label')} * <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.short_description.length}/160</span></label>
         <input style={inp} value={form.short_description} maxLength={160}
           onChange={e => set('short_description', e.target.value)}
-          placeholder="One-line summary shown on cards and listings" />
+          placeholder={t('event_form_short_desc_placeholder')} />
         <Err stepErrors={stepErrors} k="short_description" />
       </div>
 
       <div>
-        <label style={lbl}>Full Description</label>
+        <label style={lbl}>{t('event_form_full_desc_label')}</label>
         <textarea style={{ ...inp, resize: 'vertical', minHeight: 100 }} value={form.full_description}
           onChange={e => set('full_description', e.target.value)}
-          placeholder="Tell people what to expect — vibe, artists, special guests..." />
+          placeholder={t('event_form_full_desc_placeholder')} />
       </div>
     </div>
   )
@@ -178,29 +182,30 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
   fileInputRef: React.RefObject<HTMLInputElement | null>
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div>
-          <label style={lbl}>Date *</label>
+          <label style={lbl}>{t('event_form_date_label')} *</label>
           <input style={inp} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
           <Err stepErrors={stepErrors} k="date" />
         </div>
         <div>
-          <label style={lbl}>Start Time *</label>
+          <label style={lbl}>{t('event_form_start_time_label')} *</label>
           <input style={inp} type="time" value={form.start_time} onChange={e => set('start_time', e.target.value)} />
           <Err stepErrors={stepErrors} k="start_time" />
         </div>
         <div>
-          <label style={lbl}>End Time</label>
+          <label style={lbl}>{t('event_form_end_time_label')}</label>
           <input style={inp} type="time" value={form.end_time} onChange={e => set('end_time', e.target.value)} />
         </div>
         <div>
-          <label style={lbl}>City *</label>
+          <label style={lbl}>{t('listings_city')} *</label>
           <div style={{ position: 'relative' }}>
             <select style={{ ...inp, appearance: 'none', cursor: 'pointer', backgroundColor: '#0F0F1A' }}
               value={form.city} onChange={e => set('city', e.target.value)}>
-              <option value="">Select city...</option>
+              <option value="">{t('event_form_select_city')}</option>
               {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#E8A020', pointerEvents: 'none' }}>▾</span>
@@ -210,23 +215,23 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
       </div>
 
       <div>
-        <label style={lbl}>Venue *</label>
-        <input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder="e.g. Club Rodos, Fabric, Tresor" />
+        <label style={lbl}>{t('event_form_venue_label')} *</label>
+        <input style={inp} value={form.venue} onChange={e => set('venue', e.target.value)} placeholder={t('event_form_venue_placeholder')} />
         <Err stepErrors={stepErrors} k="venue" />
       </div>
 
       <div>
-        <label style={lbl}>Address</label>
-        <input style={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Full street address" />
+        <label style={lbl}>{t('event_form_address_label')}</label>
+        <input style={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder={t('event_form_address_placeholder')} />
       </div>
 
       <div>
-        <label style={lbl}>Google Maps URL</label>
+        <label style={lbl}>{t('event_form_maps_url_label')}</label>
         <input style={inp} value={form.maps_url} onChange={e => set('maps_url', e.target.value)} placeholder="https://maps.google.com/..." />
       </div>
 
       <div>
-        <label style={lbl}>Event Flyer / Image *</label>
+        <label style={lbl}>{t('event_form_image_label')} *</label>
         <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
 
         {form.image_url ? (
@@ -235,7 +240,7 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
             <button type="button" onClick={() => fileInputRef.current?.click()}
               style={{ position: 'absolute', bottom: 10, right: 10, padding: '6px 14px', borderRadius: 8, fontSize: 12,
                 backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}>
-              Change Image
+              {t('event_form_change_image')}
             </button>
           </div>
         ) : (
@@ -243,7 +248,7 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
             style={{ ...inp, cursor: uploading ? 'wait' : 'pointer', textAlign: 'center', padding: '32px 16px',
               borderStyle: 'dashed', color: uploading ? '#E8A020' : 'rgba(255,255,255,0.4)',
               borderColor: uploading ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.12)' }}>
-            {uploading ? 'Uploading...' : '+ Upload flyer'}
+            {uploading ? t('event_form_uploading') : `+ ${t('event_form_upload_flyer')}`}
           </button>
         )}
 
@@ -259,24 +264,25 @@ function Step3({ form, set, stepErrors }: {
   set: SetField
   stepErrors: Record<string, string>
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Ticket URL</label>
+        <label style={lbl}>{t('event_form_ticket_url_label')}</label>
         <input style={inp} value={form.ticket_url} onChange={e => set('ticket_url', e.target.value)} placeholder="https://..." />
       </div>
 
       <div>
-        <label style={lbl}>Price (leave empty for Free)</label>
-        <input style={inp} type="number" min={0} value={form.price} onChange={e => set('price', e.target.value)} placeholder="e.g. 15" />
+        <label style={lbl}>{t('event_form_price_label')}</label>
+        <input style={inp} type="number" min={0} value={form.price} onChange={e => set('price', e.target.value)} placeholder={t('event_form_price_placeholder')} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 16px', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)',
         border: '1px solid rgba(255,255,255,0.08)' }}>
         <div>
-          <p style={{ fontSize: 14, color: 'white', fontWeight: 500 }}>18+ Age Restriction</p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>Only allow entry to guests 18 and over</p>
+          <p style={{ fontSize: 14, color: 'white', fontWeight: 500 }}>{t('event_form_age_restriction_label')}</p>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{t('event_form_age_restriction_desc')}</p>
         </div>
         <button type="button" onClick={() => set('age_restriction', !form.age_restriction)}
           style={{ position: 'relative', width: 44, height: 24, borderRadius: 999, cursor: 'pointer',
@@ -289,13 +295,13 @@ function Step3({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>Dress Code <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.dress_code.length}/80</span></label>
-        <input style={inp} value={form.dress_code} maxLength={80} onChange={e => set('dress_code', e.target.value)} placeholder="e.g. Smart casual, No sportswear" />
+        <label style={lbl}>{t('event_form_dress_code_label')} <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.dress_code.length}/80</span></label>
+        <input style={inp} value={form.dress_code} maxLength={80} onChange={e => set('dress_code', e.target.value)} placeholder={t('event_form_dress_code_placeholder')} />
       </div>
 
       <div>
-        <label style={lbl}>Lineup <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(comma-separated)</span></label>
-        <input style={inp} value={form.lineup} onChange={e => set('lineup', e.target.value)} placeholder="DJ One, DJ Two, Live Act" />
+        <label style={lbl}>{t('event_form_lineup_label')} <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{t('event_form_comma_separated')}</span></label>
+        <input style={inp} value={form.lineup} onChange={e => set('lineup', e.target.value)} placeholder={t('event_form_lineup_placeholder')} />
       </div>
     </div>
   )
@@ -306,11 +312,12 @@ function Step4({ form, set, stepErrors }: {
   set: SetField
   stepErrors: Record<string, string>
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
         <label style={lbl}>Instagram</label>
-        <input style={inp} value={form.instagram} onChange={e => set('instagram', e.target.value)} placeholder="@handle or full URL" />
+        <input style={inp} value={form.instagram} onChange={e => set('instagram', e.target.value)} placeholder={t('event_form_instagram_placeholder')} />
       </div>
       <div>
         <label style={lbl}>Facebook</label>
@@ -321,21 +328,21 @@ function Step4({ form, set, stepErrors }: {
         <input style={inp} value={form.tiktok} onChange={e => set('tiktok', e.target.value)} placeholder="@handle" />
       </div>
       <div>
-        <label style={lbl}>Contact Email *</label>
+        <label style={lbl}>{t('event_form_contact_email_label')} *</label>
         <input style={inp} type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)} placeholder="hello@yourvenue.com" />
         <Err stepErrors={stepErrors} k="contact_email" />
       </div>
 
       {/* Summary */}
       <div style={{ padding: '16px', borderRadius: 12, backgroundColor: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.2)' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>Review</p>
+        <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>{t('event_form_review_label')}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {[
-            ['Title', form.title],
-            ['Date', form.date ? `${form.date} ${form.start_time}` : '—'],
-            ['Venue', form.venue ? `${form.venue}, ${form.city}` : '—'],
-            ['Genres', form.genres.join(', ') || '—'],
-            ['Price', form.price ? `€${form.price}` : 'Free'],
+            [t('event_form_review_title_label'), form.title],
+            [t('event_form_date_label'), form.date ? `${form.date} ${form.start_time}` : '—'],
+            [t('event_form_venue_label'), form.venue ? `${form.venue}, ${form.city}` : '—'],
+            [t('dashboard_genres'), form.genres.join(', ') || '—'],
+            [t('event_form_review_price_label'), form.price ? `€${form.price}` : t('event_form_free')],
           ].map(([label, value]) => (
             <div key={label} style={{ display: 'flex', gap: 8, fontSize: 13 }}>
               <span style={{ color: 'rgba(255,255,255,0.35)', minWidth: 60 }}>{label}</span>
@@ -349,7 +356,7 @@ function Step4({ form, set, stepErrors }: {
         <input type="checkbox" checked={form.terms_accepted} onChange={e => set('terms_accepted', e.target.checked)}
           style={{ marginTop: 2, accentColor: '#E8A020', width: 16, height: 16 }} />
         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
-          I confirm the information above is accurate and I agree to the Nightup.gr terms of service.
+          {t('event_form_terms_text')}
         </span>
       </label>
       <Err stepErrors={stepErrors} k="terms_accepted" />
@@ -360,6 +367,7 @@ function Step4({ form, set, stepErrors }: {
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function EventFormSteps({ initialData, onSubmit, loading, error }: Props) {
+  const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<EventFormData>({ ...DEFAULTS, ...initialData })
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({})
@@ -382,20 +390,20 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error }
   function validate(n: number): Record<string, string> {
     const e: Record<string, string> = {}
     if (n === 1) {
-      if (!form.title.trim()) e.title = 'Title is required'
-      if (!form.short_description.trim()) e.short_description = 'Short description is required'
-      else if (form.short_description.length > 160) e.short_description = 'Max 160 characters'
+      if (!form.title.trim()) e.title = t('event_form_err_title_required')
+      if (!form.short_description.trim()) e.short_description = t('event_form_err_short_desc_required')
+      else if (form.short_description.length > 160) e.short_description = t('event_form_err_max_160')
     }
     if (n === 2) {
-      if (!form.date) e.date = 'Date is required'
-      if (!form.start_time) e.start_time = 'Start time is required'
-      if (!form.venue.trim()) e.venue = 'Venue is required'
-      if (!form.city) e.city = 'City is required'
-      if (!form.image_url) e.image_url = 'Event image is required'
+      if (!form.date) e.date = t('event_form_err_date_required')
+      if (!form.start_time) e.start_time = t('event_form_err_start_time_required')
+      if (!form.venue.trim()) e.venue = t('event_form_err_venue_required')
+      if (!form.city) e.city = t('event_form_err_city_required')
+      if (!form.image_url) e.image_url = t('event_form_err_image_required')
     }
     if (n === 4) {
-      if (!form.contact_email.trim()) e.contact_email = 'Contact email is required'
-      if (!form.terms_accepted) e.terms_accepted = 'You must accept the terms'
+      if (!form.contact_email.trim()) e.contact_email = t('event_form_err_email_required')
+      if (!form.terms_accepted) e.terms_accepted = t('event_form_err_terms_required')
     }
     return e
   }
@@ -417,7 +425,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error }
     fd.append('file', file)
     const res = await fetch('/api/events/upload', { method: 'POST', body: fd })
     const json = await res.json()
-    if (!res.ok) { setUploadError(json.error ?? 'Upload failed'); setUploading(false); return }
+    if (!res.ok) { setUploadError(json.error ?? t('event_form_upload_failed')); setUploading(false); return }
     set('image_url', json.url)
     setUploading(false)
   }
@@ -435,7 +443,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error }
 
       <div style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '32px 28px' }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 24 }}>
-          {STEPS[step - 1].title}
+          {t(STEPS[step - 1].titleKey)}
         </h2>
 
         {step === 1 && <Step1 form={form} set={set} toggleGenre={toggleGenre} stepErrors={stepErrors} />}
@@ -455,21 +463,21 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error }
               style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)',
                 border: '1px solid rgba(255,255,255,0.12)' }}>
-              Back
+              {t('event_form_back')}
             </button>
           )}
           {step < 4 ? (
             <button type="button" onClick={next}
               style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
-              Continue
+              {t('event_form_continue')}
             </button>
           ) : (
             <button type="button" onClick={handleFinalSubmit} disabled={loading}
               style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700,
                 cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1,
                 backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
-              {loading ? 'Submitting...' : 'Submit Event'}
+              {loading ? t('event_form_submitting') : t('event_form_submit_event')}
             </button>
           )}
         </div>

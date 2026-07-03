@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../../../../../components/ui/ImageUpload'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 const RELEASE_TYPES = [
   { value: 'single', label: 'Single' },
@@ -22,6 +23,7 @@ const GENRES = [
 
 export default function EditReleaseClient({ release }: { release: any }) {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -110,7 +112,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
     setLoading(false)
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong')
+      setError(data.error ?? t('form_generic_error'))
       return
     }
 
@@ -126,7 +128,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
       <div className="max-w-2xl mx-auto">
 
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white mb-1">Edit Release</h1>
+          <h1 className="text-2xl font-bold text-white mb-1">{t('release_edit_heading')}</h1>
           <p className="text-white/40 text-sm">{form.title}</p>
         </div>
 
@@ -134,7 +136,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
 
           {/* Cover Art */}
           <div>
-            <label className={labelClass}>Cover Art</label>
+            <label className={labelClass}>{t('release_cover_art_label')}</label>
             <ImageUpload
               folder="releases"
               onUpload={(url) => setForm(prev => ({ ...prev, cover_image: url }))}
@@ -144,17 +146,17 @@ export default function EditReleaseClient({ release }: { release: any }) {
 
           {/* Title & Artist */}
           <div>
-            <label className={labelClass}>Release Title *</label>
+            <label className={labelClass}>{t('release_title_label')} *</label>
             <input name="title" value={form.title} onChange={handleChange} className={inputClass} required />
           </div>
           <div>
-            <label className={labelClass}>Artist Name *</label>
+            <label className={labelClass}>{t('release_artist_name_label')} *</label>
             <input name="artist" value={form.artist} onChange={handleChange} className={inputClass} required />
           </div>
 
           {/* Type */}
           <div>
-            <label className={labelClass}>Release Type *</label>
+            <label className={labelClass}>{t('release_type_label')} *</label>
             <div className="grid grid-cols-3 gap-2">
               {RELEASE_TYPES.map(rt => (
                 <button
@@ -176,7 +178,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
 
           {/* Primary Genre */}
           <div>
-            <label className={labelClass}>Primary Genre</label>
+            <label className={labelClass}>{t('release_primary_genre_label')}</label>
             <div className="relative">
               <select
                 name="primary_genre"
@@ -185,7 +187,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
                 className={`${inputClass} cursor-pointer appearance-none`}
                 style={{ backgroundColor: '#0F0F1A', color: form.primary_genre ? 'white' : 'rgba(255,255,255,0.4)' }}
               >
-                <option value="" style={{ backgroundColor: '#0F0F1A', color: 'rgba(255,255,255,0.4)' }}>Select genre...</option>
+                <option value="" style={{ backgroundColor: '#0F0F1A', color: 'rgba(255,255,255,0.4)' }}>{t('release_select_genre')}</option>
                 {GENRES.map(g => (
                   <option key={g} value={g} style={{ backgroundColor: '#0F0F1A', color: 'white' }}>{g}</option>
                 ))}
@@ -196,7 +198,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
 
           {/* Secondary Genres */}
           <div>
-            <label className={labelClass}>Secondary Genres</label>
+            <label className={labelClass}>{t('release_secondary_genres_label')}</label>
             <div className="flex flex-wrap gap-2 mb-3">
               {GENRES.map(g => (
                 <button
@@ -216,7 +218,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
             </div>
             <div className="flex gap-2">
               <input
-                placeholder="Add custom genre..."
+                placeholder={t('release_custom_genre_placeholder')}
                 value={form.custom_genre}
                 onChange={e => setForm(prev => ({ ...prev, custom_genre: e.target.value }))}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomGenre() } }}
@@ -228,7 +230,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
                 className="px-4 py-3 rounded-lg text-sm font-medium flex-shrink-0"
                 style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.2)' }}
               >
-                Add
+                {t('release_add')}
               </button>
             </div>
             {form.secondary_genres.length > 0 && (
@@ -246,23 +248,23 @@ export default function EditReleaseClient({ release }: { release: any }) {
 
           {/* Label & Date */}
           <div>
-            <label className={labelClass}>Label (optional)</label>
-            <input name="label" value={form.label} onChange={handleChange} placeholder="e.g. Perlon Records" className={inputClass} />
+            <label className={labelClass}>{t('release_label_field_label')}</label>
+            <input name="label" value={form.label} onChange={handleChange} placeholder={t('release_label_placeholder')} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Release Date</label>
+            <label className={labelClass}>{t('release_date_label')}</label>
             <input name="release_date" type="date" value={form.release_date} onChange={handleChange} className={inputClass} />
           </div>
 
           {/* Description */}
           <div>
-            <label className={labelClass}>Description (optional)</label>
+            <label className={labelClass}>{t('release_description_optional')}</label>
             <textarea name="description" value={form.description} onChange={handleChange} rows={3} className={`${inputClass} resize-none`} />
           </div>
 
           {/* Links */}
           <div className="pt-2 border-t border-white/5">
-            <p className="text-white/40 text-xs uppercase tracking-wider mb-4">Streaming Links</p>
+            <p className="text-white/40 text-xs uppercase tracking-wider mb-4">{t('release_streaming_links_heading')}</p>
             <div className="space-y-4">
               {[
                 { name: 'soundcloud_url', label: 'SoundCloud', placeholder: 'https://soundcloud.com/...' },
@@ -283,14 +285,14 @@ export default function EditReleaseClient({ release }: { release: any }) {
 
           {/* Credits */}
           <div className="pt-2 border-t border-white/5">
-            <p className="text-white/40 text-xs uppercase tracking-wider mb-4">Credits <span className="normal-case">(comma-separated)</span></p>
+            <p className="text-white/40 text-xs uppercase tracking-wider mb-4">{t('release_credits_heading')} <span className="normal-case">{t('event_form_comma_separated')}</span></p>
             <div className="space-y-4">
               {[
-                { name: 'featuring_artists', label: 'Featuring Artists', placeholder: 'e.g. Artist A, Artist B' },
-                { name: 'producers', label: 'Producers', placeholder: 'e.g. Producer A, Producer B' },
-                { name: 'composers', label: 'Composers', placeholder: 'e.g. Composer A' },
-                { name: 'mastering_engineer', label: 'Mastering Engineer', placeholder: 'e.g. John Smith' },
-                { name: 'artwork_by', label: 'Artwork By', placeholder: 'e.g. Jane Doe' },
+                { name: 'featuring_artists', label: t('release_featuring_artists_label'), placeholder: t('release_featuring_artists_placeholder') },
+                { name: 'producers', label: t('release_producers_label'), placeholder: t('release_producers_placeholder') },
+                { name: 'composers', label: t('release_composers_label'), placeholder: t('release_composers_placeholder') },
+                { name: 'mastering_engineer', label: t('release_mastering_engineer_label'), placeholder: t('release_mastering_engineer_placeholder') },
+                { name: 'artwork_by', label: t('release_artwork_by_label'), placeholder: t('release_artwork_by_placeholder') },
               ].map(field => (
                 <div key={field.name}>
                   <label className={labelClass}>{field.label}</label>
@@ -301,7 +303,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
-          {saved && <p className="text-green-400 text-sm">✓ Saved! Redirecting...</p>}
+          {saved && <p className="text-green-400 text-sm">{t('release_saved_redirecting')}</p>}
 
           <div className="flex gap-3 pt-2">
             <button
@@ -309,14 +311,14 @@ export default function EditReleaseClient({ release }: { release: any }) {
               onClick={() => router.push('/dashboard')}
               className="flex-1 border border-white/20 text-white py-3 rounded-lg hover:bg-white/5 transition text-sm font-medium"
             >
-              Cancel
+              {t('dashboard_cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || saved}
               className="flex-1 bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50 text-sm"
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? t('dashboard_saving') : t('dashboard_save_changes')}
             </button>
           </div>
 

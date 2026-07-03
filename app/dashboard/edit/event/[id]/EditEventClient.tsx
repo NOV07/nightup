@@ -2,9 +2,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import EventFormSteps, { EventFormData } from '../../../../../components/events/EventFormSteps'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function EditEventClient({ event }: { event: any }) {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -75,7 +77,7 @@ export default function EditEventClient({ event }: { event: any }) {
     setLoading(false)
 
     if (!res.ok) {
-      setError(json.error ?? 'Something went wrong')
+      setError(json.error ?? t('form_generic_error'))
       return
     }
 
@@ -85,7 +87,7 @@ export default function EditEventClient({ event }: { event: any }) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0F0F1A', padding: '32px 16px' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', marginBottom: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>Edit Event</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>{t('event_edit_heading')}</h1>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>{event.title}</p>
       </div>
       <EventFormSteps initialData={initialData} onSubmit={handleSubmit} loading={loading} error={error} />

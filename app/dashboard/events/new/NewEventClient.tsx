@@ -2,9 +2,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import EventFormSteps, { EventFormData } from '../../../../components/events/EventFormSteps'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function NewEventClient() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -49,7 +51,7 @@ export default function NewEventClient() {
     setLoading(false)
 
     if (!res.ok) {
-      setError(json.error ?? 'Something went wrong')
+      setError(json.error ?? t('form_generic_error'))
       return
     }
 
@@ -59,8 +61,8 @@ export default function NewEventClient() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0F0F1A', padding: '32px 16px' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', marginBottom: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>New Event</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>Fill in the details below. Your event will be reviewed before going live.</p>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>{t('event_new_heading')}</h1>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>{t('event_new_subheading')}</p>
       </div>
       <EventFormSteps onSubmit={handleSubmit} loading={loading} error={error} />
     </div>
