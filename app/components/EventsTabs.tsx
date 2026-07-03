@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import HotEventCard from './HotEventCard'
 
 function getBorderColor(e: any): string {
-  if (e.type === 'culture') return '#7C3AED'
+  if (e.type === 'culture') return '#DC2626'
   if (e.type === 'sports')  return '#2563EB'
   if (e.type === 'other')   return '#059669'
   return '#E8A020'

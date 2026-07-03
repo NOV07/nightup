@@ -46,7 +46,7 @@ export default function HotEventCard({
   };
   const categoryLabel = type && CATEGORY_LABEL_KEYS[type] ? t(CATEGORY_LABEL_KEYS[type] as any) : genre;
   const CATEGORY_COLORS: Record<string, string> = {
-    culture: "rgba(124,58,237,0.85)",
+    culture: "rgba(220,38,38,0.85)",
     sports:  "rgba(37,99,235,0.85)",
     other:   "rgba(5,150,105,0.85)",
   };
