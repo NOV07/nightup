@@ -722,9 +722,9 @@ export default function DashboardClient({ profile, events, releases, professiona
 
               {/* Photos */}
               <div className="p-6 rounded-2xl space-y-5" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Photos</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_photos')}</h2>
                 <div>
-                  <label className={labelClass}>Banner Photo</label>
+                  <label className={labelClass}>{t('dashboard_banner_photo')}</label>
                   <ImageUpload
                     folder="banners"
                     onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url }))}
@@ -732,7 +732,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Profile Photo</label>
+                  <label className={labelClass}>{t('dashboard_profile_photo')}</label>
                   <ImageUpload
                     folder="avatars"
                     onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url }))}
@@ -743,25 +743,25 @@ export default function DashboardClient({ profile, events, releases, professiona
 
               {/* Basic Info */}
               <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Basic Info</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_basic_info')}</h2>
                 <div>
-                  <label className={labelClass}>Display Name</label>
+                  <label className={labelClass}>{t('dashboard_display_name')}</label>
                   <input name="display_name" value={form.display_name} onChange={handleChange} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Bio</label>
-                  <textarea name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder="Tell your story..." className={`${inputClass} resize-none`} />
+                  <label className={labelClass}>{t('dashboard_bio')}</label>
+                  <textarea name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder={t('dashboard_bio_placeholder')} className={`${inputClass} resize-none`} />
                 </div>
                 <div>
-                  <label className={labelClass}>City / Location</label>
-                  <input name="location" value={form.location} onChange={handleChange} placeholder="e.g. Athens, Greece" className={inputClass} />
+                  <label className={labelClass}>{t('dashboard_city_location')}</label>
+                  <input name="location" value={form.location} onChange={handleChange} placeholder={t('dashboard_city_location_placeholder')} className={inputClass} />
                 </div>
 
                 {/* Availability */}
                 <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                   <div>
-                    <p className="text-sm text-white font-medium">Available for booking</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Show availability status on your profile</p>
+                    <p className="text-sm text-white font-medium">{t('dashboard_available_for_booking')}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_availability_desc')}</p>
                   </div>
                   <button
                     type="button"
@@ -776,24 +776,24 @@ export default function DashboardClient({ profile, events, releases, professiona
                 {/* Network Listing — venue */}
                 {profile.profile_type === 'venue' && (
                   <div className="space-y-3">
-                    <label className={labelClass}>Network Listing</label>
+                    <label className={labelClass}>{t('dashboard_network_listing')}</label>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.12)', border: '0.5px solid rgba(232,160,32,0.3)', color: '#E8A020' }}>
-                        Artists
+                        {t('listings_cat_artists')}
                       </span>
                       <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)' }}>
-                        Venues
+                        {t('listings_cat_venues')}
                       </span>
                     </div>
                     <div>
-                      <label className={labelClass}>What type of venue?</label>
+                      <label className={labelClass}>{t('dashboard_venue_type_q')}</label>
                       <select
                         value={form.network_subcategory}
                         onChange={e => setForm(p => ({ ...p, network_tab: 'Venues', network_category: e.target.value, network_subcategory: '' }))}
                         className={inputClass}
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                       >
-                        <option value="">Select venue type</option>
+                        <option value="">{t('dashboard_select_venue_type')}</option>
                         {Object.keys(NETWORK['Venues']).map((s: string) => (
                           <option key={s} value={s}>{s}</option>
                         ))}
@@ -805,7 +805,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                 {/* Network Listing — artist */}
                 {profile.profile_type === 'artist' && (
                   <div className="space-y-3">
-                    <label className={labelClass}>Network Listing</label>
+                    <label className={labelClass}>{t('dashboard_network_listing')}</label>
                     <div className="flex gap-2">
                       {(['Artists', 'Artists'] as const).map(tab => (
                         <button
@@ -821,7 +821,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                             fontFamily: 'var(--font-sans)',
                           }}
                         >
-                          {tab}
+                          {t('listings_cat_artists')}
                         </button>
                       ))}
                     </div>
@@ -830,18 +830,18 @@ export default function DashboardClient({ profile, events, releases, professiona
                       <>
                         <div className="flex items-center gap-2">
                           <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)' }}>
-                            Music & Artists
+                            {t('dashboard_music_artists')}
                           </span>
                         </div>
                         <div>
-                          <label className={labelClass}>Role</label>
+                          <label className={labelClass}>{t('dashboard_role')}</label>
                           <select
                             value={form.network_subcategory}
                             onChange={e => setForm(p => ({ ...p, network_tab: 'Artists', network_category: e.target.value, network_subcategory: '' }))}
                             className={inputClass}
                             style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                           >
-                            <option value="">Select role</option>
+                            <option value="">{t('dashboard_select_role')}</option>
                             {Object.keys(NETWORK['Artists']).map((s: string) => (
                               <option key={s} value={s}>{s}</option>
                             ))}
@@ -853,14 +853,14 @@ export default function DashboardClient({ profile, events, releases, professiona
                     {form.network_tab === 'Artists' && (
                       <>
                         <div>
-                          <label className={labelClass}>Category</label>
+                          <label className={labelClass}>{t('listings_category')}</label>
                           <select
                             value={form.network_category}
                             onChange={e => setForm(p => ({ ...p, network_category: e.target.value, network_subcategory: '' }))}
                             className={inputClass}
                             style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                           >
-                            <option value="">Select category</option>
+                            <option value="">{t('dashboard_select_category')}</option>
                             {Object.keys(NETWORK['Artists']).map(c => (
                               <option key={c} value={c}>{c}</option>
                             ))}
@@ -874,7 +874,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                 {/* Genres — artists */}
                 {profile.profile_type === 'artist' && (
                   <div>
-                    <label className={labelClass}>Genres</label>
+                    <label className={labelClass}>{t('dashboard_genres')}</label>
                     <div className="flex flex-wrap gap-2">
                       {GENRES.map(g => (
                         <button
@@ -898,7 +898,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                 {/* Featured track — artists/organizers/venues */}
                 {(profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
                   <div>
-                    <label className={labelClass}>Featured Track URL (SoundCloud or Spotify)</label>
+                    <label className={labelClass}>{t('dashboard_featured_track_url')}</label>
                     <input name="featured_track_url" value={form.featured_track_url} onChange={handleChange} placeholder="https://soundcloud.com/..." className={inputClass} />
                   </div>
                 )}
@@ -906,23 +906,23 @@ export default function DashboardClient({ profile, events, releases, professiona
                 {/* Booking info — organizers/venues */}
                 {(profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
                   <div>
-                    <label className={labelClass}>Booking Info</label>
-                    <textarea name="booking_info" value={form.booking_info} onChange={handleChange} rows={3} placeholder="How to book your venue..." className={`${inputClass} resize-none`} />
+                    <label className={labelClass}>{t('dashboard_booking_info')}</label>
+                    <textarea name="booking_info" value={form.booking_info} onChange={handleChange} rows={3} placeholder={t('dashboard_booking_info_placeholder')} className={`${inputClass} resize-none`} />
                   </div>
                 )}
 
                 {/* Announcements — organizers/venues */}
                 {(profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
                   <div>
-                    <label className={labelClass}>Announcements</label>
-                    <textarea name="announcements" value={form.announcements} onChange={handleChange} rows={3} placeholder="Any upcoming announcements..." className={`${inputClass} resize-none`} />
+                    <label className={labelClass}>{t('dashboard_announcements')}</label>
+                    <textarea name="announcements" value={form.announcements} onChange={handleChange} rows={3} placeholder={t('dashboard_announcements_placeholder')} className={`${inputClass} resize-none`} />
                   </div>
                 )}
               </div>
 
               {/* Socials */}
               <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Social Links</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_social_links')}</h2>
                 {SOCIAL_FIELDS.map(field => (
                   <div key={field.key}>
                     <label className={labelClass}>{field.label}</label>
@@ -943,7 +943,7 @@ export default function DashboardClient({ profile, events, releases, professiona
             {/* Profile Preview */}
             <div className="hidden lg:block">
               <div className="sticky top-6">
-                <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Profile Preview</p>
+                <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_profile_preview')}</p>
                 <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a0a14', border: '0.5px solid rgba(255,255,255,0.08)' }}>
                   <div className="relative h-24" style={{ backgroundColor: '#1a1a2e' }}>
                     {form.cover_url && <Image src={form.cover_url} alt="Banner" fill className="object-cover" />}
@@ -958,7 +958,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         </div>
                       )}
                     </div>
-                    <p className="font-bold text-white text-sm">{form.display_name || 'Display Name'}</p>
+                    <p className="font-bold text-white text-sm">{form.display_name || t('dashboard_display_name')}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
@@ -971,7 +971,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         backgroundColor: form.is_available ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
                         color: form.is_available ? '#4ade80' : 'rgba(255,255,255,0.3)',
                       }}>
-                        {form.is_available ? '● Available' : '○ Not available'}
+                        {form.is_available ? t('dashboard_available_status') : t('dashboard_not_available_status')}
                       </span>
                     </div>
                     {form.bio && (
@@ -992,7 +992,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                   className="mt-3 block text-center text-xs py-2.5 rounded-xl transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
                 >
-                  View Full Profile ↗
+                  {t('dashboard_view_full_profile')}
                 </Link>
               </div>
             </div>
@@ -1003,7 +1003,7 @@ export default function DashboardClient({ profile, events, releases, professiona
         {activeTab === 'content' && !isPro && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Your Content</h2>
+              <h2 className="text-lg font-bold text-white">{t('dashboard_your_content')}</h2>
               {submitLink[profile.profile_type] && (
                 <Link
                   href={submitLink[profile.profile_type].href}
@@ -1019,18 +1019,18 @@ export default function DashboardClient({ profile, events, releases, professiona
             {(profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>Events ({events.length})</h3>
+                  <h3 className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('events_title')} ({events.length})</h3>
                   <Link
                     href="/dashboard/events/new"
                     className="text-xs px-3 py-1.5 rounded-lg font-medium"
                     style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
                   >
-                    + Add Event
+                    {t('dashboard_add_event')}
                   </Link>
                 </div>
                 {events.length === 0 ? (
                   <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>No events yet.</p>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_no_events_yet')}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -1044,14 +1044,14 @@ export default function DashboardClient({ profile, events, releases, professiona
                           backgroundColor: event.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
                           color: event.status === 'approved' ? '#4ade80' : '#E8A020',
                         }}>
-                          {event.status === 'approved' ? 'Live' : 'Pending'}
+                          {event.status === 'approved' ? t('dashboard_status_live') : t('dashboard_status_pending')}
                         </span>
                         <Link
                           href={`/dashboard/edit/event/${event.id}`}
                           className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
                           style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
                         >
-                          Edit
+                          {t('dashboard_edit')}
                         </Link>
                       </div>
                     ))}
@@ -1063,10 +1063,10 @@ export default function DashboardClient({ profile, events, releases, professiona
             {/* Releases */}
             {profile.profile_type === 'artist' && (
               <div>
-                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Releases ({releases.length})</h3>
+                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_releases_label')} ({releases.length})</h3>
                 {releases.length === 0 ? (
                   <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>No releases yet.</p>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_no_releases_yet')}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -1083,7 +1083,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                               backgroundColor: release.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
                               color: release.status === 'approved' ? '#4ade80' : '#E8A020',
                             }}>
-                              {release.status === 'approved' ? 'Live' : 'Pending'}
+                              {release.status === 'approved' ? t('dashboard_status_live') : t('dashboard_status_pending')}
                             </span>
                           </div>
                           <Link
@@ -1091,7 +1091,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                             className="mt-2 block w-full text-center text-xs py-1.5 rounded-lg transition-opacity hover:opacity-80"
                             style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
                           >
-                            Edit
+                            {t('dashboard_edit')}
                           </Link>
                         </div>
                       </div>
