@@ -10,6 +10,7 @@ import CompactEventItem from "../components/CompactEventItem";
 import { useLanguage } from "../components/LanguageContext";
 import EventsFilterModal, { EventsFilterResult } from "@/components/EventsFilterModal";
 import { useRegisterModalOpen } from "../components/ModalStateContext";
+import { usePlayerStore } from "../components/PlayerContext";
 
 import { CITIES, GENRES, CITY_LABELS, GENRE_LABELS } from "../lib/searchConstants";
 
@@ -111,6 +112,7 @@ export default function EventsClient({
   nearbyCity: string;
 }) {
   const { lang, t } = useLanguage();
+  const { currentTrack } = usePlayerStore();
   const searchParams = useSearchParams();
   const [genre, setGenre] = useState("All");
   const [city, setCity]   = useState("All Cities");
@@ -685,6 +687,7 @@ export default function EventsClient({
           boxShadow: "0 4px 24px rgba(232,160,32,0.35)",
           whiteSpace: "nowrap",
         }}
+        className={`tonight-fab${currentTrack ? " tonight-fab-has-track" : ""}`}
       >
         <span style={{ fontSize: 14 }}>✦</span> {t("events_find")}
       </button>
