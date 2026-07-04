@@ -34,6 +34,7 @@
   --space-5: 40px;
   --space-6: 60px;
   --space-7: 80px;
+  --mobile-radio-bar-height: 54px;
 }
 
 * { box-sizing: border-box; }
@@ -661,7 +662,7 @@ section:hover .hero-arrow { opacity: 1 !important; }
   }
 
   main {
-    padding-bottom: calc(54px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(var(--mobile-radio-bar-height) + env(safe-area-inset-bottom)) !important;
   }
 
   /* Mobile: full-width bottom bar instead of floating pill */
@@ -680,7 +681,7 @@ section:hover .hero-arrow { opacity: 1 !important; }
     border-radius: 0 !important;
     min-width: 0 !important;
     width: 100% !important;
-    height: 54px !important;
+    height: var(--mobile-radio-bar-height) !important;
     border-left:   none !important;
     border-right:  none !important;
     border-bottom: none !important;
@@ -697,6 +698,13 @@ section:hover .hero-arrow { opacity: 1 !important; }
     border-radius: 18px 18px 0 0 !important;
     transform-origin: bottom center !important;
   }
+  /* Events page filter card: its own bottom controls (city dropdown, genre
+     pills) sit low enough in the static layout to end up behind the fixed
+     radio bar — reserve the same clearance main() gets, on the card itself. */
+  .events-filter-card {
+    margin-bottom: calc(var(--mobile-radio-bar-height) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
   /* A modal (Tonight, events filter, etc.) is open — the mini bubble would
      overlap the modal's own bottom content/dots on small screens, so hide
      the whole widget instead of shrinking it. Reappears once the modal closes. */
