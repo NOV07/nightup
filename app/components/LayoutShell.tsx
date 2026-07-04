@@ -10,6 +10,7 @@ import { Footer } from "@/components/layout/Footer";
 import TonightModal from "./TonightModal";
 import TonightFAB from "./TonightFAB";
 import { useTonightModal } from "./TonightContext";
+import { useRegisterModalOpen } from "./ModalStateContext";
 import type { Spot } from "../spots/types";
 
 const SPOT_COLS =
@@ -42,13 +43,20 @@ const STANDALONE_ROUTES = ["/coming-soon"];
 // Routes that provide their own bottom FAB and hide the global TonightFAB
 const HIDE_TONIGHT_FAB_ROUTES = ["/events"];
 
+// Routes (and any nested routes below them) where "what are you doing tonight"
+// has no relevance — the FAB/modal must not mount at all here, not just hide.
+const TONIGHT_FAB_EXCLUDED_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about"];
+
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isStandalone = STANDALONE_ROUTES.some((r) => pathname.startsWith(r));
-  const hideTonightFAB = HIDE_TONIGHT_FAB_ROUTES.some((r) => pathname === r);
+  const hideTonightFeature =
+    HIDE_TONIGHT_FAB_ROUTES.some((r) => pathname === r) ||
+    TONIGHT_FAB_EXCLUDED_ROUTES.some((r) => pathname.startsWith(r));
   const { isOpen, open, close } = useTonightModal();
   const [spots, setSpots] = useState<Spot[]>([]);
   const hasFetchedSpots = useRef(false);
+  useRegisterModalOpen("tonight", isOpen && !hideTonightFeature);
 
   // Fetch spots only on first Tonight modal open
   useEffect(() => {
@@ -91,8 +99,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <Footer />
       <RadioStrip />
       <MusicPlayerBar />
-      {!hideTonightFAB && <TonightFAB />}
-      <TonightModal open={isOpen} onClose={close} spots={spots} />
+      {!hideTonightFeature && <TonightFAB />}
+      {!hideTonightFeature && <TonightModal open={isOpen} onClose={close} spots={spots} />}
     </>
   );
 }

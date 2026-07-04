@@ -980,7 +980,7 @@ export default function AdminClient() {
                               <label className={labelCls}>Upload Photo (max 5MB)</label>
                               <div className="w-full px-3 py-2 rounded-lg text-sm cursor-pointer" style={{ backgroundColor:"#0F0F1A", border:"1px dashed #555", color:"#aaa" }} onClick={() => adminEventPhotoRef.current?.click()}>
                                 <input ref={adminEventPhotoRef} type="file" accept="image/*" className="hidden" onChange={handleAdminEventPhotoChange} />
-                                <span>{adminEventPhoto ? "Uploaded — click to change" : "Click to upload"}</span>
+                                <span>{adminEventPhoto ? "Uploaded. Click to change" : "Click to upload"}</span>
                               </div>
                               {adminEventPhotoError && <p className="text-red-400 text-xs mt-1">{adminEventPhotoError}</p>}
                               {adminEventPhoto && <img src={adminEventPhoto} alt="Preview" className="w-full rounded-lg object-cover mt-2" style={{ maxHeight:120 }} />}

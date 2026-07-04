@@ -32,7 +32,7 @@ export default function CookiesPage() {
           },
           {
             title: "2. How We Use Cookies",
-            body: `Nightup.gr uses only essential cookies. These are strictly necessary for the platform to function — specifically for user authentication and session management (keeping you logged in). We do not use advertising cookies, tracking pixels, or analytics cookies.`,
+            body: `Nightup.gr uses only essential cookies. These are strictly necessary for the platform to function, specifically for user authentication and session management (keeping you logged in). We do not use advertising cookies, tracking pixels, or analytics cookies.`,
           },
           {
             title: "3. Essential Cookies",
@@ -40,7 +40,7 @@ export default function CookiesPage() {
           },
           {
             title: "4. Third-Party Cookies",
-            body: `Some pages embed content from SoundCloud and Spotify (music players). These services may set their own cookies when you interact with embedded players. We have no control over these cookies — please refer to SoundCloud's and Spotify's respective cookie policies for more information.`,
+            body: `Some pages embed content from SoundCloud and Spotify (music players). These services may set their own cookies when you interact with embedded players. We have no control over these cookies; please refer to SoundCloud's and Spotify's respective cookie policies for more information.`,
           },
           {
             title: "5. Managing Cookies",

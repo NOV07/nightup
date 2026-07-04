@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pl = await getPlaylist(id);
   if (!pl) return { title: "Playlist not found" };
   const image = pl.cover_image ?? "https://nightup.gr/og-image.png";
-  const description = `${pl.platform ?? "Playlist"} — curated on Nightup.`;
+  const description = `${pl.platform ?? "Playlist"}, curated on Nightup.`;
   return {
     title: pl.title,
     description,

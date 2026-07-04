@@ -221,7 +221,7 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
                 <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: '#E8A020', verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
               </h1>
             </div>
-            <Link href="/network/listings" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Link href="/network/listings" className="section-link-gold" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
               {t("network_listings")}
             </Link>
           </div>

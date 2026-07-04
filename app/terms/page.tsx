@@ -52,7 +52,7 @@ export default function TermsPage() {
           },
           {
             title: "7. Intellectual Property",
-            body: `All original content on Nightup.gr — including editorial articles, design, and code — is the property of Nightup.gr. Embedded music content (SoundCloud, Spotify) remains the property of the respective rights holders.`,
+            body: `All original content on Nightup.gr (including editorial articles, design, and code) is the property of Nightup.gr. Embedded music content (SoundCloud, Spotify) remains the property of the respective rights holders.`,
           },
           {
             title: "8. Disclaimer of Warranties",

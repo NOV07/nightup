@@ -70,7 +70,7 @@ export default function ComingSoonPage() {
         {/* Headline */}
         <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">Έρχεται σύντομα.</h1>
         <p className="text-gray-400 mb-10 leading-relaxed text-sm md:text-base">
-          Greece's nightlife is about to go digital. Events, radio, party planning — all in one place.
+          Greece's nightlife is about to go digital. Events, radio, party planning, all in one place.
           Be the first to know when we launch.
         </p>
 

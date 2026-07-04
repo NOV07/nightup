@@ -466,7 +466,7 @@ export default function DashboardClient({ profile, events, releases, professiona
           <div className="max-w-6xl mx-auto px-4 py-2.5">
             <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ backgroundColor: '#0F0F1A', border: '1px solid rgba(232,160,32,0.35)' }}>
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                <span style={{ color: '#E8A020', fontWeight: 600 }}>{t('upgrade_become_creator')}</span> — {t('dashboard_upgrade_banner_desc')}
+                <span style={{ color: '#E8A020', fontWeight: 600 }}>{t('upgrade_become_creator')}</span>: {t('dashboard_upgrade_banner_desc')}
               </p>
               <button
                 onClick={() => setShowUpgrade(true)}

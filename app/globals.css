@@ -432,6 +432,20 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
 .nav-link:hover { color: var(--text-primary) !important; transition: color 0.2s; }
 .nav-link:hover::after { width: 100%; }
 
+/* ── "View all / Δες όλα" section-header links ───────── */
+.section-link-gold {
+  color: var(--gold);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .section-link-gold:hover {
+    color: var(--gold-bright);
+    text-decoration: underline;
+  }
+}
+
 /* ── Hero navigation arrows ──────────────────────────── */
 .hero-arrow {
   position: absolute;

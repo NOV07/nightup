@@ -439,7 +439,7 @@ export default async function MagazineArticlePage({ params }: Props) {
           <div className="flex items-center gap-3 mb-6">
             <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
             <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
-              <T k="article_more_series" /> — {article.series ? formatSlug(article.series) : ""}
+              <T k="article_more_series" />: {article.series ? formatSlug(article.series) : ""}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-12">

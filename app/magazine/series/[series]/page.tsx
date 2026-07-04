@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { series } = await params;
   const seriesName = decodeURIComponent(series);
   const title = formatSlug(seriesName);
-  return { title: `${title} — Nightup Series`, description: `A Nightup series: ${title}` };
+  return { title: `${title} - Nightup Series`, description: `A Nightup series: ${title}` };
 }
 
 export const revalidate = 300;

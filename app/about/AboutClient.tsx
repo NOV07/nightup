@@ -464,7 +464,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
             className={`about-lede ${spectral.className}`}
             style={{ fontStyle: "italic", fontSize: "18px", color: "#8A8A99", lineHeight: 1.65, maxWidth: "560px", marginTop: 0 }}
           >
-            Events, χώροι, μουσική, ιστορίες — μαζεμένα σε ένα μέρος.
+            Events, χώροι, μουσική, ιστορίες. Μαζεμένα σε ένα μέρος.
             Για να ξέρεις πάντα τι παίζει, πού παίζει, και ποιος το κάνει.
           </p>
           <div style={{ display: "flex", gap: "32px", marginTop: "36px", flexWrap: "wrap" }}>

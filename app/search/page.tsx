@@ -17,9 +17,9 @@ interface Props {
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const { q } = await searchParams;
   const qTrimmed = q?.trim();
-  const title = qTrimmed ? `"${qTrimmed}" — Αναζήτηση` : "Αναζήτηση";
+  const title = qTrimmed ? `"${qTrimmed}" - Αναζήτηση` : "Αναζήτηση";
   const description = qTrimmed
-    ? `Αποτελέσματα για "${qTrimmed}" — events, spots, μουσική και επαγγελματίες στο Nightup.gr.`
+    ? `Αποτελέσματα για "${qTrimmed}": events, spots, μουσική και επαγγελματίες στο Nightup.gr.`
     : "Βρες events, spots, μουσική και επαγγελματίες στο Nightup.gr.";
   return {
     title,

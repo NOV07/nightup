@@ -83,9 +83,9 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
 
   const keepNight = async () => {
     const lines = night.map((s, i) =>
-      `${STOP_TIMES[i] ?? ""} · ${SPOT_CAT_LABELS[s.category]}\n${s.name}${s.address ? ` — ${s.address}` : ""}${s.neighborhood ? `, ${s.neighborhood}` : ""}`
+      `${STOP_TIMES[i] ?? ""} · ${SPOT_CAT_LABELS[s.category]}\n${s.name}${s.address ? `, ${s.address}` : ""}${s.neighborhood ? `, ${s.neighborhood}` : ""}`
     );
-    const text = `${t("tonight_share_text")}\n\n${lines.join("\n\n")}\n\n— via nightup.gr`;
+    const text = `${t("tonight_share_text")}\n\n${lines.join("\n\n")}\n\nvia nightup.gr`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -221,7 +221,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
                       <SpotCard spot={s} compact onNavigate={handleClose} />
                       {i < night.length - 1 && (
                         <div style={{ fontSize: 11, color: "#E8A020", opacity: 0.82, margin: "8px 0 8px 6px" }}>
-                          — {WALKS[i] ?? t("tonight_walk_min")}
+                          · {WALKS[i] ?? t("tonight_walk_min")}
                         </div>
                       )}
                     </div>

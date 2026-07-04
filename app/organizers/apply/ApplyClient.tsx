@@ -164,7 +164,7 @@ export default function ApplyClient() {
               {logoUrl ? (
                 <>
                   <img src={logoUrl} alt="Logo preview" className="w-12 h-12 rounded-full object-cover" style={{ border: "1px solid #E8A020" }} />
-                  <span className="text-sm text-gray-300">Logo uploaded — click to change</span>
+                  <span className="text-sm text-gray-300">Logo uploaded. Click to change</span>
                 </>
               ) : (
                 <span className="text-sm">Click to upload logo (max {MAX_SIZE_MB}MB)</span>

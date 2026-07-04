@@ -5,12 +5,12 @@ import SpotsClient from "./SpotsClient";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Spots — Nightup",
-  description: "Όλα τα spots της Αθήνας — φαγητό, ποτό, νύχτα, θέαμα και άλλα.",
+  title: "Spots - Nightup",
+  description: "Όλα τα spots της Αθήνας: φαγητό, ποτό, νύχτα, θέαμα και άλλα.",
   twitter: {
     card: "summary_large_image",
     title: "Spots | Nightup.gr",
-    description: "Όλα τα spots της Αθήνας — φαγητό, ποτό, νύχτα, θέαμα και άλλα.",
+    description: "Όλα τα spots της Αθήνας: φαγητό, ποτό, νύχτα, θέαμα και άλλα.",
     images: ["https://nightup.gr/og-image.png"],
   },
 };

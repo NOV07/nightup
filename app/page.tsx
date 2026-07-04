@@ -56,8 +56,7 @@ function SectionHeader({
         </div>
         <Link
           href={href}
-          className="group flex items-center gap-1 text-sm font-medium transition-colors hover:text-white"
-          style={{ color: "var(--gold)" }}
+          className="section-link-gold group flex items-center gap-1 text-sm"
         >
           {linkLabel}
           <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +91,7 @@ export default async function HomePage() {
         .eq("status", "approved")
         .gte("date", today)
         .order("date", { ascending: true })
-        .limit(20),
+        .limit(60),
       supabase
         .from("articles")
         .select("id, title, category, published_at, read_time, hero_image, excerpt")
@@ -114,17 +113,52 @@ export default async function HomePage() {
       badge: e.is_radar_pick ? "Nightup Radar" : badge,
     });
     if (evRes.data && evRes.data.length > 0) {
+      const CATEGORIES = ["music", "culture", "sports", "other"] as const;
+      const categoryOf = (e: any) =>
+        CATEGORIES.includes(e.type) ? e.type : "music";
+      const byPopularity = (a: any, b: any) =>
+        (b.interested_count + b.going_count) - (a.interested_count + a.going_count);
+
       const featuredEvents = evRes.data
         .filter((e: any) => e.nightup_pick === true)
-        .sort((a: any, b: any) => (b.interested_count + b.going_count) - (a.interested_count + a.going_count))
+        .sort(byPopularity)
         .slice(0, 3);
       hotCards = featuredEvents.map((e: any) => toCard(e, "🔥 Hot"));
       const hotIds = new Set(featuredEvents.map((e: any) => e.id));
-      popularCards = evRes.data
-        .filter((e: any) => !hotIds.has(e.id))
-        .sort((a: any, b: any) => (b.interested_count + b.going_count) - (a.interested_count + a.going_count))
-        .slice(0, 2)
-        .map((e: any) => toCard(e, "📈 Popular"));
+
+      // Diversify "Popular" across categories: top picks per category, interleaved.
+      const remaining = evRes.data.filter((e: any) => !hotIds.has(e.id));
+      const byCategory: Record<string, any[]> = { music: [], culture: [], sports: [], other: [] };
+      remaining.forEach((e: any) => byCategory[categoryOf(e)].push(e));
+      CATEGORIES.forEach((c) => byCategory[c].sort(byPopularity));
+
+      const POPULAR_TARGET = 7;
+      const PER_CATEGORY_CAP = 3;
+      const picked: any[] = [];
+      const pickedIds = new Set<string>();
+      for (let round = 0; round < PER_CATEGORY_CAP && picked.length < POPULAR_TARGET; round++) {
+        for (const c of CATEGORIES) {
+          if (picked.length >= POPULAR_TARGET) break;
+          const candidate = byCategory[c][round];
+          if (candidate && !pickedIds.has(candidate.id)) {
+            picked.push(candidate);
+            pickedIds.add(candidate.id);
+          }
+        }
+      }
+      // Fallback: not enough hot/popular events overall — fill with soonest upcoming.
+      if (picked.length < POPULAR_TARGET) {
+        const fallback = remaining
+          .filter((e: any) => !pickedIds.has(e.id))
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        for (const e of fallback) {
+          if (picked.length >= POPULAR_TARGET) break;
+          picked.push(e);
+          pickedIds.add(e.id);
+        }
+      }
+      popularCards = picked.map((e: any) => toCard(e, "📈 Popular"));
+
       allThisWeekCards = evRes.data
         .slice(0, 8)
         .map((e: any) => toCard(e, ""));
@@ -179,7 +213,7 @@ export default async function HomePage() {
       id: r.id,
       type: "release" as const,
       eyebrow: "New Release",
-      title: r.artist ? `${r.artist} — ${r.title}` : r.title,
+      title: r.artist ? `${r.artist} - ${r.title}` : r.title,
       subtitle: "Stream now on Nightwaves",
       meta: [r.typeBadge, "Out now"],
       ctaLabel: "Listen",
@@ -212,10 +246,9 @@ export default async function HomePage() {
             }}>Events</p>
             <div style={{ width: "20px", height: "1px", background: "var(--gold)", marginTop: "5px" }} />
           </div>
-          <Link href="/events" style={{
+          <Link href="/events" className="section-link-gold" style={{
             fontFamily: "var(--font-sans)", fontSize: "11px",
-            color: "var(--text-muted)", letterSpacing: "0.05em",
-            textDecoration: "none",
+            letterSpacing: "0.05em",
           }}><T k="home_view_all" /></Link>
         </div>
         <EventTabs thisWeekCards={allThisWeekCards} hotPopularCards={hotPopularCards} />
@@ -241,10 +274,9 @@ export default async function HomePage() {
             <div style={{ width: "20px", height: "1px",
               background: "var(--gold)", marginTop: "5px" }} />
           </div>
-          <Link href="/magazine" style={{
+          <Link href="/magazine" className="section-link-gold" style={{
             fontFamily: "var(--font-mono)", fontSize: "9px",
             letterSpacing: "0.1em", textTransform: "uppercase",
-            color: "var(--text-muted)", textDecoration: "none",
           }}>All →</Link>
         </div>
 

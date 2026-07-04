@@ -47,7 +47,7 @@ const translations = {
   events_related:            { el: "Related Events", en: "Related Events" },
   events_quiet_tonight:      { el: "Ήσυχη βραδιά απόψε", en: "Quiet night tonight" },
   events_check_weekend:      { el: "Δες το σαββατοκύριακο →", en: "Check the weekend →" },
-  events_slow_night:         { el: "Λίγα events απόψε — δες το σαββατοκύριακο →", en: "Slow night — see the weekend →" },
+  events_slow_night:         { el: "Λίγα events απόψε. Δες το σαββατοκύριακο →", en: "Slow night. See the weekend →" },
   events_near_count:         { el: "events κοντά σου", en: "events near you" },
   events_none_now:           { el: "Δεν υπάρχουν events αυτή τη στιγμή", en: "No events right now" },
   events_explore:            { el: "Εξερεύνηση", en: "Explore" },
@@ -77,7 +77,7 @@ const translations = {
   filter_step_where:         { el: "Πού;", en: "Where?" },
 
   // ── Network ──────────────────────────────────────────────
-  network_tagline:       { el: "Artists, venues και professionals — όλοι εδώ.", en: "Artists, venues and professionals — all here." },
+  network_tagline:       { el: "Artists, venues και professionals. Όλοι εδώ.", en: "Artists, venues and professionals. All here." },
   network_listings:      { el: "Αγγελίες →", en: "Listings →" },
   network_view_profile:  { el: "Δες προφίλ →", en: "View profile →" },
   network_all_cities:    { el: "Όλες οι πόλεις", en: "All cities" },
@@ -117,7 +117,7 @@ const translations = {
   // ── Spots ──────────────────────────────────────────────
   spots_hero_title:   { el: "Πού πάμε", en: "Where are we going" },
   spots_hero_em:      { el: "απόψε;", en: "tonight?" },
-  spots_subtitle:     { el: "Όλα τα spots της Αθήνας — φαγητό, ποτό, νύχτα, θέαμα και άλλα. Διάλεξε κατηγορία και βρες πού να πας.", en: "All Athens spots — food, drinks, nightlife, shows and more. Pick a category and find where to go." },
+  spots_subtitle:     { el: "Όλα τα spots της Αθήνας: φαγητό, ποτό, νύχτα, θέαμα και άλλα. Διάλεξε κατηγορία και βρες πού να πας.", en: "All Athens spots: food, drinks, nightlife, shows and more. Pick a category and find where to go." },
   spots_all:          { el: "Όλα", en: "All" },
   spots_food:         { el: "Φαγητό", en: "Food" },
   spots_drink:        { el: "Ποτό", en: "Drinks" },
@@ -143,7 +143,7 @@ const translations = {
   // ── RadioStrip ────────────────────────────────────────────
   radio_buffering:    { el: "Συντονισμός…", en: "Connecting…" },
   radio_unavailable:  { el: "Μη διαθέσιμο", en: "Unavailable" },
-  radio_retry:        { el: "Προσωρινά μη διαθέσιμο — tap to retry", en: "Temporarily unavailable — tap to retry" },
+  radio_retry:        { el: "Προσωρινά μη διαθέσιμο. Tap to retry", en: "Temporarily unavailable. Tap to retry" },
   radio_coming_soon:  { el: "ΣΎΝΤΟΜΑ", en: "SOON" },
 
   // ── Magazine article ─────────────────────────────────────
@@ -184,7 +184,7 @@ const translations = {
   tonight_sub:        { el: "Διάλεξε διάθεση ή άσε μας να σου στήσουμε ολόκληρη τη βραδιά.", en: "Pick a vibe or let us build your whole night." },
   tonight_surprise:   { el: "Εξέπληξέ με", en: "Surprise me" },
   tonight_surprise_sub: { el: "Ολόκληρη βραδιά σε 2 taps", en: "Full night in 2 taps" },
-  tonight_skip:       { el: "Όχι τώρα — δες την αρχική →", en: "Not now — see home →" },
+  tonight_skip:       { el: "Όχι τώρα. Δες την αρχική →", en: "Not now. See home →" },
   tonight_back:       { el: "‹ Πίσω", en: "‹ Back" },
   tonight_all_sub:    { el: "Όλα", en: "All" },
   tonight_coming_soon:{ el: "σύντομα", en: "coming soon" },
@@ -219,7 +219,7 @@ const translations = {
   tonight_have_all:   { el: "Τα έχεις όλα! 🎉", en: "You have it all! 🎉" },
 
   // ── AuthModal ────────────────────────────────────────────
-  auth_check_email:   { el: "Έλεγξε το email σου — στείλαμε ένα reset link.", en: "Check your email — we sent a reset link." },
+  auth_check_email:   { el: "Έλεγξε το email σου. Σου στείλαμε ένα reset link.", en: "Check your email. We sent a reset link." },
   auth_back_login:    { el: "Πίσω στο login", en: "Back to login" },
   auth_sending:       { el: "Αποστολή...", en: "Sending..." },
   auth_send_reset:    { el: "Αποστολή reset link →", en: "Send reset link →" },
@@ -231,7 +231,7 @@ const translations = {
   reset_too_short:                 { el: "Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες", en: "Password must be at least 8 characters" },
   reset_title:                     { el: "Νέος κωδικός", en: "New password" },
   reset_subtitle:                  { el: "Επέλεξε έναν νέο κωδικό για τον λογαριασμό σου", en: "Choose a new password for your account" },
-  reset_success:                   { el: "Ο κωδικός άλλαξε — ανακατεύθυνση...", en: "Password changed — redirecting..." },
+  reset_success:                   { el: "Ο κωδικός άλλαξε. Ανακατεύθυνση...", en: "Password changed. Redirecting..." },
   reset_new_password_placeholder:  { el: "Νέος κωδικός", en: "New password" },
   reset_confirm_placeholder:       { el: "Επιβεβαίωση κωδικού", en: "Confirm password" },
   reset_saving:                    { el: "Αποθήκευση...", en: "Saving..." },
@@ -252,7 +252,7 @@ const translations = {
   guided_artist_desc: { el: "Βρες studio, producer, booking agent", en: "Find studio, producer, booking agent" },
   guided_browse:      { el: "Θέλω να κάνω browse μόνος μου →", en: "I want to browse on my own →" },
   guided_back:        { el: "← Πίσω", en: "← Back" },
-  guided_checklist_sub: { el: "Τσέκαρε αυτά που έχεις — θα βρούμε αυτό που λείπει.", en: "Check what you have — we'll find what's missing." },
+  guided_checklist_sub: { el: "Τσέκαρε αυτά που έχεις και θα βρούμε αυτό που λείπει.", en: "Check what you have and we'll find what's missing." },
   guided_whats_missing: { el: "Δες τι λείπει", en: "See what's missing" },
   guided_what_need_sub: { el: "Πάτα ό,τι θέλεις να βρεις.", en: "Tap what you want to find." },
   guided_city_sub:    { el: "Θα δώσουμε προτεραιότητα σε προφίλ κοντά σου.", en: "We'll prioritize profiles near you." },
@@ -280,7 +280,7 @@ const translations = {
   about_sec_contribute:     { el: "Συνέβαλε", en: "Contribute" },
   about_sec_contribute_sub: { el: "Είσαι μέρος της σκηνής.", en: "You're part of the scene." },
   about_sec_tellus:         { el: "Πες μας", en: "Tell us" },
-  about_sec_tellus_sub:     { el: "Σχόλιο, ιδέα, παράπονο — όλα μετράνε.", en: "Feedback, ideas, complaints — all count." },
+  about_sec_tellus_sub:     { el: "Σχόλιο, ιδέα, παράπονο. Όλα μετράνε.", en: "Feedback, ideas, complaints. All count." },
   about_sec_follow:         { el: "Ακολούθησε", en: "Follow" },
   about_sec_follow_sub:     { el: "Παντού όπου ζει η νύχτα.", en: "Everywhere the night lives." },
   about_form_name:          { el: "Όνομα", en: "Name" },
@@ -334,7 +334,7 @@ const translations = {
   filter_mood_company:       { el: "Παρέα", en: "Social" },
   about_card_label:          { el: "Καταχώρηση", en: "Submit" },
   about_card_event_desc:     { el: "Διοργανώνεις party, live, festival; Το προσθέτεις στον χάρτη της νύχτας.", en: "Throwing a party, live show or festival? Put it on the night map." },
-  about_card_profile_desc:   { el: "DJ, artist, venue, sound engineer — γίνε μέρος του network.", en: "DJ, artist, venue, sound engineer — join the network." },
+  about_card_profile_desc:   { el: "DJ, artist, venue, sound engineer. Γίνε μέρος του network.", en: "DJ, artist, venue, sound engineer. Join the network." },
   upgrade_become_creator:    { el: "Γίνε Creator", en: "Become a Creator" },
   upgrade_almost_ready:      { el: "Σχεδόν έτοιμος", en: "Almost ready" },
   upgrade_creator_type_q:    { el: "Τι τύπος creator είσαι;", en: "What kind of creator are you?" },
@@ -504,7 +504,7 @@ const translations = {
   event_form_short_desc_label:  { el: "Σύντομη Περιγραφή", en: "Short Description" },
   event_form_short_desc_placeholder: { el: "Μονόγραμμη περίληψη που εμφανίζεται σε κάρτες και λίστες", en: "One-line summary shown on cards and listings" },
   event_form_full_desc_label:   { el: "Πλήρης Περιγραφή", en: "Full Description" },
-  event_form_full_desc_placeholder: { el: "Πες στον κόσμο τι να περιμένει — vibe, artists, special guests...", en: "Tell people what to expect — vibe, artists, special guests..." },
+  event_form_full_desc_placeholder: { el: "Πες στον κόσμο τι να περιμένει: vibe, artists, special guests...", en: "Tell people what to expect: vibe, artists, special guests..." },
   event_form_date_label:        { el: "Ημερομηνία", en: "Date" },
   event_form_start_time_label:  { el: "Ώρα Έναρξης", en: "Start Time" },
   event_form_end_time_label:    { el: "Ώρα Λήξης", en: "End Time" },

@@ -9,6 +9,7 @@ import HotEventCard from "../components/HotEventCard";
 import CompactEventItem from "../components/CompactEventItem";
 import { useLanguage } from "../components/LanguageContext";
 import EventsFilterModal, { EventsFilterResult } from "@/components/EventsFilterModal";
+import { useRegisterModalOpen } from "../components/ModalStateContext";
 
 import { CITIES, GENRES, CITY_LABELS, GENRE_LABELS } from "../lib/searchConstants";
 
@@ -93,7 +94,7 @@ function SectionHeader({
           <div style={{ width: '24px', height: '1px', background: '#E8A020', marginTop: '6px' }} />
         </div>
         {href && count !== undefined && count > 0 && (
-          <a href={href} style={{ color: '#E8A020', fontSize: '11px', letterSpacing: '0.05em', textDecoration: 'none' }}>
+          <a href={href} className="section-link-gold" style={{ fontSize: '11px', letterSpacing: '0.05em' }}>
             {t("events_view_all")} {count} →
           </a>
         )}
@@ -122,6 +123,7 @@ export default function EventsClient({
   const [modalWhen, setModalWhen] = useState<string | null>(null);
   const [modalMood, setModalMood] = useState<string | null>(null);
   const [modalCity, setModalCity] = useState<string | null>(null);
+  useRegisterModalOpen("events-filter", showFilterModal);
 
   useEffect(() => {
     const q = searchParams.get("q");

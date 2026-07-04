@@ -102,7 +102,7 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 300,
+        zIndex: 600,
         backgroundColor: 'rgba(0,0,0,0.72)',
         display: 'flex',
         alignItems: 'flex-end',

@@ -44,7 +44,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
     setLoading(true)
     setError('')
     const specialty = selectedSub
-      ? `${currentType?.label} — ${selectedSub}`
+      ? `${currentType?.label} - ${selectedSub}`
       : currentType?.label || ''
     const res = await fetch('/api/upgrade-request', {
       method: 'POST',

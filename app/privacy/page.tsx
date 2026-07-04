@@ -56,7 +56,7 @@ export default function PrivacyPage() {
           },
           {
             title: "8. Third-Party Services",
-            body: `Nightup.gr is hosted on Vercel and uses Supabase for database services. These providers have their own privacy policies. We use SoundCloud and Spotify embeds on some pages — these services may set their own cookies when you interact with embedded players.`,
+            body: `Nightup.gr is hosted on Vercel and uses Supabase for database services. These providers have their own privacy policies. We use SoundCloud and Spotify embeds on some pages; these services may set their own cookies when you interact with embedded players.`,
           },
           {
             title: "9. Changes to This Policy",

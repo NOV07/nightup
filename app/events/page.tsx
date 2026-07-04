@@ -6,7 +6,7 @@ import { getSupabase } from "../lib/supabase";
 
 export const metadata: Metadata = {
   title: "Events",
-  description: "Find the best nightlife events in Greece. Techno, house, R&B, jazz and more — from Athens to Thessaloniki.",
+  description: "Find the best nightlife events in Greece. Techno, house, R&B, jazz and more, from Athens to Thessaloniki.",
   openGraph: {
     title: "Events | Nightup.gr",
     description: "Find the best nightlife events in Greece.",

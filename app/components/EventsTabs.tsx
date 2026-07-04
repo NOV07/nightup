@@ -136,7 +136,7 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
             <button className="ev-arrow ev-arrow-right" onClick={() => scrollBy(300)} aria-label="Next">›</button>
           )}
           <div className="ev-scroll" ref={scrollRef} onScroll={updateScrollState}>
-            {cards.slice(0, 8).map((e: any) => (
+            {cards.slice(0, 10).map((e: any) => (
               <div
                 key={e.id}
                 className="ev-card"

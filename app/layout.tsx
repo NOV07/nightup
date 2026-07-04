@@ -5,6 +5,7 @@ import { RadioProvider } from "./components/RadioContext";
 import { TonightProvider } from "./components/TonightContext";
 import { LanguageProvider } from "./components/LanguageContext";
 import { PlayerProvider } from "./components/PlayerContext";
+import { ModalStateProvider } from "./components/ModalStateContext";
 import LayoutShell from "./components/LayoutShell";
 import { Toaster } from "sonner";
 
@@ -60,9 +61,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <RadioProvider>
             <TonightProvider>
               <PlayerProvider>
-                <LayoutShell>
-                  {children}
-                </LayoutShell>
+                <ModalStateProvider>
+                  <LayoutShell>
+                    {children}
+                  </LayoutShell>
+                </ModalStateProvider>
               </PlayerProvider>
             </TonightProvider>
           </RadioProvider>

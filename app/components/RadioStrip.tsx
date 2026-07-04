@@ -1,10 +1,15 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useRadio, STATIONS } from "./RadioContext";
 import type { RadioStatus } from "./RadioContext";
 import { usePlayerStore } from "./PlayerContext";
 import { useLanguage } from "./LanguageContext";
+import { useModalState } from "./ModalStateContext";
+
+// Routes where the radio bar should stay out of the way (mini state).
+const MINI_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about"];
 
 // ── Per-station visual metadata ───────────────────────────────────────────────
 const META: Record<string, { emoji: string; genre: string; tagline: string }> = {
@@ -84,11 +89,20 @@ export default function RadioStrip() {
     volume, currentTrack, playStation, togglePlay, setVolume, toggleMute,
   } = useRadio();
   const { currentTrack: playerTrack } = usePlayerStore();
+  const pathname = usePathname();
+  const { isAnyModalOpen } = useModalState();
 
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const meta = META[currentStation.id] ?? DEFAULT_META;
+
+  // While a modal is open, the expanded panel is never shown (derived, not
+  // synced via effect) — it resumes automatically once the modal closes,
+  // exactly as the user left it.
+  const onMiniRoute = MINI_ROUTES.some((r) => pathname?.startsWith(r));
+  const panelOpen = isOpen && !isAnyModalOpen;
+  const isMini = (onMiniRoute || isAnyModalOpen) && !panelOpen;
 
   // Close on outside click
   useEffect(() => {
@@ -140,7 +154,7 @@ export default function RadioStrip() {
       {/* ══════════════════════════════════════════════════════════════════
           EXPANDED PANEL
       ══════════════════════════════════════════════════════════════════ */}
-      {isOpen && (
+      {panelOpen && (
         <div
           className="rs-panel"
           style={{
@@ -484,8 +498,32 @@ export default function RadioStrip() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════
+          MINI BUBBLE — quieter state for content-heavy pages / open modals
+      ══════════════════════════════════════════════════════════════════ */}
+      {isMini && (
+        <button
+          className="rs-mini"
+          onClick={() => setIsOpen(true)}
+          aria-label={`${isPlaying ? "Nightwaves playing" : "Nightwaves radio"}, tap to expand`}
+          style={{
+            width: 40, height: 40, borderRadius: "50%",
+            background: "#12121f",
+            border: `1px solid rgba(232,160,32,${isPlaying ? "0.38" : "0.18"})`,
+            boxShadow: isPlaying
+              ? "0 0 0 1px rgba(232,160,32,0.07), 0 6px 22px rgba(0,0,0,0.55)"
+              : "0 4px 16px rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", padding: 0,
+          }}
+        >
+          <Equalizer animate={status === "playing"} />
+        </button>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
           COLLAPSED PILL
       ══════════════════════════════════════════════════════════════════ */}
+      {!isMini && (
       <div
         className="rs-pill"
         style={{
@@ -572,6 +610,7 @@ export default function RadioStrip() {
           )}
         </button>
       </div>
+      )}
 
       {/* ── Component-scoped CSS ── */}
       <style>{`

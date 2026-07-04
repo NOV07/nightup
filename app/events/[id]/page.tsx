@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return {}
   return {
     title: data.title,
-    description: data.description ?? `${data.title} — find tickets and info on Nightup.gr`,
+    description: data.description ?? `${data.title}: find tickets and info on Nightup.gr`,
     openGraph: {
       title: data.title,
       description: data.description ?? '',

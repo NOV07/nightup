@@ -14,7 +14,7 @@ export default function SocialShare({ title, artist }: Props) {
     });
   };
 
-  const shareText = artist ? `${artist} — ${title}` : title;
+  const shareText = artist ? `${artist} - ${title}` : title;
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const whatsapp = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`.trim())}`;
 
