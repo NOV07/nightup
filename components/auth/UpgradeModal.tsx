@@ -66,7 +66,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
       <div className="w-full max-w-md relative" style={{ backgroundColor: '#0F0F1A', border: '1px solid rgba(232,160,32,0.25)', borderRadius: 6, padding: '2rem' }}>
 
         {/* Close */}
-        <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white transition text-xl">✕</button>
+        <button onClick={onClose} aria-label="Κλείσιμο" className="absolute top-2 right-2 w-11 h-11 flex items-center justify-center text-white/40 hover:text-white transition text-xl">✕</button>
 
         {done ? (
           <div className="text-center py-6">

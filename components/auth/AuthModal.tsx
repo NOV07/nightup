@@ -74,7 +74,8 @@ export default function AuthModal({ onClose, redirectTo }: { onClose: () => void
 
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-white/40 hover:text-white transition text-xl"
+          aria-label="Κλείσιμο"
+          className="absolute top-2 right-2 w-11 h-11 flex items-center justify-center text-white/40 hover:text-white transition text-xl"
         >
           ✕
         </button>

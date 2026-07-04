@@ -289,6 +289,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                     <div className="flex items-center justify-end">
                       <button
                         className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
+                        aria-label={active ? `Παύση ${s.name}` : `Αναπαραγωγή ${s.name}`}
                         style={{ backgroundColor: active ? "#E8A020" : "#1E1E30", color: active ? "#0F0F1A" : "#fff", border: active ? "none" : "1px solid #333" }}
                       >
                         {active ? (

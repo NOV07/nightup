@@ -156,14 +156,19 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
 
           <button
             onClick={onClose}
+            aria-label="Κλείσιμο"
             style={{
               fontSize: 20,
               lineHeight: 1,
-              color: 'rgba(255,255,255,0.35)',
+              color: 'rgba(255,255,255,0.50)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: 0,
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             ×

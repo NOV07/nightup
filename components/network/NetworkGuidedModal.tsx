@@ -141,7 +141,7 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
           </div>
           <button
             onClick={onClose}
-            style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.055)', background: 'rgba(255,255,255,0.03)', color: '#A1A1AA', fontSize: 17, cursor: 'pointer' }}
+            style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.055)', background: 'rgba(255,255,255,0.03)', color: '#A1A1AA', fontSize: 17, cursor: 'pointer' }}
             aria-label="Close"
           >✕</button>
         </div>
@@ -210,7 +210,7 @@ export default function NetworkGuidedModal({ onClose, profiles }: Props) {
                         {checked && '✓'}
                       </div>
                       <span className="text-sm">{item.emoji}</span>
-                      <span className="text-sm font-medium" style={{ color: checked ? 'rgba(255,255,255,0.35)' : 'white', textDecoration: checked ? 'line-through' : 'none' }}>
+                      <span className="text-sm font-medium" style={{ color: checked ? 'rgba(255,255,255,0.50)' : 'white', textDecoration: checked ? 'line-through' : 'none' }}>
                         {item.label}
                       </span>
                     </button>

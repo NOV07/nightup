@@ -38,6 +38,7 @@ function LangToggle({ compact = false }: { compact?: boolean }) {
     <button
       onClick={toggleLang}
       title={lang === "el" ? "Switch to English" : "Αλλαγή σε Ελληνικά"}
+      aria-label={lang === "el" ? "Switch to English" : "Αλλαγή σε Ελληνικά"}
       className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 flex-shrink-0"
       style={{ backgroundColor: "#1A1A2E", border: "1px solid rgba(255,255,255,0.08)", color: "#E8A020", borderRadius: "6px" }}
     >

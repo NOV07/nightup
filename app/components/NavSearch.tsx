@@ -22,6 +22,7 @@ export default function NavSearch({ activeTab, onTabClick }: NavSearchProps) {
       <button
         type="button"
         onClick={() => onTabClick("search")}
+        aria-label="Αναζήτηση"
         style={{
           display: "flex",
           alignItems: "center",

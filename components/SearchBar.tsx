@@ -291,9 +291,10 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
             <div style={{ flex: 1 }} />
             <button
               onClick={onClose}
+              aria-label="Κλείσιμο"
               style={{
-                width: 30,
-                height: 30,
+                width: 40,
+                height: 40,
                 borderRadius: "50%",
                 background: "rgba(255,255,255,0.07)",
                 border: "none",
@@ -326,7 +327,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                   height: "48px",
                 }}
               >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.6" strokeLinecap="round">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="rgba(255,255,255,0.50)" strokeWidth="1.6" strokeLinecap="round">
                   <circle cx="6.5" cy="6.5" r="5" />
                   <line x1="10.5" y1="10.5" x2="14" y2="14" />
                 </svg>
@@ -514,7 +515,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                   )}
                   <span
                     onClick={() => { setEvCity(CITIES[0]); setEvGenre(GENRES[0]); setEvDate(""); }}
-                    style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
+                    style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
                   >
                     Clear all
                   </span>
@@ -643,7 +644,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                   )}
                   <span
                     onClick={() => { setNetCity(CITIES[0]); setNetSection("Artists"); setNetCategory(""); setNetSubcategory(""); }}
-                    style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
+                    style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
                   >
                     Clear all
                   </span>
