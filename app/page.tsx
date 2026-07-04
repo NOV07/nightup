@@ -239,11 +239,11 @@ export default async function HomePage() {
           alignItems: "flex-end", marginBottom: "14px",
         }}>
           <div>
-            <p style={{
+            <h2 style={{
               fontFamily: "var(--font-sans)", fontSize: "11px",
               letterSpacing: "0.15em", textTransform: "uppercase",
-              color: "var(--text-muted)", margin: 0,
-            }}>Events</p>
+              color: "var(--text-muted)", margin: 0, fontWeight: 400,
+            }}>Events</h2>
             <div style={{ width: "20px", height: "1px", background: "var(--gold)", marginTop: "5px" }} />
           </div>
           <Link href="/events" className="section-link-gold" style={{
@@ -266,11 +266,11 @@ export default async function HomePage() {
           alignItems: "flex-end",
         }}>
           <div>
-            <p style={{
+            <h2 style={{
               fontFamily: "var(--font-sans)", fontSize: "11px",
               letterSpacing: "0.15em", textTransform: "uppercase",
-              color: "var(--text-muted)", margin: 0,
-            }}>Discover</p>
+              color: "var(--text-muted)", margin: 0, fontWeight: 400,
+            }}>Discover</h2>
             <div style={{ width: "20px", height: "1px",
               background: "var(--gold)", marginTop: "5px" }} />
           </div>
@@ -498,11 +498,11 @@ export default async function HomePage() {
           alignItems: "flex-end",
         }}>
           <div>
-            <p style={{
+            <h2 style={{
               fontFamily: "var(--font-sans)", fontSize: "11px",
               letterSpacing: "0.15em", textTransform: "uppercase",
-              color: "var(--text-muted)", margin: 0,
-            }}>On Nightwaves</p>
+              color: "var(--text-muted)", margin: 0, fontWeight: 400,
+            }}>On Nightwaves</h2>
             <div style={{ width: "20px", height: "1px",
               background: "var(--gold)", marginTop: "5px" }} />
           </div>

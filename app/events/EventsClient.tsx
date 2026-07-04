@@ -89,9 +89,9 @@ function SectionHeader({
     <div style={{ marginBottom: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
             {title}
-          </p>
+          </h2>
           <div style={{ width: '24px', height: '1px', background: '#E8A020', marginTop: '6px' }} />
         </div>
         {href && count !== undefined && count > 0 && (
@@ -557,7 +557,7 @@ export default function EventsClient({
                   />
                   {tonightEvents.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      <p className="text-sm" style={{ color: "rgba(255,255,255,0.50)" }}>
                         {t("events_quiet_tonight")}
                       </p>
                       <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
@@ -572,7 +572,7 @@ export default function EventsClient({
                       {tonightEvents.length < 3 && (
                         <div
                           className="mt-4 p-3 rounded-lg text-xs text-center"
-                          style={{ border: "1px solid rgba(255,255,255,0.05)", backgroundColor: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.35)" }}
+                          style={{ border: "1px solid rgba(255,255,255,0.05)", backgroundColor: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.50)" }}
                         >
                           {t("events_slow_night")}
                         </div>

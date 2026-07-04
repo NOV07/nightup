@@ -126,7 +126,7 @@ export default function MixesClient({ mixes }: { mixes: Mix[] }) {
 
                   {/* Info — navigate to detail */}
                   <Link href={`/nightwaves/mix/${mix.id}`} className="block p-4 hover:opacity-80 transition-opacity">
-                    <h4 className="font-semibold text-sm line-clamp-1 mb-1">{mix.title}</h4>
+                    <h2 className="font-semibold text-sm line-clamp-1 mb-1">{mix.title}</h2>
                     <p className="text-xs" style={{ color: "#666" }}>{mix.artist}</p>
                   </Link>
                 </div>

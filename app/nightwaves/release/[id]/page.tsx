@@ -272,7 +272,7 @@ export default async function ReleasePage({ params }: Props) {
                   </div>
                   <div className="p-3">
                     {r.type && <p className="text-xs mb-0.5" style={{ color: "#E8A020" }}>{r.type}</p>}
-                    <h4 className="font-semibold text-sm line-clamp-1">{r.title}</h4>
+                    <h3 className="font-semibold text-sm line-clamp-1">{r.title}</h3>
                   </div>
                 </Link>
               ))}

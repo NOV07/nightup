@@ -45,7 +45,7 @@ export default function MiniPlayer() {
         <div className="flex items-center gap-3 flex-shrink-0">
           <button
             onClick={togglePlay}
-            className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80"
             style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}
             aria-label={isPlaying ? "Pause" : "Play"}
           >

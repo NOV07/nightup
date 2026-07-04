@@ -156,7 +156,7 @@ function Step1({ form, set, toggleGenre, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>{t('event_form_short_desc_label')} * <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.short_description.length}/160</span></label>
+        <label style={lbl}>{t('event_form_short_desc_label')} * <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.short_description.length}/160</span></label>
         <input style={inp} value={form.short_description} maxLength={160}
           onChange={e => set('short_description', e.target.value)}
           placeholder={t('event_form_short_desc_placeholder')} />
@@ -282,7 +282,7 @@ function Step3({ form, set, stepErrors }: {
         border: '1px solid rgba(255,255,255,0.08)' }}>
         <div>
           <p style={{ fontSize: 14, color: 'white', fontWeight: 500 }}>{t('event_form_age_restriction_label')}</p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{t('event_form_age_restriction_desc')}</p>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.50)', marginTop: 2 }}>{t('event_form_age_restriction_desc')}</p>
         </div>
         <button type="button" onClick={() => set('age_restriction', !form.age_restriction)}
           style={{ position: 'relative', width: 44, height: 24, borderRadius: 999, cursor: 'pointer',
@@ -295,12 +295,12 @@ function Step3({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>{t('event_form_dress_code_label')} <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.dress_code.length}/80</span></label>
+        <label style={lbl}>{t('event_form_dress_code_label')} <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{form.dress_code.length}/80</span></label>
         <input style={inp} value={form.dress_code} maxLength={80} onChange={e => set('dress_code', e.target.value)} placeholder={t('event_form_dress_code_placeholder')} />
       </div>
 
       <div>
-        <label style={lbl}>{t('event_form_lineup_label')} <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{t('event_form_comma_separated')}</span></label>
+        <label style={lbl}>{t('event_form_lineup_label')} <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{t('event_form_comma_separated')}</span></label>
         <input style={inp} value={form.lineup} onChange={e => set('lineup', e.target.value)} placeholder={t('event_form_lineup_placeholder')} />
       </div>
     </div>
@@ -345,7 +345,7 @@ function Step4({ form, set, stepErrors }: {
             [t('event_form_review_price_label'), form.price ? `€${form.price}` : t('event_form_free')],
           ].map(([label, value]) => (
             <div key={label} style={{ display: 'flex', gap: 8, fontSize: 13 }}>
-              <span style={{ color: 'rgba(255,255,255,0.35)', minWidth: 60 }}>{label}</span>
+              <span style={{ color: 'rgba(255,255,255,0.50)', minWidth: 60 }}>{label}</span>
               <span style={{ color: 'rgba(255,255,255,0.8)' }}>{value}</span>
             </div>
           ))}

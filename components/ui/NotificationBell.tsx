@@ -170,7 +170,7 @@ export default function NotificationBell() {
 
           {/* Body */}
           {data.notifications.length === 0 ? (
-            <div style={{ padding: '40px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: 13 }}>
+            <div style={{ padding: '40px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.40)', fontSize: 13 }}>
               Δεν έχεις ειδοποιήσεις ακόμα
             </div>
           ) : (

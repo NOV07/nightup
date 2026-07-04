@@ -262,7 +262,7 @@ export default function MagazineClient({
                         </p>
                       )}
                       {a.readTime && (
-                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{a.readTime}</p>
+                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.50)" }}>{a.readTime}</p>
                       )}
                     </div>
                   </Link>

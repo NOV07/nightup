@@ -77,7 +77,7 @@ function UpcomingRow({ event, isLast }: { event: any; isLast: boolean }) {
         <div style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 22, fontWeight: 700, color: GOLD, lineHeight: 1 }}>
           {d.getDate()}
         </div>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2, letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.50)', marginTop: 2, letterSpacing: '0.05em' }}>
           {MONTHS[lang][d.getMonth()]}
         </div>
       </div>
@@ -90,7 +90,7 @@ function UpcomingRow({ event, isLast }: { event: any; isLast: boolean }) {
         <p style={{ color: '#F4F4F5', fontSize: 13.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {event.title}
         </p>
-        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11.5, marginTop: 2 }}>
+        <p style={{ color: 'rgba(255,255,255,0.50)', fontSize: 11.5, marginTop: 2 }}>
           {[event.venue, event.city].filter(Boolean).join(' · ')}
         </p>
       </div>
@@ -134,7 +134,7 @@ function GridCard({ href, title, sub, accent }: { href: string; title: string; s
           {title}
         </p>
         {sub && (
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p style={{ color: 'rgba(255,255,255,0.50)', fontSize: 11, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {sub}
           </p>
         )}
@@ -179,7 +179,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
           {t('dashboard_greeting')},{' '}
           <em style={{ color: GOLD, fontStyle: 'italic' }}>{name}</em>
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
+        <p style={{ color: 'rgba(255,255,255,0.50)', fontSize: 13 }}>
           {savedEvents.length} {t('dashboard_stat_saved_events')} · {savedSpots.length} {t('dashboard_stat_spots')} · {followedProfiles.length} {t('dashboard_stat_artists')}
         </p>
       </div>

@@ -45,7 +45,7 @@ export default async function SeriesPage({ params }: Props) {
         <div className="w-12 h-0.5 mb-4" style={{ backgroundColor: "#E8A020" }} />
         <p className="text-sm font-semibold tracking-widest uppercase mb-3" style={{ color: "#E8A020" }}>A Nightup Series</p>
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{title}</h1>
-        <p className="text-gray-400">{data.length} {data.length === 1 ? "article" : "articles"}</p>
+        <h2 className="text-gray-400 font-normal text-base">{data.length} {data.length === 1 ? "article" : "articles"}</h2>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 pb-16">

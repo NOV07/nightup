@@ -242,7 +242,7 @@ export default async function MixPage({ params }: Props) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs mb-0.5 truncate" style={{ color: "#E8A020" }}>{m.artist}</p>
-                    <h4 className="font-semibold text-sm line-clamp-1">{m.title}</h4>
+                    <h3 className="font-semibold text-sm line-clamp-1">{m.title}</h3>
                     {m.genre && <p className="text-xs mt-0.5 truncate" style={{ color: "#555" }}>{m.genre}</p>}
                   </div>
                   {m.duration && (

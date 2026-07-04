@@ -177,7 +177,7 @@ function PlayerInner({ soundcloudUrl, type, description, releaseDate, genre, spo
           className="flex items-center justify-between gap-4 flex-wrap rounded-xl px-4 py-4"
           style={{ backgroundColor: "#111120", border: "1px solid #1e1e30" }}
         >
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.50)" }}>
             Preview not available. Open on SoundCloud to listen.
           </p>
           <a

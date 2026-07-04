@@ -149,7 +149,7 @@ export default function ListingsBar({ listings }: { listings: Listing[] }) {
 
             {/* Bottom row: display_name + interest button */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 'auto' }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {listing.profiles.display_name}
               </span>
               <InterestButton listingId={listing.id} initialCount={0} />

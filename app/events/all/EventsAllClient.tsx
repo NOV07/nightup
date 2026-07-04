@@ -178,9 +178,9 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
         )}
       </div>
 
-      <p className="text-sm text-gray-400 mb-4">
+      <h2 className="text-sm font-normal text-gray-400 mb-4">
         {filtered.length} event{filtered.length !== 1 ? "s" : ""} found
-      </p>
+      </h2>
 
       {paginated.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

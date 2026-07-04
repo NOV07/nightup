@@ -95,7 +95,7 @@ export default function ReleasesClient({ releases }: { releases: Release[] }) {
                 </div>
                 <div className="p-3">
                   <p className="text-xs font-semibold truncate mb-0.5" style={{ color: "#E8A020" }}>{r.artist}</p>
-                  <h4 className="font-semibold text-sm line-clamp-1">{r.title}</h4>
+                  <h2 className="font-semibold text-sm line-clamp-1">{r.title}</h2>
                   {r.release_date && (
                     <p className="text-xs mt-0.5" style={{ color: "#444" }}>
                       {new Date(r.release_date).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}

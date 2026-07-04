@@ -394,7 +394,7 @@ export default function DashboardClient({ profile, events, releases, professiona
             )}
             <div>
               <p className="text-white text-sm font-medium">{form.display_name}</p>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username} · {t('dashboard_type_user')}</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username} · {t('dashboard_type_user')}</p>
             </div>
           </div>
         </div>
@@ -437,7 +437,7 @@ export default function DashboardClient({ profile, events, releases, professiona
             )}
             <div>
               <p className="text-white text-sm font-medium">{form.display_name}</p>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username} · {profileTypeLabel[profile.profile_type]}</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username} · {profileTypeLabel[profile.profile_type]}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -566,7 +566,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                 <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                   <div>
                     <p className="text-sm text-white font-medium">{t('dashboard_available_for_booking')}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_availability_desc')}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{t('dashboard_availability_desc')}</p>
                   </div>
                   <button
                     type="button"
@@ -679,7 +679,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                       )}
                     </div>
                     <p className="font-bold text-white text-sm">{form.display_name || t('dashboard_display_name')}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {(form.network_category || proForm.category) && (
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
@@ -687,7 +687,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         </span>
                       )}
                       {form.location && (
-                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>📍 {form.location}</span>
+                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>📍 {form.location}</span>
                       )}
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{
                         backgroundColor: proForm.availability === 'available' ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
@@ -762,7 +762,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                 <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                   <div>
                     <p className="text-sm text-white font-medium">{t('dashboard_available_for_booking')}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_availability_desc')}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{t('dashboard_availability_desc')}</p>
                   </div>
                   <button
                     type="button"
@@ -960,13 +960,13 @@ export default function DashboardClient({ profile, events, releases, professiona
                       )}
                     </div>
                     <p className="font-bold text-white text-sm">{form.display_name || t('dashboard_display_name')}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
                         {profileTypeLabel[profile.profile_type]}
                       </span>
                       {form.location && (
-                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>📍 {form.location}</span>
+                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>📍 {form.location}</span>
                       )}
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{
                         backgroundColor: form.is_available ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
@@ -1039,7 +1039,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                       <div key={event.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-white truncate">{event.title}</p>
-                          <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{event.venue} · {event.date}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
                         </div>
                         <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
                           backgroundColor: event.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
@@ -1079,7 +1079,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         <div className="p-3">
                           <p className="text-xs font-medium text-white truncate">{release.title}</p>
                           <div className="flex items-center justify-between mt-1">
-                            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{release.type}</p>
+                            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>{release.type}</p>
                             <span className="text-xs px-1.5 py-0.5 rounded-full" style={{
                               backgroundColor: release.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
                               color: release.status === 'approved' ? '#4ade80' : '#E8A020',
@@ -1119,7 +1119,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                     <div key={listing.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white truncate">{listing.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>
                           {[listing.role, listing.city].filter(Boolean).join(' · ')}
                         </p>
                       </div>
@@ -1339,7 +1339,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-white font-medium truncate">{actor?.display_name}</p>
-                          <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                          <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.50)' }}>
                             {t('dashboard_interested_in')} «{listing?.title}»
                           </p>
                         </div>
@@ -1372,7 +1372,7 @@ export default function DashboardClient({ profile, events, releases, professiona
                       <div key={interest.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-white font-medium truncate">{listing?.title}</p>
-                          <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                          <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.50)' }}>
                             {listing?.role && <span>{listing.role} · </span>}
                             {owner?.display_name}
                           </p>
@@ -1394,7 +1394,7 @@ export default function DashboardClient({ profile, events, releases, professiona
           <div className="max-w-xl space-y-4">
             <div>
               <h2 className="text-lg font-bold text-white mb-1">{t('dashboard_section_visibility')}</h2>
-              <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
                 {t('dashboard_visibility_desc')}
               </p>
             </div>

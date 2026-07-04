@@ -88,7 +88,7 @@ export default function EditEventClient({ event }: { event: any }) {
     <div style={{ minHeight: '100vh', backgroundColor: '#0F0F1A', padding: '32px 16px' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', marginBottom: 32 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>{t('event_edit_heading')}</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>{event.title}</p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)' }}>{event.title}</p>
       </div>
       <EventFormSteps initialData={initialData} onSubmit={handleSubmit} loading={loading} error={error} />
     </div>

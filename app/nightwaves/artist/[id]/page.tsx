@@ -183,7 +183,7 @@ export default async function ArtistPage({ params }: Props) {
                       </div>
                       <div className="p-3">
                         {r.type && <p className="text-xs mb-0.5" style={{ color: "#E8A020" }}>{r.type}</p>}
-                        <h4 className="font-semibold text-sm line-clamp-1">{r.title}</h4>
+                        <h3 className="font-semibold text-sm line-clamp-1">{r.title}</h3>
                         {r.release_date && (
                           <p className="text-xs mt-0.5" style={{ color: "#555" }}>
                             {new Date(r.release_date).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
@@ -211,7 +211,7 @@ export default async function ArtistPage({ params }: Props) {
                         <Image src={m.cover_image || FALLBACK} alt={m.title} fill className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm line-clamp-1">{m.title}</h4>
+                        <h3 className="font-semibold text-sm line-clamp-1">{m.title}</h3>
                         {m.genre && <p className="text-xs mt-0.5" style={{ color: "#666" }}>{m.genre}</p>}
                       </div>
                       {m.duration && (
