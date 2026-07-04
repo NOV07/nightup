@@ -665,6 +665,16 @@ section:hover .hero-arrow { opacity: 1 !important; }
     padding-bottom: calc(var(--mobile-radio-bar-height) + env(safe-area-inset-bottom)) !important;
   }
 
+  /* Footer (and RadioStrip/MusicPlayerBar, which are fixed and add no flow
+     height) is the last real element in the document — <main>'s padding above
+     only creates a gap before the footer, it can't add space after it. Scrolling
+     to the true end always puts the last flow element's bottom flush with the
+     viewport, so the buffer has to live on body, one level up from Footer,
+     with extra 16px so the edge isn't flush at exactly 0px. */
+  body {
+    padding-bottom: calc(var(--mobile-radio-bar-height) + env(safe-area-inset-bottom, 0px) + 16px) !important;
+  }
+
   /* Mobile: full-width bottom bar instead of floating pill */
   .radio-strip-desktop {
     bottom: 0 !important;
@@ -698,13 +708,6 @@ section:hover .hero-arrow { opacity: 1 !important; }
     border-radius: 18px 18px 0 0 !important;
     transform-origin: bottom center !important;
   }
-  /* Events page filter card: its own bottom controls (city dropdown, genre
-     pills) sit low enough in the static layout to end up behind the fixed
-     radio bar — reserve the same clearance main() gets, on the card itself. */
-  .events-filter-card {
-    margin-bottom: calc(var(--mobile-radio-bar-height) + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
   /* A modal (Tonight, events filter, etc.) is open — the mini bubble would
      overlap the modal's own bottom content/dots on small screens, so hide
      the whole widget instead of shrinking it. Reappears once the modal closes. */

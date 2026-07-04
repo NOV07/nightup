@@ -394,7 +394,7 @@ export default function EventsClient({
 
       {/* ── Filters ───────────────────────────────────────── */}
       <div
-        className="events-filter-card rounded-2xl p-4 mb-8 animate-fade-up"
+        className="rounded-2xl p-4 mb-8 animate-fade-up"
         style={{ animationDelay: "0.03s", backgroundColor: "#0a0a14", border: "1px solid rgba(232,160,32,0.12)" }}
       >
         <div className="flex flex-col sm:flex-row gap-3 mb-3">
