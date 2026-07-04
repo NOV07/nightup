@@ -301,7 +301,18 @@ export default async function MagazineArticlePage({ params }: Props) {
                   )
                   if (block.type === 'image' && block.src) return (
                     <figure key={i}>
-                      <img src={block.src} alt={block.caption || ''} style={{width:'100%',borderRadius:'8px'}} />
+                      {block.src.startsWith('data:') ? (
+                        <img src={block.src} alt={block.caption || ''} style={{width:'100%',borderRadius:'8px'}} />
+                      ) : (
+                        <Image
+                          src={block.src}
+                          alt={block.caption || ''}
+                          width={1200}
+                          height={675}
+                          sizes="(max-width: 768px) 100vw, 720px"
+                          style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                        />
+                      )}
                       {block.caption && <figcaption>{block.caption}</figcaption>}
                     </figure>
                   )
@@ -423,7 +434,7 @@ export default async function MagazineArticlePage({ params }: Props) {
                   <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
                 <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>{s.domain}</span>
-                <span className="text-xs ml-auto truncate" style={{ color: "rgba(255,255,255,0.25)", maxWidth: "260px" }}>{s.url}</span>
+                <span className="text-xs ml-auto truncate" style={{ color: "rgba(255,255,255,0.40)", maxWidth: "260px" }}>{s.url}</span>
               </a>
             ))}
           </div>

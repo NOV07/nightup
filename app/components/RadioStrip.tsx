@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRadio, STATIONS } from "./RadioContext";
 import type { RadioStatus } from "./RadioContext";
 import { usePlayerStore } from "./PlayerContext";
@@ -211,13 +212,13 @@ export default function RadioStrip() {
             <div style={{ position: "relative", overflow: "hidden", borderRadius: 0 }}>
               {/* Banner photo */}
               {currentStation.banner && (
-                <img
+                <Image
                   src={currentStation.banner}
                   alt=""
                   aria-hidden
+                  fill
+                  sizes="400px"
                   style={{
-                    position: "absolute", inset: 0,
-                    width: "100%", height: "100%",
                     objectFit: "cover",
                     opacity: 0.35,
                   }}
@@ -240,12 +241,15 @@ export default function RadioStrip() {
                     border: "1px solid rgba(232,160,32,0.25)",
                     overflow: "hidden",
                   }}>
-                    <img
-                      src={currentStation.cover}
-                      alt={currentStation.name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
+                    {currentStation.cover && (
+                      <Image
+                        src={currentStation.cover}
+                        alt={currentStation.name}
+                        fill
+                        sizes="62px"
+                        style={{ objectFit: "cover" }}
+                      />
+                    )}
                     {status === "playing" && (
                       <div style={{
                         position: "absolute", inset: 0,
@@ -415,12 +419,15 @@ export default function RadioStrip() {
                     border: `1px solid ${active ? "rgba(232,160,32,0.3)" : "rgba(232,160,32,0.2)"}`,
                     overflow: "hidden",
                   }}>
-                    <img
-                      src={station.cover}
-                      alt={station.name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
+                    {station.cover && (
+                      <Image
+                        src={station.cover}
+                        alt={station.name}
+                        fill
+                        sizes="44px"
+                        style={{ objectFit: "cover" }}
+                      />
+                    )}
                     {active && status === "playing" && (
                       <div style={{
                         position: "absolute", inset: 0,

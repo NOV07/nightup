@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
@@ -95,12 +96,21 @@ export default function SpotCard({
               overflow: "hidden",
             }}
           >
-            <img
-              src={img}
-              alt={spot.name ?? ""}
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-              onError={(e) => { (e.target as HTMLImageElement).src = PLACE; }}
-            />
+            {img.startsWith("data:") ? (
+              <img
+                src={img}
+                alt={spot.name ?? ""}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <Image
+                src={img}
+                alt={spot.name ?? ""}
+                fill
+                sizes="78px"
+                style={{ objectFit: "cover" }}
+              />
+            )}
             {spot.isSponsored && <SponsoredBadge />}
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
@@ -150,19 +160,28 @@ export default function SpotCard({
             overflow: "hidden",
           }}
         >
-          <img
-            src={img}
-            alt={spot.name ?? ""}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            onError={(e) => { (e.target as HTMLImageElement).src = PLACE; }}
-          />
+          {img.startsWith("data:") ? (
+            <img
+              src={img}
+              alt={spot.name ?? ""}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <Image
+              src={img}
+              alt={spot.name ?? ""}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              style={{ objectFit: "cover" }}
+            />
+          )}
           {spot.isSponsored && <SponsoredBadge />}
           <button
             onClick={handleSave}
             aria-label="Save spot"
             style={{
               position: "absolute", top: 8, right: 8, zIndex: 3,
-              width: 32, height: 32, borderRadius: "50%",
+              width: 40, height: 40, borderRadius: "50%",
               backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
               border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",

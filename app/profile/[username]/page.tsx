@@ -180,12 +180,21 @@ export default async function ProfilePage({ params }: Props) {
                 {profile.display_name[0].toUpperCase()}
               </div>
               {avatarSrc && (
-                <img
-                  src={avatarSrc}
-                  alt={profile.display_name}
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
+                avatarSrc.startsWith('data:') ? (
+                  <img
+                    src={avatarSrc}
+                    alt={profile.display_name}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Image
+                    src={avatarSrc}
+                    alt={profile.display_name}
+                    fill
+                    sizes="96px"
+                    style={{ objectFit: 'cover' }}
+                  />
+                )
               )}
             </div>
 
@@ -208,7 +217,7 @@ export default async function ProfilePage({ params }: Props) {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>@{profile.username}</span>
+                <span className="text-sm" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full" style={{
                   backgroundColor: 'rgba(255,255,255,0.07)',
                   color: 'rgba(255,255,255,0.45)'

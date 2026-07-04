@@ -420,7 +420,7 @@ function ListingCard({ listing, lang }: { listing: Listing; lang: string }) {
             Sponsored
           </span>
         )}
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginLeft: 'auto' }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', marginLeft: 'auto' }}>
           {timeAgo(listing.created_at, lang)}
         </span>
       </div>

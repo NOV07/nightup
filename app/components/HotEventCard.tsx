@@ -145,7 +145,7 @@ export default function HotEventCard({
 
       {/* Top-right: heart */}
       <button
-        className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
+        className="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
         onClick={handleSave}
         aria-label="Save event"
       >

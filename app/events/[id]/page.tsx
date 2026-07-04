@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/formatPrice'
@@ -180,7 +181,7 @@ export default async function EventPage({ params }: Props) {
         {/* Lineup */}
         {lineup.length > 0 && (
           <div style={{ marginBottom: 32 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 12 }}>
               Lineup
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -201,7 +202,7 @@ export default async function EventPage({ params }: Props) {
         {/* Description */}
         {event.description && (
           <div style={{ marginBottom: 40 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 12 }}>
               About
             </p>
             <p style={{ fontSize: 14, lineHeight: 1.75, color: 'rgba(255,255,255,0.68)' }}>
@@ -213,7 +214,7 @@ export default async function EventPage({ params }: Props) {
         {/* Organizer card */}
         {organizer && (
           <div style={{ marginBottom: 40, paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 14 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 14 }}>
               Organizer
             </p>
             <Link href={`/profile/${organizer.username}`} style={{ textDecoration: 'none' }}>
@@ -223,11 +224,23 @@ export default async function EventPage({ params }: Props) {
                 border: '1px solid rgba(255,255,255,0.08)', transition: 'border-color 0.2s',
               }}>
                 {organizer.avatar_url ? (
-                  <img
-                    src={organizer.avatar_url}
-                    alt={organizer.display_name ?? organizer.username}
-                    style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.3)' }}
-                  />
+                  organizer.avatar_url.startsWith('data:') ? (
+                    <img
+                      src={organizer.avatar_url}
+                      alt={organizer.display_name ?? organizer.username}
+                      style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.3)' }}
+                    />
+                  ) : (
+                    <div style={{ position: 'relative', width: 48, height: 48, borderRadius: 12, overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(232,160,32,0.3)' }}>
+                      <Image
+                        src={organizer.avatar_url}
+                        alt={organizer.display_name ?? organizer.username}
+                        fill
+                        sizes="48px"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </div>
+                  )
                 ) : (
                   <div style={{
                     width: 48, height: 48, borderRadius: 12, flexShrink: 0,
@@ -257,7 +270,7 @@ export default async function EventPage({ params }: Props) {
         {/* More events from same organizer */}
         {moreEvents.length > 0 && (
           <div>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 14 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 14 }}>
               More Events
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -269,11 +282,23 @@ export default async function EventPage({ params }: Props) {
                     border: '1px solid rgba(255,255,255,0.07)',
                   }}>
                     {e.image_url ? (
-                      <img
-                        src={e.image_url}
-                        alt={e.title}
-                        style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
-                      />
+                      e.image_url.startsWith('data:') ? (
+                        <img
+                          src={e.image_url}
+                          alt={e.title}
+                          style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      ) : (
+                        <div style={{ position: 'relative', width: 52, height: 52, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                          <Image
+                            src={e.image_url}
+                            alt={e.title}
+                            fill
+                            sizes="52px"
+                            style={{ objectFit: 'cover' }}
+                          />
+                        </div>
+                      )
                     ) : (
                       <div style={{ width: 52, height: 52, borderRadius: 8, flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.06)' }} />
                     )}
