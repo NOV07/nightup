@@ -7,6 +7,7 @@ import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { toast } from "sonner";
 import type { Spot } from "../spots/types";
+import { useLanguage } from "../components/LanguageContext";
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80";
 
@@ -191,6 +192,7 @@ export default function SpotCard({
 }
 
 function SponsoredBadge() {
+  const { t } = useLanguage();
   return (
     <span
       style={{
@@ -209,7 +211,7 @@ function SponsoredBadge() {
         border: "1px solid rgba(232,160,32,0.15)",
       }}
     >
-      SPONSORED
+      {t("spots_sponsored")}
     </span>
   );
 }

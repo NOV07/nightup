@@ -129,6 +129,7 @@ const translations = {
   spots_phone:        { el: "Τηλέφωνο", en: "Phone" },
   spots_hours:        { el: "Ωράριο", en: "Hours" },
   spots_map:          { el: "📍 Άνοιξε στον χάρτη", en: "📍 Open in Maps" },
+  spots_sponsored:    { el: "Χορηγία", en: "Sponsored" },
 
   // ── Nightwaves ────────────────────────────────────────────
   nightwaves_new_releases: { el: "New Releases", en: "New Releases" },

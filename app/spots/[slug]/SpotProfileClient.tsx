@@ -29,7 +29,7 @@ export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
         <div style={{ position: "relative", maxWidth: "56rem", margin: "0 auto", padding: "0 24px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 28 }}>
           <Link href="/spots" style={{ position: "absolute", top: 20, left: 24, color: "#fff", fontSize: 14, fontWeight: 600, background: "rgba(0,0,0,0.4)", padding: "8px 14px", borderRadius: 6, backdropFilter: "blur(8px)" }}>‹ Spots</Link>
           {spot.isSponsored && (
-            <span style={{ alignSelf: "flex-start", marginBottom: 12, background: "rgba(10,10,18,0.78)", color: "#E8A020", fontSize: 10, fontWeight: 700, letterSpacing: "0.6px", padding: "5px 10px", borderRadius: 4, border: "1px solid rgba(232,160,32,0.15)" }}>SPONSORED</span>
+            <span style={{ alignSelf: "flex-start", marginBottom: 12, background: "rgba(10,10,18,0.78)", color: "#E8A020", fontSize: 10, fontWeight: 700, letterSpacing: "0.6px", padding: "5px 10px", borderRadius: 4, border: "1px solid rgba(232,160,32,0.15)" }}>{t("spots_sponsored")}</span>
           )}
           <div style={{ fontSize: 11, letterSpacing: "2.5px", textTransform: "uppercase", color: "#E8A020", fontWeight: 700 }}>
             {CAT_LABEL[spot.category]}{spot.subcategory ? ` · ${spot.subcategory}` : ""}
