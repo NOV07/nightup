@@ -138,8 +138,10 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
                   src={s.image}
                   alt={s.title}
                   fill
+                  sizes="100vw"
                   style={{ objectFit: "cover" }}
                   priority={i === 0}
+                  fetchPriority={i === 0 ? "high" : "auto"}
                 />
               ) : (
                 <div style={{
