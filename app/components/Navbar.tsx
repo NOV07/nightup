@@ -68,6 +68,17 @@ export default function Navbar() {
 
   const handleSearchClose = useCallback(() => setSearchOpen(false), []);
 
+  // Lock body scroll while the mobile menu is open so the underlying page
+  // can't scroll out from under it; the menu gets its own internal scroll.
+  useEffect(() => {
+    document.documentElement.classList.toggle("nav-menu-open", open);
+    document.body.classList.toggle("nav-menu-open", open);
+    return () => {
+      document.documentElement.classList.remove("nav-menu-open");
+      document.body.classList.remove("nav-menu-open");
+    };
+  }, [open]);
+
   useEffect(() => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -198,14 +209,19 @@ export default function Navbar() {
       {/* Mobile slide-down */}
       {open && (
         <div
-          className="fixed top-14 left-0 right-0 z-30 md:hidden border-b"
+          className="fixed inset-0 z-30 md:hidden flex flex-col"
           style={{
             backgroundColor: "rgba(10,10,18,0.97)",
-            borderColor: "rgba(255,255,255,0.05)",
             backdropFilter: "blur(20px)",
           }}
         >
-          <nav className="px-3 py-3 flex flex-col gap-0.5">
+          {/* Spacer so content starts below the sticky header (h-14) which
+              stays on top (z-40) and holds the always-visible close button. */}
+          <div className="h-14 flex-shrink-0" aria-hidden />
+          <nav
+            className="px-3 py-3 flex flex-col gap-0.5 overflow-y-auto flex-1"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             {links.map((l) => {
               const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
               return (

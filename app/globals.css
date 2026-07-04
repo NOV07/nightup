@@ -697,6 +697,12 @@ section:hover .hero-arrow { opacity: 1 !important; }
     border-radius: 18px 18px 0 0 !important;
     transform-origin: bottom center !important;
   }
+  /* A modal (Tonight, events filter, etc.) is open — the mini bubble would
+     overlap the modal's own bottom content/dots on small screens, so hide
+     the whole widget instead of shrinking it. Reappears once the modal closes. */
+  .radio-strip-desktop.rs-modal-open {
+    display: none !important;
+  }
 }
 
 
@@ -723,6 +729,14 @@ body.tonight-open .tonight-blurable {
   transition: filter 0.7s cubic-bezier(.22,.61,.36,1);
 }
 body.tonight-open { overflow: hidden !important; }
+
+/* ── Mobile nav menu: lock scroll while open (menu has its own internal scroll).
+   html gets the class too since html itself is the scrolling box on this page
+   (its overflow-y is auto) — locking body alone lets html keep scrolling. ── */
+html.nav-menu-open,
+body.nav-menu-open {
+  overflow: hidden !important;
+}
 
 /* Tonight FAB — stays above page content but below players (z-200) */
 /* MusicPlayerBar is z-50, RadioStrip is z-500 — FAB at z-200 sits between */

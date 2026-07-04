@@ -1,15 +1,11 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useRadio, STATIONS } from "./RadioContext";
 import type { RadioStatus } from "./RadioContext";
 import { usePlayerStore } from "./PlayerContext";
 import { useLanguage } from "./LanguageContext";
 import { useModalState } from "./ModalStateContext";
-
-// Routes where the radio bar should stay out of the way (mini state).
-const MINI_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about"];
 
 // ── Per-station visual metadata ───────────────────────────────────────────────
 const META: Record<string, { emoji: string; genre: string; tagline: string }> = {
@@ -89,7 +85,6 @@ export default function RadioStrip() {
     volume, currentTrack, playStation, togglePlay, setVolume, toggleMute,
   } = useRadio();
   const { currentTrack: playerTrack } = usePlayerStore();
-  const pathname = usePathname();
   const { isAnyModalOpen } = useModalState();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -100,9 +95,8 @@ export default function RadioStrip() {
   // While a modal is open, the expanded panel is never shown (derived, not
   // synced via effect) — it resumes automatically once the modal closes,
   // exactly as the user left it.
-  const onMiniRoute = MINI_ROUTES.some((r) => pathname?.startsWith(r));
   const panelOpen = isOpen && !isAnyModalOpen;
-  const isMini = (onMiniRoute || isAnyModalOpen) && !panelOpen;
+  const isMini = isAnyModalOpen && !panelOpen;
 
   // Close on outside click
   useEffect(() => {
@@ -140,7 +134,7 @@ export default function RadioStrip() {
   return (
     <div
       ref={ref}
-      className={`radio-strip-desktop${playerTrack ? " rs-has-track" : ""}`}
+      className={`radio-strip-desktop${playerTrack ? " rs-has-track" : ""}${isAnyModalOpen ? " rs-modal-open" : ""}`}
       tabIndex={0}
       onKeyDown={onKeyDown}
       aria-label="Nightwaves Radio"
