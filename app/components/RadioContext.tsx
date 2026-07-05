@@ -31,8 +31,8 @@ export const STATIONS: Station[] = [
       "http://stream.nightup.gr/listen/nightup/radio.mp3",
       "http://167.86.121.222/listen/nightup/radio.mp3",
     ],
-    cover:  "/radio/nightup-radio-cover.png",
-    banner: "/radio/nightup-radio-banner.png",
+    cover:  "/station/nightup-radio-cover.png",
+    banner: "/station/nightup-radio-banner.png",
   },
 ];
 
