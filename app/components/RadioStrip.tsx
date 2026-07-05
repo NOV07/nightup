@@ -10,9 +10,7 @@ import { useModalState } from "./ModalStateContext";
 
 // ── Per-station visual metadata ───────────────────────────────────────────────
 const META: Record<string, { emoji: string; genre: string; tagline: string }> = {
-  house:  { emoji: "🎵", genre: "Deep House · 128 BPM",    tagline: "Midnight Ibiza frequencies" },
-  techno: { emoji: "⚡", genre: "Dark Techno · 140 BPM",   tagline: "Subterranean pulse" },
-  rnb:    { emoji: "🎷", genre: "Neo Soul · Funk · 90 BPM", tagline: "Groove after midnight" },
+  nightup: { emoji: "🎙", genre: "", tagline: "Get lost in the sound." },
 };
 const DEFAULT_META = { emoji: "🎙", genre: "", tagline: "" };
 

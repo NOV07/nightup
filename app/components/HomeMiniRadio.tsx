@@ -8,7 +8,7 @@ export default function HomeMiniRadio() {
   const liveStations = STATIONS.filter((s) => !s.comingSoon);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       {liveStations.slice(0, 3).map((s) => {
         const active = currentStation.id === s.id && isPlaying;
         return (

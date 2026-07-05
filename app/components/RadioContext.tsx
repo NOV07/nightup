@@ -22,36 +22,17 @@ export interface Station {
 
 export const STATIONS: Station[] = [
   {
-    id: "house",
-    name: "Deep House Ibiza",
-    genre: "",
+    id: "nightup",
+    name: "Nightup Radio",
+    genre: "Get lost in the sound.",
     logo: "",
     description: "",
     streamUrls: [
-      "https://radio4.vip-radios.fm:18015/stream-128kmp3-DeepHouseIbiza",
+      "http://stream.nightup.gr/listen/nightup/radio.mp3",
+      "http://167.86.121.222/listen/nightup/radio.mp3",
     ],
-    cover:  "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80",
-    banner: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80",
-  },
-  {
-    id: "techno",
-    name: "Minimal & Techno",
-    genre: "",
-    logo: "",
-    description: "",
-    streamUrls: ["https://listen.openstream.co/6521/audio"],
-    cover:  "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400&q=80",
-    banner: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=800&q=80",
-  },
-  {
-    id: "rnb",
-    name: "Hip-Hop & R&B",
-    genre: "",
-    logo: "",
-    description: "",
-    streamUrls: ["https://playerservices.streamtheworld.com/api/livestream-redirect/977_JAMZ_SC"],
-    cover:  "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80",
-    banner: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80",
+    cover:  "/radio/nightup-radio-cover.png",
+    banner: "/radio/nightup-radio-banner.png",
   },
 ];
 

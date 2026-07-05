@@ -8,10 +8,8 @@ import { useLanguage } from "../components/LanguageContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
-const STATION_STYLES: Record<string, { gradient: string; genre: string; bpm: string }> = {
-  house:  { gradient: "linear-gradient(135deg, #1a0f2e 0%, #0d0d1a 100%)", genre: "Deep · Tech House", bpm: "124–128 BPM" },
-  techno: { gradient: "linear-gradient(135deg, #0a0f1a 0%, #050810 100%)", genre: "Dark · Industrial", bpm: "138–145 BPM" },
-  rnb:    { gradient: "linear-gradient(135deg, #1a0a0f 0%, #100508 100%)", genre: "Neo Soul · Funk", bpm: "80–95 BPM" },
+const STATION_STYLES: Record<string, { gradient: string }> = {
+  nightup: { gradient: "linear-gradient(135deg, #1a0f2e 0%, #0d0d1a 100%)" },
 };
 
 function formatDuration(d: string | number | null | undefined): string | null {
@@ -230,7 +228,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
             <LiveDot />
             <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(232,160,32,0.2), transparent)" }} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 gap-5">
             {liveStations.map((s) => {
               const active = currentStation.id === s.id && isPlaying;
               return (
@@ -283,7 +281,7 @@ export default function NightwavesClient({ mixes, releases, playlists, recentIte
                     </div>
                     <div className="mb-5">
                       <p style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.1em", color: "rgba(255,255,255,0.35)" }}>
-                        {STATION_STYLES[s.id]?.genre} · {STATION_STYLES[s.id]?.bpm}
+                        {s.genre}
                       </p>
                     </div>
                     <div className="flex items-center justify-end">
