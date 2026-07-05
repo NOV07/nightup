@@ -53,6 +53,7 @@ const translations = {
   events_explore:            { el: "Εξερεύνηση", en: "Explore" },
   events_find:               { el: "Βρες events", en: "Find events" },
   events_free_entry_fallback:{ el: "είσοδος ελεύθερη", en: "free entry" },
+  events_follow_connect:     { el: "Ακολούθησε & Συνδέσου", en: "Follow & Connect" },
 
   // ── Events filter modal ──────────────────────────────────
   filter_title:              { el: "Βρες τη βραδιά σου", en: "Find your night" },

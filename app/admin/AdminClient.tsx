@@ -59,7 +59,7 @@ interface AllContent {
   spots: ContentItem[];
 }
 
-const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",featured:false };
+const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false };
 const defaultProForm = { name:"",avatar:"",category:"Venues",rating:"5",reviews_count:"0",city:"",description:"" };
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
 const defaultOrgForm = { name:"",type:"Club",city:"Athens",about:"",cover_image:"",avatar:"",instagram:"",facebook:"",tiktok:"",website:"" };
@@ -995,6 +995,10 @@ export default function AdminClient() {
                             <div className="sm:col-span-2"><label className={labelCls}>Lineup (comma-separated)</label><input className={inputCls} style={inputStyle} value={eventForm.lineup} onChange={e => setEventForm(f => ({ ...f, lineup:e.target.value }))} placeholder="DJ One, DJ Two" /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={eventForm.description} onChange={e => setEventForm(f => ({ ...f, description:e.target.value }))} /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Ticket URL</label><input className={inputCls} style={inputStyle} value={eventForm.ticket_url} onChange={e => setEventForm(f => ({ ...f, ticket_url:e.target.value }))} /></div>
+                            <div><label className={labelCls}>Instagram</label><input className={inputCls} style={inputStyle} value={eventForm.instagram} onChange={e => setEventForm(f => ({ ...f, instagram:e.target.value }))} placeholder="https://instagram.com/…" /></div>
+                            <div><label className={labelCls}>Facebook</label><input className={inputCls} style={inputStyle} value={eventForm.facebook} onChange={e => setEventForm(f => ({ ...f, facebook:e.target.value }))} placeholder="https://facebook.com/…" /></div>
+                            <div><label className={labelCls}>TikTok</label><input className={inputCls} style={inputStyle} value={eventForm.tiktok} onChange={e => setEventForm(f => ({ ...f, tiktok:e.target.value }))} placeholder="https://tiktok.com/@…" /></div>
+                            <div><label className={labelCls}>Website</label><input className={inputCls} style={inputStyle} value={eventForm.website} onChange={e => setEventForm(f => ({ ...f, website:e.target.value }))} placeholder="https://…" /></div>
                             <div className="flex items-center gap-4 flex-wrap">
                               <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={eventForm.featured} onChange={e => setEventForm(f => ({ ...f, featured:e.target.checked }))} /> Featured</label>
                               <label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} /> ★ Nightup Editorial</label>
@@ -1438,6 +1442,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("instagram","Instagram")}
           {field("facebook","Facebook")}
           {field("tiktok","TikTok")}
+          {field("website","Website")}
           {field("contact_email","Contact Email")}
           {field("description","Description","textarea",undefined,true)}
           {field("full_description","Full Description","textarea",undefined,true)}
