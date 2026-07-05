@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { RadarBadge } from "./RadarBadge";
 import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
+import EventImageFallback from "./EventImageFallback";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -84,6 +85,7 @@ export default function HotEventCard({
       setSaved(!next);
     }
   }
+  const hasRealImage = Boolean(image);
   const imgSrc = image || FALLBACK;
 
   const displayPrice = formatPrice(price);
@@ -101,7 +103,9 @@ export default function HotEventCard({
       style={isLarge ? { height: "480px" } : { height: "260px" }}
     >
       {/* Image */}
-      {imgSrc.startsWith("data:") ? (
+      {!hasRealImage ? (
+        <EventImageFallback genre={genre} compact />
+      ) : imgSrc.startsWith("data:") ? (
         <img
           src={imgSrc}
           alt={title}

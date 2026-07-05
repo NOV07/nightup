@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import EventImageFallback from "./EventImageFallback";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -18,6 +19,7 @@ interface CompactEventItemProps {
 export default function CompactEventItem({
   id, title, image, date, time, venue, delay,
 }: CompactEventItemProps) {
+  const hasRealImage = Boolean(image);
   const imgSrc = image || FALLBACK;
   const formattedDay = new Date(date).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short",
@@ -33,7 +35,9 @@ export default function CompactEventItem({
       }}
     >
       <div className="relative w-7 h-7 flex-shrink-0 rounded overflow-hidden">
-        {imgSrc.startsWith("data:") ? (
+        {!hasRealImage ? (
+          <EventImageFallback compact />
+        ) : imgSrc.startsWith("data:") ? (
           <img src={imgSrc} alt={title} className="w-full h-full object-cover" />
         ) : (
           <Image src={imgSrc} alt={title} fill sizes="28px" className="object-cover" />

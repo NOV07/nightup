@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { RadarBadge } from "./RadarBadge";
 import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
+import EventImageFallback from "./EventImageFallback";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -101,6 +102,7 @@ export default function EventCard({
     }
   }
   const color  = genreColors[genre] ?? "#E8A020";
+  const hasRealImage = Boolean(image_url || image);
   const imgSrc = image_url || image || FALLBACK_IMAGE;
 
   const displayPrice = formatPrice(price);
@@ -117,7 +119,9 @@ export default function EventCard({
     >
       {/* ── Image ─────────────────────────────────── */}
       <div className="relative overflow-hidden" style={{ height: "210px" }}>
-        {imgSrc.startsWith("data:") ? (
+        {!hasRealImage ? (
+          <EventImageFallback genre={genre} compact />
+        ) : imgSrc.startsWith("data:") ? (
           <img src={imgSrc} alt={title}
             className="w-full h-full object-cover card-img group-hover:scale-[1.05]" />
         ) : (

@@ -152,7 +152,7 @@ export default async function EventPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }} />
 
       {/* Hero */}
-      <EventHeroImage imageUrl={event.image_url} title={event.title ?? ""} />
+      <EventHeroImage imageUrl={event.image_url} title={event.title ?? ""} genre={event.genre ?? undefined} venue={event.venue ?? undefined} date={event.date ?? undefined} />
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 1.25rem 5rem', marginTop: -72, position: 'relative' }}>
 
