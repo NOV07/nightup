@@ -1,7 +1,7 @@
 import { getSupabase } from "../lib/supabase";
 import type { Spot, SpotCategory } from "./types";
 
-function mapSpot(s: any): Spot {
+export function mapSpot(s: any): Spot {
   return {
     id: String(s.id),
     name: s.name,

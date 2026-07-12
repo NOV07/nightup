@@ -7,6 +7,7 @@ import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } f
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { getEventMood } from "../lib/eventMood";
 import { useLanguage } from "./LanguageContext";
+import { useUserLocation } from "../lib/useUserLocation";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
@@ -57,6 +58,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   const [night, setNight] = useState<Spot[]>([]);
   const [matchedEvent, setMatchedEvent] = useState<EventLite | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pendingMood, setPendingMood] = useState<string | null>(null);
+  const { lat, lng, status, requestLocation } = useUserLocation();
 
   // Sync body class and reset view whenever open prop changes
   useEffect(() => {
@@ -83,21 +86,56 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   const goCategory = (c: SpotCategory) => { setActiveCat(c); setActiveSub(null); setView("subcats"); };
   const goResults = (sub: string | null) => { setActiveSub(sub); setView("results"); };
 
-  const pickMood = (mood: string) => {
-    setMoodOpen(false);
+  const fetchNight = (mood: string): Promise<Spot[]> =>
+    fetch("/api/spots/build-night", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mood, lat: lat ?? undefined, lng: lng ?? undefined }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("build-night request failed");
+        const data = await res.json();
+        if (!Array.isArray(data.spots) || data.spots.length === 0) throw new Error("empty night");
+        return data.spots as Spot[];
+      })
+      .catch(() => buildNight(spots, mood));
+
+  const runMoodBuild = (mood: string) => {
     setLoading(true);
     setLoadStep(0);
     let i = 0;
     const iv = setInterval(() => { i++; if (i < LOAD_STEPS.length) setLoadStep(i); }, 520);
-    setTimeout(() => {
+    const minDelay = new Promise<void>((resolve) => setTimeout(resolve, 2150));
+    Promise.all([fetchNight(mood), minDelay]).then(([nightSpots]) => {
       clearInterval(iv);
-      setNight(buildNight(spots, mood));
+      setNight(nightSpots);
       const matchingEvents = events.filter((e) => getEventMood(e) === mood);
       setMatchedEvent(matchingEvents.length > 0 ? matchingEvents[Math.floor(Math.random() * matchingEvents.length)] : null);
       setLoading(false);
       setView("night");
-    }, 2150);
+    });
   };
+
+  const pickMood = (mood: string) => {
+    setMoodOpen(false);
+    if (status === "idle") {
+      setPendingMood(mood);
+      requestLocation();
+      return;
+    }
+    runMoodBuild(mood);
+  };
+
+  // Resume the mood build once a pending location request has resolved
+  // (granted/denied/unsupported) — fires the deferred runMoodBuild call.
+  useEffect(() => {
+    if (pendingMood && status !== "idle" && status !== "loading") {
+      const mood = pendingMood;
+      setPendingMood(null);
+      runMoodBuild(mood);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, pendingMood]);
 
   const keepNight = async () => {
     const lines = night.map((s, i) =>
@@ -114,10 +152,11 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   const reroll = () => {
     setLoading(true);
     setLoadStep(LOAD_STEPS.length - 1);
-    setTimeout(() => {
-      setNight(buildNight(spots, "chill"));
+    const minDelay = new Promise<void>((resolve) => setTimeout(resolve, 1100));
+    Promise.all([fetchNight("chill"), minDelay]).then(([nightSpots]) => {
+      setNight(nightSpots);
       setLoading(false);
-    }, 1100);
+    });
   };
 
   const catSpots = spots.filter((s) =>
