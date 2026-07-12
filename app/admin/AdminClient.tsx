@@ -27,7 +27,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
-type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users" | "upgrades" | "queue" | "spots";
+type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots";
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
 type QueueFilter = "all" | "events" | "releases" | "network" | "spots" | "articles";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
@@ -57,6 +57,7 @@ interface AllContent {
   profiles: ContentItem[];
   upgrade_requests: any[];
   spots: ContentItem[];
+  featured_requests: any[];
 }
 
 const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false };
@@ -77,7 +78,7 @@ export default function AdminClient() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [allContent, setAllContent] = useState<AllContent>({
     events:[], professionals:[], articles:[], organizers:[],
-    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[],
+    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[],
   });
   const [assignOrgId, setAssignOrgId] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
@@ -134,6 +135,7 @@ export default function AdminClient() {
   ];
   const totalPending = allItems.filter(i => i.status === "pending").length;
   const pendingUpgrades = allContent.upgrade_requests.filter((r: any) => r.status === "pending").length;
+  const pendingFeatured = allContent.featured_requests.filter((r: any) => r.status === "pending").length;
   const today = new Date().toISOString().slice(0, 10);
   const publishedToday = allItems.filter(i => i.status === "approved" && String(i.created_at || "").slice(0, 10) === today).length;
 
@@ -149,6 +151,7 @@ export default function AdminClient() {
     articles: allContent.articles.filter(i => i.status === "pending").length,
     organizers: allContent.organizers.filter(i => i.status === "pending").length,
     upgrades: pendingUpgrades,
+    featured: pendingFeatured,
     users: 0,
   };
 
@@ -741,6 +744,7 @@ export default function AdminClient() {
             <p className="text-xs font-bold uppercase tracking-widest mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>Moderation</p>
             <SidebarNavItem label="Queue"    tab="queue"    badge={pendingByTab.queue} />
             <SidebarNavItem label="Upgrades" tab="upgrades" badge={pendingByTab.upgrades} />
+            <SidebarNavItem label="Featured" tab="featured" badge={pendingByTab.featured} />
             <SidebarNavItem label="Users"    tab="users" />
 
             <p className="text-xs font-bold uppercase tracking-widest mt-5 mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>Content</p>
@@ -902,8 +906,39 @@ export default function AdminClient() {
               </div>
             )}
 
+            {/* ── FEATURED tab ──────────────────────────────────────────── */}
+            {activeTab === "featured" && (
+              <div className="space-y-4">
+                <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color:"#666" }}>Featured Event Requests</h2>
+                {allContent.featured_requests?.length === 0 && (
+                  <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>No pending requests.</p>
+                )}
+                {allContent.featured_requests?.map((req: any) => (
+                  <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">{req.events?.title ?? "Unknown event"}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{req.events?.venue} · {req.events?.date}</p>
+                      <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.4)" }}>Requested by {req.profile_id}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {req.status === "pending" ? (
+                        <>
+                          <button onClick={async () => { await fetch("/api/admin/approve-featured", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"approved" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅</button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-featured", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"rejected" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌</button>
+                        </>
+                      ) : (
+                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:req.status==="approved" ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)", color:req.status==="approved" ? "#86efac" : "#fbbf24" }}>
+                          {req.status === "approved" ? "✓ Approved" : "✗ Rejected"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* ── CONTENT tabs (events, professionals, articles, organizers, music, spots) ── */}
-            {!["queue","users","upgrades"].includes(activeTab) && (
+            {!["queue","users","upgrades","featured"].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
                 {activeTab === "music" && (
@@ -1232,6 +1267,7 @@ export default function AdminClient() {
               { tab:"spots"    as Tab, label:"Spots",    badge: pendingByTab.spots },
               { tab:"users"    as Tab, label:"Users",    badge: 0 },
               { tab:"upgrades" as Tab, label:"Upgrades", badge: pendingByTab.upgrades },
+              { tab:"featured" as Tab, label:"Featured", badge: pendingByTab.featured },
             ]).map(({ tab, label, badge }) => (
               <button
                 key={tab}

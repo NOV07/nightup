@@ -55,7 +55,7 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
 
-export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests }: {
+export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests }: {
   profile: any
   events: any[]
   releases: any[]
@@ -67,6 +67,8 @@ export default function DashboardClient({ profile, events, releases, professiona
   listings?: any[]
   receivedInterests?: any[]
   sentInterests?: any[]
+  savedEventsCount?: number
+  featuredRequests?: any[]
 }) {
   const router = useRouter()
   const { t } = useLanguage()
@@ -82,6 +84,21 @@ export default function DashboardClient({ profile, events, releases, professiona
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [requestingFeaturedId, setRequestingFeaturedId] = useState<string | null>(null)
+
+  async function handleRequestFeatured(eventId: string) {
+    setRequestingFeaturedId(eventId)
+    try {
+      await fetch('/api/featured-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: eventId }),
+      })
+      router.refresh()
+    } finally {
+      setRequestingFeaturedId(null)
+    }
+  }
 
   // Listings state
   const [listingItems, setListingItems] = useState<any[]>(listings ?? [])
@@ -1019,6 +1036,46 @@ export default function DashboardClient({ profile, events, releases, professiona
             {/* Events */}
             {(profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
               <div>
+                {(() => {
+                  const totalViews = events.reduce((sum: number, e: any) => sum + (e.view_count ?? 0), 0)
+                  const totalGoing = events.reduce((sum: number, e: any) => sum + (e.going_count ?? 0), 0)
+                  const totalInterested = events.reduce((sum: number, e: any) => sum + (e.interested_count ?? 0), 0)
+                  const topEvent = events.length > 0
+                    ? events.reduce((top: any, e: any) => (e.going_count ?? 0) > (top.going_count ?? 0) ? e : top, events[0])
+                    : null
+                  return (
+                    <div className="mb-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                          <p className="text-xl font-bold text-white">{totalViews}</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Views</p>
+                        </div>
+                        <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                          <p className="text-xl font-bold text-white">{profile.view_count ?? 0}</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Profile Views</p>
+                        </div>
+                        <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                          <p className="text-xl font-bold text-white">{totalGoing}</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Going</p>
+                        </div>
+                        <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                          <p className="text-xl font-bold text-white">{totalInterested}</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Interested</p>
+                        </div>
+                        <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                          <p className="text-xl font-bold text-white">{savedEventsCount ?? 0}</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Saved</p>
+                        </div>
+                      </div>
+                      {topEvent && (
+                        <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                          🏆 Top event: {topEvent.title} ({topEvent.going_count ?? 0} going)
+                        </p>
+                      )}
+                    </div>
+                  )
+                })()}
+
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('events_title')} ({events.length})</h3>
                   <Link
@@ -1041,12 +1098,33 @@ export default function DashboardClient({ profile, events, releases, professiona
                           <p className="text-sm font-medium text-white truncate">{event.title}</p>
                           <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
                         </div>
+                        <span className="text-xs flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          👁 {event.view_count ?? 0} · 👥 {event.going_count ?? 0} · ⭐ {event.interested_count ?? 0}
+                        </span>
                         <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
                           backgroundColor: event.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
                           color: event.status === 'approved' ? '#4ade80' : '#E8A020',
                         }}>
                           {event.status === 'approved' ? t('dashboard_status_live') : t('dashboard_status_pending')}
                         </span>
+                        {event.featured ? (
+                          <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(232,160,32,0.15)', color: '#E8A020' }}>
+                            ⭐ Featured
+                          </span>
+                        ) : (featuredRequests ?? []).some((r: any) => r.event_id === event.id && r.status === 'pending') ? (
+                          <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
+                            ⏳ Featured request pending
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleRequestFeatured(event.id)}
+                            disabled={requestingFeaturedId === event.id}
+                            className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80 disabled:opacity-50"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                          >
+                            ⭐ Request Featured
+                          </button>
+                        )}
                         <Link
                           href={`/dashboard/edit/event/${event.id}`}
                           className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"

@@ -7,7 +7,7 @@ import Navbar from "./Navbar";
 import RadioStrip from "./RadioStrip";
 import MusicPlayerBar from "./MusicPlayerBar";
 import { Footer } from "@/components/layout/Footer";
-import TonightModal from "./TonightModal";
+import TonightModal, { type EventLite } from "./TonightModal";
 import TonightFAB from "./TonightFAB";
 import { useTonightModal } from "./TonightContext";
 import { useRegisterModalOpen } from "./ModalStateContext";
@@ -55,7 +55,9 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     TONIGHT_FAB_EXCLUDED_ROUTES.some((r) => pathname.startsWith(r));
   const { isOpen, open, close } = useTonightModal();
   const [spots, setSpots] = useState<Spot[]>([]);
+  const [events, setEvents] = useState<EventLite[]>([]);
   const hasFetchedSpots = useRef(false);
+  const hasFetchedEvents = useRef(false);
   useRegisterModalOpen("tonight", isOpen && !hideTonightFeature);
 
   // Fetch spots only on first Tonight modal open
@@ -74,6 +76,26 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       .order("is_sponsored", { ascending: false })
       .order("rating", { ascending: false })
       .then(({ data }) => { if (data) setSpots(data.map(mapSpot)); });
+  }, [isOpen]);
+
+  // Fetch upcoming approved events only on first Tonight modal open (mood-matching pool)
+  useEffect(() => {
+    if (!isOpen || hasFetchedEvents.current) return;
+    hasFetchedEvents.current = true;
+
+    const today = new Date().toISOString().split("T")[0];
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    supabase
+      .from("events")
+      .select("id, title, image_url, date, time, venue, city, type, genres, price")
+      .eq("status", "approved")
+      .gte("date", today)
+      .order("date", { ascending: true })
+      .limit(50)
+      .then(({ data }) => { if (data) setEvents(data as EventLite[]); });
   }, [isOpen]);
 
   // Auto-open on first visit only
@@ -100,7 +122,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <RadioStrip />
       <MusicPlayerBar />
       {!hideTonightFeature && <TonightFAB />}
-      {!hideTonightFeature && <TonightModal open={isOpen} onClose={close} spots={spots} />}
+      {!hideTonightFeature && <TonightModal open={isOpen} onClose={close} spots={spots} events={events} />}
     </>
   );
 }

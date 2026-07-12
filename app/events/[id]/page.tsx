@@ -43,6 +43,8 @@ export default async function EventPage({ params }: Props) {
 
   if (!event) notFound()
 
+  supabase.rpc('increment_event_views', { event_id: id }).then(() => {}, () => {})
+
   // Lineup: normalise both array and comma-string formats
   const lineup: string[] = Array.isArray(event.lineup)
     ? event.lineup

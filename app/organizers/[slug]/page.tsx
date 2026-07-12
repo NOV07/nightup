@@ -48,7 +48,10 @@ async function getOrganizer(slug: string): Promise<Organizer | null> {
       .eq("slug", slug)
       .eq("status", "approved")
       .single();
-    if (!error && data) return data as Organizer;
+    if (!error && data) {
+      supabase.rpc("increment_organizer_views", { organizer_id: data.id }).then(() => {}, () => {});
+      return data as Organizer;
+    }
   } catch {}
   // Try by UUID (new-format organizers without slug)
   try {
@@ -59,6 +62,7 @@ async function getOrganizer(slug: string): Promise<Organizer | null> {
       .eq("status", "approved")
       .single();
     if (!error && data) {
+      supabase.rpc("increment_organizer_views", { organizer_id: data.id }).then(() => {}, () => {});
       return {
         id: data.id,
         name: data.name,
@@ -87,6 +91,26 @@ async function getOrganizerEvents(organizerId: string): Promise<OrgEvent[]> {
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true });
+
+    if (error || !data) return [];
+    return data as OrgEvent[];
+  } catch {
+    return [];
+  }
+}
+
+async function getOrganizerPastEvents(organizerId: string): Promise<OrgEvent[]> {
+  try {
+    const supabase = getSupabase();
+    const today = new Date().toISOString().split("T")[0];
+    const { data, error } = await supabase
+      .from("events")
+      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured")
+      .eq("organizer_id", organizerId)
+      .eq("status", "approved")
+      .lt("date", today)
+      .order("date", { ascending: false })
+      .limit(6);
 
     if (error || !data) return [];
     return data as OrgEvent[];
@@ -132,8 +156,9 @@ export default async function OrganizerPage({ params }: Props) {
   const organizer = await getOrganizer(slug);
   if (!organizer) notFound();
 
-  const [events, gallery] = await Promise.all([
+  const [events, pastEvents, gallery] = await Promise.all([
     getOrganizerEvents(organizer.id),
+    getOrganizerPastEvents(organizer.id),
     getOrganizerGallery(organizer.id),
   ]);
 
@@ -274,6 +299,34 @@ export default async function OrganizerPage({ params }: Props) {
             </div>
           )}
         </div>
+
+        {/* Past events */}
+        {pastEvents.length > 0 && (
+          <div className="pb-16">
+            <h2 className="text-lg font-semibold text-white mb-5">Past Events</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {pastEvents.map((ev) => (
+                <div key={ev.id} className="opacity-60">
+                  <EventCard
+                    id={String(ev.id)}
+                    title={ev.title}
+                    image={ev.image_url ?? FALLBACK_EVENT}
+                    genre={ev.genre}
+                    price={ev.price ?? ""}
+                    date={ev.date}
+                    venue={ev.venue}
+                    city={ev.city}
+                    interestedCount={ev.interested_count ?? 0}
+                    goingCount={ev.going_count ?? 0}
+                    featured={ev.featured}
+                    organizerName={organizer.name}
+                    organizerSlug={organizer.slug}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

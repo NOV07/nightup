@@ -1,13 +1,28 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import SpotCard from "./SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
+import { getEventMood } from "../lib/eventMood";
 import { useLanguage } from "./LanguageContext";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
+
+export interface EventLite {
+  id: string;
+  title: string;
+  image_url: string | null;
+  date: string;
+  time: string | null;
+  venue: string;
+  city: string;
+  type: string | null;
+  genres: string[] | null;
+  price: string | null;
+}
 
 // client-side night builder (mirror του data.ts buildNight)
 function buildNight(all: Spot[], mood: string): Spot[] {
@@ -24,7 +39,7 @@ function buildNight(all: Spot[], mood: string): Spot[] {
 }
 
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
-export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; open: boolean; onClose: () => void }) {
+export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
   const { t } = useLanguage();
   const WALKS = [t("tonight_walk_2"), t("tonight_walk_4")];
   const SPOT_CAT_LABELS: Record<SpotCategory, string> = {
@@ -40,6 +55,7 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [night, setNight] = useState<Spot[]>([]);
+  const [matchedEvent, setMatchedEvent] = useState<EventLite | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Sync body class and reset view whenever open prop changes
@@ -76,6 +92,8 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
     setTimeout(() => {
       clearInterval(iv);
       setNight(buildNight(spots, mood));
+      const matchingEvents = events.filter((e) => getEventMood(e) === mood);
+      setMatchedEvent(matchingEvents.length > 0 ? matchingEvents[Math.floor(Math.random() * matchingEvents.length)] : null);
       setLoading(false);
       setView("night");
     }, 2150);
@@ -227,6 +245,21 @@ export default function TonightModal({ spots, open, onClose }: { spots: Spot[]; 
                     </div>
                   ))}
                 </div>
+                {matchedEvent && (
+                  <Link href={`/events/${matchedEvent.id}`} onClick={handleClose} style={S.eventCard}>
+                    <div style={S.eventKicker}>🎉 Ή δοκίμασε ένα event απόψε</div>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
+                      {matchedEvent.image_url && (
+                        <img src={matchedEvent.image_url} alt={matchedEvent.title} style={S.eventImg} />
+                      )}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={S.eventTitle}>{matchedEvent.title}</div>
+                        <div style={S.eventMeta}>{matchedEvent.date}{matchedEvent.time ? ` · ${matchedEvent.time}` : ""}</div>
+                        <div style={S.eventMeta}>{matchedEvent.venue}</div>
+                      </div>
+                    </div>
+                  </Link>
+                )}
                 <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
                   <button onClick={reroll} style={S.btnGhost}>{t("tonight_reroll")}</button>
                   <button onClick={keepNight} style={S.btnGold}>{copied ? t("tonight_copied") : t("tonight_keep")}</button>
@@ -322,4 +355,9 @@ const S: Record<string, React.CSSProperties> = {
   loadTxt: { fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 18, color: "#F4F4F5" },
   loadSub: { color: "#A1A1AA", fontSize: 12.5, marginTop: 9 },
   subChip: { whiteSpace: "nowrap", fontSize: 13, fontWeight: 600, color: "#A1A1AA", background: "#1A1A28", border: "1px solid rgba(255,255,255,0.055)", padding: "9px 15px", borderRadius: 6, cursor: "pointer", transition: "all .2s" },
+  eventCard: { display: "block", marginTop: 16, padding: 14, borderRadius: 14, border: "1px solid rgba(232,160,32,0.3)", background: "rgba(232,160,32,0.04)", textDecoration: "none", color: "inherit" },
+  eventKicker: { fontSize: 10.5, letterSpacing: "0.5px", color: G, fontWeight: 700 },
+  eventImg: { width: 52, height: 52, borderRadius: 10, objectFit: "cover" as const, flexShrink: 0 },
+  eventTitle: { fontFamily: "var(--font-spectral),serif", fontWeight: 600, fontSize: 14.5, color: "#F4F4F5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  eventMeta: { fontSize: 11.5, color: "#A1A1AA", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
 };

@@ -21,6 +21,19 @@ export default async function DashboardPage() {
     ? await supabase.from('events').select('*').eq('profile_id', profile.id).order('date', { ascending: false })
     : { data: [] }
 
+  const { data: savedCountRows } = (profile.profile_type === 'organizer' || profile.profile_type === 'venue') && events && events.length > 0
+    ? await supabase
+        .from('saved_events')
+        .select('event_id')
+        .in('event_id', events.map((e: any) => e.id))
+    : { data: [] }
+
+  const savedEventsCount = (savedCountRows ?? []).length
+
+  const { data: featuredRequests } = (profile.profile_type === 'organizer' || profile.profile_type === 'venue')
+    ? await supabase.from('featured_event_requests').select('event_id, status').eq('profile_id', profile.id)
+    : { data: [] }
+
   const { data: releases } = profile.profile_type === 'artist'
     ? await supabase.from('music_releases').select('*').eq('profile_id', profile.id).order('created_at', { ascending: false })
     : { data: [] }
@@ -122,6 +135,8 @@ export default async function DashboardPage() {
       listings={listings ?? []}
       receivedInterests={receivedInterests ?? []}
       sentInterests={sentInterests ?? []}
+      savedEventsCount={savedEventsCount}
+      featuredRequests={featuredRequests ?? []}
     />
   )
 }
