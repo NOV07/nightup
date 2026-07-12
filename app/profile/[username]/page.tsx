@@ -41,6 +41,8 @@ export default async function ProfilePage({ params }: Props) {
   if (error || !profile) notFound()
   if (profile.profile_type === 'user') notFound()
 
+  supabase.rpc('increment_profile_views', { target_profile_id: profile.id }).then(() => {}, () => {})
+
   const visibility = profile.section_visibility ?? {}
 
   // Fetch content based on profile type

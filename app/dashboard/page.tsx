@@ -42,6 +42,24 @@ export default async function DashboardPage() {
     ? await supabase.from('professionals').select('*').eq('profile_id', profile.id).single()
     : { data: null }
 
+  // Artist: find upcoming events where display_name appears in lineup (mirrors app/profile/[username]/page.tsx)
+  let artistBookings: any[] = []
+  if (profile.profile_type === 'artist') {
+    const { data: allEvents } = await supabase
+      .from('events')
+      .select('id, title, image_url, date, time, venue, city, lineup')
+      .eq('status', 'approved')
+      .gte('date', new Date().toISOString().split('T')[0])
+      .order('date', { ascending: true })
+
+    artistBookings = (allEvents ?? []).filter((event: any) => {
+      const lineup = event.lineup ?? []
+      return lineup.some((name: string) =>
+        name.toLowerCase().trim() === profile.display_name.toLowerCase().trim()
+      )
+    })
+  }
+
   // Two-step fetch (mirrors saved_spots pattern — avoids silent PostgREST join failure)
   const { data: savedEventRows } = profile.profile_type === 'user'
     ? await supabase
@@ -137,6 +155,7 @@ export default async function DashboardPage() {
       sentInterests={sentInterests ?? []}
       savedEventsCount={savedEventsCount}
       featuredRequests={featuredRequests ?? []}
+      artistBookings={artistBookings}
     />
   )
 }

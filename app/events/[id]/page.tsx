@@ -85,6 +85,19 @@ export default async function EventPage({ params }: Props) {
     moreEvents = data ?? []
   }
 
+  // Artist profiles for lineup matching (case-insensitive, trimmed exact match — same as profile page)
+  const { data: artistProfiles } = await supabase
+    .from('profiles')
+    .select('id, username, display_name')
+    .eq('profile_type', 'artist')
+
+  function findArtistProfile(name: string) {
+    return (artistProfiles ?? []).find(
+      (a: { display_name: string | null }) =>
+        (a.display_name ?? '').toLowerCase().trim() === name.toLowerCase().trim()
+    )
+  }
+
 
   const eventSocials = [
     event.instagram
@@ -249,16 +262,34 @@ export default async function EventPage({ params }: Props) {
               Lineup
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {lineup.map((artist, i) => (
-                <span key={i} style={{
-                  fontSize: 13, padding: '6px 14px', borderRadius: 999,
-                  backgroundColor: 'rgba(255,255,255,0.06)',
-                  color: 'rgba(255,255,255,0.85)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}>
-                  {artist}
-                </span>
-              ))}
+              {lineup.map((artist, i) => {
+                const matchedProfile = findArtistProfile(artist)
+                if (matchedProfile) {
+                  return (
+                    <Link key={i} href={`/profile/${matchedProfile.username}`} style={{
+                      fontSize: 13, padding: '6px 14px', borderRadius: 999,
+                      backgroundColor: 'rgba(232,160,32,0.10)',
+                      color: '#E8A020',
+                      border: '1px solid rgba(232,160,32,0.3)',
+                      textDecoration: 'none',
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                    }}>
+                      {artist}
+                      <span style={{ fontSize: 11 }}>→</span>
+                    </Link>
+                  )
+                }
+                return (
+                  <span key={i} style={{
+                    fontSize: 13, padding: '6px 14px', borderRadius: 999,
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    color: 'rgba(255,255,255,0.85)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}>
+                    {artist}
+                  </span>
+                )
+              })}
             </div>
           </div>
         )}
