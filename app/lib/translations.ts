@@ -131,6 +131,15 @@ const translations = {
   spots_hours:        { el: "Ωράριο", en: "Hours" },
   spots_map:          { el: "📍 Άνοιξε στον χάρτη", en: "📍 Open in Maps" },
   spots_sponsored:    { el: "Χορηγία", en: "Sponsored" },
+  spots_claim_prompt:     { el: "Είσαι ο ιδιοκτήτης αυτού του spot;", en: "Are you the owner of this spot?" },
+  spots_claim_cta:        { el: "Διεκδίκησέ το", en: "Claim it" },
+  spots_claim_note_label: { el: "Πες μας λίγα λόγια (προαιρετικό) — link, ΑΦΜ, ό,τι βοηθάει την επαλήθευση", en: "Tell us a bit (optional) — link, business ID, anything that helps verification" },
+  spots_claim_submit:     { el: "Υποβολή αιτήματος", en: "Submit request" },
+  spots_claim_submitting: { el: "Υποβολή...", en: "Submitting..." },
+  spots_claim_success:    { el: "Το αίτημά σου στάλθηκε! Θα το ελέγξουμε σύντομα.", en: "Your request was sent! We'll review it soon." },
+  spots_claim_pending:    { el: "Το αίτημά σου είναι υπό έλεγχο.", en: "Your request is under review." },
+  spots_claim_error:      { el: "Κάτι πήγε στραβά, δοκίμασε ξανά.", en: "Something went wrong, try again." },
+  spots_claimed_owner:    { el: "Διαχειρίζεσαι εσύ αυτό το spot", en: "You manage this spot" },
 
   // ── Nightwaves ────────────────────────────────────────────
   nightwaves_new_releases: { el: "New Releases", en: "New Releases" },

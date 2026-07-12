@@ -27,7 +27,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
-type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots";
+type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims";
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
 type QueueFilter = "all" | "events" | "releases" | "network" | "spots" | "articles";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
@@ -58,6 +58,7 @@ interface AllContent {
   upgrade_requests: any[];
   spots: ContentItem[];
   featured_requests: any[];
+  spot_claims: any[];
 }
 
 const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false };
@@ -78,7 +79,7 @@ export default function AdminClient() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [allContent, setAllContent] = useState<AllContent>({
     events:[], professionals:[], articles:[], organizers:[],
-    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[],
+    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[],
   });
   const [assignOrgId, setAssignOrgId] = useState<string>("");
   const [assignLoading, setAssignLoading] = useState(false);
@@ -136,6 +137,7 @@ export default function AdminClient() {
   const totalPending = allItems.filter(i => i.status === "pending").length;
   const pendingUpgrades = allContent.upgrade_requests.filter((r: any) => r.status === "pending").length;
   const pendingFeatured = allContent.featured_requests.filter((r: any) => r.status === "pending").length;
+  const pendingSpotClaims = allContent.spot_claims.filter((r: any) => r.status === "pending").length;
   const today = new Date().toISOString().slice(0, 10);
   const publishedToday = allItems.filter(i => i.status === "approved" && String(i.created_at || "").slice(0, 10) === today).length;
 
@@ -152,6 +154,7 @@ export default function AdminClient() {
     organizers: allContent.organizers.filter(i => i.status === "pending").length,
     upgrades: pendingUpgrades,
     featured: pendingFeatured,
+    "spot-claims": pendingSpotClaims,
     users: 0,
   };
 
@@ -745,6 +748,7 @@ export default function AdminClient() {
             <SidebarNavItem label="Queue"    tab="queue"    badge={pendingByTab.queue} />
             <SidebarNavItem label="Upgrades" tab="upgrades" badge={pendingByTab.upgrades} />
             <SidebarNavItem label="Featured" tab="featured" badge={pendingByTab.featured} />
+            <SidebarNavItem label="Spot Claims" tab="spot-claims" badge={pendingByTab["spot-claims"]} />
             <SidebarNavItem label="Users"    tab="users" />
 
             <p className="text-xs font-bold uppercase tracking-widest mt-5 mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>Content</p>
@@ -937,8 +941,45 @@ export default function AdminClient() {
               </div>
             )}
 
+            {/* ── SPOT CLAIMS tab ──────────────────────────────────────── */}
+            {activeTab === "spot-claims" && (
+              <div className="space-y-4">
+                <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color:"#666" }}>Spot Claim Requests</h2>
+                {allContent.spot_claims?.length === 0 && (
+                  <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>No pending requests.</p>
+                )}
+                {allContent.spot_claims?.map((claim: any) => (
+                  <div key={claim.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">
+                        {claim.spots?.slug ? (
+                          <a href={`/spots/${claim.spots.slug}`} target="_blank" rel="noopener noreferrer" style={{ color:"#E8A020" }}>{claim.spots?.name ?? "Unknown spot"}</a>
+                        ) : (claim.spots?.name ?? "Unknown spot")}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{claim.spots?.city}</p>
+                      {claim.note && (
+                        <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.4)" }}>{claim.note}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {claim.status === "pending" ? (
+                        <>
+                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"approved" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅</button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"rejected" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌</button>
+                        </>
+                      ) : (
+                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:claim.status==="approved" ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)", color:claim.status==="approved" ? "#86efac" : "#fbbf24" }}>
+                          {claim.status === "approved" ? "✓ Approved" : "✗ Rejected"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* ── CONTENT tabs (events, professionals, articles, organizers, music, spots) ── */}
-            {!["queue","users","upgrades","featured"].includes(activeTab) && (
+            {!["queue","users","upgrades","featured","spot-claims"].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
                 {activeTab === "music" && (
@@ -1268,6 +1309,7 @@ export default function AdminClient() {
               { tab:"users"    as Tab, label:"Users",    badge: 0 },
               { tab:"upgrades" as Tab, label:"Upgrades", badge: pendingByTab.upgrades },
               { tab:"featured" as Tab, label:"Featured", badge: pendingByTab.featured },
+              { tab:"spot-claims" as Tab, label:"Spot Claims", badge: pendingByTab["spot-claims"] },
             ]).map(({ tab, label, badge }) => (
               <button
                 key={tab}

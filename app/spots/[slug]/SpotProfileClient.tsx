@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Spot } from "../types";
 import { useLanguage } from "../../components/LanguageContext";
@@ -8,8 +9,31 @@ type FullSpot = Spot & { gallery: string[]; openingHours: Record<string, string>
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80";
 
-export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
+export default function SpotProfileClient({ spot, currentProfileId, claimedByProfileId }: { spot: FullSpot; currentProfileId: string | null; claimedByProfileId: string | null }) {
   const { t } = useLanguage();
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [claimNote, setClaimNote] = useState("");
+  const [claimState, setClaimState] = useState<"idle" | "submitting" | "success" | "pending" | "error">("idle");
+
+  const submitClaim = async () => {
+    setClaimState("submitting");
+    try {
+      const res = await fetch("/api/spots/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spotId: spot.id, note: claimNote || undefined }),
+      });
+      if (res.ok) {
+        setClaimState("success");
+      } else if (res.status === 409) {
+        setClaimState("pending");
+      } else {
+        setClaimState("error");
+      }
+    } catch {
+      setClaimState("error");
+    }
+  };
   const CAT_LABEL: Record<string, string> = {
     food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
     show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
@@ -80,6 +104,51 @@ export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Claim */}
+        {claimedByProfileId === currentProfileId && currentProfileId != null && (
+          <span style={{ alignSelf: "flex-start", background: "rgba(232,160,32,0.1)", color: "#E8A020", fontSize: 12, fontWeight: 700, padding: "8px 14px", borderRadius: 6, border: "1px solid rgba(232,160,32,0.2)" }}>
+            {t("spots_claimed_owner")}
+          </span>
+        )}
+
+        {claimedByProfileId === null && currentProfileId != null && (
+          <div>
+            <h2 style={sectionTitle}>{t("spots_claim_prompt")}</h2>
+            {claimState === "success" ? (
+              <p style={{ fontSize: 14, color: "#34D399", marginTop: 10 }}>{t("spots_claim_success")}</p>
+            ) : claimState === "pending" ? (
+              <p style={{ fontSize: 14, color: "#A1A1AA", marginTop: 10 }}>{t("spots_claim_pending")}</p>
+            ) : !claimOpen ? (
+              <button
+                onClick={() => setClaimOpen(true)}
+                style={{ marginTop: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, border: "none", cursor: "pointer" }}
+              >
+                {t("spots_claim_cta")}
+              </button>
+            ) : (
+              <div style={{ marginTop: 12, maxWidth: 480 }}>
+                <textarea
+                  value={claimNote}
+                  onChange={(e) => setClaimNote(e.target.value)}
+                  placeholder={t("spots_claim_note_label")}
+                  rows={3}
+                  style={{ width: "100%", boxSizing: "border-box", background: "#1A1A28", border: "1px solid rgba(255,255,255,0.055)", borderRadius: 6, padding: 12, color: "#F4F4F5", fontSize: 14, resize: "vertical" }}
+                />
+                {claimState === "error" && (
+                  <p style={{ fontSize: 13, color: "#F87171", marginTop: 8 }}>{t("spots_claim_error")}</p>
+                )}
+                <button
+                  onClick={submitClaim}
+                  disabled={claimState === "submitting"}
+                  style={{ marginTop: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, border: "none", cursor: claimState === "submitting" ? "default" : "pointer", opacity: claimState === "submitting" ? 0.7 : 1 }}
+                >
+                  {claimState === "submitting" ? t("spots_claim_submitting") : t("spots_claim_submit")}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

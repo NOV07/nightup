@@ -14,7 +14,7 @@ import { useRegisterModalOpen } from "./ModalStateContext";
 import type { Spot } from "../spots/types";
 
 const SPOT_COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, price_level, rating, instagram, is_sponsored";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, price_level, rating, instagram, is_sponsored, claimed_by_profile_id";
 
 function mapSpot(s: any): Spot {
   return {
@@ -34,6 +34,7 @@ function mapSpot(s: any): Spot {
     rating: s.rating,
     instagram: s.instagram,
     isSponsored: s.is_sponsored === true,
+    claimedByProfileId: s.claimed_by_profile_id ?? null,
   };
 }
 

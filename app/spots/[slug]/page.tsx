@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSupabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase-server";
 import type { Spot } from "../types";
 import SpotProfileClient from "./SpotProfileClient";
 
 export const revalidate = 300;
 
 const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, gallery, price_level, rating, phone, website, instagram, opening_hours, is_sponsored";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, gallery, price_level, rating, phone, website, instagram, opening_hours, is_sponsored, claimed_by_profile_id";
 
 async function getSpot(slug: string): Promise<Spot | null> {
   try {
@@ -24,6 +25,7 @@ async function getSpot(slug: string): Promise<Spot | null> {
       coverImage: data.cover_image, priceLevel: data.price_level,
       rating: data.rating, phone: data.phone, website: data.website,
       instagram: data.instagram, isSponsored: data.is_sponsored === true,
+      claimedByProfileId: data.claimed_by_profile_id ?? null,
       gallery: Array.isArray(data.gallery) ? data.gallery : [],
       openingHours: data.opening_hours ?? null,
     } as Spot & { gallery: string[]; openingHours: any };
@@ -57,5 +59,24 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
   const { slug } = await params;
   const spot = await getSpot(slug);
   if (!spot) notFound();
-  return <SpotProfileClient spot={spot as any} />;
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let currentProfileId: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+    currentProfileId = profile?.id ?? null;
+  }
+
+  return (
+    <SpotProfileClient
+      spot={spot as any}
+      currentProfileId={currentProfileId}
+      claimedByProfileId={spot.claimedByProfileId}
+    />
+  );
 }
