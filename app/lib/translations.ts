@@ -502,6 +502,7 @@ const translations = {
 
   // ── Event & Release Forms ──────────────────────────────────
   form_generic_error:           { el: "Κάτι πήγε στραβά", en: "Something went wrong" },
+  event_contributors_heading:   { el: "Συνεργάτες", en: "Contributors" },
   event_edit_heading:           { el: "Επεξεργασία Event", en: "Edit Event" },
   event_new_heading:            { el: "Νέο Event", en: "New Event" },
   event_new_subheading:         { el: "Συμπλήρωσε τα στοιχεία παρακάτω. Το event σου θα ελεγχθεί πριν δημοσιευτεί.", en: "Fill in the details below. Your event will be reviewed before going live." },
@@ -540,6 +541,8 @@ const translations = {
   event_form_lineup_label:      { el: "Lineup", en: "Lineup" },
   event_form_comma_separated:   { el: "(χωρισμένα με κόμμα)", en: "(comma-separated)" },
   event_form_lineup_placeholder: { el: "DJ One, DJ Two, Live Act", en: "DJ One, DJ Two, Live Act" },
+  event_form_contributors_label: { el: "Συνεργάτες", en: "Contributors" },
+  event_form_contributors_placeholder: { el: "π.χ. Φωτογραφία: Γιώργος Παπά, Ήχος: SoundCrew", en: "e.g. Photography: John Doe, Sound: SoundCrew" },
   event_form_instagram_placeholder: { el: "@handle ή πλήρες URL", en: "@handle or full URL" },
   event_form_contact_email_label: { el: "Email Επικοινωνίας", en: "Contact Email" },
   event_form_review_label:      { el: "Ανασκόπηση", en: "Review" },

@@ -61,7 +61,7 @@ export async function PATCH(
   const allowed = [
     'title', 'genres', 'type', 'short_description', 'full_description',
     'date', 'time', 'end_time', 'venue', 'city', 'address', 'maps_url', 'image_url',
-    'ticket_url', 'price', 'age_restriction', 'dress_code', 'lineup',
+    'ticket_url', 'price', 'age_restriction', 'dress_code', 'lineup', 'contributors',
     'instagram', 'facebook', 'tiktok', 'contact_email',
     // legacy fields kept for backwards compat
     'genre', 'description', 'min_age',

@@ -60,6 +60,24 @@ export default async function DashboardPage() {
     })
   }
 
+  // Professional: find upcoming events where display_name appears in contributors (mirrors artistBookings)
+  let professionalContributions: any[] = []
+  if (profile.profile_type === 'professional') {
+    const { data: allEvents } = await supabase
+      .from('events')
+      .select('id, title, image_url, date, time, venue, city, contributors')
+      .eq('status', 'approved')
+      .gte('date', new Date().toISOString().split('T')[0])
+      .order('date', { ascending: true })
+
+    professionalContributions = (allEvents ?? []).filter((event: any) => {
+      const contributors = event.contributors ?? []
+      return contributors.some((name: string) =>
+        name.toLowerCase().trim() === profile.display_name.toLowerCase().trim()
+      )
+    })
+  }
+
   // Two-step fetch (mirrors saved_spots pattern — avoids silent PostgREST join failure)
   const { data: savedEventRows } = profile.profile_type === 'user'
     ? await supabase
@@ -156,6 +174,7 @@ export default async function DashboardPage() {
       savedEventsCount={savedEventsCount}
       featuredRequests={featuredRequests ?? []}
       artistBookings={artistBookings}
+      professionalContributions={professionalContributions}
     />
   )
 }

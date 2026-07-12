@@ -47,6 +47,7 @@ export interface EventFormData {
   age_restriction: boolean
   dress_code: string
   lineup: string
+  contributors: string
   instagram: string
   facebook: string
   tiktok: string
@@ -60,7 +61,7 @@ const DEFAULTS: EventFormData = {
   title: '', genres: [], type: '', short_description: '', full_description: '',
   date: '', start_time: '', end_time: '', venue: '', city: '', address: '',
   maps_url: '', image_url: '', ticket_url: '', price: '', age_restriction: false,
-  dress_code: '', lineup: '', instagram: '', facebook: '', tiktok: '',
+  dress_code: '', lineup: '', contributors: '', instagram: '', facebook: '', tiktok: '',
   contact_email: '', terms_accepted: false,
 }
 
@@ -302,6 +303,11 @@ function Step3({ form, set, stepErrors }: {
       <div>
         <label style={lbl}>{t('event_form_lineup_label')} <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{t('event_form_comma_separated')}</span></label>
         <input style={inp} value={form.lineup} onChange={e => set('lineup', e.target.value)} placeholder={t('event_form_lineup_placeholder')} />
+      </div>
+
+      <div>
+        <label style={lbl}>{t('event_form_contributors_label')} <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{t('event_form_comma_separated')}</span></label>
+        <input style={inp} value={form.contributors} onChange={e => set('contributors', e.target.value)} placeholder={t('event_form_contributors_placeholder')} />
       </div>
     </div>
   )

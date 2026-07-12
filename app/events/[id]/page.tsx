@@ -36,7 +36,7 @@ export default async function EventPage({ params }: Props) {
 
   const { data: event } = await supabase
     .from('events')
-    .select('id, title, image_url, date, time, venue, city, genre, description, ticket_url, lineup, price, profile_id, instagram, facebook, tiktok, website')
+    .select('id, title, image_url, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, instagram, facebook, tiktok, website')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
@@ -50,6 +50,13 @@ export default async function EventPage({ params }: Props) {
     ? event.lineup
     : typeof event.lineup === 'string' && event.lineup
     ? event.lineup.split(',').map((s: string) => s.trim()).filter(Boolean)
+    : []
+
+  // Contributors: normalise both array and comma-string formats
+  const contributors: string[] = Array.isArray(event.contributors)
+    ? event.contributors
+    : typeof event.contributors === 'string' && event.contributors
+    ? event.contributors.split(',').map((s: string) => s.trim()).filter(Boolean)
     : []
 
   const priceLabel = formatPrice(event.price)
@@ -95,6 +102,19 @@ export default async function EventPage({ params }: Props) {
     return (artistProfiles ?? []).find(
       (a: { display_name: string | null }) =>
         (a.display_name ?? '').toLowerCase().trim() === name.toLowerCase().trim()
+    )
+  }
+
+  // Professional profiles for contributors matching (case-insensitive, trimmed exact match — same as lineup)
+  const { data: professionalProfiles } = await supabase
+    .from('profiles')
+    .select('id, username, display_name')
+    .eq('profile_type', 'professional')
+
+  function findProfessionalProfile(name: string) {
+    return (professionalProfiles ?? []).find(
+      (p: { display_name: string | null }) =>
+        (p.display_name ?? '').toLowerCase().trim() === name.toLowerCase().trim()
     )
   }
 
@@ -287,6 +307,45 @@ export default async function EventPage({ params }: Props) {
                     border: '1px solid rgba(255,255,255,0.1)',
                   }}>
                     {artist}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Contributors */}
+        {contributors.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 12 }}>
+              <T k="event_contributors_heading" />
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {contributors.map((contributor, i) => {
+                const matchedProfile = findProfessionalProfile(contributor)
+                if (matchedProfile) {
+                  return (
+                    <Link key={i} href={`/profile/${matchedProfile.username}`} style={{
+                      fontSize: 13, padding: '6px 14px', borderRadius: 999,
+                      backgroundColor: 'rgba(232,160,32,0.10)',
+                      color: '#E8A020',
+                      border: '1px solid rgba(232,160,32,0.3)',
+                      textDecoration: 'none',
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                    }}>
+                      {contributor}
+                      <span style={{ fontSize: 11 }}>→</span>
+                    </Link>
+                  )
+                }
+                return (
+                  <span key={i} style={{
+                    fontSize: 13, padding: '6px 14px', borderRadius: 999,
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    color: 'rgba(255,255,255,0.85)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}>
+                    {contributor}
                   </span>
                 )
               })}

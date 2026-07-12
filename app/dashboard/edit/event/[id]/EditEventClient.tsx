@@ -29,6 +29,7 @@ export default function EditEventClient({ event }: { event: any }) {
     age_restriction:   event.age_restriction ?? false,
     dress_code:        event.dress_code ?? '',
     lineup:            Array.isArray(event.lineup) ? event.lineup.join(', ') : (event.lineup ?? ''),
+    contributors:      Array.isArray(event.contributors) ? event.contributors.join(', ') : (event.contributors ?? ''),
     instagram:         event.instagram ?? '',
     facebook:          event.facebook ?? '',
     tiktok:            event.tiktok ?? '',
@@ -42,6 +43,10 @@ export default function EditEventClient({ event }: { event: any }) {
 
     const lineup = data.lineup
       ? data.lineup.split(',').map(s => s.trim()).filter(Boolean)
+      : []
+
+    const contributors = data.contributors
+      ? data.contributors.split(',').map(s => s.trim()).filter(Boolean)
       : []
 
     const res = await fetch(`/api/events/${event.id}`, {
@@ -66,6 +71,7 @@ export default function EditEventClient({ event }: { event: any }) {
         age_restriction:   data.age_restriction,
         dress_code:        data.dress_code || null,
         lineup,
+        contributors,
         instagram:         data.instagram || null,
         facebook:          data.facebook || null,
         tiktok:            data.tiktok || null,

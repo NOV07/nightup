@@ -18,6 +18,10 @@ export default function NewEventClient() {
       ? data.lineup.split(',').map(s => s.trim()).filter(Boolean)
       : []
 
+    const contributors = data.contributors
+      ? data.contributors.split(',').map(s => s.trim()).filter(Boolean)
+      : []
+
     const res = await fetch('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -40,6 +44,7 @@ export default function NewEventClient() {
         age_restriction:   data.age_restriction,
         dress_code:        data.dress_code || null,
         lineup,
+        contributors,
         instagram:         data.instagram || null,
         facebook:          data.facebook || null,
         tiktok:            data.tiktok || null,

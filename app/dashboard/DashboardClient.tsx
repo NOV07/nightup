@@ -55,7 +55,7 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
 
-export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings }: {
+export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings, professionalContributions }: {
   profile: any
   events: any[]
   releases: any[]
@@ -70,6 +70,7 @@ export default function DashboardClient({ profile, events, releases, professiona
   savedEventsCount?: number
   featuredRequests?: any[]
   artistBookings?: any[]
+  professionalContributions?: any[]
 }) {
   const router = useRouter()
   const { t } = useLanguage()
@@ -1236,6 +1237,56 @@ export default function DashboardClient({ profile, events, releases, professiona
         {/* ══ TAB: LISTINGS ══ */}
         {activeTab === 'listings' && (
           <div className="space-y-6">
+            {isPro && (() => {
+              const activeListingsCount = listingItems.filter((l: any) => l.is_active).length
+              const totalListingInterests = listingItems.reduce((sum: number, l: any) => sum + (l._interest_count ?? 0), 0)
+              return (
+                <div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-xl font-bold text-white">{profile.view_count ?? 0}</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Profile Views</p>
+                    </div>
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-xl font-bold text-white">{(professionalContributions ?? []).length}</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Event Contributions</p>
+                    </div>
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-xl font-bold text-white">{activeListingsCount}</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Active Listings</p>
+                    </div>
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-xl font-bold text-white">{totalListingInterests}</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Listing Interests</p>
+                    </div>
+                  </div>
+
+                  {(professionalContributions ?? []).length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        Event Contributions ({(professionalContributions ?? []).length})
+                      </h3>
+                      <div className="space-y-2">
+                        {(professionalContributions ?? []).map((event: any) => (
+                          <Link
+                            key={event.id}
+                            href={`/events/${event.id}`}
+                            className="flex items-center gap-4 p-4 rounded-xl transition-opacity hover:opacity-80"
+                            style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white truncate">{event.title}</p>
+                              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             <div>
               <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 {t('listings_title')} ({listingItems.length})
