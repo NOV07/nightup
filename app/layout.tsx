@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Spectral, Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, TikTok_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { RadioProvider } from "./components/RadioContext";
 import { TonightProvider } from "./components/TonightContext";
@@ -12,16 +12,15 @@ import { Toaster } from "sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
-const spectral = Spectral({
+const spectral = TikTok_Sans({
   weight: ["400", "600"],
-  style: ["normal", "italic"],
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin", "latin-ext", "greek"],
   variable: "--font-spectral",
 });
 
-const inter = Inter({
+const inter = TikTok_Sans({
   weight: ["400", "500", "600"],
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin", "latin-ext", "greek"],
   variable: "--font-inter",
 });
 
