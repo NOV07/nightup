@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { getSupabase } from "../lib/supabase";
 import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
+import { getAvatarCrop } from "../lib/profileCrop";
 import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
 import T from "../components/T";
 import { SearchResultCount } from "./SearchResultCount";
@@ -79,7 +80,7 @@ export default async function SearchPage({ searchParams }: Props) {
       supabase.from("events").select("id, title, venue, city, date, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height").ilike("title", pattern).eq("status", "approved").order("date", { ascending: true }).limit(10),
       supabase.from("articles").select("id, title, category, hero_image").ilike("title", pattern).eq("status", "published").limit(10),
       supabase.from("mixes").select("id, title, artist, genre, cover_image").ilike("title", pattern).eq("status", "approved").limit(10),
-      supabase.from("profiles").select("id, username, display_name, avatar_url, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${query}%,network_subcategory.ilike.%${query}%`).limit(10),
+      supabase.from("profiles").select("id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${query}%,network_subcategory.ilike.%${query}%`).limit(10),
       supabase.from("spots").select("id, name, slug, category, neighborhood, cover_image").ilike("name", pattern).eq("is_published", true).limit(10),
       supabase.from("music_releases").select("id, title, artist, type, cover_image").ilike("title", pattern).eq("status", "approved").limit(10),
     ]);
@@ -114,6 +115,7 @@ export default async function SearchPage({ searchParams }: Props) {
       title: p.display_name,
       subtitle: [p.network_subcategory, p.location].filter(Boolean).join(" · "),
       image: p.avatar_url,
+      crop: getAvatarCrop(p),
       href: `/profile/${p.username}`,
     }));
 

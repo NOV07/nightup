@@ -6,12 +6,18 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ImageUpload from '../../components/ui/ImageUpload'
 import CreatorGallery from '../../components/ui/CreatorGallery'
+import ImageCropper, { type CropBox } from '../../components/ui/ImageCropper'
+import CroppedImage from '../../components/ui/CroppedImage'
+import { getAvatarCrop, getCoverCrop } from '../lib/profileCrop'
 import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES } from '../lib/searchData'
 import ConsumerDashboard from './ConsumerDashboard'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '../lib/translations'
+
+const AVATAR_CROP_ASPECT = 1
+const COVER_CROP_ASPECT = 3
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance', 'Hip-Hop', 'R&B', 'Afrobeats', 'Reggaeton', 'Laika', 'Entechno', 'Rebetiko', 'Dimotika', 'Rock', 'Jazz', 'Classical', 'Blues', 'Electronic', 'Ambient', 'Experimental', 'Other']
 
@@ -86,6 +92,8 @@ export default function DashboardClient({ profile, events, releases, professiona
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [showAvatarCropper, setShowAvatarCropper] = useState(false)
+  const [showCoverCropper, setShowCoverCropper] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [requestingFeaturedId, setRequestingFeaturedId] = useState<string | null>(null)
 
@@ -126,6 +134,14 @@ export default function DashboardClient({ profile, events, releases, professiona
     location: profile.location ?? '',
     avatar_url: profile.avatar_url ?? '',
     cover_url: profile.cover_url ?? '',
+    avatar_crop_x: profile.avatar_crop_x ?? null as number | null,
+    avatar_crop_y: profile.avatar_crop_y ?? null as number | null,
+    avatar_crop_width: profile.avatar_crop_width ?? null as number | null,
+    avatar_crop_height: profile.avatar_crop_height ?? null as number | null,
+    cover_crop_x: profile.cover_crop_x ?? null as number | null,
+    cover_crop_y: profile.cover_crop_y ?? null as number | null,
+    cover_crop_width: profile.cover_crop_width ?? null as number | null,
+    cover_crop_height: profile.cover_crop_height ?? null as number | null,
     instagram: profile.instagram ?? '',
     facebook: profile.facebook ?? '',
     tiktok: profile.tiktok ?? '',
@@ -206,6 +222,14 @@ export default function DashboardClient({ profile, events, releases, professiona
         location: form.location,
         avatar_url: form.avatar_url || null,
         cover_url: form.cover_url || null,
+        avatar_crop_x: form.avatar_crop_x,
+        avatar_crop_y: form.avatar_crop_y,
+        avatar_crop_width: form.avatar_crop_width,
+        avatar_crop_height: form.avatar_crop_height,
+        cover_crop_x: form.cover_crop_x,
+        cover_crop_y: form.cover_crop_y,
+        cover_crop_width: form.cover_crop_width,
+        cover_crop_height: form.cover_crop_height,
         instagram: form.instagram || null,
         facebook: form.facebook || null,
         tiktok: form.tiktok || null,
@@ -261,6 +285,14 @@ export default function DashboardClient({ profile, events, releases, professiona
           location: form.location,
           avatar_url: form.avatar_url || null,
           cover_url: form.cover_url || null,
+          avatar_crop_x: form.avatar_crop_x,
+          avatar_crop_y: form.avatar_crop_y,
+          avatar_crop_width: form.avatar_crop_width,
+          avatar_crop_height: form.avatar_crop_height,
+          cover_crop_x: form.cover_crop_x,
+          cover_crop_y: form.cover_crop_y,
+          cover_crop_width: form.cover_crop_width,
+          cover_crop_height: form.cover_crop_height,
           network_tab: 'Artists',
           network_category: form.network_category || null,
           network_subcategory: form.network_subcategory || null,
@@ -405,7 +437,7 @@ export default function DashboardClient({ profile, events, releases, professiona
           <div className="px-4 py-4 flex items-center gap-4" style={{ maxWidth: 680, margin: '0 auto' }}>
             {form.avatar_url ? (
               <div className="relative w-9 h-9 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '2px solid #E8A020' }}>
-                <Image src={form.avatar_url} alt={form.display_name} fill className="object-cover" />
+                <CroppedImage src={form.avatar_url} alt={form.display_name} crop={getAvatarCrop(form)} sizes="36px" />
               </div>
             ) : (
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ backgroundColor: '#1A1A2E', border: '2px solid #E8A020', color: '#E8A020' }}>
@@ -448,7 +480,7 @@ export default function DashboardClient({ profile, events, releases, professiona
           <div className="flex items-center gap-3">
             {form.avatar_url ? (
               <div className="relative w-9 h-9 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '2px solid #E8A020' }}>
-                <Image src={form.avatar_url} alt={form.display_name} fill className="object-cover" />
+                <CroppedImage src={form.avatar_url} alt={form.display_name} crop={getAvatarCrop(form)} sizes="36px" />
               </div>
             ) : (
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ backgroundColor: '#1A1A2E', border: '2px solid #E8A020', color: '#E8A020' }}>
@@ -531,17 +563,51 @@ export default function DashboardClient({ profile, events, releases, professiona
                   <label className={labelClass}>{t('dashboard_banner_photo')}</label>
                   <ImageUpload
                     folder="banners"
-                    onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url }))}
+                    onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url, cover_crop_x: null, cover_crop_y: null, cover_crop_width: null, cover_crop_height: null }))}
                     existingUrl={form.cover_url}
                   />
+                  {form.cover_url && (
+                    <button type="button" onClick={() => setShowCoverCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color: '#E8A020' }}>
+                      {t('image_crop_edit')}
+                    </button>
+                  )}
+                  {showCoverCropper && form.cover_url && (
+                    <ImageCropper
+                      imageUrl={form.cover_url}
+                      aspect={COVER_CROP_ASPECT}
+                      initialCrop={getCoverCrop(form)}
+                      onConfirm={(box: CropBox) => {
+                        setForm(prev => ({ ...prev, cover_crop_x: box.crop_x, cover_crop_y: box.crop_y, cover_crop_width: box.crop_width, cover_crop_height: box.crop_height }))
+                        setShowCoverCropper(false)
+                      }}
+                      onCancel={() => setShowCoverCropper(false)}
+                    />
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>{t('dashboard_profile_photo')}</label>
                   <ImageUpload
                     folder="avatars"
-                    onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url }))}
+                    onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url, avatar_crop_x: null, avatar_crop_y: null, avatar_crop_width: null, avatar_crop_height: null }))}
                     existingUrl={form.avatar_url}
                   />
+                  {form.avatar_url && (
+                    <button type="button" onClick={() => setShowAvatarCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color: '#E8A020' }}>
+                      {t('image_crop_edit')}
+                    </button>
+                  )}
+                  {showAvatarCropper && form.avatar_url && (
+                    <ImageCropper
+                      imageUrl={form.avatar_url}
+                      aspect={AVATAR_CROP_ASPECT}
+                      initialCrop={getAvatarCrop(form)}
+                      onConfirm={(box: CropBox) => {
+                        setForm(prev => ({ ...prev, avatar_crop_x: box.crop_x, avatar_crop_y: box.crop_y, avatar_crop_width: box.crop_width, avatar_crop_height: box.crop_height }))
+                        setShowAvatarCropper(false)
+                      }}
+                      onCancel={() => setShowAvatarCropper(false)}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -686,12 +752,12 @@ export default function DashboardClient({ profile, events, releases, professiona
                 <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_profile_preview')}</p>
                 <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a0a14', border: '0.5px solid rgba(255,255,255,0.08)' }}>
                   <div className="relative h-24" style={{ backgroundColor: '#1a1a2e' }}>
-                    {form.cover_url && <Image src={form.cover_url} alt="Banner" fill className="object-cover" />}
+                    {form.cover_url && <CroppedImage src={form.cover_url} alt="Banner" crop={getCoverCrop(form)} sizes="360px" />}
                   </div>
                   <div className="px-4 pb-4">
                     <div className="relative -mt-8 mb-3 w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '2px solid #E8A020', backgroundColor: '#1A1A2E' }}>
                       {form.avatar_url ? (
-                        <Image src={form.avatar_url} alt={form.display_name} fill className="object-cover" />
+                        <CroppedImage src={form.avatar_url} alt={form.display_name} crop={getAvatarCrop(form)} sizes="64px" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl font-bold" style={{ color: '#E8A020' }}>
                           {form.display_name[0]?.toUpperCase()}
@@ -748,17 +814,51 @@ export default function DashboardClient({ profile, events, releases, professiona
                   <label className={labelClass}>{t('dashboard_banner_photo')}</label>
                   <ImageUpload
                     folder="banners"
-                    onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url }))}
+                    onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url, cover_crop_x: null, cover_crop_y: null, cover_crop_width: null, cover_crop_height: null }))}
                     existingUrl={form.cover_url}
                   />
+                  {form.cover_url && (
+                    <button type="button" onClick={() => setShowCoverCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color: '#E8A020' }}>
+                      {t('image_crop_edit')}
+                    </button>
+                  )}
+                  {showCoverCropper && form.cover_url && (
+                    <ImageCropper
+                      imageUrl={form.cover_url}
+                      aspect={COVER_CROP_ASPECT}
+                      initialCrop={getCoverCrop(form)}
+                      onConfirm={(box: CropBox) => {
+                        setForm(prev => ({ ...prev, cover_crop_x: box.crop_x, cover_crop_y: box.crop_y, cover_crop_width: box.crop_width, cover_crop_height: box.crop_height }))
+                        setShowCoverCropper(false)
+                      }}
+                      onCancel={() => setShowCoverCropper(false)}
+                    />
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>{t('dashboard_profile_photo')}</label>
                   <ImageUpload
                     folder="avatars"
-                    onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url }))}
+                    onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url, avatar_crop_x: null, avatar_crop_y: null, avatar_crop_width: null, avatar_crop_height: null }))}
                     existingUrl={form.avatar_url}
                   />
+                  {form.avatar_url && (
+                    <button type="button" onClick={() => setShowAvatarCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color: '#E8A020' }}>
+                      {t('image_crop_edit')}
+                    </button>
+                  )}
+                  {showAvatarCropper && form.avatar_url && (
+                    <ImageCropper
+                      imageUrl={form.avatar_url}
+                      aspect={AVATAR_CROP_ASPECT}
+                      initialCrop={getAvatarCrop(form)}
+                      onConfirm={(box: CropBox) => {
+                        setForm(prev => ({ ...prev, avatar_crop_x: box.crop_x, avatar_crop_y: box.crop_y, avatar_crop_width: box.crop_width, avatar_crop_height: box.crop_height }))
+                        setShowAvatarCropper(false)
+                      }}
+                      onCancel={() => setShowAvatarCropper(false)}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -971,12 +1071,12 @@ export default function DashboardClient({ profile, events, releases, professiona
                 <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_profile_preview')}</p>
                 <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a0a14', border: '0.5px solid rgba(255,255,255,0.08)' }}>
                   <div className="relative h-24" style={{ backgroundColor: '#1a1a2e' }}>
-                    {form.cover_url && <Image src={form.cover_url} alt="Banner" fill className="object-cover" />}
+                    {form.cover_url && <CroppedImage src={form.cover_url} alt="Banner" crop={getCoverCrop(form)} sizes="360px" />}
                   </div>
                   <div className="px-4 pb-4">
                     <div className="relative -mt-8 mb-3 w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '2px solid #E8A020', backgroundColor: '#1A1A2E' }}>
                       {form.avatar_url ? (
-                        <Image src={form.avatar_url} alt={form.display_name} fill className="object-cover" />
+                        <CroppedImage src={form.avatar_url} alt={form.display_name} crop={getAvatarCrop(form)} sizes="64px" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl font-bold" style={{ color: '#E8A020' }}>
                           {form.display_name[0]?.toUpperCase()}

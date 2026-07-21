@@ -20,6 +20,14 @@ export interface Profile {
 
   // ── dashboard-editable ──
   cover_url: string | null
+  avatar_crop_x: number | null
+  avatar_crop_y: number | null
+  avatar_crop_width: number | null
+  avatar_crop_height: number | null
+  cover_crop_x: number | null
+  cover_crop_y: number | null
+  cover_crop_width: number | null
+  cover_crop_height: number | null
   location: string | null
   facebook: string | null
   tiktok: string | null

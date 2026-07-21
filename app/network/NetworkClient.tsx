@@ -2,11 +2,12 @@
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { NETWORK, CITIES, CITY_LABELS } from '../lib/searchData'
 import FollowButton from '@/components/ui/FollowButton'
 import ListingsBar, { type Listing } from '@/components/network/ListingsBar'
 import { useLanguage } from '../components/LanguageContext'
+import { getAvatarCrop } from '../lib/profileCrop'
+import CroppedImage from '../../components/ui/CroppedImage'
 
 type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
 
@@ -15,6 +16,10 @@ interface Profile {
   username: string
   display_name: string
   avatar_url: string | null
+  avatar_crop_x?: number | null
+  avatar_crop_y?: number | null
+  avatar_crop_width?: number | null
+  avatar_crop_height?: number | null
   bio: string | null
   location: string | null
   network_tab: string | null
@@ -49,14 +54,14 @@ function ProfileCard({ profile }: { profile: Profile }) {
     >
       <div className="flex items-center gap-3">
         {profile.avatar_url ? (
-          <Image
-            src={profile.avatar_url}
-            alt={profile.display_name}
-            width={48}
-            height={48}
-            className="rounded-full object-cover flex-shrink-0"
-            style={{ border: `1px solid ${BORDER}` }}
-          />
+          <div className="relative rounded-full flex-shrink-0" style={{ width: 48, height: 48, overflow: 'hidden', border: `1px solid ${BORDER}` }}>
+            <CroppedImage
+              src={profile.avatar_url}
+              alt={profile.display_name}
+              crop={getAvatarCrop(profile)}
+              sizes="48px"
+            />
+          </div>
         ) : (
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"

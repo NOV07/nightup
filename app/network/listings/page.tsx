@@ -14,7 +14,7 @@ export default async function ListingsPage() {
 
   const { data: listingsRaw } = await supabase
     .from('listings')
-    .select('*, profiles(id, display_name, username, avatar_url, network_tab, network_category, network_subcategory)')
+    .select('*, profiles(id, display_name, username, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, network_tab, network_category, network_subcategory)')
     .eq('is_active', true)
     .order('is_sponsored', { ascending: false })
     .order('created_at', { ascending: false })

@@ -1,11 +1,11 @@
 import { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/formatPrice'
 import { getEventCoverImage, getEventCrop } from '../../lib/getEventCoverImage'
+import { getAvatarCrop } from '../../lib/profileCrop'
 import EventHeroImage from '../../components/EventHeroImage'
 import CroppedImage from '../../../components/ui/CroppedImage'
 import T from '../../components/T'
@@ -70,11 +70,11 @@ export default async function EventPage({ params }: Props) {
     : null
 
   // Organizer profile
-  let organizer: { id: string; username: string; display_name: string | null; avatar_url: string | null; bio: string | null } | null = null
+  let organizer: { id: string; username: string; display_name: string | null; avatar_url: string | null; avatar_crop_x: number | null; avatar_crop_y: number | null; avatar_crop_width: number | null; avatar_crop_height: number | null; bio: string | null } | null = null
   if (event.profile_id) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url, bio')
+      .select('id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, bio')
       .eq('id', event.profile_id)
       .single()
     organizer = data ?? null
@@ -380,23 +380,14 @@ export default async function EventPage({ params }: Props) {
                 border: '1px solid rgba(255,255,255,0.08)', transition: 'border-color 0.2s',
               }}>
                 {organizer.avatar_url ? (
-                  organizer.avatar_url.startsWith('data:') ? (
-                    <img
+                  <div style={{ position: 'relative', width: 48, height: 48, borderRadius: 12, overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(232,160,32,0.3)' }}>
+                    <CroppedImage
                       src={organizer.avatar_url}
                       alt={organizer.display_name ?? organizer.username}
-                      style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.3)' }}
+                      crop={getAvatarCrop(organizer)}
+                      sizes="48px"
                     />
-                  ) : (
-                    <div style={{ position: 'relative', width: 48, height: 48, borderRadius: 12, overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(232,160,32,0.3)' }}>
-                      <Image
-                        src={organizer.avatar_url}
-                        alt={organizer.display_name ?? organizer.username}
-                        fill
-                        sizes="48px"
-                        style={{ objectFit: 'cover' }}
-                      />
-                    </div>
-                  )
+                  </div>
                 ) : (
                   <div style={{
                     width: 48, height: 48, borderRadius: 12, flexShrink: 0,

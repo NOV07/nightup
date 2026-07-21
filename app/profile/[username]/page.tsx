@@ -6,6 +6,7 @@ import { Metadata } from 'next'
 import ContactPill from '@/app/components/ContactPill'
 import T from '@/app/components/T'
 import { getEventCoverImage, getEventCrop } from '@/app/lib/getEventCoverImage'
+import { getAvatarCrop, getCoverCrop } from '@/app/lib/profileCrop'
 import CroppedImage from '@/components/ui/CroppedImage'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
@@ -159,6 +160,10 @@ export default async function ProfilePage({ params }: Props) {
     !((profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ?? '').includes('picsum')
       ? (profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url)
       : null;
+  // Only apply the stored crop when profile.avatar_url is actually what's being shown
+  // (not the professional.image_url fallback, which has no crop of its own).
+  const avatarCrop = avatarSrc && avatarSrc === profile.avatar_url ? getAvatarCrop(profile) : null;
+  const coverCrop = coverSrc ? getCoverCrop(profile) : null;
 
   return (
     <div style={{ backgroundColor: '#0F0F1A', minHeight: '100vh' }}>
@@ -166,7 +171,7 @@ export default async function ProfilePage({ params }: Props) {
       {/* BANNER */}
       <div className="relative w-full" style={{ height: '220px' }}>
         {coverSrc ? (
-          <Image src={coverSrc} alt="Cover" fill className="object-cover" />
+          <CroppedImage src={coverSrc} alt="Cover" crop={coverCrop} sizes="100vw" />
         ) : (
           <div className="w-full h-full" style={{
             background: 'linear-gradient(135deg, #0e0e1c 0%, #1a1a2e 50%, #0e0e1c 100%)'
@@ -194,21 +199,7 @@ export default async function ProfilePage({ params }: Props) {
                 {profile.display_name[0].toUpperCase()}
               </div>
               {avatarSrc && (
-                avatarSrc.startsWith('data:') ? (
-                  <img
-                    src={avatarSrc}
-                    alt={profile.display_name}
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Image
-                    src={avatarSrc}
-                    alt={profile.display_name}
-                    fill
-                    sizes="96px"
-                    style={{ objectFit: 'cover' }}
-                  />
-                )
+                <CroppedImage src={avatarSrc} alt={profile.display_name} crop={avatarCrop} sizes="96px" />
               )}
             </div>
 

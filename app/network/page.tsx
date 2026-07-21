@@ -50,7 +50,7 @@ export default async function NetworkPage({ searchParams }: Props) {
   let query = supabase
     .from("profiles")
     .select(
-      "id, username, display_name, avatar_url, bio, location, network_tab, network_category, network_subcategory, is_featured, is_verified"
+      "id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, bio, location, network_tab, network_category, network_subcategory, is_featured, is_verified"
     )
     .not("network_tab", "is", null)
     .order("is_featured", { ascending: false, nullsFirst: false })
@@ -78,7 +78,7 @@ export default async function NetworkPage({ searchParams }: Props) {
   // Unfiltered fetch — all network profiles, for the guided modal
   const { data: allProfiles } = await supabase
     .from("profiles")
-    .select("id, username, display_name, avatar_url, bio, location, network_tab, network_category, network_subcategory, is_featured, is_verified")
+    .select("id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, bio, location, network_tab, network_category, network_subcategory, is_featured, is_verified")
     .not("network_tab", "is", null)
     .order("is_featured", { ascending: false, nullsFirst: false })
     .limit(300);

@@ -4,12 +4,18 @@ import Link from 'next/link'
 import InterestButton from '@/components/ui/InterestButton'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { getListingCategory } from '@/app/lib/searchData'
+import { getAvatarCrop } from '@/app/lib/profileCrop'
+import CroppedImage from '@/components/ui/CroppedImage'
 
 interface Profile {
   id: string
   display_name: string
   username: string
   avatar_url: string | null
+  avatar_crop_x?: number | null
+  avatar_crop_y?: number | null
+  avatar_crop_width?: number | null
+  avatar_crop_height?: number | null
   network_tab: string | null
   network_category: string | null
   network_subcategory: string | null
@@ -465,11 +471,9 @@ function ListingCard({ listing, lang }: { listing: Listing; lang: string }) {
           style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
         >
           {listing.profiles.avatar_url ? (
-            <img
-              src={listing.profiles.avatar_url}
-              alt=""
-              style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
-            />
+            <div style={{ position: 'relative', width: 28, height: 28, borderRadius: '50%', overflow: 'hidden' }}>
+              <CroppedImage src={listing.profiles.avatar_url} alt="" crop={getAvatarCrop(listing.profiles)} sizes="28px" />
+            </div>
           ) : (
             <div style={{
               width: 28, height: 28, borderRadius: '50%',
