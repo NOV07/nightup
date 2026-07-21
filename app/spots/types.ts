@@ -1,3 +1,12 @@
+import type { CropBox } from '../../components/ui/CroppedImage';
+
+/** Missing on rows returned by the spots_nearby() PostGIS RPC (its column
+ *  list is fixed in the SQL function) — those spots render without a crop. */
+export function spotCropFromRow(row: { crop_x?: number | null; crop_y?: number | null; crop_width?: number | null; crop_height?: number | null }): CropBox | null {
+  if (row.crop_x == null || row.crop_y == null || row.crop_width == null || row.crop_height == null) return null;
+  return { crop_x: row.crop_x, crop_y: row.crop_y, crop_width: row.crop_width, crop_height: row.crop_height };
+}
+
 export type SpotCategory = 'food' | 'drink' | 'nightlife' | 'show' | 'chill' | 'activity' | 'art' | 'wellness';
 
 export interface Spot {
@@ -13,6 +22,7 @@ export interface Spot {
   lng: number | null;
   description: string | null;
   coverImage: string | null;
+  crop?: CropBox | null;
   priceLevel: number | null;
   rating: number | null;
   phone?: string | null;

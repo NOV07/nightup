@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import { getSupabase } from "../../lib/supabase";
 import { createClient } from "../../lib/supabase-server";
 import type { Spot } from "../types";
+import { spotCropFromRow } from "../types";
 import SpotProfileClient from "./SpotProfileClient";
 
 export const revalidate = 300;
 
 const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, gallery, price_level, rating, phone, website, instagram, opening_hours, is_sponsored, claimed_by_profile_id";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, gallery, price_level, rating, phone, website, instagram, opening_hours, is_sponsored, claimed_by_profile_id";
 
 async function getSpot(slug: string): Promise<Spot | null> {
   try {
@@ -22,7 +23,9 @@ async function getSpot(slug: string): Promise<Spot | null> {
       category: data.category, subcategory: data.subcategory,
       city: data.city, neighborhood: data.neighborhood, address: data.address,
       lat: data.lat, lng: data.lng, description: data.description,
-      coverImage: data.cover_image, priceLevel: data.price_level,
+      coverImage: data.cover_image,
+      crop: spotCropFromRow(data),
+      priceLevel: data.price_level,
       rating: data.rating, phone: data.phone, website: data.website,
       instagram: data.instagram, isSponsored: data.is_sponsored === true,
       claimedByProfileId: data.claimed_by_profile_id ?? null,

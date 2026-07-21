@@ -1,5 +1,6 @@
 import { getSupabase } from "../lib/supabase";
 import type { Spot, SpotCategory } from "./types";
+import { spotCropFromRow } from "./types";
 
 export function mapSpot(s: any): Spot {
   return {
@@ -15,6 +16,7 @@ export function mapSpot(s: any): Spot {
     lng: s.lng,
     description: s.description,
     coverImage: s.cover_image,
+    crop: spotCropFromRow(s),
     priceLevel: s.price_level,
     rating: s.rating,
     instagram: s.instagram,
@@ -26,7 +28,7 @@ export function mapSpot(s: any): Spot {
 
 
 const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, price_level, rating, instagram, is_sponsored, claimed_by_profile_id, featured";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, rating, instagram, is_sponsored, claimed_by_profile_id, featured";
 
 export async function getAllSpots(): Promise<Spot[]> {
   try {

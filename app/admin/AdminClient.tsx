@@ -72,7 +72,8 @@ const defaultReleaseForm = { title:"",artist:"",type:"Single",genre:"House",cove
 const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
-const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",rating:"",instagram:"",is_sponsored:false,featured:false };
+const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
+const SPOT_CROP_ASPECT = 16 / 9;
 
 export default function AdminClient() {
   const router = useRouter();
@@ -114,6 +115,7 @@ export default function AdminClient() {
 
   const [adminEventPhoto, setAdminEventPhoto] = useState<string>("");
   const [showAddEventCropper, setShowAddEventCropper] = useState(false);
+  const [showAddSpotCropper, setShowAddSpotCropper] = useState(false);
   const [adminEventPhotoError, setAdminEventPhotoError] = useState("");
   const adminEventPhotoRef = useRef<HTMLInputElement>(null);
 
@@ -1259,7 +1261,29 @@ export default function AdminClient() {
                             <div><label className={labelCls}>Neighborhood</label><input className={inputCls} style={inputStyle} value={spotForm.neighborhood} onChange={e => setSpotForm(f => ({ ...f, neighborhood:e.target.value }))} /></div>
                             <div><label className={labelCls}>Address</label><input className={inputCls} style={inputStyle} value={spotForm.address} onChange={e => setSpotForm(f => ({ ...f, address:e.target.value }))} /></div>
                             <div><label className={labelCls}>Instagram</label><input className={inputCls} style={inputStyle} value={spotForm.instagram} onChange={e => setSpotForm(f => ({ ...f, instagram:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Cover Image URL</label><input className={inputCls} style={inputStyle} value={spotForm.cover_image} onChange={e => setSpotForm(f => ({ ...f, cover_image:e.target.value }))} placeholder="https://…" /></div>
+                            <div>
+                              <label className={labelCls}>Cover Image URL</label>
+                              <input className={inputCls} style={inputStyle} value={spotForm.cover_image} onChange={e => setSpotForm(f => ({ ...f, cover_image:e.target.value, crop_x:null, crop_y:null, crop_width:null, crop_height:null }))} placeholder="https://…" />
+                              {spotForm.cover_image && (
+                                <button type="button" onClick={() => setShowAddSpotCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color:"#E8A020" }}>
+                                  Edit crop
+                                </button>
+                              )}
+                            </div>
+                            {showAddSpotCropper && spotForm.cover_image && (
+                              <ImageCropper
+                                imageUrl={spotForm.cover_image}
+                                aspect={SPOT_CROP_ASPECT}
+                                initialCrop={spotForm.crop_x != null && spotForm.crop_y != null && spotForm.crop_width != null && spotForm.crop_height != null
+                                  ? { crop_x: spotForm.crop_x, crop_y: spotForm.crop_y, crop_width: spotForm.crop_width, crop_height: spotForm.crop_height }
+                                  : null}
+                                onConfirm={(box: CropBox) => {
+                                  setSpotForm(f => ({ ...f, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height }));
+                                  setShowAddSpotCropper(false);
+                                }}
+                                onCancel={() => setShowAddSpotCropper(false)}
+                              />
+                            )}
                             <div><label className={labelCls}>Price Level (1–4)</label><input type="number" min="1" max="4" className={inputCls} style={inputStyle} value={spotForm.price_level} onChange={e => setSpotForm(f => ({ ...f, price_level:e.target.value }))} /></div>
                             <div><label className={labelCls}>Rating (0–5)</label><input type="number" min="0" max="5" step="0.1" className={inputCls} style={inputStyle} value={spotForm.rating} onChange={e => setSpotForm(f => ({ ...f, rating:e.target.value }))} /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={spotForm.description} onChange={e => setSpotForm(f => ({ ...f, description:e.target.value }))} /></div>
@@ -1506,7 +1530,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           <input type={type} className={inputCls} style={inputStyle} value={String(val)} onChange={e => setForm(f => ({
             ...f,
             [key]: e.target.value,
-            ...(key === "image_url" ? { crop_x: null, crop_y: null, crop_width: null, crop_height: null } : {}),
+            ...((key === "image_url" || (key === "cover_image" && tab === "spots")) ? { crop_x: null, crop_y: null, crop_width: null, crop_height: null } : {}),
           }))} />
         )}
       </div>
@@ -1663,6 +1687,29 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("neighborhood","Neighborhood")}
           {field("address","Address")}
           {field("cover_image","Cover Image URL")}
+          {form.cover_image ? (
+            <div className="flex items-end pb-1">
+              <button type="button" onClick={() => setShowCropper(true)} className="text-xs hover:opacity-80" style={{ color:"#E8A020" }}>
+                Edit crop
+              </button>
+            </div>
+          ) : <div />}
+          {showCropper && form.cover_image && (
+            <div className="sm:col-span-2">
+              <ImageCropper
+                imageUrl={String(form.cover_image)}
+                aspect={SPOT_CROP_ASPECT}
+                initialCrop={form.crop_x != null && form.crop_y != null && form.crop_width != null && form.crop_height != null
+                  ? { crop_x: Number(form.crop_x), crop_y: Number(form.crop_y), crop_width: Number(form.crop_width), crop_height: Number(form.crop_height) }
+                  : null}
+                onConfirm={(box: CropBox) => {
+                  setForm(f => ({ ...f, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height }));
+                  setShowCropper(false);
+                }}
+                onCancel={() => setShowCropper(false)}
+              />
+            </div>
+          )}
           {field("price_level","Price Level (1–4)","number")}
           {field("rating","Rating (0–5)","number")}
           {field("instagram","Instagram")}

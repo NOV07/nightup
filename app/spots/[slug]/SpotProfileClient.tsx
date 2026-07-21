@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Spot } from "../types";
 import { useLanguage } from "../../components/LanguageContext";
+import CroppedImage from "../../../components/ui/CroppedImage";
 
 type FullSpot = Spot & { gallery: string[]; openingHours: Record<string, string> | null };
 
@@ -39,6 +40,8 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
     show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
   };
   const cover = spot.coverImage || PLACE;
+  // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
+  const coverCrop = spot.coverImage ? spot.crop : null;
   const price = spot.priceLevel ? "€".repeat(spot.priceLevel) : null;
   const mapUrl = spot.lat && spot.lng
     ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
@@ -48,7 +51,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
     <div style={{ background: "#0F0F1A", minHeight: "100vh" }}>
       {/* Cover */}
       <div style={{ position: "relative", height: 340, overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${cover}')`, backgroundSize: "cover", backgroundPosition: "center" }} />
+        <CroppedImage src={cover} alt={spot.name} crop={coverCrop} sizes="100vw" priority />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #0F0F1A, rgba(15,15,26,0.3) 55%, rgba(15,15,26,0.5))" }} />
         <div style={{ position: "relative", maxWidth: "56rem", margin: "0 auto", padding: "0 24px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 28 }}>
           <Link href="/spots" style={{ position: "absolute", top: 20, left: 24, color: "#fff", fontSize: 14, fontWeight: 600, background: "rgba(0,0,0,0.4)", padding: "8px 14px", borderRadius: 6, backdropFilter: "blur(8px)" }}>‹ Spots</Link>

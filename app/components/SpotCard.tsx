@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { toast } from "sonner";
 import type { Spot } from "../spots/types";
 import { useLanguage } from "../components/LanguageContext";
+import CroppedImage from "../../components/ui/CroppedImage";
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80";
 
@@ -31,6 +31,8 @@ export default function SpotCard({
   const pathname = usePathname();
   const router = useRouter();
   const img = spot.coverImage || PLACE;
+  // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
+  const crop = spot.coverImage ? spot.crop : null;
 
   async function handleSave(e: React.MouseEvent) {
     e.preventDefault();
@@ -96,21 +98,12 @@ export default function SpotCard({
               overflow: "hidden",
             }}
           >
-            {img.startsWith("data:") ? (
-              <img
-                src={img}
-                alt={spot.name ?? ""}
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <Image
-                src={img}
-                alt={spot.name ?? ""}
-                fill
-                sizes="78px"
-                style={{ objectFit: "cover" }}
-              />
-            )}
+            <CroppedImage
+              src={img}
+              alt={spot.name ?? ""}
+              crop={crop}
+              sizes="78px"
+            />
             {spot.isSponsored && <SponsoredBadge />}
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
@@ -160,21 +153,12 @@ export default function SpotCard({
             overflow: "hidden",
           }}
         >
-          {img.startsWith("data:") ? (
-            <img
-              src={img}
-              alt={spot.name ?? ""}
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : (
-            <Image
-              src={img}
-              alt={spot.name ?? ""}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              style={{ objectFit: "cover" }}
-            />
-          )}
+          <CroppedImage
+            src={img}
+            alt={spot.name ?? ""}
+            crop={crop}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          />
           {spot.isSponsored && <SponsoredBadge />}
           <button
             onClick={handleSave}
