@@ -6,9 +6,10 @@ interface ImageUploadProps {
   onUpload: (url: string) => void
   existingUrl?: string
   folder?: string
+  bucket?: string
 }
 
-export default function ImageUpload({ onUpload, existingUrl, folder = 'general' }: ImageUploadProps) {
+export default function ImageUpload({ onUpload, existingUrl, folder = 'general', bucket = 'uploads' }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string>(existingUrl || '')
   const [error, setError] = useState('')
@@ -43,7 +44,7 @@ export default function ImageUpload({ onUpload, existingUrl, folder = 'general' 
     const filename = `${user.id}/${folder}/${Date.now()}.${ext}`
 
     const { data, error } = await supabase.storage
-      .from('uploads')
+      .from(bucket)
       .upload(filename, file, { upsert: true })
 
     if (error) {
@@ -53,7 +54,7 @@ export default function ImageUpload({ onUpload, existingUrl, folder = 'general' 
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('uploads')
+      .from(bucket)
       .getPublicUrl(data.path)
 
     setPreview(publicUrl)

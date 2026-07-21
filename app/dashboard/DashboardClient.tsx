@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import ImageUpload from '../../components/ui/ImageUpload'
+import CreatorGallery from '../../components/ui/CreatorGallery'
 import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES } from '../lib/searchData'
@@ -956,6 +957,10 @@ export default function DashboardClient({ profile, events, releases, professiona
                   </div>
                 ))}
               </div>
+
+              {(profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
+                <CreatorGallery profileId={profile.id} />
+              )}
 
               {saveButton(handleSave)}
             </div>
