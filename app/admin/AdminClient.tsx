@@ -61,7 +61,7 @@ interface AllContent {
   spot_claims: any[];
 }
 
-const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false };
+const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false,has_copyright_restriction:false };
 const defaultProForm = { name:"",avatar:"",category:"Venues",rating:"5",reviews_count:"0",city:"",description:"" };
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
 const defaultOrgForm = { name:"",type:"Club",city:"Athens",about:"",cover_image:"",avatar:"",instagram:"",facebook:"",tiktok:"",website:"" };
@@ -1061,6 +1061,9 @@ export default function AdminClient() {
                               {adminEventPhotoError && <p className="text-red-400 text-xs mt-1">{adminEventPhotoError}</p>}
                               {adminEventPhoto && <img src={adminEventPhoto} alt="Preview" className="w-full rounded-lg object-cover mt-2" style={{ maxHeight:120 }} />}
                             </div>
+                            <div className="sm:col-span-2">
+                              <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={eventForm.has_copyright_restriction} onChange={e => setEventForm(f => ({ ...f, has_copyright_restriction:e.target.checked }))} /> Image is copyrighted (use generic cover)</label>
+                            </div>
                             <div>
                               <label className={labelCls}>Organizer</label>
                               <select className={inputCls} style={inputStyle} value={(eventForm as any).organizer_id ?? ""} onChange={e => setEventForm(f => ({ ...f, organizer_id:e.target.value || null } as any))}>
@@ -1503,6 +1506,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("type","Event Type","select",["Club Night","Live Show","Festival","Open Air","Private Party","Other"])}
           {field("price","Price")}
           {field("image_url","Image URL")}
+          {field("has_copyright_restriction","Image is copyrighted (use generic cover)","checkbox",undefined,true)}
           {field("address","Address")}
           {field("maps_url","Maps URL")}
           {field("ticket_url","Ticket URL","text",undefined,true)}

@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getSupabase } from "../lib/supabase";
+import { getEventCoverImage } from "../lib/getEventCoverImage";
 import T from "../components/T";
 import { SearchResultCount } from "./SearchResultCount";
 
@@ -74,7 +75,7 @@ export default async function SearchPage({ searchParams }: Props) {
     const pattern = `%${query}%`;
 
     const [evRes, artRes, mixRes, profRes, spotRes, relRes] = await Promise.all([
-      supabase.from("events").select("id, title, venue, city, date, image_url").ilike("title", pattern).eq("status", "approved").order("date", { ascending: true }).limit(10),
+      supabase.from("events").select("id, title, venue, city, date, image_url, has_copyright_restriction").ilike("title", pattern).eq("status", "approved").order("date", { ascending: true }).limit(10),
       supabase.from("articles").select("id, title, category, hero_image").ilike("title", pattern).eq("status", "published").limit(10),
       supabase.from("mixes").select("id, title, artist, genre, cover_image").ilike("title", pattern).eq("status", "approved").limit(10),
       supabase.from("profiles").select("id, username, display_name, avatar_url, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${query}%,network_subcategory.ilike.%${query}%`).limit(10),
@@ -86,7 +87,7 @@ export default async function SearchPage({ searchParams }: Props) {
       id: `ev-${e.id}`, type: "event",
       title: e.title,
       subtitle: [e.venue, e.city, e.date ? new Date(e.date).toLocaleDateString("el-GR", { day: "numeric", month: "short" }) : null].filter(Boolean).join(" · "),
-      image: e.image_url,
+      image: getEventCoverImage(e),
       href: `/events/${e.id}`,
     }));
 

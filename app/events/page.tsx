@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import EventsClient from "./EventsClient";
 import { getSupabase } from "../lib/supabase";
+import { getEventCoverImage } from "../lib/getEventCoverImage";
 
 export const metadata: Metadata = {
   title: "Events",
@@ -20,8 +21,6 @@ export const metadata: Metadata = {
   },
 };
 export const dynamic = "force-dynamic";
-
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
 const GREEK_CITIES = [
   "Athens", "Thessaloniki", "Patra", "Heraklion",
@@ -53,7 +52,7 @@ export default async function EventsPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
+      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true });
@@ -62,7 +61,7 @@ export default async function EventsPage() {
       eventsData = data.map((e) => ({
         id: String(e.id),
         title: e.title,
-        image: e.image_url || FALLBACK_IMAGE,
+        image: getEventCoverImage(e),
         genre: e.genre,
         price: e.price != null ? (e.price === 0 ? "Free" : `€${e.price}`) : "",
         date: e.date,

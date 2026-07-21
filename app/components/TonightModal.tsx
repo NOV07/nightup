@@ -6,6 +6,7 @@ import SpotCard from "./SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { getEventMood } from "../lib/eventMood";
+import { getEventCoverImage } from "../lib/getEventCoverImage";
 import { useLanguage } from "./LanguageContext";
 import { useUserLocation } from "../lib/useUserLocation";
 
@@ -16,6 +17,7 @@ export interface EventLite {
   id: string;
   title: string;
   image_url: string | null;
+  has_copyright_restriction: boolean;
   date: string;
   time: string | null;
   venue: string;
@@ -288,9 +290,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                   <Link href={`/events/${matchedEvent.id}`} onClick={handleClose} style={S.eventCard}>
                     <div style={S.eventKicker}>🎉 Ή δοκίμασε ένα event απόψε</div>
                     <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
-                      {matchedEvent.image_url && (
-                        <img src={matchedEvent.image_url} alt={matchedEvent.title} style={S.eventImg} />
-                      )}
+                      <img src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} style={S.eventImg} />
                       <div style={{ minWidth: 0 }}>
                         <div style={S.eventTitle}>{matchedEvent.title}</div>
                         <div style={S.eventMeta}>{matchedEvent.date}{matchedEvent.time ? ` · ${matchedEvent.time}` : ""}</div>

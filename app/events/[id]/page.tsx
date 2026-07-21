@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
 import { formatPrice } from '../../lib/formatPrice'
+import { getEventCoverImage } from '../../lib/getEventCoverImage'
 import EventHeroImage from '../../components/EventHeroImage'
 import T from '../../components/T'
 
@@ -17,7 +18,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   const supabase = getSupabase()
-  const { data } = await supabase.from('events').select('title, description, image_url').eq('id', id).single()
+  const { data } = await supabase.from('events').select('title, description, image_url, has_copyright_restriction').eq('id', id).single()
   if (!data) return {}
   return {
     title: data.title,
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: data.title,
       description: data.description ?? '',
-      images: data.image_url ? [data.image_url] : [],
+      images: [getEventCoverImage(data)],
     },
   }
 }
@@ -36,7 +37,7 @@ export default async function EventPage({ params }: Props) {
 
   const { data: event } = await supabase
     .from('events')
-    .select('id, title, image_url, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, instagram, facebook, tiktok, website')
+    .select('id, title, image_url, has_copyright_restriction, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, instagram, facebook, tiktok, website')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
@@ -79,11 +80,11 @@ export default async function EventPage({ params }: Props) {
   }
 
   // More events from same organizer
-  let moreEvents: { id: string; title: string; image_url: string | null; date: string }[] = []
+  let moreEvents: { id: string; title: string; image_url: string | null; has_copyright_restriction: boolean; date: string }[] = []
   if (event.profile_id) {
     const { data } = await supabase
       .from('events')
-      .select('id, title, image_url, date')
+      .select('id, title, image_url, has_copyright_restriction, date')
       .eq('profile_id', event.profile_id)
       .eq('status', 'approved')
       .neq('id', id)
@@ -166,7 +167,7 @@ export default async function EventPage({ params }: Props) {
       },
     },
     "description": event.description ?? event.title,
-    "image": event.image_url ?? "https://nightup.gr/og-image.png",
+    "image": getEventCoverImage(event),
     ...(event.price ? {
       "offers": {
         "@type": "Offer",
@@ -187,7 +188,7 @@ export default async function EventPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }} />
 
       {/* Hero */}
-      <EventHeroImage imageUrl={event.image_url} title={event.title ?? ""} genre={event.genre ?? undefined} venue={event.venue ?? undefined} date={event.date ?? undefined} />
+      <EventHeroImage imageUrl={getEventCoverImage(event)} title={event.title ?? ""} genre={event.genre ?? undefined} venue={event.venue ?? undefined} date={event.date ?? undefined} />
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 1.25rem 5rem', marginTop: -72, position: 'relative' }}>
 
@@ -435,26 +436,22 @@ export default async function EventPage({ params }: Props) {
                     borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)',
                     border: '1px solid rgba(255,255,255,0.07)',
                   }}>
-                    {e.image_url ? (
-                      e.image_url.startsWith('data:') ? (
-                        <img
-                          src={e.image_url}
-                          alt={e.title}
-                          style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
-                        />
-                      ) : (
-                        <div style={{ position: 'relative', width: 52, height: 52, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                          <Image
-                            src={e.image_url}
-                            alt={e.title}
-                            fill
-                            sizes="52px"
-                            style={{ objectFit: 'cover' }}
-                          />
-                        </div>
-                      )
+                    {getEventCoverImage(e).startsWith('data:') ? (
+                      <img
+                        src={getEventCoverImage(e)}
+                        alt={e.title}
+                        style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                      />
                     ) : (
-                      <div style={{ width: 52, height: 52, borderRadius: 8, flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <div style={{ position: 'relative', width: 52, height: 52, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                        <Image
+                          src={getEventCoverImage(e)}
+                          alt={e.title}
+                          fill
+                          sizes="52px"
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

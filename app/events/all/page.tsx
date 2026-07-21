@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { getSupabase } from "../../lib/supabase";
+import { getEventCoverImage } from "../../lib/getEventCoverImage";
 import EventsAllClient from "./EventsAllClient";
 
 export const metadata: Metadata = {
@@ -15,8 +16,6 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
-
 export default async function EventsAllPage() {
   let events: any[] = [];
 
@@ -31,7 +30,7 @@ export default async function EventsAllPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, organizer_id, type")
+      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, organizer_id, type")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true });
@@ -40,7 +39,7 @@ export default async function EventsAllPage() {
       events = data.map((e) => ({
         id: String(e.id),
         title: e.title,
-        image: e.image_url || FALLBACK,
+        image: getEventCoverImage(e),
         genre: e.genre,
         price: e.price ?? "",
         date: e.date,

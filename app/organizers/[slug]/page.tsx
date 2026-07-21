@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import { getEventCoverImage } from "../../lib/getEventCoverImage";
 import EventCard from "../../components/EventCard";
 
 interface Props {
@@ -27,6 +28,7 @@ interface OrgEvent {
   id: string;
   title: string;
   image_url: string | null;
+  has_copyright_restriction: boolean;
   genre: string;
   price: string | null;
   date: string;
@@ -86,7 +88,7 @@ async function getOrganizerEvents(organizerId: string): Promise<OrgEvent[]> {
     const today = new Date().toISOString().split("T")[0];
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured")
+      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, featured")
       .eq("organizer_id", organizerId)
       .eq("status", "approved")
       .gte("date", today)
@@ -105,7 +107,7 @@ async function getOrganizerPastEvents(organizerId: string): Promise<OrgEvent[]> 
     const today = new Date().toISOString().split("T")[0];
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, genre, price, date, time, venue, city, interested_count, going_count, featured")
+      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, featured")
       .eq("organizer_id", organizerId)
       .eq("status", "approved")
       .lt("date", today)
@@ -127,6 +129,7 @@ async function getOrganizerGallery(organizerId: string): Promise<string[]> {
       .select("image_url")
       .eq("organizer_id", organizerId)
       .eq("status", "approved")
+      .eq("has_copyright_restriction", false)
       .not("image_url", "is", null)
       .order("date", { ascending: false })
       .limit(9);
@@ -149,7 +152,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const FALLBACK_COVER = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&q=80";
-const FALLBACK_EVENT = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
 export default async function OrganizerPage({ params }: Props) {
   const { slug } = await params;
@@ -283,7 +285,7 @@ export default async function OrganizerPage({ params }: Props) {
                   key={ev.id}
                   id={String(ev.id)}
                   title={ev.title}
-                  image={ev.image_url ?? FALLBACK_EVENT}
+                  image={getEventCoverImage(ev)}
                   genre={ev.genre}
                   price={ev.price ?? ""}
                   date={ev.date}
@@ -310,7 +312,7 @@ export default async function OrganizerPage({ params }: Props) {
                   <EventCard
                     id={String(ev.id)}
                     title={ev.title}
-                    image={ev.image_url ?? FALLBACK_EVENT}
+                    image={getEventCoverImage(ev)}
                     genre={ev.genre}
                     price={ev.price ?? ""}
                     date={ev.date}
