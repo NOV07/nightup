@@ -50,6 +50,16 @@ export default async function ProfilePage({ params }: Props) {
   let upcomingEvents: any[] = []
   let releases: any[] = []
   let professional: any = null
+  let galleryPhotos: { id: string; image_url: string }[] = []
+
+  if (profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue') {
+    const { data } = await supabase
+      .from('creator_gallery')
+      .select('id, image_url')
+      .eq('profile_id', profile.id)
+      .order('display_order', { ascending: true })
+    galleryPhotos = data ?? []
+  }
 
   // Artist: find events where display_name appears in lineup
   if (profile.profile_type === 'artist') {
@@ -423,6 +433,22 @@ export default async function ProfilePage({ params }: Props) {
               </section>
             )}
 
+            {/* Gallery */}
+            {visibility.gallery !== false && galleryPhotos.length > 0 && (
+              <section>
+                <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  Gallery
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {galleryPhotos.map((photo) => (
+                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
+                      <Image src={photo.image_url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Booking */}
             {profile.booking_info && (
               <section>
@@ -490,6 +516,22 @@ export default async function ProfilePage({ params }: Props) {
                     frameBorder="no"
                     src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(profile.featured_track_url)}&color=%23E8A020&auto_play=false&hide_related=true&show_comments=false`}
                   />
+                </div>
+              </section>
+            )}
+
+            {/* Gallery */}
+            {visibility.gallery !== false && galleryPhotos.length > 0 && (
+              <section>
+                <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  Gallery
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {galleryPhotos.map((photo) => (
+                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
+                      <Image src={photo.image_url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                    </div>
+                  ))}
                 </div>
               </section>
             )}
