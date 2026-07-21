@@ -52,12 +52,12 @@ export default async function ProfilePage({ params }: Props) {
   let upcomingEvents: any[] = []
   let releases: any[] = []
   let professional: any = null
-  let galleryPhotos: { id: string; image_url: string }[] = []
+  let galleryPhotos: { id: string; image_url: string; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null }[] = []
 
   if (profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue') {
     const { data } = await supabase
       .from('creator_gallery')
-      .select('id, image_url')
+      .select('id, image_url, crop_x, crop_y, crop_width, crop_height')
       .eq('profile_id', profile.id)
       .order('display_order', { ascending: true })
     galleryPhotos = data ?? []
@@ -434,7 +434,7 @@ export default async function ProfilePage({ params }: Props) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {galleryPhotos.map((photo) => (
                     <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
-                      <Image src={photo.image_url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                      <CroppedImage src={photo.image_url} alt="" crop={photo.crop_x != null && photo.crop_y != null && photo.crop_width != null && photo.crop_height != null ? { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height } : null} className="hover:scale-105 transition-transform duration-300" sizes="(max-width: 640px) 50vw, 33vw" />
                     </div>
                   ))}
                 </div>
@@ -521,7 +521,7 @@ export default async function ProfilePage({ params }: Props) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {galleryPhotos.map((photo) => (
                     <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
-                      <Image src={photo.image_url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                      <CroppedImage src={photo.image_url} alt="" crop={photo.crop_x != null && photo.crop_y != null && photo.crop_width != null && photo.crop_height != null ? { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height } : null} className="hover:scale-105 transition-transform duration-300" sizes="(max-width: 640px) 50vw, 33vw" />
                     </div>
                   ))}
                 </div>

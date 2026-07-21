@@ -1,23 +1,35 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import Image from 'next/image'
-import { FiChevronUp, FiChevronDown, FiX } from 'react-icons/fi'
+import { FiChevronUp, FiChevronDown, FiX, FiCrop } from 'react-icons/fi'
 import ImageUpload from './ImageUpload'
+import ImageCropper, { type CropBox } from './ImageCropper'
+import CroppedImage from './CroppedImage'
 import { useLanguage } from '@/app/components/LanguageContext'
 
 const MAX_PHOTOS = 12
+const GALLERY_CROP_ASPECT = 1
 
 interface GalleryPhoto {
   id: string
   image_url: string
   display_order: number
+  crop_x: number | null
+  crop_y: number | null
+  crop_width: number | null
+  crop_height: number | null
+}
+
+function cropOf(photo: GalleryPhoto): CropBox | null {
+  if (photo.crop_x == null || photo.crop_y == null || photo.crop_width == null || photo.crop_height == null) return null
+  return { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height }
 }
 
 export default function CreatorGallery({ profileId }: { profileId: string }) {
   const { t } = useLanguage()
   const [photos, setPhotos] = useState<GalleryPhoto[]>([])
   const [error, setError] = useState('')
+  const [croppingId, setCroppingId] = useState<string | null>(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +40,7 @@ export default function CreatorGallery({ profileId }: { profileId: string }) {
     let cancelled = false
     supabase
       .from('creator_gallery')
-      .select('id, image_url, display_order')
+      .select('id, image_url, display_order, crop_x, crop_y, crop_width, crop_height')
       .eq('profile_id', profileId)
       .order('display_order', { ascending: true })
       .then(({ data }) => { if (!cancelled && data) setPhotos(data as GalleryPhoto[]) })
@@ -41,10 +53,18 @@ export default function CreatorGallery({ profileId }: { profileId: string }) {
     const { data, error } = await supabase
       .from('creator_gallery')
       .insert({ profile_id: profileId, image_url: url, display_order: nextOrder })
-      .select('id, image_url, display_order')
+      .select('id, image_url, display_order, crop_x, crop_y, crop_width, crop_height')
       .single()
     if (error) { setError(error.message); return }
     setPhotos(prev => [...prev, data as GalleryPhoto])
+  }
+
+  async function handleCropConfirm(id: string, box: CropBox) {
+    setCroppingId(null)
+    setPhotos(prev => prev.map(p => p.id === id ? { ...p, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height } : p))
+    await supabase.from('creator_gallery').update({
+      crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height,
+    }).eq('id', id)
   }
 
   async function handleDelete(id: string) {
@@ -83,7 +103,25 @@ export default function CreatorGallery({ profileId }: { profileId: string }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {photos.map((photo, i) => (
           <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden group" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
-            <Image src={photo.image_url} alt={`Gallery ${i + 1}`} fill className="object-cover" />
+            <CroppedImage src={photo.image_url} alt={`Gallery ${i + 1}`} crop={cropOf(photo)} sizes="200px" />
+            <button
+              type="button"
+              onClick={() => setCroppingId(photo.id)}
+              aria-label={t('image_crop_edit')}
+              className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white' }}
+            >
+              <FiCrop size={12} />
+            </button>
+            {croppingId === photo.id && (
+              <ImageCropper
+                imageUrl={photo.image_url}
+                aspect={GALLERY_CROP_ASPECT}
+                initialCrop={cropOf(photo)}
+                onConfirm={(box) => handleCropConfirm(photo.id, box)}
+                onCancel={() => setCroppingId(null)}
+              />
+            )}
             <button
               type="button"
               onClick={() => handleDelete(photo.id)}
