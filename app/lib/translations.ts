@@ -597,6 +597,14 @@ const translations = {
   release_artwork_by_label:     { el: "Artwork από", en: "Artwork By" },
   release_artwork_by_placeholder: { el: "π.χ. Jane Doe", en: "e.g. Jane Doe" },
   release_saved_redirecting:    { el: "✓ Αποθηκεύτηκε! Μεταφορά...", en: "✓ Saved! Redirecting..." },
+
+  // ── ImageCropper ─────────────────────────────────────────
+  image_crop_title:             { el: "Περικοπή Εικόνας", en: "Crop Image" },
+  image_crop_zoom:              { el: "Ζουμ", en: "Zoom" },
+  image_crop_cancel:            { el: "Ακύρωση", en: "Cancel" },
+  image_crop_confirm:           { el: "Αποθήκευση", en: "Save Crop" },
+  image_crop_close:             { el: "Κλείσιμο", en: "Close" },
+  image_crop_edit:              { el: "Επεξεργασία περικοπής", en: "Edit crop" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
