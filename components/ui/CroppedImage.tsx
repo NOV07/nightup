@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, SyntheticEvent } from 'react'
 
 /** Crop box as fractions (0-1) of the original image, matching the crop_x/y/width/height DB columns. */
 export interface CropBox {
@@ -17,6 +17,9 @@ interface CroppedImageProps {
   style?: CSSProperties
   sizes?: string
   priority?: boolean
+  /** Only applies to the uncropped next/image and data-uri <img> branches — the
+   *  background-image crop branch has no equivalent load-error event to hook. */
+  onError?: (e: SyntheticEvent<HTMLImageElement, Event>) => void
 }
 
 /**
@@ -28,9 +31,26 @@ interface CroppedImageProps {
  * background-position (computed from the crop box) is used instead. That does
  * mean cropped images skip next/image's automatic optimization — a deliberate
  * trade-off for correctly reproducing the stored crop.
+ *
+ * `data:` URIs (base64 photos uploaded through the admin panel without going
+ * through Storage) bypass next/image entirely and fall back to a plain `<img>`,
+ * matching what every call site already did individually before this existed.
  */
-export default function CroppedImage({ src, alt, crop, className, style, sizes, priority }: CroppedImageProps) {
+export default function CroppedImage({ src, alt, crop, className, style, sizes, priority, onError }: CroppedImageProps) {
+  const isDataUri = src.startsWith('data:')
+
   if (!crop) {
+    if (isDataUri) {
+      return (
+        <img
+          src={src}
+          alt={alt}
+          className={className}
+          onError={onError}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', ...style }}
+        />
+      )
+    }
     return (
       <Image
         src={src}
@@ -39,6 +59,7 @@ export default function CroppedImage({ src, alt, crop, className, style, sizes, 
         sizes={sizes}
         priority={priority}
         className={className}
+        onError={onError}
         style={{ objectFit: 'cover', ...style }}
       />
     )

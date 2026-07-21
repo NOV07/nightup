@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
@@ -11,6 +10,7 @@ import { RadarBadge } from "./RadarBadge";
 import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
 import EventImageFallback from "./EventImageFallback";
+import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -18,6 +18,7 @@ interface HotEventCardProps {
   id: string;
   title: string;
   image?: string;
+  crop?: CropBox | null;
   genre: string;
   type?: string | null;
   price: string | number | null | undefined;
@@ -32,7 +33,7 @@ interface HotEventCardProps {
 }
 
 export default function HotEventCard({
-  id, title, image, genre, type, price, date, time, venue, isRadarPick, showHotBadge = false,
+  id, title, image, crop, genre, type, price, date, time, venue, isRadarPick, showHotBadge = false,
   variant = "large", initialSaved,
 }: HotEventCardProps) {
   const [saved, setSaved] = useState(initialSaved ?? false);
@@ -105,17 +106,11 @@ export default function HotEventCard({
       {/* Image */}
       {!hasRealImage ? (
         <EventImageFallback genre={genre} compact />
-      ) : imgSrc.startsWith("data:") ? (
-        <img
-          src={imgSrc}
-          alt={title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
       ) : (
-        <Image
+        <CroppedImage
           src={imgSrc}
           alt={title}
-          fill
+          crop={crop}
           sizes={isLarge ? "(max-width: 1024px) 100vw, 50vw" : "(max-width: 1024px) 100vw, 25vw"}
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK; }}

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getSupabase } from "../../lib/supabase";
-import { getEventCoverImage } from "../../lib/getEventCoverImage";
+import { getEventCoverImage, getEventCrop } from "../../lib/getEventCoverImage";
 import EventsAllClient from "./EventsAllClient";
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export default async function EventsAllPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, organizer_id, type")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, date, time, venue, city, interested_count, going_count, organizer_id, type")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true });
@@ -40,6 +40,7 @@ export default async function EventsAllPage() {
         id: String(e.id),
         title: e.title,
         image: getEventCoverImage(e),
+        crop: getEventCrop(e),
         genre: e.genre,
         price: e.price ?? "",
         date: e.date,

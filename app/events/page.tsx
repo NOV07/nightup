@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import EventsClient from "./EventsClient";
 import { getSupabase } from "../lib/supabase";
-import { getEventCoverImage } from "../lib/getEventCoverImage";
+import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
 
 export const metadata: Metadata = {
   title: "Events",
@@ -52,7 +52,7 @@ export default async function EventsPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true });
@@ -62,6 +62,7 @@ export default async function EventsPage() {
         id: String(e.id),
         title: e.title,
         image: getEventCoverImage(e),
+        crop: getEventCrop(e),
         genre: e.genre,
         price: e.price != null ? (e.price === 0 ? "Free" : `€${e.price}`) : "",
         date: e.date,

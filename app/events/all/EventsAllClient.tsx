@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import EventCard from "../../components/EventCard";
+import type { CropBox } from "../../../components/ui/CroppedImage";
 
 import { CITIES, GENRES, GENRE_LABELS } from "../../lib/searchConstants";
 import { useLanguage } from "../../components/LanguageContext";
 const PAGE_SIZE = 12;
 
 interface Event {
-  id: string; title: string; image: string; genre: string; price: string;
+  id: string; title: string; image: string; crop?: CropBox | null; genre: string; price: string;
   date: string; time: string; venue: string; city: string;
   interestedCount: number; goingCount: number; featured?: boolean;
   isRadarPick?: boolean; type?: string | null;

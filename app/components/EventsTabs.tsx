@@ -149,6 +149,7 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
                   id={e.id}
                   title={e.title}
                   image={e.image_url || e.image}
+                  crop={e.crop}
                   genre={e.genre}
                   type={e.type}
                   price={e.price}

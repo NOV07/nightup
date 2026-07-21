@@ -91,7 +91,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     );
     supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, date, time, venue, city, type, genres, price")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, type, genres, price")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true })

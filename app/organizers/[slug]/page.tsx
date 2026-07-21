@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
-import { getEventCoverImage } from "../../lib/getEventCoverImage";
+import { getEventCoverImage, getEventCrop } from "../../lib/getEventCoverImage";
 import EventCard from "../../components/EventCard";
 
 interface Props {
@@ -29,6 +29,10 @@ interface OrgEvent {
   title: string;
   image_url: string | null;
   has_copyright_restriction: boolean;
+  crop_x: number | null;
+  crop_y: number | null;
+  crop_width: number | null;
+  crop_height: number | null;
   genre: string;
   price: string | null;
   date: string;
@@ -88,7 +92,7 @@ async function getOrganizerEvents(organizerId: string): Promise<OrgEvent[]> {
     const today = new Date().toISOString().split("T")[0];
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, featured")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, date, time, venue, city, interested_count, going_count, featured")
       .eq("organizer_id", organizerId)
       .eq("status", "approved")
       .gte("date", today)
@@ -107,7 +111,7 @@ async function getOrganizerPastEvents(organizerId: string): Promise<OrgEvent[]> 
     const today = new Date().toISOString().split("T")[0];
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, featured")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, date, time, venue, city, interested_count, going_count, featured")
       .eq("organizer_id", organizerId)
       .eq("status", "approved")
       .lt("date", today)
@@ -286,6 +290,7 @@ export default async function OrganizerPage({ params }: Props) {
                   id={String(ev.id)}
                   title={ev.title}
                   image={getEventCoverImage(ev)}
+                  crop={getEventCrop(ev)}
                   genre={ev.genre}
                   price={ev.price ?? ""}
                   date={ev.date}
@@ -313,6 +318,7 @@ export default async function OrganizerPage({ params }: Props) {
                     id={String(ev.id)}
                     title={ev.title}
                     image={getEventCoverImage(ev)}
+                    crop={getEventCrop(ev)}
                     genre={ev.genre}
                     price={ev.price ?? ""}
                     date={ev.date}

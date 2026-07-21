@@ -6,7 +6,8 @@ import SpotCard from "./SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { getEventMood } from "../lib/eventMood";
-import { getEventCoverImage } from "../lib/getEventCoverImage";
+import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
+import CroppedImage from "../../components/ui/CroppedImage";
 import { useLanguage } from "./LanguageContext";
 import { useUserLocation } from "../lib/useUserLocation";
 
@@ -18,6 +19,10 @@ export interface EventLite {
   title: string;
   image_url: string | null;
   has_copyright_restriction: boolean;
+  crop_x: number | null;
+  crop_y: number | null;
+  crop_width: number | null;
+  crop_height: number | null;
   date: string;
   time: string | null;
   venue: string;
@@ -290,7 +295,9 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                   <Link href={`/events/${matchedEvent.id}`} onClick={handleClose} style={S.eventCard}>
                     <div style={S.eventKicker}>🎉 Ή δοκίμασε ένα event απόψε</div>
                     <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
-                      <img src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} style={S.eventImg} />
+                      <div style={{ position: "relative", ...S.eventImg }}>
+                        <CroppedImage src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} crop={getEventCrop(matchedEvent)} sizes="52px" style={{ borderRadius: S.eventImg.borderRadius }} />
+                      </div>
                       <div style={{ minWidth: 0 }}>
                         <div style={S.eventTitle}>{matchedEvent.title}</div>
                         <div style={S.eventMeta}>{matchedEvent.date}{matchedEvent.time ? ` · ${matchedEvent.time}` : ""}</div>

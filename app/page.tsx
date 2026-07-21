@@ -4,7 +4,7 @@ import Image from "next/image";
 import HeroSearch from "./components/HeroSearch";
 import EventTabs from "./components/EventsTabs";
 import { getSupabase } from "./lib/supabase";
-import { getEventCoverImage } from "./lib/getEventCoverImage";
+import { getEventCoverImage, getEventCrop } from "./lib/getEventCoverImage";
 import FadeInObserver from "./components/FadeInObserver";
 import HeroSlider from "./components/HeroSlider";
 import NightwavesHomeCard from "./components/NightwavesHomeCard";
@@ -88,7 +88,7 @@ export default async function HomePage() {
     const [evRes, artRes, relRes, mixFeedRes, playFeedRes] = await Promise.all([
       supabase
         .from("events")
-        .select("id, title, image_url, has_copyright_restriction, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick, type")
+        .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick, type")
         .eq("status", "approved")
         .gte("date", today)
         .order("date", { ascending: true })
@@ -105,7 +105,7 @@ export default async function HomePage() {
     ]);
 
     const toCard = (e: any, badge: string) => ({
-      id: String(e.id), title: e.title, image: getEventCoverImage(e),
+      id: String(e.id), title: e.title, image: getEventCoverImage(e), crop: getEventCrop(e),
       genre: e.genre, price: e.price ?? "", date: e.date, time: e.time ?? "",
       venue: e.venue, city: e.city,
       interestedCount: e.interested_count ?? 0, goingCount: e.going_count ?? 0,

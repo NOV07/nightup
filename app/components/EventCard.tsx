@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { MouseEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
@@ -12,6 +11,7 @@ import { RadarBadge } from "./RadarBadge";
 import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
 import EventImageFallback from "./EventImageFallback";
+import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -20,6 +20,7 @@ interface EventCardProps {
   title: string;
   image?: string;
   image_url?: string;
+  crop?: CropBox | null;
   genre: string;
   type?: string | null;
   price: string | number | null | undefined;
@@ -50,7 +51,7 @@ const genreColors: Record<string, string> = {
 };
 
 export default function EventCard({
-  id, title, image, image_url, genre, type, price, date, venue, city,
+  id, title, image, image_url, crop, genre, type, price, date, venue, city,
   interestedCount, goingCount, featured, badge, organizerName, organizerSlug,
   initialSaved,
 }: EventCardProps) {
@@ -121,13 +122,13 @@ export default function EventCard({
       <div className="relative overflow-hidden" style={{ height: "210px" }}>
         {!hasRealImage ? (
           <EventImageFallback genre={genre} compact />
-        ) : imgSrc.startsWith("data:") ? (
-          <img src={imgSrc} alt={title}
-            className="w-full h-full object-cover card-img group-hover:scale-[1.05]" />
         ) : (
-          <Image src={imgSrc} alt={title} fill
+          <CroppedImage
+            src={imgSrc}
+            alt={title}
+            crop={crop}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover card-img event-card-image"
+            className="object-cover card-img event-card-image group-hover:scale-[1.05]"
             onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
           />
         )}

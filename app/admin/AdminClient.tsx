@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import RichTextEditor from "../components/admin/RichTextEditor";
 import { useRouter } from "next/navigation";
+import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
+
+const EVENT_CROP_ASPECT = 16 / 9;
 
 function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -61,7 +64,7 @@ interface AllContent {
   spot_claims: any[];
 }
 
-const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false,has_copyright_restriction:false };
+const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false,has_copyright_restriction:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
 const defaultProForm = { name:"",avatar:"",category:"Venues",rating:"5",reviews_count:"0",city:"",description:"" };
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
 const defaultOrgForm = { name:"",type:"Club",city:"Athens",about:"",cover_image:"",avatar:"",instagram:"",facebook:"",tiktok:"",website:"" };
@@ -110,6 +113,7 @@ export default function AdminClient() {
   const [articleContent, setArticleContent] = useState("");
 
   const [adminEventPhoto, setAdminEventPhoto] = useState<string>("");
+  const [showAddEventCropper, setShowAddEventCropper] = useState(false);
   const [adminEventPhotoError, setAdminEventPhotoError] = useState("");
   const adminEventPhotoRef = useRef<HTMLInputElement>(null);
 
@@ -296,6 +300,7 @@ export default function AdminClient() {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { setAdminEventPhotoError("Photo must be under 5MB."); return; }
     setAdminEventPhoto(await readFileAsBase64(file));
+    setEventForm(f => ({ ...f, crop_x: null, crop_y: null, crop_width: null, crop_height: null }));
   }
 
   async function handleAddEvent(e: React.FormEvent) {
@@ -1051,7 +1056,7 @@ export default function AdminClient() {
                             )}
                             <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={eventForm.city} onChange={e => setEventForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
                             <div><label className={labelCls}>Price</label><input className={inputCls} style={inputStyle} value={eventForm.price} onChange={e => setEventForm(f => ({ ...f, price:e.target.value }))} placeholder="€15" /></div>
-                            <div><label className={labelCls}>Image URL</label><input className={inputCls} style={inputStyle} value={eventForm.image_url} onChange={e => { setEventForm(f => ({ ...f, image_url:e.target.value })); setAdminEventPhoto(""); }} placeholder="https://…" /></div>
+                            <div><label className={labelCls}>Image URL</label><input className={inputCls} style={inputStyle} value={eventForm.image_url} onChange={e => { setEventForm(f => ({ ...f, image_url:e.target.value, crop_x:null, crop_y:null, crop_width:null, crop_height:null })); setAdminEventPhoto(""); }} placeholder="https://…" /></div>
                             <div>
                               <label className={labelCls}>Upload Photo (max 5MB)</label>
                               <div className="w-full px-3 py-2 rounded-lg text-sm cursor-pointer" style={{ backgroundColor:"#0F0F1A", border:"1px dashed #555", color:"#aaa" }} onClick={() => adminEventPhotoRef.current?.click()}>
@@ -1060,10 +1065,29 @@ export default function AdminClient() {
                               </div>
                               {adminEventPhotoError && <p className="text-red-400 text-xs mt-1">{adminEventPhotoError}</p>}
                               {adminEventPhoto && <img src={adminEventPhoto} alt="Preview" className="w-full rounded-lg object-cover mt-2" style={{ maxHeight:120 }} />}
+                              {(adminEventPhoto || eventForm.image_url) && (
+                                <button type="button" onClick={() => setShowAddEventCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color:"#E8A020" }}>
+                                  Edit crop
+                                </button>
+                              )}
                             </div>
                             <div className="sm:col-span-2">
                               <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={eventForm.has_copyright_restriction} onChange={e => setEventForm(f => ({ ...f, has_copyright_restriction:e.target.checked }))} /> Image is copyrighted (use generic cover)</label>
                             </div>
+                            {showAddEventCropper && (adminEventPhoto || eventForm.image_url) && (
+                              <ImageCropper
+                                imageUrl={adminEventPhoto || eventForm.image_url}
+                                aspect={EVENT_CROP_ASPECT}
+                                initialCrop={eventForm.crop_x != null && eventForm.crop_y != null && eventForm.crop_width != null && eventForm.crop_height != null
+                                  ? { crop_x: eventForm.crop_x, crop_y: eventForm.crop_y, crop_width: eventForm.crop_width, crop_height: eventForm.crop_height }
+                                  : null}
+                                onConfirm={(box: CropBox) => {
+                                  setEventForm(f => ({ ...f, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height }));
+                                  setShowAddEventCropper(false);
+                                }}
+                                onCancel={() => setShowAddEventCropper(false)}
+                              />
+                            )}
                             <div>
                               <label className={labelCls}>Organizer</label>
                               <select className={inputCls} style={inputStyle} value={(eventForm as any).organizer_id ?? ""} onChange={e => setEventForm(f => ({ ...f, organizer_id:e.target.value || null } as any))}>
@@ -1460,6 +1484,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
   approvedOrgs: ContentItem[];
 }) {
   const [form, setForm] = useState<Record<string, unknown>>({ ...item });
+  const [showCropper, setShowCropper] = useState(false);
 
   function field(key: string, label: string, type: "text" | "textarea" | "select" | "date" | "number" | "checkbox" = "text", options?: string[], colSpan = false) {
     const val = form[key] ?? "";
@@ -1478,7 +1503,11 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
             <span className="text-sm text-gray-300">{label}</span>
           </div>
         ) : (
-          <input type={type} className={inputCls} style={inputStyle} value={String(val)} onChange={e => setForm(f => ({ ...f, [key]:e.target.value }))} />
+          <input type={type} className={inputCls} style={inputStyle} value={String(val)} onChange={e => setForm(f => ({
+            ...f,
+            [key]: e.target.value,
+            ...(key === "image_url" ? { crop_x: null, crop_y: null, crop_width: null, crop_height: null } : {}),
+          }))} />
         )}
       </div>
     );
@@ -1506,7 +1535,30 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("type","Event Type","select",["Club Night","Live Show","Festival","Open Air","Private Party","Other"])}
           {field("price","Price")}
           {field("image_url","Image URL")}
+          {form.image_url ? (
+            <div className="flex items-end pb-1">
+              <button type="button" onClick={() => setShowCropper(true)} className="text-xs hover:opacity-80" style={{ color:"#E8A020" }}>
+                Edit crop
+              </button>
+            </div>
+          ) : <div />}
           {field("has_copyright_restriction","Image is copyrighted (use generic cover)","checkbox",undefined,true)}
+          {showCropper && form.image_url && (
+            <div className="sm:col-span-2">
+              <ImageCropper
+                imageUrl={String(form.image_url)}
+                aspect={EVENT_CROP_ASPECT}
+                initialCrop={form.crop_x != null && form.crop_y != null && form.crop_width != null && form.crop_height != null
+                  ? { crop_x: Number(form.crop_x), crop_y: Number(form.crop_y), crop_width: Number(form.crop_width), crop_height: Number(form.crop_height) }
+                  : null}
+                onConfirm={(box: CropBox) => {
+                  setForm(f => ({ ...f, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height }));
+                  setShowCropper(false);
+                }}
+                onCancel={() => setShowCropper(false)}
+              />
+            </div>
+          )}
           {field("address","Address")}
           {field("maps_url","Maps URL")}
           {field("ticket_url","Ticket URL","text",undefined,true)}

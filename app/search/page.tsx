@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { getSupabase } from "../lib/supabase";
-import { getEventCoverImage } from "../lib/getEventCoverImage";
+import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
+import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
 import T from "../components/T";
 import { SearchResultCount } from "./SearchResultCount";
 
@@ -46,6 +46,7 @@ interface Result {
   title: string;
   subtitle?: string;
   image?: string | null;
+  crop?: CropBox | null;
   badge?: string;
   href: string;
   type: ResultType;
@@ -75,7 +76,7 @@ export default async function SearchPage({ searchParams }: Props) {
     const pattern = `%${query}%`;
 
     const [evRes, artRes, mixRes, profRes, spotRes, relRes] = await Promise.all([
-      supabase.from("events").select("id, title, venue, city, date, image_url, has_copyright_restriction").ilike("title", pattern).eq("status", "approved").order("date", { ascending: true }).limit(10),
+      supabase.from("events").select("id, title, venue, city, date, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height").ilike("title", pattern).eq("status", "approved").order("date", { ascending: true }).limit(10),
       supabase.from("articles").select("id, title, category, hero_image").ilike("title", pattern).eq("status", "published").limit(10),
       supabase.from("mixes").select("id, title, artist, genre, cover_image").ilike("title", pattern).eq("status", "approved").limit(10),
       supabase.from("profiles").select("id, username, display_name, avatar_url, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${query}%,network_subcategory.ilike.%${query}%`).limit(10),
@@ -88,6 +89,7 @@ export default async function SearchPage({ searchParams }: Props) {
       title: e.title,
       subtitle: [e.venue, e.city, e.date ? new Date(e.date).toLocaleDateString("el-GR", { day: "numeric", month: "short" }) : null].filter(Boolean).join(" · "),
       image: getEventCoverImage(e),
+      crop: getEventCrop(e),
       href: `/events/${e.id}`,
     }));
 
@@ -230,13 +232,12 @@ export default async function SearchPage({ searchParams }: Props) {
                     onMouseLeave={(e: any) => (e.currentTarget.style.background = "transparent")}
                   >
                     {/* Thumbnail */}
-                    <div style={{ width: 44, height: 44, borderRadius: type === "profile" ? "50%" : 6, overflow: "hidden", flexShrink: 0, background: "#1A1A28" }}>
-                      <Image
+                    <div style={{ position: "relative", width: 44, height: 44, borderRadius: type === "profile" ? "50%" : 6, overflow: "hidden", flexShrink: 0, background: "#1A1A28" }}>
+                      <CroppedImage
                         src={item.image || FALLBACK}
                         alt={item.title}
-                        width={44}
-                        height={44}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        crop={item.crop}
+                        sizes="44px"
                       />
                     </div>
 

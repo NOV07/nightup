@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 import ContactPill from '@/app/components/ContactPill'
 import T from '@/app/components/T'
-import { getEventCoverImage } from '@/app/lib/getEventCoverImage'
+import { getEventCoverImage, getEventCrop } from '@/app/lib/getEventCoverImage'
+import CroppedImage from '@/components/ui/CroppedImage'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
 
@@ -65,7 +66,7 @@ export default async function ProfilePage({ params }: Props) {
   if (profile.profile_type === 'artist') {
     const { data: allEvents } = await supabase
       .from('events')
-      .select('id, title, image_url, has_copyright_restriction, genre, date, time, venue, city, lineup')
+      .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, lineup')
       .eq('status', 'approved')
       .gte('date', new Date().toISOString().split('T')[0])
       .order('date', { ascending: true })
@@ -94,7 +95,7 @@ export default async function ProfilePage({ params }: Props) {
   if (profile.profile_type === 'organizer' || profile.profile_type === 'venue') {
     const { data } = await supabase
       .from('events')
-      .select('id, title, image_url, has_copyright_restriction, genre, date, time, venue, city, ticket_url')
+      .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, ticket_url')
       .eq('profile_id', profile.id)
       .eq('status', 'approved')
       .gte('date', new Date().toISOString().split('T')[0])
@@ -353,7 +354,7 @@ export default async function ProfilePage({ params }: Props) {
                       className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
                       style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '56px', height: '56px' }}>
-                        <Image src={getEventCoverImage(event)} alt={event.title} fill className="object-cover" />
+                        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-white text-sm truncate">{event.title}</p>
@@ -480,7 +481,7 @@ export default async function ProfilePage({ params }: Props) {
                       className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
                       style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '64px', height: '64px' }}>
-                        <Image src={getEventCoverImage(event)} alt={event.title} fill className="object-cover" />
+                        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-white truncate">{event.title}</p>
