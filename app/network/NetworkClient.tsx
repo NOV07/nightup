@@ -308,33 +308,29 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
     <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <div style={{ position: 'relative', background: '#080808', overflow: 'hidden', minHeight: '260px', display: 'flex', alignItems: 'flex-end', padding: '48px 0 44px' }}>
-        {/* Ambient floating blobs (float = drift, glow-pulse = opacity) */}
-        <div className="animate-float-a" style={{ position: 'absolute', top: -90, left: -70, pointerEvents: 'none', zIndex: 1 }}>
-          <div className="animate-glow-pulse" style={{ width: 320, height: 320, borderRadius: '50%', background: GOLD, filter: 'blur(80px)' }} />
+      <div style={{ position: 'relative', background: '#080808', overflow: 'hidden', minHeight: '240px', display: 'flex', alignItems: 'flex-end', padding: '44px 0 28px' }}>
+        {/* Ambient floating blobs — float class drifts them; opacity kept high
+            enough to read against the near-black background. */}
+        <div className="animate-float-a" style={{ position: 'absolute', top: -70, left: -50, pointerEvents: 'none', zIndex: 1 }}>
+          <div style={{ width: 340, height: 340, borderRadius: '50%', background: GOLD, filter: 'blur(85px)', opacity: 0.22 }} />
         </div>
-        <div className="animate-float-b" style={{ position: 'absolute', top: -110, right: -80, pointerEvents: 'none', zIndex: 1 }}>
-          <div className="animate-glow-pulse" style={{ width: 360, height: 360, borderRadius: '50%', background: '#16213E', filter: 'blur(90px)' }} />
+        <div className="animate-float-b" style={{ position: 'absolute', top: -90, right: -60, pointerEvents: 'none', zIndex: 1 }}>
+          <div style={{ width: 380, height: 380, borderRadius: '50%', background: '#2C4A80', filter: 'blur(95px)', opacity: 0.3 }} />
         </div>
 
         {/* Bottom fade into page background */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
 
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '72rem', margin: '0 auto', padding: '0 24px', width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
-              {/* Eyebrow: LIVE NETWORK with pulsing dot */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span className="animate-live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
-                <span style={{ fontSize: 9, letterSpacing: '0.35em', textTransform: 'uppercase', color: GOLD, fontFamily: 'var(--font-sans)' }}>{t('network_live_eyebrow')}</span>
-              </div>
-              <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0 }}>
-                The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
-              </h1>
+          <div>
+            {/* Eyebrow: LIVE NETWORK with pulsing dot */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span className="animate-live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ fontSize: 9, letterSpacing: '0.35em', textTransform: 'uppercase', color: GOLD, fontFamily: 'var(--font-sans)' }}>{t('network_live_eyebrow')}</span>
             </div>
-            <Link href="/network/listings" className="section-link-gold" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
-              {t('network_listings')}
-            </Link>
+            <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0 }}>
+              The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
+            </h1>
           </div>
           <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
             {t('network_tagline')}
@@ -494,7 +490,7 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
         </>
       ) : (
         /* ══ GATES — default view ════════════════════════════════════ */
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 pt-4 pb-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {gateRows.map((row, ri) => (
               <Fragment key={ri}>

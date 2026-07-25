@@ -2,8 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useTonightModal } from "./TonightContext";
-import NetworkGuidedModal from "@/components/network/NetworkGuidedModal";
-import { useNetworkProfiles } from "./NetworkProfilesContext";
 import { usePlayerStore } from "./PlayerContext";
 import { useLanguage } from "./LanguageContext";
 
@@ -12,11 +10,11 @@ export default function TonightFAB() {
   const { open, isOpen } = useTonightModal();
   const [hidden, setHidden] = useState(false);
   const [fabOpacity, setFabOpacity] = useState(1);
-  const [showNetworkModal, setShowNetworkModal] = useState(false);
   const lastY = useRef(0);
   const pathname = usePathname();
+  // On /network the hero has its own guided-modal link, so we don't show the FAB
+  // there (a single entry point, not two).
   const isNetwork = (pathname === "/network" || pathname?.startsWith("/network")) && !pathname?.startsWith("/network/listings");
-  const networkProfiles = useNetworkProfiles();
   const { currentTrack } = usePlayerStore();
 
   useEffect(() => {
@@ -37,10 +35,12 @@ export default function TonightFAB() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  if (isNetwork) return null;
+
   return (
     <>
       <button
-        onClick={isNetwork ? () => setShowNetworkModal(true) : open}
+        onClick={open}
         style={{
           position: "fixed",
           bottom: 28,
@@ -61,8 +61,8 @@ export default function TonightFAB() {
           cursor: "pointer",
           boxShadow: "0 4px 24px rgba(232,160,32,0.35)",
           whiteSpace: "nowrap",
-          opacity: isOpen || showNetworkModal || hidden ? 0 : fabOpacity,
-          pointerEvents: isOpen || showNetworkModal || hidden ? "none" : "auto",
+          opacity: isOpen || hidden ? 0 : fabOpacity,
+          pointerEvents: isOpen || hidden ? "none" : "auto",
           transform: hidden
             ? "translateX(-50%) translateY(120%)"
             : "translateX(-50%) translateY(0)",
@@ -70,11 +70,8 @@ export default function TonightFAB() {
         }}
         className={`tonight-fab${currentTrack ? ' tonight-fab-has-track' : ''}`}
       >
-        <span style={{ fontSize: 14 }}>✦</span> {isNetwork ? t("fab_plan_event") : t("fab_find_night")}
+        <span style={{ fontSize: 14 }}>✦</span> {t("fab_find_night")}
       </button>
-      {isNetwork && showNetworkModal && (
-        <NetworkGuidedModal onClose={() => setShowNetworkModal(false)} profiles={networkProfiles} />
-      )}
     </>
   );
 }
