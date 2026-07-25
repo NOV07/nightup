@@ -1,15 +1,18 @@
 'use client'
-import { useEffect } from 'react'
+import { useState, Fragment } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { NETWORK, CITIES, CITY_LABELS } from '../lib/searchData'
 import FollowButton from '@/components/ui/FollowButton'
 import ListingsBar, { type Listing } from '@/components/network/ListingsBar'
+import NetworkGuidedModal from '@/components/network/NetworkGuidedModal'
+import { useNetworkProfiles } from '../components/NetworkProfilesContext'
 import { useLanguage } from '../components/LanguageContext'
 import { getAvatarCrop } from '../lib/profileCrop'
 import CroppedImage from '../../components/ui/CroppedImage'
 
 type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
+type GateKey = NetworkTab | 'Listings'
 
 interface Profile {
   id: string
@@ -29,7 +32,15 @@ interface Profile {
   is_verified: boolean | null
 }
 
+interface GatesPreview {
+  Artists: { profiles: Profile[]; count: number }
+  Venues: { profiles: Profile[]; count: number }
+  Professionals: { profiles: Profile[]; count: number }
+  Listings: { items: Listing[]; count: number }
+}
+
 const GOLD = '#E8A020'
+const BLUE = '#60A5FA'
 const SURFACE = '#111120'
 const BORDER = 'rgba(232,160,32,0.12)'
 
@@ -39,6 +50,14 @@ const TAB_META: Record<NetworkTab, { emoji: string; label: string }> = {
   Professionals: { emoji: '🤝', label: 'Professionals' },
 }
 
+const GATE_CONFIG: { key: GateKey; slug: string; icon: string }[] = [
+  { key: 'Artists',       slug: 'artists',       icon: '🎵' },
+  { key: 'Venues',        slug: 'venues',        icon: '🏛' },
+  { key: 'Professionals', slug: 'professionals', icon: '🤝' },
+  { key: 'Listings',      slug: 'listings',      icon: '📋' },
+]
+
+// ── Full profile card (used in the full-view grid) ─────────────────────
 function ProfileCard({ profile }: { profile: Profile }) {
   const { t } = useLanguage()
   const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
@@ -95,10 +114,68 @@ function ProfileCard({ profile }: { profile: Profile }) {
   )
 }
 
-export default function NetworkClient({ profiles, listings = [] }: { profiles: Profile[]; allProfiles?: Profile[]; listings?: Listing[] }) {
+// ── Compact profile card (used in the gate previews) ───────────────────
+function CompactProfileCard({ profile }: { profile: Profile }) {
+  const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
+  return (
+    <Link
+      href={`/profile/${profile.username}`}
+      className="flex items-center gap-3 p-3 transition-all hover:opacity-90"
+      style={{
+        backgroundColor: '#1A1A28',
+        border: `1px solid ${profile.is_featured ? GOLD : 'rgba(255,255,255,0.06)'}`,
+        borderRadius: 6,
+      }}
+    >
+      {profile.avatar_url ? (
+        <div className="relative rounded-full flex-shrink-0" style={{ width: 40, height: 40, overflow: 'hidden', border: `1px solid ${BORDER}` }}>
+          <CroppedImage
+            src={profile.avatar_url}
+            alt={profile.display_name}
+            crop={getAvatarCrop(profile)}
+            sizes="40px"
+          />
+        </div>
+      ) : (
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+          style={{ backgroundColor: 'rgba(232,160,32,0.12)', color: GOLD }}
+        >
+          {initials}
+        </div>
+      )}
+      <div className="min-w-0">
+        <div className="flex items-center gap-1">
+          <p className="font-semibold text-white text-sm truncate">{profile.display_name}</p>
+          {profile.is_verified && <span style={{ color: GOLD }} className="text-xs flex-shrink-0">✓</span>}
+          {profile.is_featured && <span style={{ color: GOLD }} className="text-xs flex-shrink-0">★</span>}
+        </div>
+        {profile.network_subcategory && (
+          <p className="text-xs mt-0.5 truncate" style={{ color: GOLD }}>{profile.network_subcategory}</p>
+        )}
+        {profile.location && (
+          <p className="text-[11px] mt-0.5 text-white/40 truncate">📍 {profile.location}</p>
+        )}
+      </div>
+    </Link>
+  )
+}
+
+interface Props {
+  profiles: Profile[]
+  allProfiles?: Profile[]
+  listings?: Listing[]
+  gatesPreview: GatesPreview
+}
+
+export default function NetworkClient({ profiles, listings = [], gatesPreview }: Props) {
   const { t } = useLanguage()
   const router = useRouter()
   const params = useSearchParams()
+  const networkProfiles = useNetworkProfiles()
+
+  const [showGuided, setShowGuided] = useState(false)
+  const [activeGate, setActiveGate] = useState<GateKey | null>(null)
 
   const slugToTab: Record<string, NetworkTab> = {
     artists: 'Artists',
@@ -109,8 +186,14 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
   const activeCategory = params.get('category') || ''
   const activeCity = params.get('city') || ''
 
+  // Full-view is shown when the URL carries any of these params (keeps every
+  // existing deep link — ?tab=/?category=/?city= — working); the plain
+  // /network entry shows the gates.
+  const showFullView = ['view', 'tab', 'category', 'city'].some(k => params.get(k))
+
   function push(overrides: Record<string, string>) {
     const p = new URLSearchParams()
+    p.set('view', 'all')
     const next = { tab: activeTab, category: activeCategory, city: activeCity, ...overrides }
     if (next.tab) p.set('tab', next.tab.toLowerCase())
     if (next.category) p.set('category', next.category)
@@ -118,9 +201,20 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
     router.push(`/network?${p.toString()}`)
   }
 
+  const gateDesc: Record<GateKey, string> = {
+    Artists:       t('network_gate_artists_desc'),
+    Venues:        t('network_gate_venues_desc'),
+    Professionals: t('network_gate_pros_desc'),
+    Listings:      t('network_gate_listings_desc'),
+  }
+  const gateTitle = (key: GateKey) =>
+    key === 'Listings' ? t('network_gate_listings_title') : TAB_META[key].label
+  const gateCount = (key: GateKey) => gatesPreview[key].count
+
   const tabData = NETWORK[activeTab] as Record<string, unknown>
 
-  // For Professionals, flatten "For Events" and "For Artists" sub-groups into one list
+  // For Professionals, flatten "For Events" and "For Artists" sub-groups into
+  // one list for the filter pills.
   const subcategories = activeTab === 'Professionals'
     ? Object.values(tabData).flatMap(group => Object.keys(group as Record<string, unknown>))
     : tabData ? Object.keys(tabData) : []
@@ -140,214 +234,332 @@ export default function NetworkClient({ profiles, listings = [] }: { profiles: P
     border: active ? '1px solid rgba(232,160,32,0.15)' : '1px solid rgba(255,255,255,0.06)',
   })
 
-  useEffect(() => {
-    const segments: [string, boolean][] = [
-      ['The people behind the ', false],
-      ['night.', true],
-    ]
-    const fullText = segments.map(s => s[0]).join('')
-    const goldStart = segments[0][0].length
-    const typed = document.getElementById('hero-typed')
-    const cursor = document.getElementById('hero-cursor')
-    const eyebrow = document.getElementById('hero-eyebrow')
-    if (!typed || !cursor || !eyebrow) return
-    let i = 0
-    const interval = setInterval(() => {
-      if (i >= fullText.length) {
-        clearInterval(interval)
-        setTimeout(() => { eyebrow.style.animation = 'cn-eyebrow 0.8s ease-out forwards' }, 200)
-        setTimeout(() => { if (cursor) cursor.style.display = 'none' }, 1700)
-        return
-      }
-      typed.innerHTML = ''
-      const before = fullText.slice(0, Math.min(i + 1, goldStart))
-      const after = i >= goldStart ? fullText.slice(goldStart, i + 1) : ''
-      before.split('\n').forEach((line, idx) => {
-        if (idx > 0) typed.appendChild(document.createElement('br'))
-        typed.appendChild(document.createTextNode(line))
-      })
-      if (after) {
-        const span = document.createElement('span')
-        span.style.cssText = 'color:#E8A020;font-style:italic'
-        span.textContent = after
-        typed.appendChild(span)
-      }
-      i++
-    }, 38)
-    return () => clearInterval(interval)
-  }, [])
+  const renderGrid = (list: Profile[]) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {list.map(p => <ProfileCard key={p.id} profile={p} />)}
+    </div>
+  )
+
+  // ── Professionals grouping (full-view) ──────────────────────────────
+  const forEventsRoles = Object.keys(NETWORK.Professionals['For Events'])
+  const forArtistsRoles = Object.keys(NETWORK.Professionals['For Artists'])
+  const inGroup = (roles: string[], p: Profile) => roles.includes(p.network_category ?? '')
+  const proForEvents = profiles.filter(p => inGroup(forEventsRoles, p))
+  const proForArtists = profiles.filter(p => inGroup(forArtistsRoles, p))
+  const proUngrouped = profiles.filter(p => !inGroup(forEventsRoles, p) && !inGroup(forArtistsRoles, p))
+
+  const groupSection = (label: string, color: string, list: Profile[]) => (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color }}>{label}</span>
+        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+      </div>
+      {renderGrid(list)}
+    </div>
+  )
+
+  // ── Gate panel (accordion expand content) ───────────────────────────
+  function renderGatePanel(key: GateKey) {
+    if (key === 'Listings') {
+      const { items } = gatesPreview.Listings
+      return (
+        <div style={{ padding: '2px 2px 8px' }}>
+          {items.length === 0 ? (
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '12px 4px' }}>{t('network_gate_empty')}</p>
+          ) : (
+            <ListingsBar listings={items} />
+          )}
+          <Link
+            href="/network/listings"
+            className="inline-block mt-4 text-xs font-semibold transition-opacity hover:opacity-80"
+            style={{ color: GOLD }}
+          >
+            {t('network_see_all_listings')}
+          </Link>
+        </div>
+      )
+    }
+
+    const preview = gatesPreview[key]
+    const slug = key.toLowerCase()
+    return (
+      <div style={{ padding: '2px 2px 8px' }}>
+        {preview.profiles.length === 0 ? (
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '12px 4px' }}>{t('network_gate_empty')}</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {preview.profiles.map(p => <CompactProfileCard key={p.id} profile={p} />)}
+          </div>
+        )}
+        <button
+          onClick={() => router.push(`/network?view=all&tab=${slug}`)}
+          className="mt-4 text-xs font-semibold transition-opacity hover:opacity-80"
+          style={{ color: GOLD, cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+        >
+          {t('network_see_all_profiles')} {preview.count} →
+        </button>
+      </div>
+    )
+  }
+
+  const gateRows = [GATE_CONFIG.slice(0, 2), GATE_CONFIG.slice(2, 4)]
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
 
-      {/* ── Cinematic Hero ──────────────────────────────── */}
-      <div style={{ position: 'relative', background: '#080808', overflow: 'hidden', minHeight: '280px', display: 'flex', alignItems: 'flex-end', padding: '32px 0 48px' }}>
-        <style>{`
-          @keyframes cn-flash { 0%{opacity:1} 100%{opacity:0} }
-          @keyframes cn-float { from{transform:translateY(0) translateX(0);opacity:var(--op)} to{transform:translateY(-40px) translateX(var(--dx));opacity:calc(var(--op)*0.2)} }
-          @keyframes cn-trail { 0%{transform:translateY(0);opacity:0} 10%{opacity:1} 90%{opacity:0.5} 100%{transform:translateY(-100px);opacity:0} }
-          @keyframes cn-flare { 0%,100%{opacity:0.03;transform:scale(1)} 50%{opacity:0.08;transform:scale(1.12)} }
-          @keyframes cn-blink { 0%,100%{opacity:1} 50%{opacity:0} }
-          @keyframes cn-eyebrow { from{opacity:0;letter-spacing:0.6em} to{opacity:1;letter-spacing:0.35em} }
-          @keyframes cn-particles-in { from{opacity:0} to{opacity:1} }
-        `}</style>
-
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 60% 80% at 20% 60%, rgba(232,160,32,0.35), transparent 60%)', animation: 'cn-flash 0.15s ease-out forwards', pointerEvents: 'none', zIndex: 20 }} />
-
-        {([[20,20,200],[45,50,280],[70,15,160],[85,60,220]] as [number,number,number][]).map(([l,t,s],i) => (
-          <div key={`f${i}`} style={{ position: 'absolute', width: s, height: s, left: `${l}%`, top: `${t}%`, transform: 'translate(-50%,-50%)', borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,160,32,0.06) 0%, transparent 70%)', animation: `cn-flare ${6+i*2}s ease-in-out infinite`, animationDelay: `${i*1.5}s`, pointerEvents: 'none', zIndex: 1 }} />
-        ))}
-
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, animation: 'cn-particles-in 2s ease-out forwards', animationDelay: '0.15s', opacity: 0, pointerEvents: 'none', zIndex: 1 }}>
-          {[...Array(50)].map((_, i) => {
-            const size = i%5===0 ? 2.5 : i%3===0 ? 1.5 : 1
-            const op = 0.15+(i%6)*0.08
-            const dx = ((i*7)%60)-30
-            const dur = 8+(i%5)*3
-            const blur = i%4===0
-            return (
-              <div key={`p${i}`} style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', background: i%7===0 ? '#E8A020' : '#ffffff', opacity: op, left: `${(i*13+7)%96}%`, top: `${(i*19+5)%90}%`, filter: blur ? 'blur(1px)' : 'none', ['--op' as any]: op, ['--dx' as any]: `${dx}px`, animation: `cn-float ${dur}s ease-in-out infinite alternate`, animationDelay: `${(i*0.3)%4}s` }} />
-            )
-          })}
-          {[...Array(14)].map((_,i) => (
-            <div key={`t${i}`} style={{ position: 'absolute', width: '1px', height: `${10+(i%4)*8}px`, left: `${(i*17+3)%95}%`, top: `${60+(i%4)*8}%`, background: `linear-gradient(to top, transparent, rgba(255,255,255,${0.1+(i%3)*0.08}), transparent)`, animation: `cn-trail ${4+(i%4)*1.5}s ease-in infinite`, animationDelay: `${(i*0.6)%5}s` }} />
-          ))}
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <div style={{ position: 'relative', background: '#080808', overflow: 'hidden', minHeight: '260px', display: 'flex', alignItems: 'flex-end', padding: '48px 0 44px' }}>
+        {/* Ambient floating blobs (float = drift, glow-pulse = opacity) */}
+        <div className="animate-float-a" style={{ position: 'absolute', top: -90, left: -70, pointerEvents: 'none', zIndex: 1 }}>
+          <div className="animate-glow-pulse" style={{ width: 320, height: 320, borderRadius: '50%', background: GOLD, filter: 'blur(80px)' }} />
+        </div>
+        <div className="animate-float-b" style={{ position: 'absolute', top: -110, right: -80, pointerEvents: 'none', zIndex: 1 }}>
+          <div className="animate-glow-pulse" style={{ width: 360, height: 360, borderRadius: '50%', background: '#16213E', filter: 'blur(90px)' }} />
         </div>
 
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '160px', background: 'linear-gradient(to right, #0F0F1A, transparent)', pointerEvents: 'none', zIndex: 5 }} />
+        {/* Bottom fade into page background */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
 
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '72rem', margin: '0 auto', padding: '0 24px', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <div id="hero-eyebrow" style={{ fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#E8A020', marginBottom: '10px', opacity: 0, fontFamily: 'var(--font-sans)' }}>Network</div>
-              <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0, minHeight: '4rem' }}>
-                <span id="hero-typed"></span>
-                <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: '#E8A020', verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
+              {/* Eyebrow: LIVE NETWORK with pulsing dot */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span className="animate-live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
+                <span style={{ fontSize: 9, letterSpacing: '0.35em', textTransform: 'uppercase', color: GOLD, fontFamily: 'var(--font-sans)' }}>{t('network_live_eyebrow')}</span>
+              </div>
+              <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0 }}>
+                The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
               </h1>
             </div>
             <Link href="/network/listings" className="section-link-gold" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
-              {t("network_listings")}
+              {t('network_listings')}
             </Link>
           </div>
           <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
-            {t("network_tagline")}
+            {t('network_tagline')}
           </p>
+          {/* Guided modal opener — subtle, not a big CTA */}
+          <button
+            onClick={() => setShowGuided(true)}
+            style={{
+              marginTop: 16,
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: 12.5,
+              fontWeight: 500,
+              color: '#F5B335',
+              background: 'rgba(232,160,32,0.08)',
+              border: '1px solid rgba(232,160,32,0.15)',
+              borderRadius: 6,
+              padding: '8px 14px',
+              cursor: 'pointer',
+            }}
+          >
+            {t('network_guided_link')}
+          </button>
         </div>
       </div>
 
-      {/* Listings Bar */}
-      {listings.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 pb-6">
-          <ListingsBar listings={listings} />
+      {showFullView ? (
+        /* ══ FULL VIEW — tabs + filters + grid ═══════════════════════ */
+        <>
+          {/* Listings Bar */}
+          {listings.length > 0 && (
+            <div className="max-w-6xl mx-auto px-4 pt-6 pb-2">
+              <ListingsBar listings={listings} />
+            </div>
+          )}
+
+          {/* Sticky filter bar */}
+          <div
+            className="sticky z-10 border-b"
+            style={{ top: 56, backgroundColor: 'rgba(15,15,26,0.95)', backdropFilter: 'blur(8px)', borderColor: BORDER }}
+          >
+            <div className="max-w-6xl mx-auto px-4 py-3 space-y-3">
+
+              {/* Row 1: tabs + city */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none min-w-0 flex-1">
+                  {(Object.keys(TAB_META) as NetworkTab[]).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => push({ tab, category: '', city: activeCity })}
+                      style={pillStyle(activeTab === tab)}
+                    >
+                      {TAB_META[tab].emoji} {TAB_META[tab].label}
+                    </button>
+                  ))}
+                </div>
+                <select
+                  value={activeCity}
+                  onChange={e => push({ city: e.target.value })}
+                  className="outline-none flex-shrink-0"
+                  style={{
+                    backgroundColor: '#1A1A28',
+                    color: activeCity ? 'white' : 'rgba(255,255,255,0.4)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: 6,
+                    fontSize: '0.8rem',
+                    padding: '0.4rem 0.75rem',
+                  }}
+                >
+                  <option value="">{t("network_all_cities")}</option>
+                  {CITIES.slice(1).map(c => <option key={c} value={c}>{CITY_LABELS[c] ?? c}</option>)}
+                </select>
+              </div>
+
+              {/* Row 2: subcategories */}
+              {hasSubcategories && (
+                <div className="relative">
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                    <button
+                      onClick={() => push({ category: '' })}
+                      style={pillStyle(!activeCategory)}
+                    >
+                      {t("network_all")}
+                    </button>
+                    {subcategories.map(sub => (
+                      <button
+                        key={sub}
+                        onClick={() => push({ category: sub })}
+                        style={pillStyle(activeCategory === sub)}
+                        className="whitespace-nowrap"
+                      >
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Fade-out gradient indicating more content to scroll */}
+                  <div
+                    className="sm:hidden"
+                    style={{
+                      position: 'absolute', top: 0, right: 0,
+                      width: 32, height: 'calc(100% - 4px)',
+                      background: 'linear-gradient(to right, transparent, rgba(15,15,26,0.95))',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Results */}
+          <div className="max-w-6xl mx-auto px-4 py-6">
+
+            {/* Back to gates */}
+            <button
+              onClick={() => router.push('/network')}
+              className="mb-5 text-xs transition-colors hover:text-white"
+              style={{ color: 'rgba(255,255,255,0.45)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            >
+              {t('network_back_to_gates')}
+            </button>
+
+            {/* Count */}
+            <div className="mb-5">
+              <p className="text-xs text-white/30">
+                {profiles.length} {profiles.length === 1 ? t("network_results_one") : t("network_results_many")}
+                {activeCategory && <span> · {activeCategory}</span>}
+                {activeCity && <span> · {activeCity}</span>}
+              </p>
+            </div>
+
+            {profiles.length > 0 ? (
+              activeTab === 'Professionals' ? (
+                <div className="space-y-9">
+                  {proForEvents.length > 0 && groupSection(t('network_group_for_events'), BLUE, proForEvents)}
+                  {proForArtists.length > 0 && groupSection(t('network_group_for_artists'), GOLD, proForArtists)}
+                  {proUngrouped.length > 0 && renderGrid(proUngrouped)}
+                </div>
+              ) : (
+                renderGrid(profiles)
+              )
+            ) : (
+              <div className="text-center py-20">
+                <p className="text-white/30 text-sm mb-2">{t("network_no_results")}</p>
+                {(activeCategory || activeCity) && (
+                  <button
+                    onClick={() => push({ category: '', city: '' })}
+                    className="text-xs hover:underline mt-2"
+                    style={{ color: GOLD }}
+                  >
+                    {t("network_clear")}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        /* ══ GATES — default view ════════════════════════════════════ */
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {gateRows.map((row, ri) => (
+              <Fragment key={ri}>
+                {row.map(gate => {
+                  const open = activeGate === gate.key
+                  return (
+                    <button
+                      key={gate.key}
+                      onClick={() => setActiveGate(open ? null : gate.key)}
+                      style={{
+                        textAlign: 'left',
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 12,
+                        padding: 20,
+                        background: open ? 'rgba(232,160,32,0.05)' : SURFACE,
+                        border: `1px solid ${open ? 'rgba(232,160,32,0.35)' : BORDER}`,
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        transition: 'all .2s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(232,160,32,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                          {gate.icon}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{gateTitle(gate.key)}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, background: 'rgba(232,160,32,0.12)', borderRadius: 4, padding: '2px 7px' }}>
+                            {gateCount(gate.key)}
+                          </span>
+                        </div>
+                        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 16, transition: 'transform .25s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>
+                          ›
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+                        {gateDesc[gate.key]}
+                      </p>
+                    </button>
+                  )
+                })}
+                {row.some(g => g.key === activeGate) && activeGate && (
+                  <div
+                    style={{
+                      gridColumn: '1 / -1',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${BORDER}`,
+                      borderRadius: 6,
+                      padding: 16,
+                    }}
+                  >
+                    {renderGatePanel(activeGate)}
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Sticky filter bar */}
-      <div
-        className="sticky z-10 border-b"
-        style={{ top: 56, backgroundColor: 'rgba(15,15,26,0.95)', backdropFilter: 'blur(8px)', borderColor: BORDER }}
-      >
-        <div className="max-w-6xl mx-auto px-4 py-3 space-y-3">
-
-          {/* Row 1: tabs + city */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none min-w-0 flex-1">
-              {(Object.keys(TAB_META) as NetworkTab[]).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => push({ tab, category: '', city: activeCity })}
-                  style={pillStyle(activeTab === tab)}
-                >
-                  {TAB_META[tab].emoji} {TAB_META[tab].label}
-                </button>
-              ))}
-            </div>
-            <select
-              value={activeCity}
-              onChange={e => push({ city: e.target.value })}
-              className="outline-none flex-shrink-0"
-              style={{
-                backgroundColor: '#1A1A28',
-                color: activeCity ? 'white' : 'rgba(255,255,255,0.4)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 6,
-                fontSize: '0.8rem',
-                padding: '0.4rem 0.75rem',
-              }}
-            >
-              <option value="">{t("network_all_cities")}</option>
-              {CITIES.slice(1).map(c => <option key={c} value={c}>{CITY_LABELS[c] ?? c}</option>)}
-            </select>
-          </div>
-
-          {/* Row 2: subcategories */}
-          {hasSubcategories && (
-            <div className="relative">
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                <button
-                  onClick={() => push({ category: '' })}
-                  style={pillStyle(!activeCategory)}
-                >
-                  {t("network_all")}
-                </button>
-                {subcategories.map(sub => (
-                  <button
-                    key={sub}
-                    onClick={() => push({ category: sub })}
-                    style={pillStyle(activeCategory === sub)}
-                    className="whitespace-nowrap"
-                  >
-                    {sub}
-                  </button>
-                ))}
-              </div>
-              {/* Fade-out gradient indicating more content to scroll */}
-              <div
-                className="sm:hidden"
-                style={{
-                  position: 'absolute', top: 0, right: 0,
-                  width: 32, height: 'calc(100% - 4px)',
-                  background: 'linear-gradient(to right, transparent, rgba(15,15,26,0.95))',
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Results */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-
-        {/* Count */}
-        <div className="mb-5">
-          <p className="text-xs text-white/30">
-            {profiles.length} {profiles.length === 1 ? t("network_results_one") : t("network_results_many")}
-            {activeCategory && <span> · {activeCategory}</span>}
-            {activeCity && <span> · {activeCity}</span>}
-          </p>
-        </div>
-
-        {profiles.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {profiles.map(p => <ProfileCard key={p.id} profile={p} />)}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-white/30 text-sm mb-2">{t("network_no_results")}</p>
-            {(activeCategory || activeCity) && (
-              <button
-                onClick={() => push({ category: '', city: '' })}
-                className="text-xs hover:underline mt-2"
-                style={{ color: GOLD }}
-              >
-                {t("network_clear")}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      {showGuided && (
+        <NetworkGuidedModal onClose={() => setShowGuided(false)} profiles={networkProfiles} />
+      )}
     </div>
   )
 }
