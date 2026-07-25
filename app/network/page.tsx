@@ -121,7 +121,9 @@ export default async function NetworkPage({ searchParams }: Props) {
     Artists:       { profiles: gateProfileResults[0]?.data ?? [], count: gateCountResults[0]?.count ?? 0 },
     Venues:        { profiles: gateProfileResults[1]?.data ?? [], count: gateCountResults[1]?.count ?? 0 },
     Professionals: { profiles: gateProfileResults[2]?.data ?? [], count: gateCountResults[2]?.count ?? 0 },
-    Listings:      { items: listings.slice(0, 2), count: listingsCount ?? 0 },
+    // `listings` is already ordered is_sponsored desc, created_at desc — so the
+    // preview shows sponsored first, then most recent.
+    Listings:      { items: listings.slice(0, 4), count: listingsCount ?? 0 },
   };
 
   return (
