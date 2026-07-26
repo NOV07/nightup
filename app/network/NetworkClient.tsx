@@ -238,28 +238,17 @@ export default function NetworkClient({ gatesPreview }: Props) {
         className="flex flex-col p-4 lg:p-[18px] lg:min-h-[360px]"
         style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
       >
-        {/* Header — title + sponsored label, see-all link bottom right */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h2 style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{gateTitle(activeGate)}</h2>
-              <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, background: 'rgba(232,160,32,0.12)', borderRadius: 4, padding: '2px 7px' }}>
-                {gateCount(activeGate)}
-              </span>
-            </div>
-            <p style={{ marginTop: 5, fontSize: 9, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
-              Sponsored
-            </p>
+        {/* Header — category title, count and the sponsored label */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{gateTitle(activeGate)}</h2>
+            <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, background: 'rgba(232,160,32,0.12)', borderRadius: 4, padding: '2px 7px' }}>
+              {gateCount(activeGate)}
+            </span>
           </div>
-          <Link
-            href={gateHref(activeGate)}
-            className="text-xs font-semibold transition-opacity hover:opacity-80"
-            style={{ color: GOLD, flexShrink: 0 }}
-          >
-            {isListings
-              ? t('network_see_all_listings')
-              : `${t('network_see_all_profiles')} ${gateCount(activeGate)} →`}
-          </Link>
+          <p style={{ marginTop: 5, fontSize: 9, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
+            Sponsored
+          </p>
         </div>
 
         {empty ? (
@@ -271,6 +260,26 @@ export default function NetworkClient({ gatesPreview }: Props) {
               : gatesPreview[activeGate].profiles.map(p => <CompactProfileCard key={p.id} profile={p} />)}
           </div>
         )}
+
+        {/* See-all pill — centred in the space left under the grid */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, padding: '20px 8px 6px' }}>
+          <Link
+            href={gateHref(activeGate)}
+            className="text-xs font-semibold transition-all hover:opacity-80"
+            style={{
+              color: '#F5B335',
+              background: 'rgba(232,160,32,0.08)',
+              border: '1px solid rgba(232,160,32,0.25)',
+              borderRadius: 999,
+              padding: '10px 22px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isListings
+              ? t('network_see_all_listings')
+              : `${t('network_see_all_profiles')} ${gateCount(activeGate)} →`}
+          </Link>
+        </div>
       </div>
     )
   }
