@@ -1,5 +1,5 @@
 'use client'
-import { useState, Fragment } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { NETWORK, CITIES, CITY_LABELS } from '../lib/searchData'
@@ -177,6 +177,53 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
   const [showGuided, setShowGuided] = useState(false)
   const [activeGate, setActiveGate] = useState<GateKey | null>(null)
 
+  // Hero typewriter — same pattern as the Spots hero. The eyebrow fades in
+  // first (CSS), then the title types out, then subtitle + guided link fade in.
+  useEffect(() => {
+    const segments: [string, boolean][] = [
+      ['The people behind the ', false],
+      ['night.', true],
+    ]
+    const fullText = segments.map(s => s[0]).join('')
+    const goldStart = segments[0][0].length
+    const typed = document.getElementById('hero-typed')
+    const cursor = document.getElementById('hero-cursor')
+    const tail = document.getElementById('hero-tail')
+    if (!typed || !cursor || !tail) return
+    let i = 0
+    let interval: ReturnType<typeof setInterval> | undefined
+    const timeouts: ReturnType<typeof setTimeout>[] = []
+    const start = setTimeout(() => {
+      interval = setInterval(() => {
+        if (i >= fullText.length) {
+          clearInterval(interval)
+          timeouts.push(setTimeout(() => {
+            tail.style.animation = 'cn-fade-in 0.8s ease-out forwards'
+            tail.style.pointerEvents = 'auto'
+          }, 200))
+          timeouts.push(setTimeout(() => { cursor.style.display = 'none' }, 1700))
+          return
+        }
+        typed.innerHTML = ''
+        const before = fullText.slice(0, Math.min(i + 1, goldStart))
+        const after = i >= goldStart ? fullText.slice(goldStart, i + 1) : ''
+        typed.appendChild(document.createTextNode(before))
+        if (after) {
+          const span = document.createElement('span')
+          span.style.cssText = 'color:#E8A020;font-style:italic'
+          span.textContent = after
+          typed.appendChild(span)
+        }
+        i++
+      }, 38)
+    }, 700)
+    return () => {
+      clearTimeout(start)
+      clearInterval(interval)
+      timeouts.forEach(clearTimeout)
+    }
+  }, [])
+
   const slugToTab: Record<string, NetworkTab> = {
     artists: 'Artists',
     venues: 'Venues',
@@ -316,6 +363,8 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
           @keyframes cn-flare { 0%,100%{opacity:0.03;transform:scale(1)} 50%{opacity:0.08;transform:scale(1.12)} }
           @keyframes cn-eyebrow { from{opacity:0;letter-spacing:0.6em} to{opacity:1;letter-spacing:0.35em} }
           @keyframes cn-particles-in { from{opacity:0} to{opacity:1} }
+          @keyframes cn-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+          @keyframes cn-fade-in { from{opacity:0} to{opacity:1} }
         `}</style>
 
         {/* Camera-flash burst on mount */}
@@ -353,31 +402,34 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
             <span className="animate-live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
             <span>{t('network_live_eyebrow')}</span>
           </div>
-          <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0 }}>
-            The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
+          <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0, minHeight: '4rem' }}>
+            <span id="hero-typed"></span>
+            <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: GOLD, verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
           </h1>
-          <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
-            {t('network_tagline')}
-          </p>
-          {/* Guided modal opener — subtle, not a big CTA */}
-          <button
-            onClick={() => setShowGuided(true)}
-            style={{
-              marginTop: 16,
-              display: 'inline-flex',
-              alignItems: 'center',
-              fontSize: 12.5,
-              fontWeight: 500,
-              color: '#F5B335',
-              background: 'rgba(232,160,32,0.08)',
-              border: '1px solid rgba(232,160,32,0.15)',
-              borderRadius: 6,
-              padding: '8px 14px',
-              cursor: 'pointer',
-            }}
-          >
-            {t('network_guided_link')}
-          </button>
+          <div id="hero-tail" style={{ opacity: 0, pointerEvents: 'none' }}>
+            <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
+              {t('network_tagline')}
+            </p>
+            {/* Guided modal opener — subtle, not a big CTA */}
+            <button
+              onClick={() => setShowGuided(true)}
+              style={{
+                marginTop: 16,
+                display: 'inline-flex',
+                alignItems: 'center',
+                fontSize: 12.5,
+                fontWeight: 500,
+                color: '#F5B335',
+                background: 'rgba(232,160,32,0.08)',
+                border: '1px solid rgba(232,160,32,0.15)',
+                borderRadius: 6,
+                padding: '8px 14px',
+                cursor: 'pointer',
+              }}
+            >
+              {t('network_guided_link')}
+            </button>
+          </div>
         </div>
       </div>
 
