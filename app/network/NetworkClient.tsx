@@ -138,9 +138,13 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
   return (
     <Link
       href={`/profile/${profile.username}`}
-      className="flex items-center gap-3 p-3 transition-all hover:opacity-90"
+      className="flex items-center gap-3 transition-all hover:opacity-90"
       style={{
         position: 'relative',
+        // Uniform top padding on every card keeps the avatars aligned across
+        // the grid and leaves room for the badge, which matters on the narrow
+        // two-column mobile layout.
+        padding: '24px 12px 12px',
         backgroundColor: '#1A1A28',
         border: `1px solid ${profile.is_featured ? GOLD : 'rgba(255,255,255,0.06)'}`,
         borderRadius: 6,
@@ -164,8 +168,7 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
           {initials}
         </div>
       )}
-      {/* Padding keeps the name clear of the absolutely positioned badge */}
-      <div className="min-w-0" style={{ paddingRight: profile.is_featured ? 62 : 0 }}>
+      <div className="min-w-0">
         <div className="flex items-center gap-1">
           <p className="font-semibold text-white text-sm truncate">{profile.display_name}</p>
           {profile.is_verified && <span style={{ color: GOLD }} className="text-xs flex-shrink-0">✓</span>}
@@ -190,14 +193,14 @@ function CompactListingCard({ listing }: { listing: Listing }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
-        padding: 14,
+        padding: '26px 14px 14px',
         backgroundColor: listing.is_sponsored ? 'rgba(232,160,32,0.04)' : '#1A1A28',
         border: `1px solid ${listing.is_sponsored ? GOLD : 'rgba(255,255,255,0.06)'}`,
         borderRadius: 6,
       }}
     >
       {listing.is_sponsored && <span style={BADGE_STYLE}>Sponsored</span>}
-      <span style={{ color: GOLD, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', paddingRight: listing.is_sponsored ? 78 : 0 }}>
+      <span style={{ color: GOLD, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
         {listing.role}
       </span>
       <p
@@ -214,8 +217,8 @@ function CompactListingCard({ listing }: { listing: Listing }) {
             : null,
         ].filter(Boolean).join(' · ')}
       </p>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 'auto' }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 'auto' }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
           {listing.profiles.display_name}
         </span>
         <InterestButton listingId={listing.id} initialCount={0} />
@@ -380,18 +383,11 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
 
     return (
       <div
-        style={{
-          background: SURFACE,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 8,
-          padding: 18,
-          minHeight: 340,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
+        className="flex flex-col p-4 lg:p-[18px] lg:min-h-[340px]"
+        style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
       >
         {/* Header — title + sponsored label, see-all link bottom right */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <h2 style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{gateTitle(activeGate)}</h2>
@@ -651,11 +647,10 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
       ) : (
         /* ══ CATEGORY LIST + PANEL — default view ════════════════════ */
         <div
-          className="max-w-6xl mx-auto px-4 pt-4 pb-10"
-          style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}
+          className="max-w-6xl mx-auto px-4 pt-4 pb-10 flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-5"
         >
-          {/* Left column — compact category list */}
-          <div style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Left column on desktop, full-width list on mobile */}
+          <div className="w-full lg:w-[360px] lg:flex-shrink-0 flex flex-col gap-2.5">
             {GATE_CONFIG.map(gate => {
               const on = activeGate === gate.key
               return (
@@ -701,8 +696,8 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
             })}
           </div>
 
-          {/* Right column — sponsored-first panel */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Right column on desktop; below the whole list on mobile */}
+          <div className="w-full lg:flex-1 min-w-0">
             {renderPanel()}
           </div>
         </div>
