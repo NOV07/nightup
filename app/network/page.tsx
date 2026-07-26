@@ -4,6 +4,7 @@ import { getSupabase } from "../lib/supabase";
 import NetworkClient from "./NetworkClient";
 import { NetworkProfilesProvider } from "../components/NetworkProfilesContext";
 import { PROFILE_COLUMNS } from "../lib/networkProfile";
+import { logQueryError } from "../lib/logQueryError";
 import type { Listing } from "@/components/network/ListingsBar";
 
 export const metadata: Metadata = {
@@ -95,10 +96,21 @@ export default async function NetworkPage({ searchParams }: Props) {
   const gateProfilesPromise = Promise.all(gateProfileQueries);
   const gateCountsPromise = Promise.all(gateCountQueries);
 
-  const [{ data: listingsRaw }, { data: allProfiles }, { count: listingsCount }] =
-    await fixedPromise;
+  const [
+    { data: listingsRaw, error: listingsError },
+    { data: allProfiles, error: allProfilesError },
+    { count: listingsCount, error: listingsCountError },
+  ] = await fixedPromise;
   const gateProfileResults = await gateProfilesPromise;
   const gateCountResults = await gateCountsPromise;
+
+  logQueryError("network", "listings preview", listingsError);
+  logQueryError("network", "all profiles (guided modal)", allProfilesError);
+  logQueryError("network", "listings count", listingsCountError);
+  GATE_TABS.forEach((t, i) => {
+    logQueryError("network", `${t} gate preview`, gateProfileResults[i]?.error ?? null);
+    logQueryError("network", `${t} gate count`, gateCountResults[i]?.error ?? null);
+  });
 
   const listings = (listingsRaw ?? []) as Listing[];
 
