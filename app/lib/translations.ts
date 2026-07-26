@@ -101,6 +101,12 @@ const translations = {
   network_group_for_artists:  { el: "Για Artists", en: "For Artists" },
   network_gate_empty:         { el: "Κανένα προφίλ ακόμα", en: "No profiles yet" },
 
+  // ── Network panel guides (no category selected) ───────────
+  network_guide_event_title: { el: "Φτιάξε το πάρτι σου", en: "Throw your party" },
+  network_guide_event_sub:   { el: "Βρες artists, venue και ό,τι χρειάζεσαι για το event σου.", en: "Find artists, a venue and everything your event needs." },
+  network_guide_music_title: { el: "Φτιάξε τη μουσική σου", en: "Build your music" },
+  network_guide_music_sub:   { el: "Βρες studio, booking agent, engineer για την καριέρα σου.", en: "Find a studio, booking agent and engineer for your career." },
+
   // ── Network category pages (hero + sections) ──────────────
   network_artists_hero_title: { el: "Ποιος θα παίξει ", en: "Who's playing " },
   network_artists_hero_em:    { el: "απόψε;", en: "tonight?" },

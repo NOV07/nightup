@@ -152,8 +152,9 @@ export default function NetworkClient({ gatesPreview }: Props) {
   const networkProfiles = useNetworkProfiles()
 
   const [showGuided, setShowGuided] = useState(false)
-  // Exactly one category is always active; the first one is active on mount.
-  const [activeGate, setActiveGate] = useState<GateKey>(GATE_CONFIG[0].key)
+  // At most one category is active. Nothing is selected on mount, and clicking
+  // the active one deselects it — both leave the panel on its guides state.
+  const [activeGate, setActiveGate] = useState<GateKey | null>(null)
 
   const gateDesc: Record<GateKey, string> = {
     Artists:       t('network_gate_artists_desc'),
@@ -167,10 +168,60 @@ export default function NetworkClient({ gatesPreview }: Props) {
   const gateHref = (key: GateKey) =>
     `/network/${GATE_CONFIG.find(g => g.key === key)!.slug}`
 
+  // ── Guides — shown in the panel while no category is selected ───────
+  function renderGuides() {
+    const guides = [
+      { icon: '🎉', title: t('network_guide_event_title'), sub: t('network_guide_event_sub') },
+      { icon: '🎤', title: t('network_guide_music_title'), sub: t('network_guide_music_sub') },
+    ]
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+        {guides.map(guide => (
+          <button
+            key={guide.title}
+            onClick={() => setShowGuided(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 10,
+              padding: 20,
+              textAlign: 'left',
+              background: '#1A1A28',
+              border: `1px solid ${BORDER}`,
+              borderRadius: 6,
+              cursor: 'pointer',
+              transition: 'all .2s',
+            }}
+          >
+            <span style={{ fontSize: 26, lineHeight: 1 }}>{guide.icon}</span>
+            <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{guide.title}</span>
+            <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>{guide.sub}</span>
+            <span style={{ marginTop: 'auto', paddingTop: 8, fontSize: 12, fontWeight: 600, color: '#F5B335' }}>
+              {t('network_guided_link')}
+            </span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   // ── Sponsored-first panel for the active category ───────────────────
   // The data arrives from page.tsx already ordered is_featured / is_sponsored
   // desc, then created_at desc, capped at 4 — no client-side sorting needed.
   function renderPanel() {
+    // Same container in both states, so selecting a category does not resize it.
+    if (activeGate === null) {
+      return (
+        <div
+          className="flex flex-col p-4 lg:p-[18px] lg:min-h-[340px]"
+          style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
+        >
+          {renderGuides()}
+        </div>
+      )
+    }
+
     const isListings = activeGate === 'Listings'
     const empty = isListings
       ? gatesPreview.Listings.items.length === 0
@@ -258,7 +309,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
             return (
               <div key={gate.key}>
                 <button
-                  onClick={() => setActiveGate(gate.key)}
+                  onClick={() => setActiveGate(on ? null : gate.key)}
                   style={{
                     textAlign: 'left',
                     width: '100%',
