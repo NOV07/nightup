@@ -7,8 +7,11 @@
 export function logQueryError(
   route: string,
   label: string,
-  error: { message: string } | null,
+  error: { message: string; code?: string } | null,
 ) {
   if (!error) return
+  // PGRST116 is `.single()` finding no row — an ordinary empty result that the
+  // callers already handle (notFound, null fallback), not a failure.
+  if (error.code === 'PGRST116') return
   console.error(`[${route}] ${label} query failed:`, error.message)
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
+import { logQueryError } from '../../lib/logQueryError'
 import { formatPrice } from '../../lib/formatPrice'
 import { getEventCoverImage, getEventCrop } from '../../lib/getEventCoverImage'
 import { getAvatarCrop } from '../../lib/profileCrop'
@@ -36,12 +37,16 @@ export default async function EventPage({ params }: Props) {
   const { id } = await params
   const supabase = getSupabase()
 
-  const { data: event } = await supabase
+  const { data: event, error: eventError } = await supabase
     .from('events')
     .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, instagram, facebook, tiktok, website')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
+
+  // Logged so a broken query is not mistaken for a missing event; a genuinely
+  // missing row is filtered out by the helper. `notFound()` stays the response.
+  logQueryError(`events/${id}`, 'event', eventError)
 
   if (!event) notFound()
 
@@ -72,18 +77,19 @@ export default async function EventPage({ params }: Props) {
   // Organizer profile
   let organizer: { id: string; username: string; display_name: string | null; avatar_url: string | null; avatar_crop_x: number | null; avatar_crop_y: number | null; avatar_crop_width: number | null; avatar_crop_height: number | null; bio: string | null } | null = null
   if (event.profile_id) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, bio')
       .eq('id', event.profile_id)
       .single()
+    logQueryError(`events/${id}`, 'organizer profile', error)
     organizer = data ?? null
   }
 
   // More events from same organizer
   let moreEvents: { id: string; title: string; image_url: string | null; has_copyright_restriction: boolean; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null; date: string }[] = []
   if (event.profile_id) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('events')
       .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date')
       .eq('profile_id', event.profile_id)
@@ -91,14 +97,17 @@ export default async function EventPage({ params }: Props) {
       .neq('id', id)
       .order('date', { ascending: true })
       .limit(3)
+    logQueryError(`events/${id}`, 'more events', error)
     moreEvents = data ?? []
   }
 
   // Artist profiles for lineup matching (case-insensitive, trimmed exact match — same as profile page)
-  const { data: artistProfiles } = await supabase
+  const { data: artistProfiles, error: artistProfilesError } = await supabase
     .from('profiles')
     .select('id, username, display_name')
     .eq('profile_type', 'artist')
+
+  logQueryError(`events/${id}`, 'artist profiles', artistProfilesError)
 
   function findArtistProfile(name: string) {
     return (artistProfiles ?? []).find(
@@ -108,10 +117,12 @@ export default async function EventPage({ params }: Props) {
   }
 
   // Professional profiles for contributors matching (case-insensitive, trimmed exact match — same as lineup)
-  const { data: professionalProfiles } = await supabase
+  const { data: professionalProfiles, error: professionalProfilesError } = await supabase
     .from('profiles')
     .select('id, username, display_name')
     .eq('profile_type', 'professional')
+
+  logQueryError(`events/${id}`, 'professional profiles', professionalProfilesError)
 
   function findProfessionalProfile(name: string) {
     return (professionalProfiles ?? []).find(

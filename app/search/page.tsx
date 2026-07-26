@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { getSupabase } from "../lib/supabase";
+import { logQueryError } from "../lib/logQueryError";
 import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
 import { getAvatarCrop } from "../lib/profileCrop";
 import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
@@ -84,6 +85,13 @@ export default async function SearchPage({ searchParams }: Props) {
       supabase.from("spots").select("id, name, slug, category, neighborhood, cover_image").ilike("name", pattern).eq("is_published", true).limit(10),
       supabase.from("music_releases").select("id, title, artist, type, cover_image").ilike("title", pattern).eq("status", "approved").limit(10),
     ]);
+
+    logQueryError("search", "events", evRes.error);
+    logQueryError("search", "articles", artRes.error);
+    logQueryError("search", "mixes", mixRes.error);
+    logQueryError("search", "profiles", profRes.error);
+    logQueryError("search", "spots", spotRes.error);
+    logQueryError("search", "music_releases", relRes.error);
 
     evRes.data?.forEach((e: any) => groups.event.push({
       id: `ev-${e.id}`, type: "event",
