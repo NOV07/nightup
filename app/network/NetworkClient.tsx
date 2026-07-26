@@ -1,10 +1,11 @@
 'use client'
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { NETWORK, CITIES, CITY_LABELS } from '../lib/searchData'
 import FollowButton from '@/components/ui/FollowButton'
 import ListingsBar, { type Listing } from '@/components/network/ListingsBar'
+import InterestButton from '@/components/ui/InterestButton'
 import NetworkGuidedModal from '@/components/network/NetworkGuidedModal'
 import { useNetworkProfiles } from '../components/NetworkProfilesContext'
 import { useLanguage } from '../components/LanguageContext'
@@ -43,6 +44,23 @@ const GOLD = '#E8A020'
 const BLUE = '#60A5FA'
 const SURFACE = '#111120'
 const BORDER = 'rgba(232,160,32,0.12)'
+
+// Same pill the listings cards already use for their "Sponsored" flag, reused
+// here for the featured/sponsored marker on the panel cards.
+const BADGE_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  fontSize: 9,
+  fontWeight: 700,
+  color: GOLD,
+  backgroundColor: 'rgba(232,160,32,0.12)',
+  border: '1px solid rgba(232,160,32,0.25)',
+  borderRadius: 4,
+  padding: '2px 6px',
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+}
 
 const TAB_META: Record<NetworkTab, { emoji: string; label: string }> = {
   Artists:       { emoji: '🎵', label: 'Artists' },
@@ -114,7 +132,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
   )
 }
 
-// ── Compact profile card (used in the gate previews) ───────────────────
+// ── Compact profile card (used in the sponsored-first panel) ───────────
 function CompactProfileCard({ profile }: { profile: Profile }) {
   const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
   return (
@@ -122,11 +140,13 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
       href={`/profile/${profile.username}`}
       className="flex items-center gap-3 p-3 transition-all hover:opacity-90"
       style={{
+        position: 'relative',
         backgroundColor: '#1A1A28',
         border: `1px solid ${profile.is_featured ? GOLD : 'rgba(255,255,255,0.06)'}`,
         borderRadius: 6,
       }}
     >
+      {profile.is_featured && <span style={BADGE_STYLE}>Featured</span>}
       {profile.avatar_url ? (
         <div className="relative rounded-full flex-shrink-0" style={{ width: 40, height: 40, overflow: 'hidden', border: `1px solid ${BORDER}` }}>
           <CroppedImage
@@ -144,11 +164,11 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
           {initials}
         </div>
       )}
-      <div className="min-w-0">
+      {/* Padding keeps the name clear of the absolutely positioned badge */}
+      <div className="min-w-0" style={{ paddingRight: profile.is_featured ? 62 : 0 }}>
         <div className="flex items-center gap-1">
           <p className="font-semibold text-white text-sm truncate">{profile.display_name}</p>
           {profile.is_verified && <span style={{ color: GOLD }} className="text-xs flex-shrink-0">✓</span>}
-          {profile.is_featured && <span style={{ color: GOLD }} className="text-xs flex-shrink-0">★</span>}
         </div>
         {profile.network_subcategory && (
           <p className="text-xs mt-0.5 truncate" style={{ color: GOLD }}>{profile.network_subcategory}</p>
@@ -158,6 +178,49 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
         )}
       </div>
     </Link>
+  )
+}
+
+// ── Compact listing card (panel counterpart of the ListingsBar card) ───
+function CompactListingCard({ listing }: { listing: Listing }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        padding: 14,
+        backgroundColor: listing.is_sponsored ? 'rgba(232,160,32,0.04)' : '#1A1A28',
+        border: `1px solid ${listing.is_sponsored ? GOLD : 'rgba(255,255,255,0.06)'}`,
+        borderRadius: 6,
+      }}
+    >
+      {listing.is_sponsored && <span style={BADGE_STYLE}>Sponsored</span>}
+      <span style={{ color: GOLD, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', paddingRight: listing.is_sponsored ? 78 : 0 }}>
+        {listing.role}
+      </span>
+      <p
+        className="line-clamp-2"
+        style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 15, fontWeight: 500, color: '#F4F4F5', lineHeight: 1.3 }}
+      >
+        {listing.title}
+      </p>
+      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+        {[
+          listing.city,
+          listing.date_needed
+            ? new Date(listing.date_needed).toLocaleDateString('el-GR', { day: 'numeric', month: 'short' })
+            : null,
+        ].filter(Boolean).join(' · ')}
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 'auto' }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {listing.profiles.display_name}
+        </span>
+        <InterestButton listingId={listing.id} initialCount={0} />
+      </div>
+    </div>
   )
 }
 
@@ -175,7 +238,8 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
   const networkProfiles = useNetworkProfiles()
 
   const [showGuided, setShowGuided] = useState(false)
-  const [activeGate, setActiveGate] = useState<GateKey | null>(null)
+  // Exactly one category is always active; the first one is active on mount.
+  const [activeGate, setActiveGate] = useState<GateKey>(GATE_CONFIG[0].key)
 
   // Hero typewriter — same pattern as the Spots hero. The eyebrow fades in
   // first (CSS), then the title types out, then subtitle + guided link fade in.
@@ -305,51 +369,71 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
     </div>
   )
 
-  // ── Gate panel (accordion expand content) ───────────────────────────
-  function renderGatePanel(key: GateKey) {
-    if (key === 'Listings') {
-      const { items } = gatesPreview.Listings
-      return (
-        <div style={{ padding: '2px 2px 8px' }}>
-          {items.length === 0 ? (
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '12px 4px' }}>{t('network_gate_empty')}</p>
-          ) : (
-            <ListingsBar listings={items} />
-          )}
-          <Link
-            href="/network/listings"
-            className="inline-block mt-4 text-xs font-semibold transition-opacity hover:opacity-80"
-            style={{ color: GOLD }}
-          >
-            {t('network_see_all_listings')}
-          </Link>
-        </div>
-      )
-    }
+  // ── Sponsored-first panel for the active category ───────────────────
+  // The data arrives from page.tsx already ordered is_featured / is_sponsored
+  // desc, then created_at desc, capped at 4 — no client-side sorting needed.
+  function renderPanel() {
+    const isListings = activeGate === 'Listings'
+    const empty = isListings
+      ? gatesPreview.Listings.items.length === 0
+      : gatesPreview[activeGate].profiles.length === 0
 
-    const preview = gatesPreview[key]
-    const slug = key.toLowerCase()
     return (
-      <div style={{ padding: '2px 2px 8px' }}>
-        {preview.profiles.length === 0 ? (
+      <div
+        style={{
+          background: SURFACE,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 8,
+          padding: 18,
+          minHeight: 340,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Header — title + sponsored label, see-all link bottom right */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{gateTitle(activeGate)}</h2>
+              <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, background: 'rgba(232,160,32,0.12)', borderRadius: 4, padding: '2px 7px' }}>
+                {gateCount(activeGate)}
+              </span>
+            </div>
+            <p style={{ marginTop: 5, fontSize: 9, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
+              Sponsored
+            </p>
+          </div>
+          {isListings ? (
+            <Link
+              href="/network/listings"
+              className="text-xs font-semibold transition-opacity hover:opacity-80"
+              style={{ color: GOLD, flexShrink: 0 }}
+            >
+              {t('network_see_all_listings')}
+            </Link>
+          ) : (
+            <button
+              onClick={() => router.push(`/network?view=all&tab=${activeGate.toLowerCase()}`)}
+              className="text-xs font-semibold transition-opacity hover:opacity-80"
+              style={{ color: GOLD, flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+            >
+              {t('network_see_all_profiles')} {gateCount(activeGate)} →
+            </button>
+          )}
+        </div>
+
+        {empty ? (
           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '12px 4px' }}>{t('network_gate_empty')}</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {preview.profiles.map(p => <CompactProfileCard key={p.id} profile={p} />)}
+          <div className="grid grid-cols-2 gap-3">
+            {isListings
+              ? gatesPreview.Listings.items.map(l => <CompactListingCard key={l.id} listing={l} />)
+              : gatesPreview[activeGate].profiles.map(p => <CompactProfileCard key={p.id} profile={p} />)}
           </div>
         )}
-        <button
-          onClick={() => router.push(`/network?view=all&tab=${slug}`)}
-          className="mt-4 text-xs font-semibold transition-opacity hover:opacity-80"
-          style={{ color: GOLD, cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
-        >
-          {t('network_see_all_profiles')} {preview.count} →
-        </button>
       </div>
     )
   }
-
-  const gateRows = [GATE_CONFIG.slice(0, 2), GATE_CONFIG.slice(2, 4)]
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
@@ -565,66 +649,61 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
           </div>
         </>
       ) : (
-        /* ══ GATES — default view ════════════════════════════════════ */
-        <div className="max-w-6xl mx-auto px-4 pt-4 pb-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {gateRows.map((row, ri) => (
-              <Fragment key={ri}>
-                {row.map(gate => {
-                  const open = activeGate === gate.key
-                  return (
-                    <button
-                      key={gate.key}
-                      onClick={() => setActiveGate(open ? null : gate.key)}
-                      style={{
-                        textAlign: 'left',
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 12,
-                        padding: 20,
-                        background: open ? 'rgba(232,160,32,0.05)' : SURFACE,
-                        border: `1px solid ${open ? 'rgba(232,160,32,0.35)' : BORDER}`,
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                        transition: 'all .2s',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(232,160,32,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                          {gate.icon}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{gateTitle(gate.key)}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, background: 'rgba(232,160,32,0.12)', borderRadius: 4, padding: '2px 7px' }}>
-                            {gateCount(gate.key)}
-                          </span>
-                        </div>
-                        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 16, transition: 'transform .25s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>
-                          ›
-                        </span>
-                      </div>
-                      <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
-                        {gateDesc[gate.key]}
-                      </p>
-                    </button>
-                  )
-                })}
-                {row.some(g => g.key === activeGate) && activeGate && (
-                  <div
+        /* ══ CATEGORY LIST + PANEL — default view ════════════════════ */
+        <div
+          className="max-w-6xl mx-auto px-4 pt-4 pb-10"
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}
+        >
+          {/* Left column — compact category list */}
+          <div style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {GATE_CONFIG.map(gate => {
+              const on = activeGate === gate.key
+              return (
+                <div key={gate.key}>
+                  <button
+                    onClick={() => setActiveGate(gate.key)}
                     style={{
-                      gridColumn: '1 / -1',
-                      background: 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${BORDER}`,
+                      textAlign: 'left',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 14px',
+                      background: on ? 'rgba(232,160,32,0.05)' : SURFACE,
+                      border: `1px solid ${on ? 'rgba(232,160,32,0.35)' : BORDER}`,
                       borderRadius: 6,
-                      padding: 16,
+                      cursor: 'pointer',
+                      transition: 'all .2s',
                     }}
                   >
-                    {renderGatePanel(activeGate)}
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(232,160,32,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                      {gate.icon}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{gateTitle(gate.key)}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, background: 'rgba(232,160,32,0.12)', borderRadius: 4, padding: '2px 7px' }}>
+                        {gateCount(gate.key)}
+                      </span>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 16, transition: 'transform .25s', transform: on ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>
+                      ›
+                    </span>
+                  </button>
+
+                  {/* One-sentence explainer, expands under the active item */}
+                  <div style={{ maxHeight: on ? 140 : 0, overflow: 'hidden', transition: 'max-height .3s ease' }}>
+                    <p style={{ padding: '10px 14px 2px 66px', fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+                      {gateDesc[gate.key]}
+                    </p>
                   </div>
-                )}
-              </Fragment>
-            ))}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Right column — sponsored-first panel */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {renderPanel()}
           </div>
         </div>
       )}
