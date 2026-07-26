@@ -5,6 +5,8 @@ import { type Listing } from '@/components/network/ListingsBar'
 import InterestButton from '@/components/ui/InterestButton'
 import CinematicHero from '@/components/network/CinematicHero'
 import NetworkGuidedModal from '@/components/network/NetworkGuidedModal'
+import PartyBuilderModal from '@/components/network/PartyBuilderModal'
+import { LuPartyPopper } from 'react-icons/lu'
 import { TAB_META, type NetworkTab, type Profile } from '@/app/lib/networkProfile'
 import { useNetworkProfiles } from '../components/NetworkProfilesContext'
 import { useLanguage } from '../components/LanguageContext'
@@ -158,6 +160,8 @@ export default function NetworkClient({ gatesPreview }: Props) {
     setGuidedIntent(intent)
     setShowGuided(true)
   }
+  // The party flow has its own modal; the music flow stays on the guided one.
+  const [showParty, setShowParty] = useState(false)
   // At most one category is active. Nothing is selected on mount, and clicking
   // the active one deselects it — both leave the panel on its guides state.
   const [activeGate, setActiveGate] = useState<GateKey | null>(null)
@@ -177,15 +181,15 @@ export default function NetworkClient({ gatesPreview }: Props) {
   // ── Guides — shown in the panel while no category is selected ───────
   function renderGuides() {
     const guides = [
-      { icon: '🎉', intent: 'event' as const,  title: t('network_guide_event_title'), sub: t('network_guide_event_sub') },
-      { icon: '🎤', intent: 'artist' as const, title: t('network_guide_music_title'), sub: t('network_guide_music_sub') },
+      { key: 'party' as const, title: t('network_guide_event_title'), sub: t('network_guide_event_sub') },
+      { key: 'music' as const, title: t('network_guide_music_title'), sub: t('network_guide_music_sub') },
     ]
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
         {guides.map(guide => (
           <button
-            key={guide.title}
-            onClick={() => openGuided(guide.intent)}
+            key={guide.key}
+            onClick={() => guide.key === 'party' ? setShowParty(true) : openGuided('artist')}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -200,7 +204,9 @@ export default function NetworkClient({ gatesPreview }: Props) {
               transition: 'all .2s',
             }}
           >
-            <span style={{ fontSize: 26, lineHeight: 1 }}>{guide.icon}</span>
+            {guide.key === 'party'
+              ? <LuPartyPopper size={26} color={GOLD} strokeWidth={1.5} />
+              : <span style={{ fontSize: 26, lineHeight: 1 }}>🎤</span>}
             <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{guide.title}</span>
             <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.65 }}>{guide.sub}</span>
             <span style={{ marginTop: 'auto', paddingTop: 8, fontSize: 12, fontWeight: 600, color: '#F5B335' }}>
@@ -356,6 +362,10 @@ export default function NetworkClient({ gatesPreview }: Props) {
           profiles={networkProfiles}
           initialIntent={guidedIntent}
         />
+      )}
+
+      {showParty && (
+        <PartyBuilderModal onClose={() => setShowParty(false)} profiles={networkProfiles} />
       )}
     </div>
   )
