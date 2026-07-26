@@ -202,7 +202,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
           >
             <span style={{ fontSize: 26, lineHeight: 1 }}>{guide.icon}</span>
             <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{guide.title}</span>
-            <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>{guide.sub}</span>
+            <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.65 }}>{guide.sub}</span>
             <span style={{ marginTop: 'auto', paddingTop: 8, fontSize: 12, fontWeight: 600, color: '#F5B335' }}>
               {t('network_guided_link')}
             </span>
@@ -220,7 +220,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
     if (activeGate === null) {
       return (
         <div
-          className="flex flex-col p-4 lg:p-[18px] lg:min-h-[340px]"
+          className="flex flex-col p-4 lg:p-[18px] lg:min-h-[360px]"
           style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
         >
           {renderGuides()}
@@ -235,7 +235,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
 
     return (
       <div
-        className="flex flex-col p-4 lg:p-[18px] lg:min-h-[340px]"
+        className="flex flex-col p-4 lg:p-[18px] lg:min-h-[360px]"
         style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
       >
         {/* Header — title + sponsored label, see-all link bottom right */}
@@ -284,27 +284,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
         titleBefore="The people behind the "
         titleEm="night."
         subtitle={t('network_tagline')}
-      >
-        {/* Guided modal opener — subtle, not a big CTA */}
-        <button
-          onClick={() => openGuided()}
-          style={{
-            marginTop: 16,
-            display: 'inline-flex',
-            alignItems: 'center',
-            fontSize: 12.5,
-            fontWeight: 500,
-            color: '#F5B335',
-            background: 'rgba(232,160,32,0.08)',
-            border: '1px solid rgba(232,160,32,0.15)',
-            borderRadius: 6,
-            padding: '8px 14px',
-            cursor: 'pointer',
-          }}
-        >
-          {t('network_guided_link')}
-        </button>
-      </CinematicHero>
+      />
 
       {/* ══ CATEGORY LIST + SPONSORED PANEL ══════════════════════════ */}
       <div className="max-w-6xl mx-auto px-4 pt-4 pb-10 flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-5">

@@ -103,9 +103,9 @@ const translations = {
 
   // ── Network panel guides (no category selected) ───────────
   network_guide_event_title: { el: "Φτιάξε το πάρτι σου", en: "Throw your party" },
-  network_guide_event_sub:   { el: "Βρες artists, venue και ό,τι χρειάζεσαι για το event σου.", en: "Find artists, a venue and everything your event needs." },
+  network_guide_event_sub:   { el: "Βρες DJs, μπάντες και τραγουδιστές για τη βραδιά σου. Δες ποια venues είναι διαθέσιμα στην περιοχή σου. Και όλους τους professionals που χρειάζεσαι: φωτογράφους, sound & lighting, catering.", en: "Find DJs, bands and singers for your night. See which venues are available in your area. Plus every professional you need: photographers, sound & lighting, catering." },
   network_guide_music_title: { el: "Φτιάξε τη μουσική σου", en: "Build your music" },
-  network_guide_music_sub:   { el: "Βρες studio, booking agent, engineer για την καριέρα σου.", en: "Find a studio, booking agent and engineer for your career." },
+  network_guide_music_sub:   { el: "Βρες studio για να ηχογραφήσεις. Producers και mix & master engineers για να τελειοποιήσεις τον ήχο σου. Και booking agents που θα σε συνδέσουν με venues και events.", en: "Find a studio to record in. Producers and mix & master engineers to perfect your sound. Plus booking agents to connect you with venues and events." },
 
   // ── Network category pages (hero + sections) ──────────────
   network_artists_hero_title: { el: "Ποιος θα παίξει ", en: "Who's playing " },
