@@ -307,31 +307,55 @@ export default function NetworkClient({ profiles, listings = [], gatesPreview }:
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
 
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <div style={{ position: 'relative', background: '#080808', overflow: 'hidden', minHeight: '240px', display: 'flex', alignItems: 'flex-end', padding: '44px 0 28px' }}>
-        {/* Ambient floating blobs — float class drifts them; opacity kept high
-            enough to read against the near-black background. */}
-        <div className="animate-float-a" style={{ position: 'absolute', top: -70, left: -50, pointerEvents: 'none', zIndex: 1 }}>
-          <div style={{ width: 340, height: 340, borderRadius: '50%', background: GOLD, filter: 'blur(85px)', opacity: 0.22 }} />
-        </div>
-        <div className="animate-float-b" style={{ position: 'absolute', top: -90, right: -60, pointerEvents: 'none', zIndex: 1 }}>
-          <div style={{ width: 380, height: 380, borderRadius: '50%', background: '#2C4A80', filter: 'blur(95px)', opacity: 0.3 }} />
+      {/* ── Cinematic Hero ───────────────────────────────────── */}
+      <div style={{ position: 'relative', background: '#080808', overflow: 'hidden', minHeight: '280px', display: 'flex', alignItems: 'flex-end', padding: '32px 0 48px' }}>
+        <style>{`
+          @keyframes cn-flash { 0%{opacity:1} 100%{opacity:0} }
+          @keyframes cn-float { from{transform:translateY(0) translateX(0);opacity:var(--op)} to{transform:translateY(-40px) translateX(var(--dx));opacity:calc(var(--op)*0.2)} }
+          @keyframes cn-trail { 0%{transform:translateY(0);opacity:0} 10%{opacity:1} 90%{opacity:0.5} 100%{transform:translateY(-100px);opacity:0} }
+          @keyframes cn-flare { 0%,100%{opacity:0.03;transform:scale(1)} 50%{opacity:0.08;transform:scale(1.12)} }
+          @keyframes cn-eyebrow { from{opacity:0;letter-spacing:0.6em} to{opacity:1;letter-spacing:0.35em} }
+          @keyframes cn-particles-in { from{opacity:0} to{opacity:1} }
+        `}</style>
+
+        {/* Camera-flash burst on mount */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 60% 80% at 20% 60%, rgba(232,160,32,0.35), transparent 60%)', animation: 'cn-flash 0.15s ease-out forwards', pointerEvents: 'none', zIndex: 20 }} />
+
+        {/* Slow gold flares */}
+        {([[20,20,200],[45,50,280],[70,15,160],[85,60,220]] as [number,number,number][]).map(([l,tp,s],i) => (
+          <div key={`f${i}`} style={{ position: 'absolute', width: s, height: s, left: `${l}%`, top: `${tp}%`, transform: 'translate(-50%,-50%)', borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,160,32,0.06) 0%, transparent 70%)', animation: `cn-flare ${6+i*2}s ease-in-out infinite`, animationDelay: `${i*1.5}s`, pointerEvents: 'none', zIndex: 1 }} />
+        ))}
+
+        {/* Particles + light trails */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, animation: 'cn-particles-in 2s ease-out forwards', animationDelay: '0.15s', opacity: 0, pointerEvents: 'none', zIndex: 1 }}>
+          {[...Array(50)].map((_, i) => {
+            const size = i%5===0 ? 2.5 : i%3===0 ? 1.5 : 1
+            const op = 0.15+(i%6)*0.08
+            const dx = ((i*7)%60)-30
+            const dur = 8+(i%5)*3
+            const blur = i%4===0
+            return (
+              <div key={`p${i}`} style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', background: i%7===0 ? GOLD : '#ffffff', opacity: op, left: `${(i*13+7)%96}%`, top: `${(i*19+5)%90}%`, filter: blur ? 'blur(1px)' : 'none', ['--op' as string]: op, ['--dx' as string]: `${dx}px`, animation: `cn-float ${dur}s ease-in-out infinite alternate`, animationDelay: `${(i*0.3)%4}s` } as React.CSSProperties} />
+            )
+          })}
+          {[...Array(14)].map((_, i) => (
+            <div key={`t${i}`} style={{ position: 'absolute', width: '1px', height: `${10+(i%4)*8}px`, left: `${(i*17+3)%95}%`, top: `${60+(i%4)*8}%`, background: `linear-gradient(to top, transparent, rgba(255,255,255,${0.1+(i%3)*0.08}), transparent)`, animation: `cn-trail ${4+(i%4)*1.5}s ease-in infinite`, animationDelay: `${(i*0.6)%5}s` }} />
+          ))}
         </div>
 
-        {/* Bottom fade into page background */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
+        {/* Fades into the page background */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '160px', background: 'linear-gradient(to right, #0F0F1A, transparent)', pointerEvents: 'none', zIndex: 5 }} />
 
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '72rem', margin: '0 auto', padding: '0 24px', width: '100%' }}>
-          <div>
-            {/* Eyebrow: LIVE NETWORK with pulsing dot */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span className="animate-live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
-              <span style={{ fontSize: 9, letterSpacing: '0.35em', textTransform: 'uppercase', color: GOLD, fontFamily: 'var(--font-sans)' }}>{t('network_live_eyebrow')}</span>
-            </div>
-            <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0 }}>
-              The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
-            </h1>
+          {/* Eyebrow: LIVE NETWORK with pulsing dot */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 9, letterSpacing: '0.35em', textTransform: 'uppercase', color: GOLD, fontFamily: 'var(--font-sans)', opacity: 0, animation: 'cn-eyebrow 0.8s ease-out forwards', animationDelay: '0.2s' }}>
+            <span className="animate-live-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
+            <span>{t('network_live_eyebrow')}</span>
           </div>
+          <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0 }}>
+            The people behind the <span style={{ color: GOLD, fontStyle: 'italic' }}>night.</span>
+          </h1>
           <p style={{ marginTop: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
             {t('network_tagline')}
           </p>
