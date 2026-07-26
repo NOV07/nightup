@@ -151,7 +151,13 @@ export default function NetworkClient({ gatesPreview }: Props) {
   const { t } = useLanguage()
   const networkProfiles = useNetworkProfiles()
 
+  // `guidedIntent` undefined means the modal opens on its own intent step.
   const [showGuided, setShowGuided] = useState(false)
+  const [guidedIntent, setGuidedIntent] = useState<'event' | 'artist' | undefined>(undefined)
+  const openGuided = (intent?: 'event' | 'artist') => {
+    setGuidedIntent(intent)
+    setShowGuided(true)
+  }
   // At most one category is active. Nothing is selected on mount, and clicking
   // the active one deselects it — both leave the panel on its guides state.
   const [activeGate, setActiveGate] = useState<GateKey | null>(null)
@@ -171,15 +177,15 @@ export default function NetworkClient({ gatesPreview }: Props) {
   // ── Guides — shown in the panel while no category is selected ───────
   function renderGuides() {
     const guides = [
-      { icon: '🎉', title: t('network_guide_event_title'), sub: t('network_guide_event_sub') },
-      { icon: '🎤', title: t('network_guide_music_title'), sub: t('network_guide_music_sub') },
+      { icon: '🎉', intent: 'event' as const,  title: t('network_guide_event_title'), sub: t('network_guide_event_sub') },
+      { icon: '🎤', intent: 'artist' as const, title: t('network_guide_music_title'), sub: t('network_guide_music_sub') },
     ]
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
         {guides.map(guide => (
           <button
             key={guide.title}
-            onClick={() => setShowGuided(true)}
+            onClick={() => openGuided(guide.intent)}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -281,7 +287,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
       >
         {/* Guided modal opener — subtle, not a big CTA */}
         <button
-          onClick={() => setShowGuided(true)}
+          onClick={() => openGuided()}
           style={{
             marginTop: 16,
             display: 'inline-flex',
@@ -356,7 +362,11 @@ export default function NetworkClient({ gatesPreview }: Props) {
       </div>
 
       {showGuided && (
-        <NetworkGuidedModal onClose={() => setShowGuided(false)} profiles={networkProfiles} />
+        <NetworkGuidedModal
+          onClose={() => setShowGuided(false)}
+          profiles={networkProfiles}
+          initialIntent={guidedIntent}
+        />
       )}
     </div>
   )

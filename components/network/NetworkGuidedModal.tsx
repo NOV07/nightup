@@ -44,12 +44,14 @@ interface Profile {
 interface Props {
   onClose: () => void
   profiles: Profile[]
+  /** Skips the intent step when the caller already knows which flow it wants. */
+  initialIntent?: 'event' | 'artist'
 }
 
-export default function NetworkGuidedModal({ onClose, profiles }: Props) {
+export default function NetworkGuidedModal({ onClose, profiles, initialIntent }: Props) {
   const { t } = useLanguage()
-  const [step, setStep] = useState<'intent' | 'have' | 'missing' | 'location' | 'results'>('intent')
-  const [intent, setIntent] = useState<'event' | 'artist' | null>(null)
+  const [step, setStep] = useState<'intent' | 'have' | 'missing' | 'location' | 'results'>(initialIntent ? 'have' : 'intent')
+  const [intent, setIntent] = useState<'event' | 'artist' | null>(initialIntent ?? null)
   const [have, setHave] = useState<Set<string>>(new Set())
   const [missing, setMissing] = useState<Item[]>([])
   const [activeItem, setActiveItem] = useState<Item | null>(null)
