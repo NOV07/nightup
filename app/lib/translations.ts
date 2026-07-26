@@ -101,6 +101,19 @@ const translations = {
   network_group_for_artists:  { el: "Για Artists", en: "For Artists" },
   network_gate_empty:         { el: "Κανένα προφίλ ακόμα", en: "No profiles yet" },
 
+  // ── Network category pages (hero + sections) ──────────────
+  network_artists_hero_title: { el: "Ποιος θα παίξει ", en: "Who's playing " },
+  network_artists_hero_em:    { el: "απόψε;", en: "tonight?" },
+  network_artists_subtitle:   { el: "DJs, τραγουδιστές, μπάντες και οργανοπαίχτες σε όλη την Ελλάδα.", en: "DJs, singers, bands and instrumentalists across Greece." },
+  network_venues_hero_title:  { el: "Πού θα γίνει ", en: "Where will it " },
+  network_venues_hero_em:     { el: "το event;", en: "happen?" },
+  network_venues_subtitle:    { el: "Clubs, μπαρ, rooftops και κάθε χώρος για το επόμενο event.", en: "Clubs, bars, rooftops and every space for your next event." },
+  network_pros_hero_title:    { el: "Professionals ", en: "Professionals " },
+  network_pros_hero_em:       { el: "για κάθε ανάγκη.", en: "for every need." },
+  network_pros_subtitle:      { el: "Όλοι οι επαγγελματίες που χρειάζεσαι, από το event μέχρι το studio.", en: "Every professional you need, from the event to the studio." },
+  network_pros_events_intro:  { el: "Φωτογράφοι, sound & lighting, catering, decoration — για να στήσεις το event σου.", en: "Photographers, sound & lighting, catering, decoration — everything to put your event together." },
+  network_pros_artists_intro: { el: "Studio, producers, mix & master engineers, booking agents — για να χτίσεις την καριέρα σου.", en: "Studios, producers, mix & master engineers, booking agents — everything to build your career." },
+
   // ── Network listings (αγγελίες) ───────────────────────────
   listings_title:        { el: "Αγγελίες", en: "Listings" },
   listings_subtitle:     { el: "Βρες συνεργάτες για events, εκδηλώσεις και μουσικά projects σε όλη την Ελλάδα.", en: "Find collaborators for events, shows and music projects across Greece." },

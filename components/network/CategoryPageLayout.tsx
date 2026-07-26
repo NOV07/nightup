@@ -3,17 +3,11 @@ import Link from 'next/link'
 import { CITIES, CITY_LABELS } from '@/app/lib/searchData'
 import { useLanguage } from '@/app/components/LanguageContext'
 
+import { TAB_META, type NetworkTab } from '@/app/lib/networkProfile'
+
 const GOLD = '#E8A020'
 const NAVY = '#0F0F1A'
 const BORDER = 'rgba(232,160,32,0.12)'
-
-export type NetworkTab = 'Artists' | 'Venues' | 'Professionals'
-
-export const TAB_META: Record<NetworkTab, { emoji: string; label: string; slug: string }> = {
-  Artists:       { emoji: '🎵', label: 'Artists',       slug: 'artists' },
-  Venues:        { emoji: '🏛', label: 'Venues',        slug: 'venues' },
-  Professionals: { emoji: '🤝', label: 'Professionals', slug: 'professionals' },
-}
 
 export const pillStyle = (active: boolean) => ({
   padding: '7px 14px',
