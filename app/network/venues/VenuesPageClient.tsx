@@ -1,33 +1,30 @@
 'use client'
-import { useState } from 'react'
 import { useLanguage } from '@/app/components/LanguageContext'
-import type { Profile } from '@/app/lib/networkProfile'
-import ProfileCard from '@/components/network/ProfileCard'
-import CategoryPageLayout from '@/components/network/CategoryPageLayout'
+import { TAB_META, type Profile } from '@/app/lib/networkProfile'
+import CategorySectionsPage, { GOLD } from '@/components/network/CategorySectionsPage'
 
-// Venues has no subcategory taxonomy in NETWORK yet, so the pills row is
-// omitted and city is the only filter.
+// Venues has no subcategory taxonomy in NETWORK yet, so the single section
+// carries no chips.
 export default function VenuesPageClient({ profiles }: { profiles: Profile[] }) {
   const { t } = useLanguage()
-  const [city, setCity] = useState('')
-
-  const filtered = profiles.filter(p =>
-    !city || (p.location ?? '').toLowerCase().includes(city.toLowerCase())
-  )
 
   return (
-    <CategoryPageLayout
-      tab="Venues"
-      subtitle={t('network_gate_venues_desc')}
-      city={city}
-      onCityChange={setCity}
-      resultCount={filtered.length}
-      canClear={!!city}
-      onClear={() => setCity('')}
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(p => <ProfileCard key={p.id} profile={p} />)}
-      </div>
-    </CategoryPageLayout>
+    <CategorySectionsPage
+      eyebrow="Venues"
+      titleBefore={t('network_venues_hero_title')}
+      titleEm={t('network_venues_hero_em')}
+      subtitle={t('network_venues_subtitle')}
+      sections={[
+        {
+          id: 'venues',
+          icon: TAB_META.Venues.emoji,
+          label: TAB_META.Venues.label,
+          intro: t('network_gate_venues_desc'),
+          accent: GOLD,
+          subcategories: [],
+          profiles,
+        },
+      ]}
+    />
   )
 }
