@@ -133,6 +133,20 @@ const translations = {
   party_none_found:       { el: "Κανένα προφίλ ακόμα σε αυτή την κατηγορία.", en: "No profiles in this category yet." },
   party_price_note:       { el: "Οι τιμές δεν εμφανίζονται ακόμα. Επικοινώνησε απευθείας με κάθε προφίλ για προσφορά. Σύντομα θα μπορείς να κλείσεις όλο το πακέτο μέσα από το Nightup.", en: "Prices are not shown yet. Contact each profile directly for a quote. Soon you will be able to book the whole package through Nightup." },
 
+  // ── Career builder modal (artists) ────────────────────────
+  career_step_needs_title:  { el: "Τι χρειάζεσαι;", en: "What do you need?" },
+  career_step_needs_sub:    { el: "Διάλεξε ό,τι ψάχνεις για τη μουσική σου.", en: "Pick everything you're looking for." },
+  career_need_studio:       { el: "Studio / Rehearsal", en: "Studio / Rehearsal" },
+  career_need_producer:     { el: "Producer / Beatmaker", en: "Producer / Beatmaker" },
+  career_need_mix:          { el: "Mix & Master Engineer", en: "Mix & Master Engineer" },
+  career_need_video:        { el: "Video Director", en: "Video Director" },
+  career_need_booking:      { el: "Booking Agent / Manager", en: "Booking Agent / Manager" },
+  career_step_city_title:   { el: "Πού ψάχνεις;", en: "Where are you looking?" },
+  career_step_city_sub:     { el: "Διάλεξε περιοχή για να δεις κοντινές επιλογές.", en: "Pick an area to see nearby options." },
+  career_step_result_title: { el: "Τα αποτελέσματά σου", en: "Your results" },
+  career_step_result_sub:   { el: "Να τι βρήκαμε για κάθε ανάγκη.", en: "Here's what we found for each need." },
+  career_price_note:        { el: "Οι τιμές δεν εμφανίζονται ακόμα. Επικοινώνησε απευθείας με κάθε προφίλ για προσφορά.", en: "Prices are not shown yet. Contact each profile directly for a quote." },
+
   // ── Network panel guides (no category selected) ───────────
   network_guide_event_title: { el: "Φτιάξε το πάρτι σου", en: "Throw your party" },
   network_guide_event_sub:   { el: "Βρες DJs, μπάντες και τραγουδιστές για τη βραδιά σου. Δες ποια venues είναι διαθέσιμα στην περιοχή σου. Και όλους τους professionals που χρειάζεσαι: φωτογράφους, sound & lighting, catering.", en: "Find DJs, bands and singers for your night. See which venues are available in your area. Plus every professional you need: photographers, sound & lighting, catering." },
