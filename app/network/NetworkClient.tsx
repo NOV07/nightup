@@ -1,12 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
 import Link from 'next/link'
 import { type Listing } from '@/components/network/ListingsBar'
 import InterestButton from '@/components/ui/InterestButton'
 import CinematicHero from '@/components/network/CinematicHero'
-import NetworkGuidedModal from '@/components/network/NetworkGuidedModal'
 import PartyBuilderModal from '@/components/network/PartyBuilderModal'
-import { LuPartyPopper } from 'react-icons/lu'
+import CareerBuilderModal from '@/components/network/CareerBuilderModal'
+import { LuPartyPopper, LuDisc3 } from 'react-icons/lu'
+import { ArtistsIcon, VenuesIcon, ProfessionalsIcon, ListingsIcon } from '@/components/network/icons'
 import { TAB_META, type NetworkTab, type Profile } from '@/app/lib/networkProfile'
 import { useNetworkProfiles } from '../components/NetworkProfilesContext'
 import { useLanguage } from '../components/LanguageContext'
@@ -43,11 +44,13 @@ const BADGE_STYLE: React.CSSProperties = {
   textTransform: 'uppercase',
 }
 
-const GATE_CONFIG: { key: GateKey; slug: string; icon: string }[] = [
-  { key: 'Artists',       slug: 'artists',       icon: '🎵' },
-  { key: 'Venues',        slug: 'venues',        icon: '🏛' },
-  { key: 'Professionals', slug: 'professionals', icon: '🤝' },
-  { key: 'Listings',      slug: 'listings',      icon: '📋' },
+// Each gate carries its own drawn glyph; the tinted circle behind it stays gold
+// on all four, so only the glyph colour separates the categories.
+const GATE_CONFIG: { key: GateKey; slug: string; Icon: ComponentType<{ size?: number; className?: string }> }[] = [
+  { key: 'Artists',       slug: 'artists',       Icon: ArtistsIcon },
+  { key: 'Venues',        slug: 'venues',        Icon: VenuesIcon },
+  { key: 'Professionals', slug: 'professionals', Icon: ProfessionalsIcon },
+  { key: 'Listings',      slug: 'listings',      Icon: ListingsIcon },
 ]
 
 // ── Compact profile card (used in the sponsored-first panel) ───────────
@@ -153,15 +156,9 @@ export default function NetworkClient({ gatesPreview }: Props) {
   const { t } = useLanguage()
   const networkProfiles = useNetworkProfiles()
 
-  // `guidedIntent` undefined means the modal opens on its own intent step.
-  const [showGuided, setShowGuided] = useState(false)
-  const [guidedIntent, setGuidedIntent] = useState<'event' | 'artist' | undefined>(undefined)
-  const openGuided = (intent?: 'event' | 'artist') => {
-    setGuidedIntent(intent)
-    setShowGuided(true)
-  }
-  // The party flow has its own modal; the music flow stays on the guided one.
+  // Each guide card opens its own builder modal — party (gold), music (blue).
   const [showParty, setShowParty] = useState(false)
+  const [showCareer, setShowCareer] = useState(false)
   // At most one category is active. Nothing is selected on mount, and clicking
   // the active one deselects it — both leave the panel on its guides state.
   const [activeGate, setActiveGate] = useState<GateKey | null>(null)
@@ -189,7 +186,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
         {guides.map(guide => (
           <button
             key={guide.key}
-            onClick={() => guide.key === 'party' ? setShowParty(true) : openGuided('artist')}
+            onClick={() => guide.key === 'party' ? setShowParty(true) : setShowCareer(true)}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -206,7 +203,7 @@ export default function NetworkClient({ gatesPreview }: Props) {
           >
             {guide.key === 'party'
               ? <LuPartyPopper size={26} color={GOLD} strokeWidth={1.5} />
-              : <span style={{ fontSize: 26, lineHeight: 1 }}>🎤</span>}
+              : <LuDisc3 size={26} color="#60A5FA" strokeWidth={1.5} />}
             <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{guide.title}</span>
             <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.65 }}>{guide.sub}</span>
             <span style={{ marginTop: 'auto', paddingTop: 8, fontSize: 12, fontWeight: 600, color: '#F5B335' }}>
@@ -325,8 +322,8 @@ export default function NetworkClient({ gatesPreview }: Props) {
                     transition: 'all .2s',
                   }}
                 >
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(232,160,32,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                    {gate.icon}
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(232,160,32,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <gate.Icon size={22} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{gateTitle(gate.key)}</span>
@@ -356,16 +353,12 @@ export default function NetworkClient({ gatesPreview }: Props) {
         </div>
       </div>
 
-      {showGuided && (
-        <NetworkGuidedModal
-          onClose={() => setShowGuided(false)}
-          profiles={networkProfiles}
-          initialIntent={guidedIntent}
-        />
-      )}
-
       {showParty && (
         <PartyBuilderModal onClose={() => setShowParty(false)} profiles={networkProfiles} />
+      )}
+
+      {showCareer && (
+        <CareerBuilderModal onClose={() => setShowCareer(false)} profiles={networkProfiles} />
       )}
     </div>
   )

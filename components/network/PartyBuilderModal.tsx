@@ -1,13 +1,15 @@
 'use client'
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
 import Link from 'next/link'
 import {
-  LuCake, LuHeart, LuBuilding2, LuPartyPopper, LuMusic, LuSparkles,
-  LuUsers, LuLightbulb, LuGlassWater, LuCamera, LuPalette,
-} from 'react-icons/lu'
-import type { IconType } from 'react-icons'
+  BirthdayIcon, WeddingIcon, CorporateIcon, PrivatePartyIcon, LiveEventIcon, OtherIcon,
+  GuestsIcon, LightingIcon, CateringIcon, PhotoIcon, DecorIcon,
+  VenuesIcon, ArtistsIcon, type GlyphProps,
+} from '@/components/network/icons'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
+
+type Glyph = ComponentType<GlyphProps>
 
 const GOLD = '#E8A020'
 
@@ -28,13 +30,13 @@ interface Profile {
   is_featured: boolean | null
 }
 
-const EVENT_TYPES: { id: string; labelKey: TranslationKey; Icon: IconType }[] = [
-  { id: 'birthday',  labelKey: 'party_type_birthday',  Icon: LuCake },
-  { id: 'wedding',   labelKey: 'party_type_wedding',   Icon: LuHeart },
-  { id: 'corporate', labelKey: 'party_type_corporate', Icon: LuBuilding2 },
-  { id: 'private',   labelKey: 'party_type_private',   Icon: LuPartyPopper },
-  { id: 'live',      labelKey: 'party_type_live',      Icon: LuMusic },
-  { id: 'other',     labelKey: 'party_type_other',     Icon: LuSparkles },
+const EVENT_TYPES: { id: string; labelKey: TranslationKey; Icon: Glyph }[] = [
+  { id: 'birthday',  labelKey: 'party_type_birthday',  Icon: BirthdayIcon },
+  { id: 'wedding',   labelKey: 'party_type_wedding',   Icon: WeddingIcon },
+  { id: 'corporate', labelKey: 'party_type_corporate', Icon: CorporateIcon },
+  { id: 'private',   labelKey: 'party_type_private',   Icon: PrivatePartyIcon },
+  { id: 'live',      labelKey: 'party_type_live',      Icon: LiveEventIcon },
+  { id: 'other',     labelKey: 'party_type_other',     Icon: OtherIcon },
 ]
 
 const SIZES: { id: string; labelKey: TranslationKey }[] = [
@@ -48,19 +50,21 @@ const SIZES: { id: string; labelKey: TranslationKey }[] = [
 interface Need {
   id: string
   labelKey: TranslationKey
-  Icon: IconType
+  Icon: Glyph
   tab: string
   category: string
   preselected: boolean
 }
 
+// Venue and DJ borrow the gate glyphs, so the same category reads the same way
+// here as it does on the network landing page.
 const NEEDS: Need[] = [
-  { id: 'venue',    labelKey: 'party_need_venue',    Icon: LuBuilding2,  tab: 'Venues',        category: '',                          preselected: true },
-  { id: 'dj',       labelKey: 'party_need_dj',       Icon: LuMusic,      tab: 'Artists',       category: 'DJ',                        preselected: true },
-  { id: 'lights',   labelKey: 'party_need_lights',   Icon: LuLightbulb,  tab: 'Professionals', category: 'Sound & Lighting',          preselected: true },
-  { id: 'catering', labelKey: 'party_need_catering', Icon: LuGlassWater, tab: 'Professionals', category: 'Catering',                  preselected: true },
-  { id: 'photo',    labelKey: 'party_need_photo',    Icon: LuCamera,     tab: 'Professionals', category: 'Φωτογράφος / Videographer', preselected: false },
-  { id: 'deco',     labelKey: 'party_need_deco',     Icon: LuPalette,    tab: 'Professionals', category: 'Decoration',                preselected: false },
+  { id: 'venue',    labelKey: 'party_need_venue',    Icon: VenuesIcon,   tab: 'Venues',        category: '',                          preselected: true },
+  { id: 'dj',       labelKey: 'party_need_dj',       Icon: ArtistsIcon,  tab: 'Artists',       category: 'DJ',                        preselected: true },
+  { id: 'lights',   labelKey: 'party_need_lights',   Icon: LightingIcon, tab: 'Professionals', category: 'Sound & Lighting',          preselected: true },
+  { id: 'catering', labelKey: 'party_need_catering', Icon: CateringIcon, tab: 'Professionals', category: 'Catering',                  preselected: true },
+  { id: 'photo',    labelKey: 'party_need_photo',    Icon: PhotoIcon,    tab: 'Professionals', category: 'Φωτογράφος / Videographer', preselected: false },
+  { id: 'deco',     labelKey: 'party_need_deco',     Icon: DecorIcon,    tab: 'Professionals', category: 'Decoration',                preselected: false },
 ]
 
 interface Props {
@@ -193,7 +197,7 @@ export default function PartyBuilderModal({ onClose, profiles }: Props) {
                     style={tileStyle(eventType === id)}
                     {...lift}
                   >
-                    <Icon size={22} color={GOLD} strokeWidth={1.5} />
+                    <Icon size={22} />
                     <span className="text-white text-sm font-semibold">{t(labelKey)}</span>
                   </button>
                 ))}
@@ -221,7 +225,7 @@ export default function PartyBuilderModal({ onClose, profiles }: Props) {
                     style={tileStyle(size === id)}
                     {...lift}
                   >
-                    <LuUsers size={22} color={GOLD} strokeWidth={1.5} />
+                    <GuestsIcon size={22} />
                     <span className="text-white text-sm font-semibold">{t(labelKey)}</span>
                   </button>
                 ))}
@@ -253,7 +257,7 @@ export default function PartyBuilderModal({ onClose, profiles }: Props) {
                       >
                         {checked && '✓'}
                       </div>
-                      <Icon size={22} color={GOLD} strokeWidth={1.5} className="flex-shrink-0" />
+                      <Icon size={22} className="flex-shrink-0" />
                       <span className="text-sm font-medium" style={{ color: checked ? 'white' : 'rgba(255,255,255,0.55)' }}>
                         {t(labelKey)}
                       </span>
@@ -326,7 +330,7 @@ export default function PartyBuilderModal({ onClose, profiles }: Props) {
                 return (
                   <div key={need.id} style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-                      <need.Icon size={16} color={GOLD} strokeWidth={1.5} />
+                      <need.Icon size={16} />
                       <span style={{ color: '#F4F4F5', fontSize: 13, fontWeight: 600 }}>{t(need.labelKey)}</span>
                       <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
                         {all.length} {t('party_available')}
