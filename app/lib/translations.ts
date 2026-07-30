@@ -153,6 +153,12 @@ const translations = {
   network_guide_music_title: { el: "Φτιάξε τη μουσική σου", en: "Build your music" },
   network_guide_music_sub:   { el: "Βρες studio για να ηχογραφήσεις. Producers και mix & master engineers για να τελειοποιήσεις τον ήχο σου. Και booking agents που θα σε συνδέσουν με venues και events.", en: "Find a studio to record in. Producers and mix & master engineers to perfect your sound. Plus booking agents to connect you with venues and events." },
 
+  // Compact wording for the mobile hero shortcuts to the same two builders
+  network_guide_event_mini:     { el: "🎉 Πάρτι", en: "🎉 Party" },
+  network_guide_event_mini_sub: { el: "Φτιάξε το event σου", en: "Build your event" },
+  network_guide_music_mini:     { el: "🎵 Μουσική", en: "🎵 Music" },
+  network_guide_music_mini_sub: { el: "Φτιάξε την καριέρα σου", en: "Build your career" },
+
   // ── Network category pages (hero + sections) ──────────────
   network_artists_hero_title: { el: "Ποιος θα παίξει ", en: "Who's playing " },
   network_artists_hero_em:    { el: "απόψε;", en: "tonight?" },

@@ -9,6 +9,7 @@ import CareerBuilderModal from '@/components/network/CareerBuilderModal'
 import { LuPartyPopper, LuDisc3 } from 'react-icons/lu'
 import { ArtistsIcon, VenuesIcon, ProfessionalsIcon, ListingsIcon } from '@/components/network/icons'
 import { TAB_META, type NetworkTab, type Profile } from '@/app/lib/networkProfile'
+import { type TranslationKey } from '../lib/translations'
 import { useNetworkProfiles } from '../components/NetworkProfilesContext'
 import { useLanguage } from '../components/LanguageContext'
 import { getAvatarCrop } from '../lib/profileCrop'
@@ -51,6 +52,34 @@ const GATE_CONFIG: { key: GateKey; slug: string; Icon: ComponentType<{ size?: nu
   { key: 'Venues',        slug: 'venues',        Icon: VenuesIcon },
   { key: 'Professionals', slug: 'professionals', Icon: ProfessionalsIcon },
   { key: 'Listings',      slug: 'listings',      Icon: ListingsIcon },
+]
+
+// Mobile hero shortcuts into the two builders — gold for the party flow, blue
+// for the music one, matching the icon colours on the desktop guide cards.
+const HERO_SHORTCUTS: {
+  key: 'party' | 'music'
+  title: TranslationKey
+  sub: TranslationKey
+  color: string
+  bg: string
+  border: string
+}[] = [
+  {
+    key: 'party',
+    title: 'network_guide_event_mini',
+    sub: 'network_guide_event_mini_sub',
+    color: '#F5B335',
+    bg: 'rgba(232,160,32,0.08)',
+    border: 'rgba(232,160,32,0.25)',
+  },
+  {
+    key: 'music',
+    title: 'network_guide_music_mini',
+    sub: 'network_guide_music_mini_sub',
+    color: '#60A5FA',
+    bg: 'rgba(96,165,250,0.08)',
+    border: 'rgba(96,165,250,0.25)',
+  },
 ]
 
 // ── Compact profile card (used in the sponsored-first panel) ───────────
@@ -286,7 +315,38 @@ export default function NetworkClient({ gatesPreview }: Props) {
         titleBefore="The people behind the "
         titleEm="night."
         subtitle={t('network_tagline')}
-      />
+      >
+        {/* Mobile only — the two builders are reachable from the desktop guide
+            cards in the sponsored panel, which mobile never shows. These pair
+            of shortcuts stand in for them, independent of the accordion. */}
+        <div className="lg:hidden" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          {HERO_SHORTCUTS.map(shortcut => (
+            <button
+              key={shortcut.key}
+              onClick={() => shortcut.key === 'party' ? setShowParty(true) : setShowCareer(true)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                textAlign: 'left',
+                padding: '11px 12px',
+                background: shortcut.bg,
+                border: `1px solid ${shortcut.border}`,
+                borderRadius: 8,
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 700, color: shortcut.color }}>
+                {t(shortcut.title)}
+              </span>
+              <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.4)' }}>
+                {t(shortcut.sub)}
+              </span>
+            </button>
+          ))}
+        </div>
+      </CinematicHero>
 
       {/* ══ CATEGORY LIST + SPONSORED PANEL ══════════════════════════ */}
       <div className="max-w-6xl mx-auto px-4 pt-4 pb-10 flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-5">
