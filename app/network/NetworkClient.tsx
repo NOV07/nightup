@@ -218,35 +218,25 @@ export default function NetworkClient({ gatesPreview }: Props) {
   // ── Sponsored-first panel for the active category ───────────────────
   // The data arrives from page.tsx already ordered is_featured / is_sponsored
   // desc, then created_at desc, capped at 4 — no client-side sorting needed.
-  function renderPanel() {
-    // Same container in both states, so selecting a category does not resize it.
-    if (activeGate === null) {
-      return (
-        <div
-          className="flex flex-col p-4 lg:p-[18px] lg:min-h-[360px]"
-          style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
-        >
-          {renderGuides()}
-        </div>
-      )
-    }
+  // Rendered twice: in the fixed right column on desktop, and inline inside the
+  // open accordion item on mobile. Only the wrapper below differs, so the grid
+  // and the guides markup live here once.
+  function renderPanelContent(gate: GateKey | null) {
+    if (gate === null) return renderGuides()
 
-    const isListings = activeGate === 'Listings'
+    const isListings = gate === 'Listings'
     const empty = isListings
       ? gatesPreview.Listings.items.length === 0
-      : gatesPreview[activeGate].profiles.length === 0
+      : gatesPreview[gate].profiles.length === 0
 
     return (
-      <div
-        className="flex flex-col p-4 lg:p-[18px] lg:min-h-[360px]"
-        style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
-      >
+      <>
         {/* Header — category title, count and the sponsored label */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h2 style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{gateTitle(activeGate)}</h2>
+            <h2 style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>{gateTitle(gate)}</h2>
             <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, background: 'rgba(232,160,32,0.12)', borderRadius: 4, padding: '2px 7px' }}>
-              {gateCount(activeGate)}
+              {gateCount(gate)}
             </span>
           </div>
           <p style={{ marginTop: 5, fontSize: 9, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
@@ -260,14 +250,14 @@ export default function NetworkClient({ gatesPreview }: Props) {
           <div className="grid grid-cols-2 gap-3">
             {isListings
               ? gatesPreview.Listings.items.map(l => <CompactListingCard key={l.id} listing={l} />)
-              : gatesPreview[activeGate].profiles.map(p => <CompactProfileCard key={p.id} profile={p} />)}
+              : gatesPreview[gate].profiles.map(p => <CompactProfileCard key={p.id} profile={p} />)}
           </div>
         )}
 
         {/* See-all pill — centred in the space left under the grid */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, padding: '20px 8px 6px' }}>
           <Link
-            href={gateHref(activeGate)}
+            href={gateHref(gate)}
             className="text-xs font-semibold transition-all hover:opacity-80"
             style={{
               color: '#F5B335',
@@ -280,10 +270,10 @@ export default function NetworkClient({ gatesPreview }: Props) {
           >
             {isListings
               ? t('network_see_all_listings')
-              : `${t('network_see_all_profiles')} ${gateCount(activeGate)} →`}
+              : `${t('network_see_all_profiles')} ${gateCount(gate)} →`}
           </Link>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -342,14 +332,31 @@ export default function NetworkClient({ gatesPreview }: Props) {
                     {gateDesc[gate.key]}
                   </p>
                 </div>
+
+                {/* Mobile only — the sponsored panel rides inside this item's
+                    accordion, right under the explainer. On desktop the same
+                    content lives in the fixed right column instead. */}
+                {on && (
+                  <div
+                    className="lg:hidden flex flex-col"
+                    style={{ marginTop: 8, padding: 14, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6 }}
+                  >
+                    {renderPanelContent(gate.key)}
+                  </div>
+                )}
               </div>
             )
           })}
         </div>
 
-        {/* Right column on desktop; below the whole list on mobile */}
-        <div className="w-full lg:flex-1 min-w-0">
-          {renderPanel()}
+        {/* Right column — desktop only; on mobile the panel is inline above */}
+        <div className="hidden lg:block lg:flex-1 min-w-0">
+          <div
+            className="flex flex-col p-[18px] min-h-[360px]"
+            style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8 }}
+          >
+            {renderPanelContent(activeGate)}
+          </div>
         </div>
       </div>
 
