@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 
+// Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
+// Duplicated rather than imported: that module is a client component.
+const AGE_LEVELS = ['none', '18+', '21+']
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
@@ -19,8 +23,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No profile found. Complete onboarding first.' }, { status: 400 })
   }
 
-  if (profile.profile_type !== 'organizer') {
-    return NextResponse.json({ error: 'Only organizers can submit events' }, { status: 403 })
+  if (!['organizer', 'professional'].includes(profile.profile_type)) {
+    return NextResponse.json({ error: 'Only organizers and professionals can submit events' }, { status: 403 })
   }
 
   let body: Record<string, unknown>
@@ -34,10 +38,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields: title, date' }, { status: 400 })
   }
 
+  if ('age_restriction_level' in body && !AGE_LEVELS.includes(String(body.age_restriction_level))) {
+    return NextResponse.json({ error: `age_restriction_level must be one of: ${AGE_LEVELS.join(', ')}` }, { status: 400 })
+  }
+
   const allowed = [
     'title', 'genres', 'type', 'short_description', 'full_description',
     'date', 'time', 'end_time', 'venue', 'city', 'address', 'maps_url', 'image_url',
-    'ticket_url', 'price', 'age_restriction', 'dress_code', 'lineup', 'contributors',
+    'gallery', 'ticket_url', 'price', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
     'instagram', 'facebook', 'tiktok', 'contact_email',
   ]
   const payload: Record<string, unknown> = {}

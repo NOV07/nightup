@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 
+// Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
+// Duplicated rather than imported: that module is a client component.
+const AGE_LEVELS = ['none', '18+', '21+']
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -58,10 +62,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
+  if ('age_restriction_level' in body && !AGE_LEVELS.includes(String(body.age_restriction_level))) {
+    return NextResponse.json({ error: `age_restriction_level must be one of: ${AGE_LEVELS.join(', ')}` }, { status: 400 })
+  }
+
   const allowed = [
     'title', 'genres', 'type', 'short_description', 'full_description',
     'date', 'time', 'end_time', 'venue', 'city', 'address', 'maps_url', 'image_url',
-    'ticket_url', 'price', 'age_restriction', 'dress_code', 'lineup', 'contributors',
+    'gallery', 'ticket_url', 'price', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
     'instagram', 'facebook', 'tiktok', 'contact_email',
     // legacy fields kept for backwards compat
     'genre', 'description', 'min_age',
