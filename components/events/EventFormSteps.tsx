@@ -7,6 +7,14 @@ import EventLivePreview from './EventLivePreview'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Hip-Hop', 'R&B', 'Laika', 'Entechno', 'Rock', 'Open Air', 'Other']
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
+// events.type doubles as the category the public /events tabs filter on, so the
+// admin picks from those values instead of the wording shown to organizers.
+const ADMIN_EVENT_TYPES: { value: string; label: string }[] = [
+  { value: 'music', label: 'Μουσική' },
+  { value: 'culture', label: 'Κουλτούρα' },
+  { value: 'sports', label: 'Αθλητισμός' },
+  { value: 'other', label: 'Άλλα' },
+]
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
 
 const STEPS: { n: number; titleKey: TranslationKey }[] = [
@@ -90,6 +98,8 @@ interface Props {
   isAdmin?: boolean
   /** Admin editing an existing event — unlocks the status select. */
   isEdit?: boolean
+  /** Fires on every change, so an admin host can mirror state (e.g. for the cropper). */
+  onChange?: (data: EventFormData) => void
 }
 
 // ── Sub-components (defined outside to prevent remount on each render) ────
@@ -132,11 +142,12 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
   )
 }
 
-function Step1({ form, set, toggleGenre, stepErrors }: {
+function Step1({ form, set, toggleGenre, stepErrors, isAdmin }: {
   form: EventFormData
   set: SetField
   toggleGenre: (g: string) => void
   stepErrors: Record<string, string>
+  isAdmin: boolean
 }) {
   const { t } = useLanguage()
   return (
@@ -153,7 +164,9 @@ function Step1({ form, set, toggleGenre, stepErrors }: {
           <select style={{ ...inp, appearance: 'none', cursor: 'pointer', backgroundColor: '#0F0F1A' }}
             value={form.type} onChange={e => set('type', e.target.value)}>
             <option value="">{t('event_form_select_type')}</option>
-            {EVENT_TYPES.map(et => <option key={et} value={et}>{et}</option>)}
+            {isAdmin
+              ? ADMIN_EVENT_TYPES.map(et => <option key={et.value} value={et.value}>{et.label}</option>)
+              : EVENT_TYPES.map(et => <option key={et} value={et}>{et}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#E8A020', pointerEvents: 'none' }}>▾</span>
         </div>
@@ -194,7 +207,29 @@ function Step1({ form, set, toggleGenre, stepErrors }: {
   )
 }
 
-function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, handleImageChange, onGalleryAdd, onGalleryRemove }: {
+function GalleryUrlInput({ onAdd }: { onAdd: (url: string) => void }) {
+  const [url, setUrl] = useState('')
+  function add() {
+    const trimmed = url.trim()
+    if (!trimmed) return
+    onAdd(trimmed)
+    setUrl('')
+  }
+  return (
+    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+      <input style={inp} value={url} onChange={e => setUrl(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
+        placeholder="https://… (image URL)" />
+      <button type="button" onClick={add}
+        style={{ padding: '0 18px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          backgroundColor: 'rgba(232,160,32,0.15)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.35)' }}>
+        +
+      </button>
+    </div>
+  )
+}
+
+function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, handleImageChange, onGalleryAdd, onGalleryRemove, isAdmin }: {
   form: EventFormData
   set: SetField
   stepErrors: Record<string, string>
@@ -204,6 +239,7 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onGalleryAdd: (url: string) => void
   onGalleryRemove: (index: number) => void
+  isAdmin: boolean
 }) {
   const { t } = useLanguage()
   return (
@@ -277,6 +313,13 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
 
         {uploadError && <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{uploadError}</p>}
         <Err stepErrors={stepErrors} k="image_url" />
+
+        {/* Uploads need a Supabase session, which the admin cookie login does not
+            provide — so the admin pastes a URL the way the old panel did. */}
+        {isAdmin && (
+          <input style={{ ...inp, marginTop: 8 }} value={form.image_url}
+            onChange={e => set('image_url', e.target.value)} placeholder="https://… (image URL)" />
+        )}
       </div>
 
       {/* Gallery */}
@@ -306,12 +349,16 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
             </div>
           ))}
 
-          {form.gallery.length < MAX_GALLERY && (
+          {form.gallery.length < MAX_GALLERY && !isAdmin && (
             <div style={{ aspectRatio: '1 / 1', borderRadius: 12, overflow: 'hidden', border: '1px dashed rgba(255,255,255,0.15)' }}>
               <ImageUpload folder="events" onUpload={onGalleryAdd} />
             </div>
           )}
         </div>
+
+        {isAdmin && form.gallery.length < MAX_GALLERY && (
+          <GalleryUrlInput onAdd={onGalleryAdd} />
+        )}
       </div>
     </div>
   )
@@ -489,7 +536,7 @@ function Step4({ form, set, stepErrors, isAdmin, isEdit }: {
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export default function EventFormSteps({ initialData, onSubmit, loading, error, isAdmin = false, isEdit = false }: Props) {
+export default function EventFormSteps({ initialData, onSubmit, loading, error, isAdmin = false, isEdit = false, onChange }: Props) {
   const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<EventFormData>({ ...DEFAULTS, ...initialData })
@@ -499,6 +546,11 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   const [isMobile, setIsMobile] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Held in a ref so an inline onChange prop does not re-fire the effect.
+  const onChangeRef = useRef(onChange)
+  useEffect(() => { onChangeRef.current = onChange })
+  useEffect(() => { onChangeRef.current?.(form) }, [form])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 980)
@@ -601,8 +653,8 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
           {t(STEPS[step - 1].titleKey)}
         </h2>
 
-        {step === 1 && <Step1 form={form} set={set} toggleGenre={toggleGenre} stepErrors={stepErrors} />}
-        {step === 2 && <Step2 form={form} set={set} stepErrors={stepErrors} uploading={uploading} uploadError={uploadError} fileInputRef={fileInputRef} handleImageChange={handleImageChange} onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage} />}
+        {step === 1 && <Step1 form={form} set={set} toggleGenre={toggleGenre} stepErrors={stepErrors} isAdmin={isAdmin} />}
+        {step === 2 && <Step2 form={form} set={set} stepErrors={stepErrors} uploading={uploading} uploadError={uploadError} fileInputRef={fileInputRef} handleImageChange={handleImageChange} onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage} isAdmin={isAdmin} />}
         {step === 3 && <Step3 form={form} set={set} stepErrors={stepErrors} />}
         {step === 4 && <Step4 form={form} set={set} stepErrors={stepErrors} isAdmin={isAdmin} isEdit={isEdit} />}
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import RichTextEditor from "../components/admin/RichTextEditor";
 import { useRouter } from "next/navigation";
 import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
+import EventFormSteps, { type EventFormData } from "../../components/events/EventFormSteps";
 
 const EVENT_CROP_ASPECT = 16 / 9;
 
@@ -64,7 +65,83 @@ interface AllContent {
   spot_claims: any[];
 }
 
-const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false,has_copyright_restriction:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
+// Admin-context fields that live outside the shared EventFormSteps form.
+const defaultEventExtras = {
+  organizer_id: "" as string,
+  website: "",
+  has_copyright_restriction: false,
+  crop_x: null as number | null,
+  crop_y: null as number | null,
+  crop_width: null as number | null,
+  crop_height: null as number | null,
+};
+
+/** events row -> shared form shape. Falls back to the legacy singular columns. */
+function eventItemToFormData(item: Record<string, any>): Partial<EventFormData> {
+  return {
+    title:             item.title ?? "",
+    genres:            Array.isArray(item.genres) ? item.genres : (item.genre ? [item.genre] : []),
+    type:              item.type ?? "music",
+    short_description: item.short_description ?? "",
+    full_description:  item.full_description ?? item.description ?? "",
+    date:              item.date ?? "",
+    start_time:        item.time ?? "",
+    end_time:          item.end_time ?? "",
+    venue:             item.venue ?? "",
+    city:              item.city ?? "",
+    address:           item.address ?? "",
+    maps_url:          item.maps_url ?? "",
+    image_url:         item.image_url ?? "",
+    gallery:           Array.isArray(item.gallery) ? item.gallery : [],
+    ticket_url:        item.ticket_url ?? "",
+    price:             item.price ? String(item.price).replace(/[^0-9.]/g, "") : "",
+    age_restriction_level: item.age_restriction_level ?? "none",
+    dress_code:        item.dress_code ?? "",
+    lineup:            Array.isArray(item.lineup) ? item.lineup.join(", ") : (item.lineup ?? ""),
+    contributors:      Array.isArray(item.contributors) ? item.contributors.join(", ") : (item.contributors ?? ""),
+    instagram:         item.instagram ?? "",
+    facebook:          item.facebook ?? "",
+    tiktok:            item.tiktok ?? "",
+    contact_email:     item.contact_email ?? "",
+    terms_accepted:    true,
+    featured:          !!item.featured,
+    is_radar_pick:     !!item.is_radar_pick,
+    status:            item.status ?? "pending",
+  };
+}
+
+/** shared form shape -> events row. Keeps the legacy genre/description columns
+ *  in sync, since the public event pages still read those. */
+function eventFormDataToRow(data: EventFormData) {
+  return {
+    title:             data.title,
+    genres:            data.genres,
+    genre:             data.genres[0] ?? null,
+    type:              data.type || null,
+    short_description: data.short_description || null,
+    full_description:  data.full_description || null,
+    description:       data.full_description || data.short_description || null,
+    date:              data.date,
+    time:              data.start_time,
+    end_time:          data.end_time || null,
+    venue:             data.venue,
+    city:              data.city,
+    address:           data.address || null,
+    maps_url:          data.maps_url || null,
+    image_url:         data.image_url || null,
+    gallery:           data.gallery,
+    ticket_url:        data.ticket_url || null,
+    price:             data.price ? `€${data.price}` : null,
+    age_restriction_level: data.age_restriction_level,
+    dress_code:        data.dress_code || null,
+    lineup:            data.lineup.split(",").map(s => s.trim()).filter(Boolean),
+    contributors:      data.contributors.split(",").map(s => s.trim()).filter(Boolean),
+    instagram:         data.instagram || null,
+    facebook:          data.facebook || null,
+    tiktok:            data.tiktok || null,
+    contact_email:     data.contact_email || null,
+  };
+}
 const defaultProForm = { name:"",avatar:"",category:"Venues",rating:"5",reviews_count:"0",city:"",description:"" };
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
 const defaultOrgForm = { name:"",type:"Club",city:"Athens",about:"",cover_image:"",avatar:"",instagram:"",facebook:"",tiktok:"",website:"" };
@@ -102,7 +179,10 @@ export default function AdminClient() {
   const [editError, setEditError] = useState("");
   const [isEditorial, setIsEditorial] = useState(true);
 
-  const [eventForm, setEventForm] = useState({ ...defaultEventForm });
+  const [eventExtras, setEventExtras] = useState({ ...defaultEventExtras });
+  const [eventCover, setEventCover] = useState("");
+  const [showEventCropper, setShowEventCropper] = useState(false);
+  const eventCoverRef = useRef("");
   const [proForm, setProForm] = useState({ ...defaultProForm });
   const [articleForm, setArticleForm] = useState({ ...defaultArticleForm });
   const [orgForm, setOrgForm] = useState({ ...defaultOrgForm });
@@ -113,11 +193,7 @@ export default function AdminClient() {
   const [spotForm, setSpotForm] = useState({ ...defaultSpotForm });
   const [articleContent, setArticleContent] = useState("");
 
-  const [adminEventPhoto, setAdminEventPhoto] = useState<string>("");
-  const [showAddEventCropper, setShowAddEventCropper] = useState(false);
   const [showAddSpotCropper, setShowAddSpotCropper] = useState(false);
-  const [adminEventPhotoError, setAdminEventPhotoError] = useState("");
-  const adminEventPhotoRef = useRef<HTMLInputElement>(null);
 
   const fetchContent = useCallback(async () => {
     setLoading(true);
@@ -296,33 +372,113 @@ export default function AdminClient() {
     await fetchContent();
   }
 
-  async function handleAdminEventPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setAdminEventPhotoError("");
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setAdminEventPhotoError("Photo must be under 5MB."); return; }
-    setAdminEventPhoto(await readFileAsBase64(file));
-    setEventForm(f => ({ ...f, crop_x: null, crop_y: null, crop_width: null, crop_height: null }));
+  // Seed the admin-only extras whenever an event opens for editing, and clear
+  // them when the add form is opened fresh.
+  useEffect(() => {
+    if (editItem && previewTab === "events") {
+      const it = editItem as Record<string, any>;
+      setEventExtras({
+        organizer_id: it.organizer_id ? String(it.organizer_id) : "",
+        website: it.website ?? "",
+        has_copyright_restriction: !!it.has_copyright_restriction,
+        crop_x: it.crop_x ?? null,
+        crop_y: it.crop_y ?? null,
+        crop_width: it.crop_width ?? null,
+        crop_height: it.crop_height ?? null,
+      });
+      setEventCover(it.image_url ?? "");
+      eventCoverRef.current = it.image_url ?? "";
+      setShowEventCropper(false);
+    }
+  }, [editItem, previewTab]);
+
+  useEffect(() => {
+    if (showAddForm && activeTab === "events" && !editItem) {
+      setEventExtras({ ...defaultEventExtras });
+      setEventCover("");
+      eventCoverRef.current = "";
+      setShowEventCropper(false);
+    }
+  }, [showAddForm, activeTab, editItem]);
+
+  // featured and is_radar_pick go through their own admin endpoints rather than
+  // the generic row write, so the toggles stay on one code path.
+  async function applyEventFlags(id: string, featured: boolean, isRadarPick: boolean) {
+    await Promise.all([
+      fetch("/api/admin/feature-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, featured }),
+      }),
+      fetch("/api/admin/radar-pick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, is_radar_pick: isRadarPick }),
+      }),
+    ]);
   }
 
-  async function handleAddEvent(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleAdminEventSubmit(data: EventFormData) {
     setAddLoading(true); setAddError(""); setAddSuccess("");
-    const lineup = eventForm.lineup.split(",").map(s => s.trim()).filter(Boolean);
-    const imageUrl = adminEventPhoto || eventForm.image_url || null;
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "events", data: { ...eventForm, image_url: imageUrl, lineup, interested_count: 0, going_count: 0, profile_id: isEditorial ? null : undefined } }),
+      body: JSON.stringify({
+        table: "events",
+        data: {
+          ...eventFormDataToRow(data),
+          ...eventExtras,
+          organizer_id: eventExtras.organizer_id || null,
+          interested_count: 0,
+          going_count: 0,
+          profile_id: isEditorial ? null : undefined,
+        },
+      }),
     });
     const json = await res.json();
+    if (!res.ok) { setAddLoading(false); setAddError(json.error ?? "Failed"); return; }
+
+    const newId = json.data?.id;
+    if (newId) await applyEventFlags(String(newId), data.featured, data.is_radar_pick);
+
     setAddLoading(false);
-    if (!res.ok) { setAddError(json.error ?? "Failed"); return; }
     setAddSuccess("Event added!");
-    setEventForm({ ...defaultEventForm });
-    setAdminEventPhoto("");
-    if (adminEventPhotoRef.current) adminEventPhotoRef.current.value = "";
+    setEventExtras({ ...defaultEventExtras });
+    setEventCover("");
     setShowAddForm(false);
+    await fetchContent();
+  }
+
+  async function handleAdminEventEditSave(data: EventFormData) {
+    if (!editItem) return;
+    const id = String(editItem.id);
+    setEditLoading(true); setEditError("");
+
+    const res = await fetch("/api/admin/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        table: "events",
+        id,
+        data: {
+          ...eventFormDataToRow(data),
+          ...eventExtras,
+          organizer_id: eventExtras.organizer_id || null,
+          status: data.status,
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const j = await res.json();
+      setEditLoading(false);
+      setEditError(j.error ?? "Failed to save");
+      return;
+    }
+
+    await applyEventFlags(id, data.featured, data.is_radar_pick);
+    setEditLoading(false);
+    setEditItem(null);
     await fetchContent();
   }
 
@@ -715,6 +871,72 @@ export default function AdminClient() {
     return activeTab.slice(0, -1);
   }
 
+  /** Admin-context fields the shared event form does not carry. */
+  function renderEventExtras(mode: "add" | "edit") {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 rounded-xl"
+        style={{ backgroundColor:"#0F0F1A", border:"1px dashed rgba(232,160,32,0.25)" }}>
+        <div>
+          <label className={labelCls}>Organizer</label>
+          <select className={inputCls} style={inputStyle} value={eventExtras.organizer_id}
+            onChange={e => setEventExtras(f => ({ ...f, organizer_id: e.target.value }))}>
+            <option value="">— None —</option>
+            {allContent.organizers.filter(o => o.status === "approved").map(o => (
+              <option key={String(o.id)} value={String(o.id)}>{o.name as string}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Website</label>
+          <input className={inputCls} style={inputStyle} value={eventExtras.website}
+            onChange={e => setEventExtras(f => ({ ...f, website: e.target.value }))} placeholder="https://…" />
+        </div>
+        <div className="sm:col-span-2 flex items-center gap-4 flex-wrap">
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            <input type="checkbox" checked={eventExtras.has_copyright_restriction}
+              onChange={e => setEventExtras(f => ({ ...f, has_copyright_restriction: e.target.checked }))} />
+            Image is copyrighted (use generic cover)
+          </label>
+          {mode === "add" && (
+            <label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}>
+              <input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} />
+              ★ Nightup Editorial
+            </label>
+          )}
+          {eventCover && (
+            <button type="button" onClick={() => setShowEventCropper(true)} className="text-xs hover:opacity-80" style={{ color:"#E8A020" }}>
+              Edit crop
+            </button>
+          )}
+        </div>
+        {showEventCropper && eventCover && (
+          <div className="sm:col-span-2">
+            <ImageCropper
+              imageUrl={eventCover}
+              aspect={EVENT_CROP_ASPECT}
+              initialCrop={eventExtras.crop_x != null && eventExtras.crop_y != null && eventExtras.crop_width != null && eventExtras.crop_height != null
+                ? { crop_x: eventExtras.crop_x, crop_y: eventExtras.crop_y, crop_width: eventExtras.crop_width, crop_height: eventExtras.crop_height }
+                : null}
+              onConfirm={(box: CropBox) => {
+                setEventExtras(f => ({ ...f, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height }));
+                setShowEventCropper(false);
+              }}
+              onCancel={() => setShowEventCropper(false)}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /** Cover changes invalidate the stored crop box. */
+  function handleEventFormChange(data: EventFormData) {
+    if (eventCoverRef.current === data.image_url) return;
+    eventCoverRef.current = data.image_url;
+    setEventCover(data.image_url);
+    setEventExtras(f => ({ ...f, crop_x: null, crop_y: null, crop_width: null, crop_height: null }));
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
@@ -1044,76 +1266,23 @@ export default function AdminClient() {
                   {showAddForm && (
                     <div className="p-6 rounded-2xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
 
-                      {/* EVENT FORM */}
+                      {/* EVENT FORM — unified with the public submission flow.
+                          The old admin-only form is kept for reference at the
+                          bottom of this file as _deprecated_AdminEventFormOld. */}
                       {activeTab === "events" && (
-                        <form onSubmit={handleAddEvent} className="space-y-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div><label className={labelCls}>Event Type</label><select className={inputCls} style={inputStyle} value={eventForm.type} onChange={e => setEventForm(f => ({ ...f, type:e.target.value }))}>{EVENT_TYPE_VALUES.map(v => <option key={v} value={v}>{EVENT_TYPE_LABELS[v]}</option>)}</select></div>
-                            <div><label className={labelCls}>Title *</label><input required className={inputCls} style={inputStyle} value={eventForm.title} onChange={e => setEventForm(f => ({ ...f, title:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Venue *</label><input required className={inputCls} style={inputStyle} value={eventForm.venue} onChange={e => setEventForm(f => ({ ...f, venue:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Date *</label><input required type="date" className={inputCls} style={inputStyle} value={eventForm.date} onChange={e => setEventForm(f => ({ ...f, date:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Time</label><input className={inputCls} style={inputStyle} value={eventForm.time} onChange={e => setEventForm(f => ({ ...f, time:e.target.value }))} placeholder="23:00" /></div>
-                            {eventForm.type === "music" && (
-                              <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={eventForm.genre} onChange={e => setEventForm(f => ({ ...f, genre:e.target.value }))}>{MUSIC_GENRES_CREATE.map(g => <option key={g}>{g}</option>)}</select></div>
-                            )}
-                            <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={eventForm.city} onChange={e => setEventForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
-                            <div><label className={labelCls}>Price</label><input className={inputCls} style={inputStyle} value={eventForm.price} onChange={e => setEventForm(f => ({ ...f, price:e.target.value }))} placeholder="€15" /></div>
-                            <div><label className={labelCls}>Image URL</label><input className={inputCls} style={inputStyle} value={eventForm.image_url} onChange={e => { setEventForm(f => ({ ...f, image_url:e.target.value, crop_x:null, crop_y:null, crop_width:null, crop_height:null })); setAdminEventPhoto(""); }} placeholder="https://…" /></div>
-                            <div>
-                              <label className={labelCls}>Upload Photo (max 5MB)</label>
-                              <div className="w-full px-3 py-2 rounded-lg text-sm cursor-pointer" style={{ backgroundColor:"#0F0F1A", border:"1px dashed #555", color:"#aaa" }} onClick={() => adminEventPhotoRef.current?.click()}>
-                                <input ref={adminEventPhotoRef} type="file" accept="image/*" className="hidden" onChange={handleAdminEventPhotoChange} />
-                                <span>{adminEventPhoto ? "Uploaded. Click to change" : "Click to upload"}</span>
-                              </div>
-                              {adminEventPhotoError && <p className="text-red-400 text-xs mt-1">{adminEventPhotoError}</p>}
-                              {adminEventPhoto && <img src={adminEventPhoto} alt="Preview" className="w-full rounded-lg object-cover mt-2" style={{ maxHeight:120 }} />}
-                              {(adminEventPhoto || eventForm.image_url) && (
-                                <button type="button" onClick={() => setShowAddEventCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color:"#E8A020" }}>
-                                  Edit crop
-                                </button>
-                              )}
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={eventForm.has_copyright_restriction} onChange={e => setEventForm(f => ({ ...f, has_copyright_restriction:e.target.checked }))} /> Image is copyrighted (use generic cover)</label>
-                            </div>
-                            {showAddEventCropper && (adminEventPhoto || eventForm.image_url) && (
-                              <ImageCropper
-                                imageUrl={adminEventPhoto || eventForm.image_url}
-                                aspect={EVENT_CROP_ASPECT}
-                                initialCrop={eventForm.crop_x != null && eventForm.crop_y != null && eventForm.crop_width != null && eventForm.crop_height != null
-                                  ? { crop_x: eventForm.crop_x, crop_y: eventForm.crop_y, crop_width: eventForm.crop_width, crop_height: eventForm.crop_height }
-                                  : null}
-                                onConfirm={(box: CropBox) => {
-                                  setEventForm(f => ({ ...f, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height }));
-                                  setShowAddEventCropper(false);
-                                }}
-                                onCancel={() => setShowAddEventCropper(false)}
-                              />
-                            )}
-                            <div>
-                              <label className={labelCls}>Organizer</label>
-                              <select className={inputCls} style={inputStyle} value={(eventForm as any).organizer_id ?? ""} onChange={e => setEventForm(f => ({ ...f, organizer_id:e.target.value || null } as any))}>
-                                <option value="">— None —</option>
-                                {allContent.organizers.filter(o => o.status === "approved").map(o => <option key={String(o.id)} value={String(o.id)}>{o.name as string}</option>)}
-                              </select>
-                            </div>
-                            <div className="sm:col-span-2"><label className={labelCls}>Lineup (comma-separated)</label><input className={inputCls} style={inputStyle} value={eventForm.lineup} onChange={e => setEventForm(f => ({ ...f, lineup:e.target.value }))} placeholder="DJ One, DJ Two" /></div>
-                            <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={eventForm.description} onChange={e => setEventForm(f => ({ ...f, description:e.target.value }))} /></div>
-                            <div className="sm:col-span-2"><label className={labelCls}>Ticket URL</label><input className={inputCls} style={inputStyle} value={eventForm.ticket_url} onChange={e => setEventForm(f => ({ ...f, ticket_url:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Instagram</label><input className={inputCls} style={inputStyle} value={eventForm.instagram} onChange={e => setEventForm(f => ({ ...f, instagram:e.target.value }))} placeholder="https://instagram.com/…" /></div>
-                            <div><label className={labelCls}>Facebook</label><input className={inputCls} style={inputStyle} value={eventForm.facebook} onChange={e => setEventForm(f => ({ ...f, facebook:e.target.value }))} placeholder="https://facebook.com/…" /></div>
-                            <div><label className={labelCls}>TikTok</label><input className={inputCls} style={inputStyle} value={eventForm.tiktok} onChange={e => setEventForm(f => ({ ...f, tiktok:e.target.value }))} placeholder="https://tiktok.com/@…" /></div>
-                            <div><label className={labelCls}>Website</label><input className={inputCls} style={inputStyle} value={eventForm.website} onChange={e => setEventForm(f => ({ ...f, website:e.target.value }))} placeholder="https://…" /></div>
-                            <div className="flex items-center gap-4 flex-wrap">
-                              <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={eventForm.featured} onChange={e => setEventForm(f => ({ ...f, featured:e.target.checked }))} /> Featured</label>
-                              <label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} /> ★ Nightup Editorial</label>
-                            </div>
-                          </div>
-                          {addError && <p className="text-red-400 text-xs">{addError}</p>}
-                          <button type="submit" disabled={addLoading} className="px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>{addLoading ? "Saving…" : "Add Event"}</button>
-                        </form>
+                        <>
+                          {renderEventExtras("add")}
+                          <EventFormSteps
+                            key="admin-add-event"
+                            isAdmin
+                            initialData={{ type: "music", city: "Athens", start_time: "23:00", ticket_url: "https://tickets.nightup.gr", terms_accepted: true }}
+                            onSubmit={handleAdminEventSubmit}
+                            onChange={handleEventFormChange}
+                            loading={addLoading}
+                            error={addError}
+                          />
+                        </>
                       )}
-
                       {/* PROFESSIONAL FORM */}
                       {activeTab === "professionals" && (
                         <form onSubmit={handleAddPro} className="space-y-4">
@@ -1405,11 +1574,26 @@ export default function AdminClient() {
       {/* ── EDIT MODAL ────────────────────────────────────────────────────── */}
       {editItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:"rgba(0,0,0,0.85)" }} onClick={e => { if (e.target === e.currentTarget) setEditItem(null); }}>
-          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-6" style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
+          <div className={`relative w-full ${previewTab === "events" ? "max-w-5xl" : "max-w-lg"} max-h-[90vh] overflow-y-auto rounded-2xl p-6`} style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold" style={{ color:"#E8A020" }}>Edit</h2>
               <button onClick={() => setEditItem(null)} className="text-sm px-3 py-1 rounded-lg" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Close</button>
             </div>
+            {previewTab === "events" ? (
+              <>
+                {renderEventExtras("edit")}
+                <EventFormSteps
+                  key={`admin-edit-event-${editItem.id}`}
+                  isAdmin
+                  isEdit
+                  initialData={eventItemToFormData(editItem as Record<string, any>)}
+                  onSubmit={handleAdminEventEditSave}
+                  onChange={handleEventFormChange}
+                  loading={editLoading}
+                  error={editError}
+                />
+              </>
+            ) : (
             <EditForm
               item={editItem}
               tab={previewTab}
@@ -1430,6 +1614,7 @@ export default function AdminClient() {
               spotCategories={SPOT_CATS}
               approvedOrgs={allContent.organizers.filter(o => o.status === "approved")}
             />
+            )}
           </div>
         </div>
       )}
@@ -1723,3 +1908,120 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
     </form>
   );
 }
+
+// ── _deprecated_AdminEventFormOld ─────────────────────────────────────────
+// The admin-only event form that ran before events moved onto the shared
+// EventFormSteps flow. Kept as a fallback reference; delete once the unified
+// form has been verified live.
+//
+// State it relied on:
+//   const defaultEventForm = { title:"",image_url:"",genre:"Techno",type:"music",price:"",date:"",time:"23:00",venue:"",city:"Athens",lineup:"",description:"",ticket_url:"https://tickets.nightup.gr",instagram:"",facebook:"",tiktok:"",website:"",featured:false,has_copyright_restriction:false,crop_x:null,crop_y:null,crop_width:null,crop_height:null };
+//   const [eventForm, setEventForm] = useState({ ...defaultEventForm });
+//   const [adminEventPhoto, setAdminEventPhoto] = useState<string>("");
+//   const [showAddEventCropper, setShowAddEventCropper] = useState(false);
+//   const [adminEventPhotoError, setAdminEventPhotoError] = useState("");
+//   const adminEventPhotoRef = useRef<HTMLInputElement>(null);
+//
+// Handlers:
+//   async function handleAdminEventPhotoChange(e) {
+//     setAdminEventPhotoError("");
+//     const file = e.target.files?.[0];
+//     if (!file) return;
+//     if (file.size > 5 * 1024 * 1024) { setAdminEventPhotoError("Photo must be under 5MB."); return; }
+//     setAdminEventPhoto(await readFileAsBase64(file));
+//     setEventForm(f => ({ ...f, crop_x: null, crop_y: null, crop_width: null, crop_height: null }));
+//   }
+//
+//   async function handleAddEvent(e) {
+//     e.preventDefault();
+//     setAddLoading(true); setAddError(""); setAddSuccess("");
+//     const lineup = eventForm.lineup.split(",").map(s => s.trim()).filter(Boolean);
+//     const imageUrl = adminEventPhoto || eventForm.image_url || null;
+//     const res = await fetch("/api/admin/add", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ table: "events", data: { ...eventForm, image_url: imageUrl, lineup, interested_count: 0, going_count: 0, profile_id: isEditorial ? null : undefined } }),
+//     });
+//     const json = await res.json();
+//     setAddLoading(false);
+//     if (!res.ok) { setAddError(json.error ?? "Failed"); return; }
+//     setAddSuccess("Event added!");
+//     setEventForm({ ...defaultEventForm });
+//     setAdminEventPhoto("");
+//     if (adminEventPhotoRef.current) adminEventPhotoRef.current.value = "";
+//     setShowAddForm(false);
+//     await fetchContent();
+//   }
+//
+// Markup:
+//                       {/* EVENT FORM */}
+//                       {activeTab === "events" && (
+//                         <form onSubmit={handleAddEvent} className="space-y-4">
+//                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//                             <div><label className={labelCls}>Event Type</label><select className={inputCls} style={inputStyle} value={eventForm.type} onChange={e => setEventForm(f => ({ ...f, type:e.target.value }))}>{EVENT_TYPE_VALUES.map(v => <option key={v} value={v}>{EVENT_TYPE_LABELS[v]}</option>)}</select></div>
+//                             <div><label className={labelCls}>Title *</label><input required className={inputCls} style={inputStyle} value={eventForm.title} onChange={e => setEventForm(f => ({ ...f, title:e.target.value }))} /></div>
+//                             <div><label className={labelCls}>Venue *</label><input required className={inputCls} style={inputStyle} value={eventForm.venue} onChange={e => setEventForm(f => ({ ...f, venue:e.target.value }))} /></div>
+//                             <div><label className={labelCls}>Date *</label><input required type="date" className={inputCls} style={inputStyle} value={eventForm.date} onChange={e => setEventForm(f => ({ ...f, date:e.target.value }))} /></div>
+//                             <div><label className={labelCls}>Time</label><input className={inputCls} style={inputStyle} value={eventForm.time} onChange={e => setEventForm(f => ({ ...f, time:e.target.value }))} placeholder="23:00" /></div>
+//                             {eventForm.type === "music" && (
+//                               <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={eventForm.genre} onChange={e => setEventForm(f => ({ ...f, genre:e.target.value }))}>{MUSIC_GENRES_CREATE.map(g => <option key={g}>{g}</option>)}</select></div>
+//                             )}
+//                             <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={eventForm.city} onChange={e => setEventForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
+//                             <div><label className={labelCls}>Price</label><input className={inputCls} style={inputStyle} value={eventForm.price} onChange={e => setEventForm(f => ({ ...f, price:e.target.value }))} placeholder="€15" /></div>
+//                             <div><label className={labelCls}>Image URL</label><input className={inputCls} style={inputStyle} value={eventForm.image_url} onChange={e => { setEventForm(f => ({ ...f, image_url:e.target.value, crop_x:null, crop_y:null, crop_width:null, crop_height:null })); setAdminEventPhoto(""); }} placeholder="https://…" /></div>
+//                             <div>
+//                               <label className={labelCls}>Upload Photo (max 5MB)</label>
+//                               <div className="w-full px-3 py-2 rounded-lg text-sm cursor-pointer" style={{ backgroundColor:"#0F0F1A", border:"1px dashed #555", color:"#aaa" }} onClick={() => adminEventPhotoRef.current?.click()}>
+//                                 <input ref={adminEventPhotoRef} type="file" accept="image/*" className="hidden" onChange={handleAdminEventPhotoChange} />
+//                                 <span>{adminEventPhoto ? "Uploaded. Click to change" : "Click to upload"}</span>
+//                               </div>
+//                               {adminEventPhotoError && <p className="text-red-400 text-xs mt-1">{adminEventPhotoError}</p>}
+//                               {adminEventPhoto && <img src={adminEventPhoto} alt="Preview" className="w-full rounded-lg object-cover mt-2" style={{ maxHeight:120 }} />}
+//                               {(adminEventPhoto || eventForm.image_url) && (
+//                                 <button type="button" onClick={() => setShowAddEventCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color:"#E8A020" }}>
+//                                   Edit crop
+//                                 </button>
+//                               )}
+//                             </div>
+//                             <div className="sm:col-span-2">
+//                               <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={eventForm.has_copyright_restriction} onChange={e => setEventForm(f => ({ ...f, has_copyright_restriction:e.target.checked }))} /> Image is copyrighted (use generic cover)</label>
+//                             </div>
+//                             {showAddEventCropper && (adminEventPhoto || eventForm.image_url) && (
+//                               <ImageCropper
+//                                 imageUrl={adminEventPhoto || eventForm.image_url}
+//                                 aspect={EVENT_CROP_ASPECT}
+//                                 initialCrop={eventForm.crop_x != null && eventForm.crop_y != null && eventForm.crop_width != null && eventForm.crop_height != null
+//                                   ? { crop_x: eventForm.crop_x, crop_y: eventForm.crop_y, crop_width: eventForm.crop_width, crop_height: eventForm.crop_height }
+//                                   : null}
+//                                 onConfirm={(box: CropBox) => {
+//                                   setEventForm(f => ({ ...f, crop_x: box.crop_x, crop_y: box.crop_y, crop_width: box.crop_width, crop_height: box.crop_height }));
+//                                   setShowAddEventCropper(false);
+//                                 }}
+//                                 onCancel={() => setShowAddEventCropper(false)}
+//                               />
+//                             )}
+//                             <div>
+//                               <label className={labelCls}>Organizer</label>
+//                               <select className={inputCls} style={inputStyle} value={(eventForm as any).organizer_id ?? ""} onChange={e => setEventForm(f => ({ ...f, organizer_id:e.target.value || null } as any))}>
+//                                 <option value="">— None —</option>
+//                                 {allContent.organizers.filter(o => o.status === "approved").map(o => <option key={String(o.id)} value={String(o.id)}>{o.name as string}</option>)}
+//                               </select>
+//                             </div>
+//                             <div className="sm:col-span-2"><label className={labelCls}>Lineup (comma-separated)</label><input className={inputCls} style={inputStyle} value={eventForm.lineup} onChange={e => setEventForm(f => ({ ...f, lineup:e.target.value }))} placeholder="DJ One, DJ Two" /></div>
+//                             <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={eventForm.description} onChange={e => setEventForm(f => ({ ...f, description:e.target.value }))} /></div>
+//                             <div className="sm:col-span-2"><label className={labelCls}>Ticket URL</label><input className={inputCls} style={inputStyle} value={eventForm.ticket_url} onChange={e => setEventForm(f => ({ ...f, ticket_url:e.target.value }))} /></div>
+//                             <div><label className={labelCls}>Instagram</label><input className={inputCls} style={inputStyle} value={eventForm.instagram} onChange={e => setEventForm(f => ({ ...f, instagram:e.target.value }))} placeholder="https://instagram.com/…" /></div>
+//                             <div><label className={labelCls}>Facebook</label><input className={inputCls} style={inputStyle} value={eventForm.facebook} onChange={e => setEventForm(f => ({ ...f, facebook:e.target.value }))} placeholder="https://facebook.com/…" /></div>
+//                             <div><label className={labelCls}>TikTok</label><input className={inputCls} style={inputStyle} value={eventForm.tiktok} onChange={e => setEventForm(f => ({ ...f, tiktok:e.target.value }))} placeholder="https://tiktok.com/@…" /></div>
+//                             <div><label className={labelCls}>Website</label><input className={inputCls} style={inputStyle} value={eventForm.website} onChange={e => setEventForm(f => ({ ...f, website:e.target.value }))} placeholder="https://…" /></div>
+//                             <div className="flex items-center gap-4 flex-wrap">
+//                               <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={eventForm.featured} onChange={e => setEventForm(f => ({ ...f, featured:e.target.checked }))} /> Featured</label>
+//                               <label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} /> ★ Nightup Editorial</label>
+//                             </div>
+//                           </div>
+//                           {addError && <p className="text-red-400 text-xs">{addError}</p>}
+//                           <button type="submit" disabled={addLoading} className="px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>{addLoading ? "Saving…" : "Add Event"}</button>
+//                         </form>
+//                       )}
+// 
+// ──────────────────────────────────────────────────────────────────────────

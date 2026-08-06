@@ -14,7 +14,9 @@ export async function GET(req: NextRequest) {
   const admin = getSupabaseAdmin()
 
   const [events, professionals, articles, organizers, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, spotClaims] = await Promise.all([
-    admin.from('events').select('id, title, venue, city, date, time, genre, price, description, lineup, contact_email, instagram, facebook, tiktok, website, image_url, nightup_pick, is_radar_pick, organizer_id, profile_id, status, created_at').order('created_at', { ascending: false }),
+    // select('*') so the unified admin event form edits a complete row —
+    // anything it does not receive would be written back empty on save.
+    admin.from('events').select('*').order('created_at', { ascending: false }),
     admin.from('professionals').select('id, name, category, city, description, instagram, facebook, tiktok, website, phone, featured, status, created_at').order('created_at', { ascending: false }),
     admin.from('articles').select('id, title, category, published_at, excerpt, content, hero_image, read_time, series, series_order, slug, word_count, updated_at, tags, status, created_at').order('created_at', { ascending: false }),
     admin.from('organizers').select('id, name, type, city, about, cover_image, avatar, instagram, facebook, tiktok, website, gallery, status, created_at').order('created_at', { ascending: false }),
