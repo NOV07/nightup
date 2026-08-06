@@ -5,6 +5,7 @@ import RichTextEditor from "../components/admin/RichTextEditor";
 import { useRouter } from "next/navigation";
 import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
 import EventFormSteps, { type EventFormData } from "../../components/events/EventFormSteps";
+import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
 
 const EVENT_CROP_ASPECT = 16 / 9;
 
@@ -39,7 +40,8 @@ type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 interface ContentItem {
   id: string;
   status: ItemStatus;
-  featured?: boolean;
+  featured?: boolean;          // spots / professionals / articles — a real column there
+  featured_until?: string | null; // events — no `featured` column, this window stands in
   [key: string]: unknown;
 }
 
@@ -104,7 +106,7 @@ function eventItemToFormData(item: Record<string, any>): Partial<EventFormData> 
     tiktok:            item.tiktok ?? "",
     contact_email:     item.contact_email ?? "",
     terms_accepted:    true,
-    featured:          !!item.featured,
+    featured:          isEventFeatured(item),
     is_radar_pick:     !!item.is_radar_pick,
     status:            item.status ?? "pending",
   };
@@ -315,7 +317,7 @@ export default function AdminClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, featured: !currentFeatured }),
     });
-    setAllContent(prev => ({ ...prev, events: prev.events.map(e => e.id === id ? { ...e, featured: !currentFeatured } : e) }));
+    setAllContent(prev => ({ ...prev, events: prev.events.map(e => e.id === id ? { ...e, featured_until: featuredUntilFor(!currentFeatured) } : e) }));
   }
 
   async function handleToggleNightupPick(id: string, current: boolean) {
@@ -816,7 +818,7 @@ export default function AdminClient() {
           )}
           {/* Featured — events */}
           {tab === "events" && section === "approved" && (
-            <button onClick={() => handleToggleFeatured(id, !!item.featured)} title={item.featured ? "Unfeature" : "Feature"} className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all" style={{ backgroundColor:item.featured ? "#E8A020" : "#2A2A3E", color:item.featured ? "#0F0F1A" : "#666" }}>★</button>
+            <button onClick={() => handleToggleFeatured(id, isEventFeatured(item))} title={isEventFeatured(item) ? "Unfeature" : "Feature"} className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all" style={{ backgroundColor:isEventFeatured(item) ? "#E8A020" : "#2A2A3E", color:isEventFeatured(item) ? "#0F0F1A" : "#666" }}>★</button>
           )}
           {/* Featured — professionals */}
           {tab === "professionals" && section === "approved" && (

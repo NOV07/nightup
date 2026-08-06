@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
+import { featuredUntilFor } from '@/app/lib/eventFeatured'
 
 export async function POST(req: NextRequest) {
   if (!verifyAdminToken(req.cookies.get('admin_auth')?.value)) {
@@ -32,10 +33,10 @@ export async function POST(req: NextRequest) {
     .eq('id', request_id)
 
   if (action === 'approved') {
-    // Mark the event as featured
+    // Mark the event as featured — opens the featured_until window
     await supabase
       .from('events')
-      .update({ featured: true })
+      .update({ featured_until: featuredUntilFor(true) })
       .eq('id', request.event_id)
   }
 
