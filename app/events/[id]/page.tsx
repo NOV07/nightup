@@ -10,6 +10,7 @@ import { getAvatarCrop } from '../../lib/profileCrop'
 import EventHeroImage from '../../components/EventHeroImage'
 import CroppedImage from '../../../components/ui/CroppedImage'
 import T from '../../components/T'
+import type { TranslationKey } from '../../lib/translations'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +40,7 @@ export default async function EventPage({ params }: Props) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, instagram, facebook, tiktok, website')
+    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
@@ -65,6 +66,17 @@ export default async function EventPage({ params }: Props) {
     : typeof event.contributors === 'string' && event.contributors
     ? event.contributors.split(',').map((s: string) => s.trim()).filter(Boolean)
     : []
+
+  const gallery: string[] = Array.isArray(event.gallery) ? event.gallery.filter(Boolean) : []
+
+  // Entry conditions worth calling out above the ticket CTA
+  const infoCards: { key: TranslationKey; value: string }[] = []
+  if (event.age_restriction_level && event.age_restriction_level !== 'none') {
+    infoCards.push({ key: 'event_age_restriction_heading', value: event.age_restriction_level })
+  }
+  if (event.dress_code) {
+    infoCards.push({ key: 'event_form_dress_code_label', value: event.dress_code })
+  }
 
   const priceLabel = formatPrice(event.price)
 
@@ -242,6 +254,24 @@ export default async function EventPage({ params }: Props) {
           </div>
         </div>
 
+        {/* Info cards */}
+        {infoCards.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(infoCards.length, 2)}, 1fr)`, gap: 10, marginBottom: 32 }}>
+            {infoCards.map(card => (
+              <div key={card.key} style={{
+                padding: '12px 14px', borderRadius: 12,
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.40)' }}>
+                  <T k={card.key} />
+                </p>
+                <p style={{ fontSize: 14, color: '#fff', marginTop: 4 }}>{card.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Ticket CTA */}
         {event.ticket_url && (
           <a
@@ -362,6 +392,25 @@ export default async function EventPage({ params }: Props) {
                   </span>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Gallery */}
+        {gallery.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 12 }}>
+              <T k="event_gallery_heading" />
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+              {gallery.map((url, i) => (
+                <div key={i} style={{
+                  position: 'relative', aspectRatio: '1 / 1', borderRadius: 12, overflow: 'hidden',
+                  backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                }}>
+                  <CroppedImage src={url} alt={`${event.title} ${i + 1}`} sizes="(max-width: 680px) 45vw, 220px" />
+                </div>
+              ))}
             </div>
           </div>
         )}
