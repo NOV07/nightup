@@ -44,3 +44,6 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# local DB dumps from one-off seed/maintenance scripts — never commit
+/_backup/
