@@ -98,6 +98,19 @@ export default async function EventPage({ params }: Props) {
     organizer = data ?? null
   }
 
+  // When the host is a spot account, point the card at the spot page rather
+  // than the bare profile — the spot is what the reader actually wants.
+  let hostSpot: { slug: string; name: string } | null = null
+  if (event.profile_id) {
+    const { data } = await supabase
+      .from('spots')
+      .select('slug, name')
+      .eq('owner_id', event.profile_id)
+      .eq('is_published', true)
+      .maybeSingle()
+    hostSpot = data ?? null
+  }
+
   // More events from same organizer
   let moreEvents: { id: string; title: string; image_url: string | null; has_copyright_restriction: boolean; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null; date: string }[] = []
   if (event.profile_id) {
@@ -431,9 +444,9 @@ export default async function EventPage({ params }: Props) {
         {organizer && (
           <div style={{ marginBottom: 40, paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 14 }}>
-              Organizer
+              {hostSpot ? 'Spot' : 'Organizer'}
             </p>
-            <Link href={`/profile/${organizer.username}`} style={{ textDecoration: 'none' }}>
+            <Link href={hostSpot ? `/spots/${hostSpot.slug}` : `/profile/${organizer.username}`} style={{ textDecoration: 'none' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '16px',
                 borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.04)',

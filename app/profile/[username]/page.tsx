@@ -53,7 +53,7 @@ export default async function ProfilePage({ params }: Props) {
   let releases: any[] = []
   let galleryPhotos: { id: string; image_url: string; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null }[] = []
 
-  if (profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'professional') {
+  if (profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'professional' || profile.profile_type === 'spot') {
     const { data } = await supabase
       .from('creator_gallery')
       .select('id, image_url, crop_x, crop_y, crop_width, crop_height')
@@ -92,7 +92,7 @@ export default async function ProfilePage({ params }: Props) {
   }
 
   // Organizer/Venue: find events by profile_id
-  if (profile.profile_type === 'organizer' || profile.profile_type === 'venue') {
+  if (profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot') {
     const { data } = await supabase
       .from('events')
       .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, ticket_url')
@@ -116,6 +116,7 @@ export default async function ProfilePage({ params }: Props) {
     artist: 'Artist / DJ',
     venue: 'Venue',
     professional: 'Professional',
+    spot: 'Spot',
   }
 
   function normalizeSocial(handle: string | null | undefined, baseUrl: string): string | null {
@@ -441,7 +442,7 @@ export default async function ProfilePage({ params }: Props) {
         )}
 
         {/* ═══ ORGANIZER / VENUE SECTIONS ═══ */}
-        {(profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
+        {(profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot') && (
           <div className="space-y-12 pb-16">
 
             {/* Upcoming Events */}
