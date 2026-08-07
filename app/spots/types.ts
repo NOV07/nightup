@@ -9,6 +9,9 @@ export function spotCropFromRow(row: { crop_x?: number | null; crop_y?: number |
 
 export type SpotCategory = 'food' | 'drink' | 'nightlife' | 'show' | 'chill' | 'activity' | 'art' | 'wellness';
 
+/** Aspect every spot cover is cropped to, in the admin panel and the wizard alike. */
+export const SPOT_CROP_ASPECT = 16 / 9;
+
 export interface Spot {
   id: string;
   name: string;

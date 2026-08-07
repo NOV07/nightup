@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
 import EventFormSteps, { type EventFormData } from "../../components/events/EventFormSteps";
 import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
+import { SPOT_CROP_ASPECT } from "../spots/types";
 
 const EVENT_CROP_ASPECT = 16 / 9;
 
@@ -163,7 +164,6 @@ const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcl
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
 const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
-const SPOT_CROP_ASPECT = 16 / 9;
 
 export default function AdminClient() {
   const router = useRouter();
