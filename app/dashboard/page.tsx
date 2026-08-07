@@ -17,11 +17,19 @@ export default async function DashboardPage() {
 
   if (!profile) redirect('/onboarding')
 
-  const { data: events } = profile.profile_type === 'organizer' || profile.profile_type === 'venue'
+  // Spot accounts host their own events, so they get the same event sections
+  // as organizers and venues.
+  const hostsEvents = ['organizer', 'venue', 'spot'].includes(profile.profile_type)
+
+  const { data: ownedSpot } = profile.profile_type === 'spot'
+    ? await supabase.from('spots').select('*').eq('owner_id', profile.id).maybeSingle()
+    : { data: null }
+
+  const { data: events } = hostsEvents
     ? await supabase.from('events').select('*').eq('profile_id', profile.id).order('date', { ascending: false })
     : { data: [] }
 
-  const { data: savedCountRows } = (profile.profile_type === 'organizer' || profile.profile_type === 'venue') && events && events.length > 0
+  const { data: savedCountRows } = hostsEvents && events && events.length > 0
     ? await supabase
         .from('saved_events')
         .select('event_id')
@@ -30,7 +38,7 @@ export default async function DashboardPage() {
 
   const savedEventsCount = (savedCountRows ?? []).length
 
-  const { data: featuredRequests } = (profile.profile_type === 'organizer' || profile.profile_type === 'venue')
+  const { data: featuredRequests } = hostsEvents
     ? await supabase.from('featured_event_requests').select('event_id, status').eq('profile_id', profile.id)
     : { data: [] }
 
@@ -170,6 +178,7 @@ export default async function DashboardPage() {
       featuredRequests={featuredRequests ?? []}
       artistBookings={artistBookings}
       professionalContributions={professionalContributions}
+      ownedSpot={ownedSpot ?? null}
     />
   )
 }

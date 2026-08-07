@@ -120,6 +120,36 @@ export function deserializeOpeningHours(stored: Record<string, string> | null | 
   return out
 }
 
+/**
+ * The exact row shape the API writes. Both the create and the edit client go
+ * through this so the two paths cannot drift, and the crop box is flattened
+ * into the four columns the table actually has.
+ */
+export function spotFormToPayload(form: SpotFormData) {
+  return {
+    name: form.name.trim(),
+    category: form.category,
+    subcategory: form.subcategory || null,
+    city: form.city,
+    neighborhood: form.neighborhood.trim() || null,
+    address: form.address.trim() || null,
+    lat: form.lat,
+    lng: form.lng,
+    description: form.description.trim() || null,
+    cover_image: form.cover_image || null,
+    crop_x: form.crop?.crop_x ?? null,
+    crop_y: form.crop?.crop_y ?? null,
+    crop_width: form.crop?.crop_width ?? null,
+    crop_height: form.crop?.crop_height ?? null,
+    gallery: form.gallery,
+    price_level: form.price_level || null,
+    phone: form.phone.trim() || null,
+    website: form.website.trim() || null,
+    instagram: form.instagram.trim() || null,
+    opening_hours: serializeOpeningHours(form.opening_hours),
+  }
+}
+
 interface Props {
   initialData?: Partial<SpotFormData>
   onSubmit: (data: SpotFormData) => void

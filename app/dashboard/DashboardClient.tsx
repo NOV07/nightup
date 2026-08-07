@@ -62,7 +62,7 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
 
-export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings, professionalContributions }: {
+export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings, professionalContributions, ownedSpot }: {
   profile: any
   events: any[]
   releases: any[]
@@ -77,6 +77,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   featuredRequests?: any[]
   artistBookings?: any[]
   professionalContributions?: any[]
+  ownedSpot?: any | null
 }) {
   const router = useRouter()
   const { t } = useLanguage()
@@ -401,6 +402,11 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     organizer: { href: '/dashboard/events/new', label: t('dashboard_new_event') },
     artist: { href: '/submit/release', label: t('dashboard_new_release') },
     venue: { href: '/dashboard/events/new', label: t('dashboard_new_event') },
+    // Points at the spot itself until one exists, then at the event flow —
+    // the spot is the account's first job, its events come after.
+    spot: ownedSpot
+      ? { href: '/dashboard/events/new', label: t('dashboard_new_event') }
+      : { href: '/dashboard/spots/new', label: 'Καταχώρησε το spot σου' },
   }
 
   const saveButton = (onClick: () => void) => (
@@ -1104,8 +1110,69 @@ export default function DashboardClient({ profile, events, releases, savedEvents
               )}
             </div>
 
+            {/* Spot — one per account, so this is a single card, not a list */}
+            {profile.profile_type === 'spot' && (
+              <div className="mb-8">
+                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  Το spot σου
+                </h3>
+                {ownedSpot ? (
+                  <div className="flex items-center gap-4 p-4 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                    {ownedSpot.cover_image && (
+                      <img
+                        src={ownedSpot.cover_image}
+                        alt=""
+                        className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{ownedSpot.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>
+                        {[ownedSpot.subcategory, ownedSpot.neighborhood, ownedSpot.city].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
+                      backgroundColor: ownedSpot.is_published ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
+                      color: ownedSpot.is_published ? '#4ade80' : '#E8A020',
+                    }}>
+                      {ownedSpot.is_published ? t('dashboard_status_live') : t('dashboard_status_pending')}
+                    </span>
+                    {ownedSpot.is_published && (
+                      <Link
+                        href={`/spots/${ownedSpot.slug}`}
+                        className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                      >
+                        {t('dashboard_view_profile')}
+                      </Link>
+                    )}
+                    <Link
+                      href={`/dashboard/edit/spot/${ownedSpot.id}`}
+                      className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                    >
+                      {t('dashboard_edit')}
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      Δεν έχεις καταχωρήσει ακόμα το spot σου.
+                    </p>
+                    <Link
+                      href="/dashboard/spots/new"
+                      className="inline-block text-xs px-4 py-2 rounded-lg font-medium"
+                      style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+                    >
+                      Καταχώρησε το spot σου
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Events */}
-            {(profile.profile_type === 'organizer' || profile.profile_type === 'venue') && (
+            {(profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot') && (
               <div>
                 {(() => {
                   const totalViews = events.reduce((sum: number, e: any) => sum + (e.view_count ?? 0), 0)
