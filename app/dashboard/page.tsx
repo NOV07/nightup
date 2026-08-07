@@ -38,10 +38,6 @@ export default async function DashboardPage() {
     ? await supabase.from('music_releases').select('*').eq('profile_id', profile.id).order('created_at', { ascending: false })
     : { data: [] }
 
-  const { data: professional } = profile.profile_type === 'professional'
-    ? await supabase.from('professionals').select('*').eq('profile_id', profile.id).single()
-    : { data: null }
-
   // Artist: find upcoming events where display_name appears in lineup (mirrors app/profile/[username]/page.tsx)
   let artistBookings: any[] = []
   if (profile.profile_type === 'artist') {
@@ -163,7 +159,6 @@ export default async function DashboardPage() {
       profile={profile}
       events={events ?? []}
       releases={releases ?? []}
-      professional={professional}
       savedEvents={savedEvents ?? []}
       savedSpots={savedSpots ?? []}
       upcomingEvents={upcomingEvents}

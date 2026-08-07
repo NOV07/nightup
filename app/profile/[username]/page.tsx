@@ -51,10 +51,9 @@ export default async function ProfilePage({ params }: Props) {
   // Fetch content based on profile type
   let upcomingEvents: any[] = []
   let releases: any[] = []
-  let professional: any = null
   let galleryPhotos: { id: string; image_url: string; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null }[] = []
 
-  if (profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue') {
+  if (profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'professional') {
     const { data } = await supabase
       .from('creator_gallery')
       .select('id, image_url, crop_x, crop_y, crop_width, crop_height')
@@ -104,17 +103,6 @@ export default async function ProfilePage({ params }: Props) {
     upcomingEvents = data ?? []
   }
 
-  // Professional
-  if (profile.profile_type === 'professional') {
-    const { data } = await supabase
-      .from('professionals')
-      .select('*')
-      .eq('profile_id', profile.id)
-      .eq('status', 'approved')
-      .single()
-    professional = data ?? null
-  }
-
   // Fetch active listings for this profile
   const { data: profileListings } = await supabase
     .from('listings')
@@ -130,8 +118,6 @@ export default async function ProfilePage({ params }: Props) {
     professional: 'Professional',
   }
 
-  const socialSource = profile.profile_type === 'professional' && professional ? professional : profile;
-
   function normalizeSocial(handle: string | null | undefined, baseUrl: string): string | null {
     if (!handle) return null;
     if (handle.startsWith('http://') || handle.startsWith('https://')) return handle;
@@ -141,28 +127,26 @@ export default async function ProfilePage({ params }: Props) {
   }
 
   const socialLinks = [
-    { key: 'instagram',  label: 'Instagram',  url: normalizeSocial(socialSource.instagram, 'https://instagram.com') },
-    { key: 'facebook',   label: 'Facebook',   url: normalizeSocial(socialSource.facebook, 'https://facebook.com') },
-    { key: 'tiktok',     label: 'TikTok',     url: normalizeSocial(socialSource.tiktok, 'https://tiktok.com') },
-    { key: 'youtube',    label: 'YouTube',    url: normalizeSocial(socialSource.youtube || socialSource.youtube_url, 'https://youtube.com/@') },
-    { key: 'soundcloud', label: 'SoundCloud', url: normalizeSocial(socialSource.soundcloud || socialSource.soundcloud_url, 'https://soundcloud.com') },
-    { key: 'spotify',    label: 'Spotify',    url: socialSource.spotify || socialSource.spotify_url || null },
-    { key: 'website',    label: 'Website',    url: socialSource.website || null },
-    { key: 'bandcamp',   label: 'Bandcamp',   url: profile.bandcamp_url || socialSource.bandcamp_url || null },
+    { key: 'instagram',  label: 'Instagram',  url: normalizeSocial(profile.instagram, 'https://instagram.com') },
+    { key: 'facebook',   label: 'Facebook',   url: normalizeSocial(profile.facebook, 'https://facebook.com') },
+    { key: 'tiktok',     label: 'TikTok',     url: normalizeSocial(profile.tiktok, 'https://tiktok.com') },
+    { key: 'youtube',    label: 'YouTube',    url: normalizeSocial(profile.youtube_url, 'https://youtube.com/@') },
+    { key: 'soundcloud', label: 'SoundCloud', url: normalizeSocial(profile.soundcloud_url, 'https://soundcloud.com') },
+    { key: 'spotify',    label: 'Spotify',    url: profile.spotify_url || null },
+    { key: 'website',    label: 'Website',    url: profile.website || null },
+    { key: 'bandcamp',   label: 'Bandcamp',   url: profile.bandcamp_url || null },
     { key: 'apple_music',label: 'Apple Music',url: profile.apple_music_url || null },
     { key: 'beatport',   label: 'Beatport',   url: profile.beatport_url || null },
-    { key: 'mixcloud',   label: 'Mixcloud',   url: normalizeSocial(profile.mixcloud_url || socialSource.mixcloud_url, 'https://mixcloud.com') },
+    { key: 'mixcloud',   label: 'Mixcloud',   url: normalizeSocial(profile.mixcloud_url, 'https://mixcloud.com') },
   ].filter(s => s.url);
 
   const coverSrc = profile.cover_url && !profile.cover_url.includes('picsum') && !profile.cover_url.includes('pravatar') ? profile.cover_url : null;
-  const avatarSrc = (profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) &&
-    !((profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ?? '').includes('pravatar') &&
-    !((profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url) ?? '').includes('picsum')
-      ? (profile.profile_type === 'professional' ? (profile.avatar_url || professional?.image_url) : profile.avatar_url)
+  const avatarSrc = profile.avatar_url &&
+    !profile.avatar_url.includes('pravatar') &&
+    !profile.avatar_url.includes('picsum')
+      ? profile.avatar_url
       : null;
-  // Only apply the stored crop when profile.avatar_url is actually what's being shown
-  // (not the professional.image_url fallback, which has no crop of its own).
-  const avatarCrop = avatarSrc && avatarSrc === profile.avatar_url ? getAvatarCrop(profile) : null;
+  const avatarCrop = avatarSrc ? getAvatarCrop(profile) : null;
   const coverCrop = coverSrc ? getCoverCrop(profile) : null;
 
   return (
@@ -251,7 +235,7 @@ export default async function ProfilePage({ params }: Props) {
           )}
 
           {/* Socials + Contact */}
-          {(socialLinks.length > 0 || profile.booking_email || professional?.phone) && (
+          {(socialLinks.length > 0 || profile.booking_email || profile.phone) && (
             <div className="flex flex-wrap gap-2 mb-8">
               {socialLinks.map(social => (
                 <a
@@ -270,8 +254,8 @@ export default async function ProfilePage({ params }: Props) {
                 </a>
               ))}
               <ContactPill
-                email={profile.booking_email || professional?.email}
-                phone={professional?.phone}
+                email={profile.booking_email}
+                phone={profile.phone}
               />
             </div>
           )}
@@ -544,27 +528,22 @@ export default async function ProfilePage({ params }: Props) {
         )}
 
         {/* ═══ PROFESSIONAL SECTIONS ═══ */}
-        {profile.profile_type === 'professional' && professional && (
+        {profile.profile_type === 'professional' && (
           <div className="space-y-10 pb-16">
 
-            {/* About */}
+            {/* About — bio already renders in the header above, so this section
+                carries the taxonomy (tags + services) only. */}
+            {((profile.tags?.length ?? 0) > 0 || (profile.services?.length ?? 0) > 0) && (
             <section>
               <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 About
               </h2>
               <div className="p-6 rounded-2xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
 
-                {/* Description */}
-                {professional.description && (
-                  <p className="text-sm leading-relaxed mb-4" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    {professional.description}
-                  </p>
-                )}
-
                 {/* Tags */}
-                {professional.tags && professional.tags.length > 0 && (
+                {profile.tags && profile.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {(professional.tags as string[]).map((tag: string) => (
+                    {(profile.tags as string[]).map((tag: string) => (
                       <span key={tag} className="text-xs px-3 py-1.5 rounded-full" style={{
                         backgroundColor: 'rgba(232,160,32,0.08)',
                         border: '0.5px solid rgba(232,160,32,0.2)',
@@ -587,17 +566,18 @@ export default async function ProfilePage({ params }: Props) {
                 )}
               </div>
             </section>
+            )}
 
             {/* Gallery */}
-            {professional.gallery && professional.gallery.length > 0 && (
+            {visibility.gallery !== false && galleryPhotos.length > 0 && (
               <section>
                 <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   Gallery
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {(professional.gallery as string[]).map((url: string, i: number) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden">
-                      <Image src={url} alt={`Gallery ${i + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-300" />
+                  {galleryPhotos.map((photo) => (
+                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
+                      <CroppedImage src={photo.image_url} alt="" crop={photo.crop_x != null && photo.crop_y != null && photo.crop_width != null && photo.crop_height != null ? { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height } : null} className="hover:scale-105 transition-transform duration-300" sizes="(max-width: 640px) 50vw, 33vw" />
                     </div>
                   ))}
                 </div>
@@ -635,7 +615,7 @@ export default async function ProfilePage({ params }: Props) {
             )}
 
             {/* Booking CTA */}
-            {visibility.booking_cta !== false && professional.email && (
+            {visibility.booking_cta !== false && profile.booking_email && (
               <section>
                 <div className="p-6 rounded-2xl" style={{
                   backgroundColor: 'rgba(232,160,32,0.05)',
@@ -649,7 +629,7 @@ export default async function ProfilePage({ params }: Props) {
                       </p>
                     </div>
                     <a
-                      href={`mailto:${professional.email}`}
+                      href={`mailto:${profile.booking_email}`}
                       className="px-6 py-3 rounded-xl font-bold text-sm flex-shrink-0 transition-opacity hover:opacity-90"
                       style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
                     >

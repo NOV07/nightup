@@ -15,9 +15,9 @@ export async function GET() {
         .select('id', { count: 'exact', head: true })
         .eq('status', 'approved'),
       supabase
-        .from('professionals')
+        .from('profiles')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'approved'),
+        .eq('profile_type', 'professional'),
       supabase
         .from('events')
         .select('city')

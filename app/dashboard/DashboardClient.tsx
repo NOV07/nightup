@@ -62,11 +62,10 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
 
-export default function DashboardClient({ profile, events, releases, professional, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings, professionalContributions }: {
+export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings, professionalContributions }: {
   profile: any
   events: any[]
   releases: any[]
-  professional: any
   savedEvents?: any[]
   savedSpots?: any[]
   upcomingEvents?: any[]
@@ -167,22 +166,22 @@ export default function DashboardClient({ profile, events, releases, professiona
     network_subcategory: profile.network_subcategory ?? '',
   })
 
-  // Pro-specific listing fields
+  // Pro-specific listing fields. These used to be seeded from a parallel
+  // `professionals` row, which most professionals never had — so the form
+  // opened blank for them. They now live on the profile itself.
   const [proForm, setProForm] = useState({
-    category: professional?.category ?? '',
-    availability: professional?.availability ?? 'available',
-    tags: (professional?.tags ?? []).join(', '),
-    email: professional?.email ?? '',
-    phone: professional?.phone ?? '',
-    website: professional?.website ?? '',
-    instagram: professional?.instagram ?? '',
-    facebook: professional?.facebook ?? '',
-    tiktok: professional?.tiktok ?? '',
-    youtube: professional?.youtube ?? '',
-    soundcloud: professional?.soundcloud ?? '',
-    spotify: professional?.spotify ?? '',
-    gallery: (professional?.gallery ?? []) as string[],
-    status: professional?.status ?? 'pending',
+    category: profile.network_category ?? '',
+    availability: profile.is_available === false ? 'busy' : 'available',
+    tags: (profile.tags ?? []).join(', '),
+    email: profile.booking_email ?? '',
+    phone: profile.phone ?? '',
+    website: profile.website ?? '',
+    instagram: profile.instagram ?? '',
+    facebook: profile.facebook ?? '',
+    tiktok: profile.tiktok ?? '',
+    youtube: profile.youtube_url ?? '',
+    soundcloud: profile.soundcloud_url ?? '',
+    spotify: profile.spotify_url ?? '',
   })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
@@ -266,7 +265,10 @@ export default function DashboardClient({ profile, events, releases, professiona
     }
   }
 
-  // Pro profile save — updates profiles + upserts professionals in parallel
+  // Pro profile save — single write to profiles. This used to also upsert a
+  // parallel `professionals` row, and hardcoded network_tab to 'Artists', which
+  // dropped the profile off /network/professionals (that page filters on
+  // network_tab = 'Professionals').
   async function handleProSave() {
     setSaving(true)
     setError('')
@@ -276,56 +278,43 @@ export default function DashboardClient({ profile, events, releases, professiona
       ? proForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
       : []
 
-    const [profileResult, proResult] = await Promise.all([
-      supabase
-        .from('profiles')
-        .update({
-          display_name: form.display_name,
-          bio: form.bio,
-          location: form.location,
-          avatar_url: form.avatar_url || null,
-          cover_url: form.cover_url || null,
-          avatar_crop_x: form.avatar_crop_x,
-          avatar_crop_y: form.avatar_crop_y,
-          avatar_crop_width: form.avatar_crop_width,
-          avatar_crop_height: form.avatar_crop_height,
-          cover_crop_x: form.cover_crop_x,
-          cover_crop_y: form.cover_crop_y,
-          cover_crop_width: form.cover_crop_width,
-          cover_crop_height: form.cover_crop_height,
-          network_tab: 'Artists',
-          network_category: form.network_category || null,
-          network_subcategory: form.network_subcategory || null,
-        })
-        .eq('id', profile.id),
-      supabase
-        .from('professionals')
-        .upsert({
-          profile_id: profile.id,
-          name: form.display_name,
-          description: form.bio,
-          city: form.location,
-          category: form.network_category || proForm.category,
-          availability: proForm.availability,
-          tags: tagsArray,
-          email: proForm.email,
-          phone: proForm.phone,
-          website: proForm.website,
-          instagram: proForm.instagram,
-          facebook: proForm.facebook,
-          tiktok: proForm.tiktok,
-          youtube: proForm.youtube,
-          soundcloud: proForm.soundcloud,
-          spotify: proForm.spotify,
-          gallery: proForm.gallery ?? [],
-          status: proForm.status === 'approved' ? 'approved' : 'pending',
-        }, { onConflict: 'profile_id' }),
-    ])
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        display_name: form.display_name,
+        bio: form.bio,
+        location: form.location,
+        avatar_url: form.avatar_url || null,
+        cover_url: form.cover_url || null,
+        avatar_crop_x: form.avatar_crop_x,
+        avatar_crop_y: form.avatar_crop_y,
+        avatar_crop_width: form.avatar_crop_width,
+        avatar_crop_height: form.avatar_crop_height,
+        cover_crop_x: form.cover_crop_x,
+        cover_crop_y: form.cover_crop_y,
+        cover_crop_width: form.cover_crop_width,
+        cover_crop_height: form.cover_crop_height,
+        network_tab: 'Professionals',
+        network_category: form.network_category || proForm.category || null,
+        network_subcategory: form.network_subcategory || null,
+        // former `professionals` columns, now first-class on profiles
+        phone: proForm.phone || null,
+        tags: tagsArray,
+        booking_email: proForm.email || null,
+        is_available: proForm.availability === 'available',
+        website: proForm.website || null,
+        instagram: proForm.instagram || null,
+        facebook: proForm.facebook || null,
+        tiktok: proForm.tiktok || null,
+        youtube_url: proForm.youtube || null,
+        soundcloud_url: proForm.soundcloud || null,
+        spotify_url: proForm.spotify || null,
+      })
+      .eq('id', profile.id)
 
     setSaving(false)
-    const err = profileResult.error || proResult.error
-    if (err) {
-      setError(err.message)
+    if (error) {
+      setError(error.message)
     } else {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -714,34 +703,9 @@ export default function DashboardClient({ profile, events, releases, professiona
                 ))}
               </div>
 
-              {/* Gallery */}
-              <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_gallery')}</h2>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_gallery_desc')}</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {proForm.gallery.map((url, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden group" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
-                      <Image src={url} alt={`Gallery ${i + 1}`} fill className="object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setProForm(p => ({ ...p, gallery: p.gallery.filter((_, idx) => idx !== i) }))}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white' }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  {proForm.gallery.length < 10 && (
-                    <div className="aspect-square rounded-xl overflow-hidden" style={{ border: '0.5px dashed rgba(255,255,255,0.15)' }}>
-                      <ImageUpload
-                        folder="professionals"
-                        onUpload={(url) => setProForm(p => ({ ...p, gallery: [...p.gallery, url] }))}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+              {/* Gallery — same creator_gallery store artists use, rather than
+                  the old professionals.gallery text[] column. */}
+              <CreatorGallery profileId={profile.id} />
 
               {saveButton(handleProSave)}
             </div>
