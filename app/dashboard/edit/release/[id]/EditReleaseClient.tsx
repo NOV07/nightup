@@ -4,14 +4,18 @@ import { useRouter } from 'next/navigation'
 import ImageUpload from '../../../../../components/ui/ImageUpload'
 import { useLanguage } from '@/app/components/LanguageContext'
 
-const RELEASE_TYPES = [
-  { value: 'single', label: 'Single' },
-  { value: 'ep', label: 'EP' },
-  { value: 'album', label: 'Album' },
-  { value: 'mix', label: 'Mix' },
-  { value: 'compilation', label: 'Compilation' },
-  { value: 'live_set', label: 'Live Set' },
-]
+// Stored verbatim: the release pages branch on the exact strings "Single",
+// "EP" and "Album", so these values are the casing the column carries.
+const RELEASE_TYPES = ['Single', 'EP', 'Album', 'Mix', 'Compilation', 'Live Set']
+
+// Rows written before the casing was settled hold values like "ep" or
+// "live_set"; map those onto the canonical string so the right button lights
+// up and saving does not leave the old value in place.
+function normalizeType(stored: string | null | undefined) {
+  if (!stored) return 'Single'
+  const key = stored.replace(/[_-]/g, ' ').trim().toLowerCase()
+  return RELEASE_TYPES.find(t => t.toLowerCase() === key) ?? stored
+}
 
 const GENRES = [
   'Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance',
@@ -31,7 +35,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
   const [form, setForm] = useState({
     title: release.title ?? '',
     artist: release.artist ?? '',
-    type: release.type ?? 'single',
+    type: normalizeType(release.type),
     primary_genre: release.primary_genre ?? '',
     secondary_genres: release.secondary_genres ?? [],
     custom_genre: '',
@@ -160,17 +164,17 @@ export default function EditReleaseClient({ release }: { release: any }) {
             <div className="grid grid-cols-3 gap-2">
               {RELEASE_TYPES.map(rt => (
                 <button
-                  key={rt.value}
+                  key={rt}
                   type="button"
-                  onClick={() => setForm(prev => ({ ...prev, type: rt.value }))}
+                  onClick={() => setForm(prev => ({ ...prev, type: rt }))}
                   className="py-2.5 px-3 rounded-lg text-sm font-medium transition-all"
                   style={{
-                    backgroundColor: form.type === rt.value ? '#E8A020' : 'rgba(255,255,255,0.05)',
-                    color: form.type === rt.value ? '#0F0F1A' : 'rgba(255,255,255,0.5)',
-                    border: `1px solid ${form.type === rt.value ? '#E8A020' : 'rgba(255,255,255,0.1)'}`,
+                    backgroundColor: form.type === rt ? '#E8A020' : 'rgba(255,255,255,0.05)',
+                    color: form.type === rt ? '#0F0F1A' : 'rgba(255,255,255,0.5)',
+                    border: `1px solid ${form.type === rt ? '#E8A020' : 'rgba(255,255,255,0.1)'}`,
                   }}
                 >
-                  {rt.label}
+                  {rt}
                 </button>
               ))}
             </div>
