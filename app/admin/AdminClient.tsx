@@ -20,7 +20,6 @@ function readFileAsBase64(file: File): Promise<string> {
 
 const GENRES = ["Techno","House","Deep House","Minimal","Drum & Bass","Trance","Hip-Hop","R&B","Afrobeats","Reggaeton","Laika","Entechno","Rebetiko","Dimotika","Rock","Jazz","Classical","Blues","Open Air","Beach Party","Rooftop"];
 const CITIES = ["Athens","Thessaloniki","Mykonos","Santorini","Heraklion","Patras","Rhodes","Ios","Corfu","Zakynthos"];
-const PRO_CATEGORIES = ["Venues","Music & Artists","Sound & Lighting","Food & Drinks","Decoration","Transport & VIP","Photography"];
 const ART_CATEGORIES = ["Venues","Festivals","Artists","Guide","Music","Culture"];
 const RELEASE_TYPES = ["Single","EP","Album"];
 const MUSIC_GENRES = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Afrobeats","Pop","Rock","Laika","Entechno","Other"];
@@ -32,7 +31,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
-type Tab = "events" | "professionals" | "articles" | "organizers" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims";
+type Tab = "events" | "articles" | "organizers" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims";
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
 type QueueFilter = "all" | "events" | "releases" | "network" | "spots" | "articles";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
@@ -40,7 +39,7 @@ type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 interface ContentItem {
   id: string;
   status: ItemStatus;
-  featured?: boolean;          // spots / professionals / articles — a real column there
+  featured?: boolean;          // spots / articles — a real column there
   featured_until?: string | null; // events — no `featured` column, this window stands in
   [key: string]: unknown;
 }
@@ -53,7 +52,6 @@ interface QueueItem extends ContentItem {
 
 interface AllContent {
   events: ContentItem[];
-  professionals: ContentItem[];
   articles: ContentItem[];
   organizers: ContentItem[];
   releases: ContentItem[];
@@ -144,7 +142,6 @@ function eventFormDataToRow(data: EventFormData) {
     contact_email:     data.contact_email || null,
   };
 }
-const defaultProForm = { name:"",avatar:"",category:"Venues",rating:"5",reviews_count:"0",city:"",description:"" };
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
 const defaultOrgForm = { name:"",type:"Club",city:"Athens",about:"",cover_image:"",avatar:"",instagram:"",facebook:"",tiktok:"",website:"" };
 const defaultReleaseForm = { title:"",artist:"",type:"Single",genre:"House",cover_image:"",spotify_url:"",soundcloud_url:"",description:"",release_date:"",is_promoted:false };
@@ -161,7 +158,7 @@ export default function AdminClient() {
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [allContent, setAllContent] = useState<AllContent>({
-    events:[], professionals:[], articles:[], organizers:[],
+    events:[], articles:[], organizers:[],
     releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[],
   });
   const [assignOrgId, setAssignOrgId] = useState<string>("");
@@ -185,7 +182,6 @@ export default function AdminClient() {
   const [eventCover, setEventCover] = useState("");
   const [showEventCropper, setShowEventCropper] = useState(false);
   const eventCoverRef = useRef("");
-  const [proForm, setProForm] = useState({ ...defaultProForm });
   const [articleForm, setArticleForm] = useState({ ...defaultArticleForm });
   const [orgForm, setOrgForm] = useState({ ...defaultOrgForm });
   const [releaseForm, setReleaseForm] = useState({ ...defaultReleaseForm });
@@ -214,7 +210,7 @@ export default function AdminClient() {
 
   // ── Computed stats ──────────────────────────────────────────────────────────
   const allItems = [
-    ...allContent.events, ...allContent.professionals, ...allContent.articles,
+    ...allContent.events, ...allContent.articles,
     ...allContent.organizers, ...allContent.releases, ...allContent.mixes,
     ...allContent.playlists, ...allContent.artists, ...allContent.spots,
   ];
@@ -232,7 +228,6 @@ export default function AdminClient() {
     queue: totalPending,
     events: allContent.events.filter(i => i.status === "pending").length,
     music: totalMusicPending,
-    professionals: allContent.professionals.filter(i => i.status === "pending").length,
     spots: allContent.spots.filter(i => i.status === "pending").length,
     articles: allContent.articles.filter(i => i.status === "pending").length,
     organizers: allContent.organizers.filter(i => i.status === "pending").length,
@@ -249,7 +244,6 @@ export default function AdminClient() {
       [allContent.releases,     "release",   "music",  "releases"],
       [allContent.mixes,        "mix",       "music",  "mixes"],
       [allContent.artists,      "artist",    "music",  "artists"],
-      [allContent.professionals,"network",   "professionals"],
       [allContent.articles,     "article",   "articles"],
       [allContent.organizers,   "organizer", "organizers"],
       [allContent.spots,        "spot",      "spots"],
@@ -270,7 +264,7 @@ export default function AdminClient() {
     if (filter === "all")      return items;
     if (filter === "events")   return items.filter(i => i._type === "event");
     if (filter === "releases") return items.filter(i => ["release","mix","artist"].includes(i._type));
-    if (filter === "network")  return items.filter(i => ["network","organizer"].includes(i._type));
+    if (filter === "network")  return items.filter(i => i._type === "organizer");
     if (filter === "spots")    return items.filter(i => i._type === "spot");
     if (filter === "articles") return items.filter(i => i._type === "article");
     return items;
@@ -338,13 +332,13 @@ export default function AdminClient() {
     setAllContent(prev => ({ ...prev, events: prev.events.map(e => e.id === id ? { ...e, is_radar_pick: !current } : e) }));
   }
 
-  async function handleToggleFeaturedPro(id: string, currentFeatured: boolean) {
-    await fetch("/api/admin/feature-professional", {
+  async function handleToggleFeaturedProfile(id: string, currentFeatured: boolean) {
+    await fetch("/api/admin/feature-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, is_featured: !currentFeatured }),
     });
-    setAllContent(prev => ({ ...prev, professionals: prev.professionals.map(p => p.id === id ? { ...p, is_featured: !currentFeatured } : p) }));
+    setAllContent(prev => ({ ...prev, profiles: prev.profiles.map(p => p.id === id ? { ...p, is_featured: !currentFeatured } : p) }));
   }
 
   async function handleToggleFeaturedSpot(id: string, current: boolean) {
@@ -481,23 +475,6 @@ export default function AdminClient() {
     await applyEventFlags(id, data.featured, data.is_radar_pick);
     setEditLoading(false);
     setEditItem(null);
-    await fetchContent();
-  }
-
-  async function handleAddPro(e: React.FormEvent) {
-    e.preventDefault();
-    setAddLoading(true); setAddError(""); setAddSuccess("");
-    const res = await fetch("/api/admin/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "professionals", data: { ...proForm, rating: parseFloat(proForm.rating), reviews_count: parseInt(proForm.reviews_count), profile_id: isEditorial ? null : undefined } }),
-    });
-    const json = await res.json();
-    setAddLoading(false);
-    if (!res.ok) { setAddError(json.error ?? "Failed"); return; }
-    setAddSuccess("Professional added!");
-    setProForm({ ...defaultProForm });
-    setShowAddForm(false);
     await fetchContent();
   }
 
@@ -777,7 +754,7 @@ export default function AdminClient() {
     const isSpot    = tab === "spots";
 
     const primary =
-      (tab === "professionals" || tab === "organizers" || isArtist || isSpot)
+      (tab === "organizers" || isArtist || isSpot)
         ? (item.name as string)
         : (isRelease || isMix || isPlaylist)
           ? `${item.title} — ${item.artist ?? item.platform ?? ""}`
@@ -785,7 +762,6 @@ export default function AdminClient() {
 
     const secondary =
       tab === "events"       ? [item.venue, item.city, item.date, item.genre].filter(Boolean).join(" · ")
-      : tab === "professionals" ? [item.category, item.city].filter(Boolean).join(" · ")
       : tab === "organizers" ? [item.type, item.city].filter(Boolean).join(" · ")
       : isRelease            ? [item.type, item.genre].filter(Boolean).join(" · ")
       : isMix                ? (item.genre as string) || ""
@@ -819,10 +795,6 @@ export default function AdminClient() {
           {/* Featured — events */}
           {tab === "events" && section === "approved" && (
             <button onClick={() => handleToggleFeatured(id, isEventFeatured(item))} title={isEventFeatured(item) ? "Unfeature" : "Feature"} className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all" style={{ backgroundColor:isEventFeatured(item) ? "#E8A020" : "#2A2A3E", color:isEventFeatured(item) ? "#0F0F1A" : "#666" }}>★</button>
-          )}
-          {/* Featured — professionals */}
-          {tab === "professionals" && section === "approved" && (
-            <button onClick={() => handleToggleFeaturedPro(id, !!(item as any).is_featured)} title={(item as any).is_featured ? "Remove Featured" : "Feature"} className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all" style={{ backgroundColor:(item as any).is_featured ? "#E8A020" : "#2A2A3E", color:(item as any).is_featured ? "#0F0F1A" : "#666" }}>★</button>
           )}
           {/* Featured — spots */}
           {tab === "spots" && section === "approved" && (
@@ -868,7 +840,6 @@ export default function AdminClient() {
   // ── Add form label for header ─────────────────────────────────────────────
   function addFormLabel() {
     if (activeTab === "music") return musicSubTab.slice(0, -1);
-    if (activeTab === "professionals") return "Professional";
     if (activeTab === "spots") return "Spot";
     return activeTab.slice(0, -1);
   }
@@ -985,7 +956,6 @@ export default function AdminClient() {
             <p className="text-xs font-bold uppercase tracking-widest mt-5 mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>Content</p>
             <SidebarNavItem label="Events"     tab="events"        badge={pendingByTab.events} />
             <SidebarNavItem label="Nightwaves" tab="music"         badge={pendingByTab.music} />
-            <SidebarNavItem label="Network"    tab="professionals" badge={pendingByTab.professionals} />
             <SidebarNavItem label="Spots"      tab="spots"         badge={pendingByTab.spots} />
             <SidebarNavItem label="Magazine"   onClick={() => router.push("/admin/magazine")} />
           </div>
@@ -1101,9 +1071,14 @@ export default function AdminClient() {
                           style={{ backgroundColor:"#111120", color:"#666", border:"1px solid #444" }}
                         >Verify</button>
                       )}
-                      <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color:profile.is_featured ? "#E8A020" : "#555" }}>
+                      <button
+                        onClick={() => handleToggleFeaturedProfile(profile.id, !!profile.is_featured)}
+                        title={profile.is_featured ? "Remove Featured" : "Feature"}
+                        className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
+                        style={{ backgroundColor:profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color:profile.is_featured ? "#E8A020" : "#555" }}
+                      >
                         {profile.is_featured ? "★ Featured" : "Not featured"}
-                      </span>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1216,7 +1191,7 @@ export default function AdminClient() {
               </div>
             )}
 
-            {/* ── CONTENT tabs (events, professionals, articles, organizers, music, spots) ── */}
+            {/* ── CONTENT tabs (events, articles, organizers, music, spots) ── */}
             {!["queue","users","upgrades","featured","spot-claims"].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
@@ -1292,24 +1267,6 @@ export default function AdminClient() {
                           />
                         </>
                       )}
-                      {/* PROFESSIONAL FORM */}
-                      {activeTab === "professionals" && (
-                        <form onSubmit={handleAddPro} className="space-y-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div><label className={labelCls}>Name *</label><input required className={inputCls} style={inputStyle} value={proForm.name} onChange={e => setProForm(f => ({ ...f, name:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Category</label><select className={inputCls} style={inputStyle} value={proForm.category} onChange={e => setProForm(f => ({ ...f, category:e.target.value }))}>{PRO_CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div>
-                            <div><label className={labelCls}>City</label><input className={inputCls} style={inputStyle} value={proForm.city} onChange={e => setProForm(f => ({ ...f, city:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Rating (0–5)</label><input type="number" min="0" max="5" step="0.1" className={inputCls} style={inputStyle} value={proForm.rating} onChange={e => setProForm(f => ({ ...f, rating:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Avatar URL</label><input className={inputCls} style={inputStyle} value={proForm.avatar} onChange={e => setProForm(f => ({ ...f, avatar:e.target.value }))} placeholder="https://…" /></div>
-                            <div><label className={labelCls}>Review Count</label><input type="number" min="0" className={inputCls} style={inputStyle} value={proForm.reviews_count} onChange={e => setProForm(f => ({ ...f, reviews_count:e.target.value }))} /></div>
-                            <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={proForm.description} onChange={e => setProForm(f => ({ ...f, description:e.target.value }))} /></div>
-                            <div><label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} /> ★ Nightup Editorial</label></div>
-                          </div>
-                          {addError && <p className="text-red-400 text-xs">{addError}</p>}
-                          <button type="submit" disabled={addLoading} className="px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>{addLoading ? "Saving…" : "Add Professional"}</button>
-                        </form>
-                      )}
-
                       {/* ARTICLE FORM */}
                       {activeTab === "articles" && (
                         <form onSubmit={handleAddArticle} className="space-y-4">
@@ -1495,7 +1452,7 @@ export default function AdminClient() {
           { tab:"queue" as Tab,         label:"Queue",   icon:"⏳", badge: totalPending },
           { tab:"events" as Tab,        label:"Events",  icon:"📅", badge: 0 },
           { tab:"music" as Tab,         label:"Waves",   icon:"🎵", badge: pendingByTab.music },
-          { tab:"professionals" as Tab, label:"Network", icon:"👤", badge: pendingByTab.professionals },
+          { tab:"users" as Tab,         label:"Users",   icon:"👤", badge: 0 },
         ]).map(({ tab, label, icon, badge }) => (
           <button
             key={tab}
@@ -1615,7 +1572,6 @@ export default function AdminClient() {
               labelCls={labelCls}
               genres={GENRES}
               cities={CITIES}
-              proCategories={PRO_CATEGORIES}
               artCategories={ART_CATEGORIES}
               orgTypes={ORG_TYPES}
               releaseTypes={RELEASE_TYPES}
@@ -1692,12 +1648,12 @@ export default function AdminClient() {
 // ─────────────────────────────────────────────────────────────────────────────
 // EditForm
 // ─────────────────────────────────────────────────────────────────────────────
-function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputStyle, labelCls, genres, cities, proCategories, artCategories, orgTypes, releaseTypes, musicGenres, spotCategories, approvedOrgs }: {
+function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputStyle, labelCls, genres, cities, artCategories, orgTypes, releaseTypes, musicGenres, spotCategories, approvedOrgs }: {
   item: ContentItem; tab: string; subtab?: string;
   onSave: (table: string, id: string, data: Record<string, unknown>) => void;
   loading: boolean; error: string;
   inputCls: string; inputStyle: React.CSSProperties; labelCls: string;
-  genres: string[]; cities: string[]; proCategories: string[]; artCategories: string[];
+  genres: string[]; cities: string[]; artCategories: string[];
   orgTypes: string[]; releaseTypes: string[]; musicGenres: string[]; spotCategories: string[];
   approvedOrgs: ContentItem[];
 }) {
@@ -1733,7 +1689,6 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
 
   function getTable() {
     if (tab === "music") return subtab ?? "music_releases";
-    if (tab === "professionals") return "professionals";
     if (tab === "organizers") return "organizers";
     if (tab === "articles") return "articles";
     return tab;
@@ -1798,12 +1753,6 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("contact_email","Contact Email")}
           {field("description","Description","textarea",undefined,true)}
           {field("full_description","Full Description","textarea",undefined,true)}
-        </>)}
-        {tab === "professionals" && (<>
-          {field("name","Name")}
-          {field("category","Category","select",proCategories)}
-          {field("city","City","select",cities)}
-          {field("description","Description","textarea",undefined,true)}
         </>)}
         {tab === "articles" && (<>
           {field("title","Title","text",undefined,true)}
