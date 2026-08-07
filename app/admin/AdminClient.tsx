@@ -1121,7 +1121,7 @@ export default function AdminClient() {
                   <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
                     <div className="min-w-0">
                       <p className="font-medium text-sm">@{req.username}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{req.email} · {req.specialty}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{req.email} · {req.requested_type ?? "no type"} · {req.specialty}</p>
                       <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.4)" }}>{req.bio}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -1131,9 +1131,16 @@ export default function AdminClient() {
                           <button onClick={async () => { await fetch("/api/admin/approve-upgrade", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"rejected" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌</button>
                         </>
                       ) : (
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:req.status==="approved" ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)", color:req.status==="approved" ? "#86efac" : "#fbbf24" }}>
-                          {req.status === "approved" ? "✓ Approved" : "✗ Rejected"}
-                        </span>
+                        <>
+                          {req.status === "approved" && !req.requested_type && (
+                            <span className="text-xs px-2 py-1 rounded-full" title="Approved with no structured type — set profile_type by hand" style={{ backgroundColor:"rgba(220,38,38,0.15)", color:"#fca5a5" }}>
+                              ⚠ Set profile_type
+                            </span>
+                          )}
+                          <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:req.status==="approved" ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)", color:req.status==="approved" ? "#86efac" : "#fbbf24" }}>
+                            {req.status === "approved" ? "✓ Approved" : "✗ Rejected"}
+                          </span>
+                        </>
                       )}
                     </div>
                   </div>

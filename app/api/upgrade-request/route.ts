@@ -4,6 +4,11 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+// Keep in sync with the tile ids in components/auth/UpgradeModal.tsx and with
+// ProfileType in app/lib/types.ts. Rejecting anything else keeps stale clients
+// (which sent the old 'organiser' spelling) from poisoning the column.
+const REQUESTABLE_TYPES = ['organizer', 'artist', 'spot', 'professional'] as const
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
@@ -12,9 +17,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { specialty, bio } = await req.json()
+  const { specialty, bio, requested_type } = await req.json()
   if (!specialty || !bio) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  }
+  if (!REQUESTABLE_TYPES.includes(requested_type)) {
+    return NextResponse.json({ error: 'Invalid creator type' }, { status: 400 })
   }
 
   // Get profile
@@ -53,6 +61,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       specialty,
       bio,
+      requested_type,
     })
 
   if (insertError) {
@@ -68,6 +77,7 @@ export async function POST(req: NextRequest) {
       <h2>Νέο Creator Upgrade Request</h2>
       <p><strong>Username:</strong> @${profile.username}</p>
       <p><strong>Email:</strong> ${user.email}</p>
+      <p><strong>Τύπος:</strong> ${requested_type}</p>
       <p><strong>Ειδικότητα:</strong> ${specialty}</p>
       <p><strong>Bio:</strong> ${bio}</p>
       <hr/>

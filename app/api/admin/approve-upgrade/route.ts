@@ -28,6 +28,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   }
 
+  // Requests submitted before requested_type existed carry no structured type —
+  // approve them as creator but leave profile_type alone and tell the admin.
+  const needsManualType = action === 'approved' && !request.requested_type
+
+  if (action === 'approved') {
+    // Update profile plan_tier (and profile_type, when we know it). Do this before
+    // flipping the request status so a failure leaves the request pending and retryable.
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update(
+        needsManualType
+          ? { plan_tier: 'creator' }
+          : { plan_tier: 'creator', profile_type: request.requested_type }
+      )
+      .eq('id', request.user_id)
+
+    // Don't mark it approved or email the user if the profile never actually changed.
+    if (profileError) {
+      return NextResponse.json(
+        { error: `Profile update failed: ${profileError.message}` },
+        { status: 500 }
+      )
+    }
+  }
+
   // Update request status
   await supabase
     .from('upgrade_requests')
@@ -35,12 +60,6 @@ export async function POST(req: NextRequest) {
     .eq('id', request_id)
 
   if (action === 'approved') {
-    // Update profile plan_tier
-    await supabase
-      .from('profiles')
-      .update({ plan_tier: 'creator' })
-      .eq('id', request.user_id)
-
     // Email the user
     await resend.emails.send({
       from: 'onboarding@resend.dev',
@@ -61,5 +80,5 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, needsManualType })
 }

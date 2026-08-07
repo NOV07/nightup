@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useLanguage } from '@/app/components/LanguageContext'
 
 const TYPES_BASE = [
-  { id: 'organiser', emoji: '🎪', label: 'Event Organiser', sub: null as string[] | null },
+  { id: 'organizer', emoji: '🎪', label: 'Event Organiser', sub: null as string[] | null },
   { id: 'artist',    emoji: '🎵', label: 'Artist',          sub: ['DJ', 'Live Act', 'Singer', 'MC'] },
   { id: 'spot',      emoji: '📍', label: 'Spot',            sub: null as string[] | null },
   { id: 'professional', emoji: '🤝', label: 'Professional', sub: null as string[] | null },
@@ -49,7 +49,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
     const res = await fetch('/api/upgrade-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ specialty, bio }),
+      body: JSON.stringify({ specialty, bio, requested_type: selectedType }),
     })
     const data = await res.json()
     setLoading(false)
