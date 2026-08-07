@@ -14,7 +14,21 @@ export default async function NewEventPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.profile_type !== 'organizer') redirect('/dashboard')
+  if (!profile || !['organizer', 'spot'].includes(profile.profile_type)) redirect('/dashboard')
 
-  return <NewEventClient />
+  // A spot hosting its own night almost always runs it at its own address, so
+  // seed the venue fields from the spot. Editable — a spot can host elsewhere.
+  let venueDefaults: { venue: string; city: string; address: string } | null = null
+  if (profile.profile_type === 'spot') {
+    const { data: spot } = await supabase
+      .from('spots')
+      .select('name, city, address')
+      .eq('owner_id', user.id)
+      .maybeSingle()
+    if (spot) {
+      venueDefaults = { venue: spot.name ?? '', city: spot.city ?? '', address: spot.address ?? '' }
+    }
+  }
+
+  return <NewEventClient venueDefaults={venueDefaults} />
 }

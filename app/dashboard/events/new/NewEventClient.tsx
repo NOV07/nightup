@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import EventFormSteps, { EventFormData } from '../../../../components/events/EventFormSteps'
 import { useLanguage } from '@/app/components/LanguageContext'
 
-export default function NewEventClient() {
+export default function NewEventClient({ venueDefaults }: { venueDefaults?: { venue: string; city: string; address: string } | null }) {
   const router = useRouter()
   const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
@@ -70,7 +70,7 @@ export default function NewEventClient() {
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>{t('event_new_heading')}</h1>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)' }}>{t('event_new_subheading')}</p>
       </div>
-      <EventFormSteps onSubmit={handleSubmit} loading={loading} error={error} />
+      <EventFormSteps initialData={venueDefaults ?? undefined} onSubmit={handleSubmit} loading={loading} error={error} />
     </div>
   )
 }
