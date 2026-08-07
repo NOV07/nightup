@@ -754,7 +754,7 @@ export default function AdminClient() {
 
     const secondary =
       tab === "events"       ? [item.venue, item.city, item.date, item.genre].filter(Boolean).join(" · ")
-      : isRelease            ? [item.type, item.genre].filter(Boolean).join(" · ")
+      : isRelease            ? [item.type, item.primary_genre].filter(Boolean).join(" · ")
       : isMix                ? (item.genre as string) || ""
       : isArtist             ? (item.origin as string) || ""
       : isSpot               ? [item.category, item.subcategory, item.city].filter(Boolean).join(" · ")

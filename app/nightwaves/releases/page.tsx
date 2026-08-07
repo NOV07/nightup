@@ -21,12 +21,10 @@ export default async function ReleasesPage() {
     const supabase = getSupabase();
     const { data } = await supabase
       .from("music_releases")
-      .select("id, title, artist, type, genre, primary_genre, cover_image, release_date, is_promoted")
+      .select("id, title, artist, type, primary_genre, cover_image, release_date, is_promoted")
       .eq("status", "approved")
       .order("created_at", { ascending: false });
-    // primary_genre is the column every submit/edit form writes; genre is the
-    // legacy single-string column only older admin-created rows still carry.
-    if (data) releases = data.map(r => ({ ...r, genre: r.primary_genre ?? r.genre }));
+    if (data) releases = data;
   } catch {}
   return <ReleasesClient releases={releases} />;
 }

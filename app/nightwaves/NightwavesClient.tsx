@@ -49,7 +49,7 @@ function SectionLabel({ children, href, linkLabel }: { children: React.ReactNode
 }
 
 interface Mix { id: string; title: string; artist: string; genre?: string; cover_image?: string; soundcloud_url?: string; duration?: string; }
-interface Release { id: string; title: string; artist: string; type?: string; genre?: string; cover_image?: string; spotify_url?: string; soundcloud_url?: string; release_date?: string; is_promoted?: boolean; }
+interface Release { id: string; title: string; artist: string; type?: string; primary_genre?: string; cover_image?: string; spotify_url?: string; soundcloud_url?: string; release_date?: string; is_promoted?: boolean; }
 interface Playlist { id: string; title: string; platform?: string; embed_url?: string; cover_image?: string; is_sponsored?: boolean; }
 interface RecentItem { id: string; title: string; artist?: string; typeBadge: string; cover_image?: string; href: string; external?: boolean; is_promoted?: boolean; _contentType: string; soundcloud_url?: string; spotify_url?: string; }
 

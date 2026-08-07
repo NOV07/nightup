@@ -24,9 +24,7 @@ async function getRelease(id: string) {
       .eq("id", id)
       .eq("status", "approved")
       .single();
-    // primary_genre is the column every submit/edit form writes; genre is the
-    // legacy single-string column only older admin-created rows still carry.
-    if (!error && data) return { ...data, genre: data.primary_genre ?? data.genre };
+    if (!error && data) return data;
   } catch {}
   return null;
 }
@@ -161,9 +159,9 @@ export default async function ReleasePage({ params }: Props) {
                   {release.type}
                 </span>
               )}
-              {release.genre && (
+              {release.primary_genre && (
                 <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "#1A1A2E", color: "#E8A020", border: "1px solid #E8A02040" }}>
-                  {release.genre}
+                  {release.primary_genre}
                 </span>
               )}
               {release.is_promoted && (
@@ -231,7 +229,7 @@ export default async function ReleasePage({ params }: Props) {
             type={release.type ?? "Single"}
             description={release.description}
             releaseDate={release.release_date}
-            genre={release.genre}
+            genre={release.primary_genre}
             spotifyUrl={release.spotify_url}
             appleMusicUrl={release.apple_music_url}
             bandcampUrl={release.bandcamp_url}

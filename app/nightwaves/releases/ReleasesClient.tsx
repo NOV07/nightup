@@ -11,7 +11,7 @@ interface Release {
   title: string;
   artist: string;
   type?: string;
-  genre?: string;
+  primary_genre?: string;
   cover_image?: string;
   release_date?: string;
   is_promoted?: boolean;
