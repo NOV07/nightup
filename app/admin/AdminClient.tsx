@@ -23,7 +23,6 @@ const CITIES = ["Athens","Thessaloniki","Mykonos","Santorini","Heraklion","Patra
 const ART_CATEGORIES = ["Venues","Festivals","Artists","Guide","Music","Culture"];
 const RELEASE_TYPES = ["Single","EP","Album"];
 const MUSIC_GENRES = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Afrobeats","Pop","Rock","Laika","Entechno","Other"];
-const ORG_TYPES = ["Club","Promoter","Festival","Bar","Agency","Venue","Other"];
 const SPOT_CATS = ["food","drink","nightlife","show","chill","activity","art","wellness"];
 const EVENT_TYPE_LABELS: Record<string, string> = {
   music: "Μουσική", culture: "Κουλτούρα", sports: "Αθλητισμός", other: "Άλλα",
@@ -31,9 +30,9 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
-type Tab = "events" | "articles" | "organizers" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims";
+type Tab = "events" | "articles" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims";
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
-type QueueFilter = "all" | "events" | "releases" | "network" | "spots" | "articles";
+type QueueFilter = "all" | "events" | "releases" | "spots" | "articles";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 
 interface ContentItem {
@@ -53,7 +52,6 @@ interface QueueItem extends ContentItem {
 interface AllContent {
   events: ContentItem[];
   articles: ContentItem[];
-  organizers: ContentItem[];
   releases: ContentItem[];
   mixes: ContentItem[];
   playlists: ContentItem[];
@@ -67,7 +65,7 @@ interface AllContent {
 
 // Admin-context fields that live outside the shared EventFormSteps form.
 const defaultEventExtras = {
-  organizer_id: "" as string,
+  editorial_owner_name: "",
   website: "",
   has_copyright_restriction: false,
   crop_x: null as number | null,
@@ -143,7 +141,6 @@ function eventFormDataToRow(data: EventFormData) {
   };
 }
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
-const defaultOrgForm = { name:"",type:"Club",city:"Athens",about:"",cover_image:"",avatar:"",instagram:"",facebook:"",tiktok:"",website:"" };
 const defaultReleaseForm = { title:"",artist:"",type:"Single",genre:"House",cover_image:"",spotify_url:"",soundcloud_url:"",description:"",release_date:"",is_promoted:false };
 const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
@@ -158,11 +155,9 @@ export default function AdminClient() {
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [allContent, setAllContent] = useState<AllContent>({
-    events:[], articles:[], organizers:[],
+    events:[], articles:[],
     releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[],
   });
-  const [assignOrgId, setAssignOrgId] = useState<string>("");
-  const [assignLoading, setAssignLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; tab: Tab; subtab?: MusicSubTab } | null>(null);
@@ -183,7 +178,6 @@ export default function AdminClient() {
   const [showEventCropper, setShowEventCropper] = useState(false);
   const eventCoverRef = useRef("");
   const [articleForm, setArticleForm] = useState({ ...defaultArticleForm });
-  const [orgForm, setOrgForm] = useState({ ...defaultOrgForm });
   const [releaseForm, setReleaseForm] = useState({ ...defaultReleaseForm });
   const [mixForm, setMixForm] = useState({ ...defaultMixForm });
   const [playlistForm, setPlaylistForm] = useState({ ...defaultPlaylistForm });
@@ -211,7 +205,7 @@ export default function AdminClient() {
   // ── Computed stats ──────────────────────────────────────────────────────────
   const allItems = [
     ...allContent.events, ...allContent.articles,
-    ...allContent.organizers, ...allContent.releases, ...allContent.mixes,
+    ...allContent.releases, ...allContent.mixes,
     ...allContent.playlists, ...allContent.artists, ...allContent.spots,
   ];
   const totalPending = allItems.filter(i => i.status === "pending").length;
@@ -230,7 +224,6 @@ export default function AdminClient() {
     music: totalMusicPending,
     spots: allContent.spots.filter(i => i.status === "pending").length,
     articles: allContent.articles.filter(i => i.status === "pending").length,
-    organizers: allContent.organizers.filter(i => i.status === "pending").length,
     upgrades: pendingUpgrades,
     featured: pendingFeatured,
     "spot-claims": pendingSpotClaims,
@@ -245,7 +238,6 @@ export default function AdminClient() {
       [allContent.mixes,        "mix",       "music",  "mixes"],
       [allContent.artists,      "artist",    "music",  "artists"],
       [allContent.articles,     "article",   "articles"],
-      [allContent.organizers,   "organizer", "organizers"],
       [allContent.spots,        "spot",      "spots"],
     ];
     return pairs
@@ -264,7 +256,6 @@ export default function AdminClient() {
     if (filter === "all")      return items;
     if (filter === "events")   return items.filter(i => i._type === "event");
     if (filter === "releases") return items.filter(i => ["release","mix","artist"].includes(i._type));
-    if (filter === "network")  return items.filter(i => i._type === "organizer");
     if (filter === "spots")    return items.filter(i => i._type === "spot");
     if (filter === "articles") return items.filter(i => i._type === "article");
     return items;
@@ -374,7 +365,7 @@ export default function AdminClient() {
     if (editItem && previewTab === "events") {
       const it = editItem as Record<string, any>;
       setEventExtras({
-        organizer_id: it.organizer_id ? String(it.organizer_id) : "",
+        editorial_owner_name: it.editorial_owner_name ? String(it.editorial_owner_name) : "",
         website: it.website ?? "",
         has_copyright_restriction: !!it.has_copyright_restriction,
         crop_x: it.crop_x ?? null,
@@ -424,7 +415,7 @@ export default function AdminClient() {
         data: {
           ...eventFormDataToRow(data),
           ...eventExtras,
-          organizer_id: eventExtras.organizer_id || null,
+          editorial_owner_name: eventExtras.editorial_owner_name || null,
           interested_count: 0,
           going_count: 0,
           profile_id: isEditorial ? null : undefined,
@@ -459,7 +450,7 @@ export default function AdminClient() {
         data: {
           ...eventFormDataToRow(data),
           ...eventExtras,
-          organizer_id: eventExtras.organizer_id || null,
+          editorial_owner_name: eventExtras.editorial_owner_name || null,
           status: data.status,
         },
       }),
@@ -506,22 +497,6 @@ export default function AdminClient() {
     await fetchContent();
   }
 
-  async function handleAddOrganizer(e: React.FormEvent) {
-    e.preventDefault();
-    setAddLoading(true); setAddError(""); setAddSuccess("");
-    const res = await fetch("/api/admin/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "organizers", data: orgForm }),
-    });
-    const json = await res.json();
-    setAddLoading(false);
-    if (!res.ok) { setAddError(json.error ?? "Failed"); return; }
-    setAddSuccess("Organizer added!");
-    setOrgForm({ ...defaultOrgForm });
-    setShowAddForm(false);
-    await fetchContent();
-  }
 
   async function handleAddRelease(e: React.FormEvent) {
     e.preventDefault();
@@ -678,7 +653,7 @@ export default function AdminClient() {
   // ── Queue row ─────────────────────────────────────────────────────────────
   const TYPE_LABELS: Record<string, string> = {
     event:"Event", release:"Release", mix:"Mix", artist:"Artist",
-    network:"Network", article:"Article", organizer:"Organizer", spot:"Spot",
+    network:"Network", article:"Article", spot:"Spot",
   };
 
   function renderQueueRow(item: QueueItem) {
@@ -745,7 +720,7 @@ export default function AdminClient() {
     const busy = actionId === id;
     const tab  = activeTab;
     const subtab = activeTab === "music" ? musicSubTab : undefined;
-    const isOrganizer = tab === "organizers";
+
     const isMusic   = tab === "music";
     const isRelease = isMusic && musicSubTab === "releases";
     const isMix     = isMusic && musicSubTab === "mixes";
@@ -754,7 +729,7 @@ export default function AdminClient() {
     const isSpot    = tab === "spots";
 
     const primary =
-      (tab === "organizers" || isArtist || isSpot)
+      (isArtist || isSpot)
         ? (item.name as string)
         : (isRelease || isMix || isPlaylist)
           ? `${item.title} — ${item.artist ?? item.platform ?? ""}`
@@ -762,7 +737,6 @@ export default function AdminClient() {
 
     const secondary =
       tab === "events"       ? [item.venue, item.city, item.date, item.genre].filter(Boolean).join(" · ")
-      : tab === "organizers" ? [item.type, item.city].filter(Boolean).join(" · ")
       : isRelease            ? [item.type, item.genre].filter(Boolean).join(" · ")
       : isMix                ? (item.genre as string) || ""
       : isArtist             ? (item.origin as string) || ""
@@ -803,15 +777,15 @@ export default function AdminClient() {
           {/* Edit */}
           <button onClick={() => { setEditItem(item); setEditError(""); setPreviewTab(tab); setEditSubtab(subtab); }} title="Edit" className="px-2 py-1.5 rounded-lg text-sm leading-none transition-opacity hover:opacity-80" style={{ backgroundColor:"#1E2A3A", color:"#aaa", border:"1px solid #444" }}>✏️</button>
           {/* Preview */}
-          <button onClick={() => { setPreviewItem(item); setPreviewTab(tab); if (tab === "events") setAssignOrgId((item.organizer_id as string) ?? ""); }} title="Preview" className="px-2 py-1.5 rounded-lg text-sm leading-none transition-opacity hover:opacity-80" style={{ backgroundColor:"#1E2A3A", color:"#E8A020", border:"1px solid #E8A020" }}>👁</button>
+          <button onClick={() => { setPreviewItem(item); setPreviewTab(tab); }} title="Preview" className="px-2 py-1.5 rounded-lg text-sm leading-none transition-opacity hover:opacity-80" style={{ backgroundColor:"#1E2A3A", color:"#E8A020", border:"1px solid #E8A020" }}>👁</button>
           {/* Approve */}
           {section !== "approved" && (
             <button onClick={() => handleAction(id, "approved", tab, subtab)} disabled={busy} title="Approve" className="px-2 py-1.5 rounded-lg text-sm leading-none disabled:opacity-40" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅</button>
           )}
           {/* Hide / Reject */}
           {section !== "hidden" && (
-            <button onClick={() => handleAction(id, isOrganizer || isArtist ? "rejected" : "hidden", tab, subtab)} disabled={busy} title={isOrganizer || isArtist ? "Reject" : "Hide"} className="px-2 py-1.5 rounded-lg text-sm leading-none disabled:opacity-40" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>
-              {isOrganizer || isArtist ? "✗" : "🙈"}
+            <button onClick={() => handleAction(id, isArtist ? "rejected" : "hidden", tab, subtab)} disabled={busy} title={isArtist ? "Reject" : "Hide"} className="px-2 py-1.5 rounded-lg text-sm leading-none disabled:opacity-40" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>
+              {isArtist ? "✗" : "🙈"}
             </button>
           )}
           {/* Delete */}
@@ -850,14 +824,10 @@ export default function AdminClient() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 rounded-xl"
         style={{ backgroundColor:"#0F0F1A", border:"1px dashed rgba(232,160,32,0.25)" }}>
         <div>
-          <label className={labelCls}>Organizer</label>
-          <select className={inputCls} style={inputStyle} value={eventExtras.organizer_id}
-            onChange={e => setEventExtras(f => ({ ...f, organizer_id: e.target.value }))}>
-            <option value="">— None —</option>
-            {allContent.organizers.filter(o => o.status === "approved").map(o => (
-              <option key={String(o.id)} value={String(o.id)}>{o.name as string}</option>
-            ))}
-          </select>
+          <label className={labelCls}>Organizer name</label>
+          <input className={inputCls} style={inputStyle} value={eventExtras.editorial_owner_name}
+            onChange={e => setEventExtras(f => ({ ...f, editorial_owner_name: e.target.value }))}
+            placeholder="Shown as plain text on editorial events" />
         </div>
         <div>
           <label className={labelCls}>Website</label>
@@ -1007,7 +977,7 @@ export default function AdminClient() {
                   </div>
                   {/* Filter chips */}
                   <div className="flex gap-2 mb-5 flex-wrap">
-                    {(["all","events","releases","network","spots","articles"] as QueueFilter[]).map(f => {
+                    {(["all","events","releases","spots","articles"] as QueueFilter[]).map(f => {
                       const count = applyQueueFilter(queueItems, f).length;
                       return (
                         <button
@@ -1191,7 +1161,7 @@ export default function AdminClient() {
               </div>
             )}
 
-            {/* ── CONTENT tabs (events, articles, organizers, music, spots) ── */}
+            {/* ── CONTENT tabs (events, articles, music, spots) ── */}
             {!["queue","users","upgrades","featured","spot-claims"].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
@@ -1221,7 +1191,7 @@ export default function AdminClient() {
                   <>
                     {renderSection("Pending Approval", pendingItems, "pending", "No pending submissions.")}
                     {renderSection(
-                      activeTab === "organizers" || (activeTab === "music" && musicSubTab === "artists") ? "Approved" : "Published",
+                      (activeTab === "music" && musicSubTab === "artists") ? "Approved" : "Published",
                       publishedItems, "approved", "Nothing here."
                     )}
                     {renderSection("Hidden / Rejected", hiddenItems, "hidden", "Nothing hidden.")}
@@ -1290,25 +1260,6 @@ export default function AdminClient() {
                         </form>
                       )}
 
-                      {/* ORGANIZER FORM */}
-                      {activeTab === "organizers" && (
-                        <form onSubmit={handleAddOrganizer} className="space-y-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div><label className={labelCls}>Name *</label><input required className={inputCls} style={inputStyle} value={orgForm.name} onChange={e => setOrgForm(f => ({ ...f, name:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Type</label><select className={inputCls} style={inputStyle} value={orgForm.type} onChange={e => setOrgForm(f => ({ ...f, type:e.target.value }))}>{ORG_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
-                            <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={orgForm.city} onChange={e => setOrgForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
-                            <div><label className={labelCls}>Avatar URL</label><input className={inputCls} style={inputStyle} value={orgForm.avatar} onChange={e => setOrgForm(f => ({ ...f, avatar:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Cover Image URL</label><input className={inputCls} style={inputStyle} value={orgForm.cover_image} onChange={e => setOrgForm(f => ({ ...f, cover_image:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Instagram</label><input className={inputCls} style={inputStyle} value={orgForm.instagram} onChange={e => setOrgForm(f => ({ ...f, instagram:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Facebook</label><input className={inputCls} style={inputStyle} value={orgForm.facebook} onChange={e => setOrgForm(f => ({ ...f, facebook:e.target.value }))} /></div>
-                            <div><label className={labelCls}>TikTok</label><input className={inputCls} style={inputStyle} value={orgForm.tiktok} onChange={e => setOrgForm(f => ({ ...f, tiktok:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Website</label><input className={inputCls} style={inputStyle} value={orgForm.website} onChange={e => setOrgForm(f => ({ ...f, website:e.target.value }))} /></div>
-                            <div className="sm:col-span-2"><label className={labelCls}>About</label><textarea rows={3} className={inputCls} style={inputStyle} value={orgForm.about} onChange={e => setOrgForm(f => ({ ...f, about:e.target.value }))} /></div>
-                          </div>
-                          {addError && <p className="text-red-400 text-xs">{addError}</p>}
-                          <button type="submit" disabled={addLoading} className="px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>{addLoading ? "Saving…" : "Add Organizer"}</button>
-                        </form>
-                      )}
 
                       {/* RELEASE FORM */}
                       {activeTab === "music" && musicSubTab === "releases" && (
@@ -1573,11 +1524,9 @@ export default function AdminClient() {
               genres={GENRES}
               cities={CITIES}
               artCategories={ART_CATEGORIES}
-              orgTypes={ORG_TYPES}
               releaseTypes={RELEASE_TYPES}
               musicGenres={MUSIC_GENRES}
               spotCategories={SPOT_CATS}
-              approvedOrgs={allContent.organizers.filter(o => o.status === "approved")}
             />
             )}
           </div>
@@ -1604,30 +1553,9 @@ export default function AdminClient() {
               ))}
             </div>
 
-            {previewTab === "events" && (
-              <div>
-                <p className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Assign Organizer</p>
-                <div className="flex gap-2">
-                  <select value={assignOrgId} onChange={e => setAssignOrgId(e.target.value)} className="flex-1 px-3 py-2 rounded-lg text-sm outline-none" style={{ backgroundColor:"#0F0F1A", color:"#fff", border:"1px solid #444" }}>
-                    <option value="">— No organizer —</option>
-                    {allContent.organizers.filter(o => o.status === "approved").map(o => (
-                      <option key={String(o.id)} value={String(o.id)}>{o.name as string}</option>
-                    ))}
-                  </select>
-                  <button
-                    disabled={assignLoading}
-                    onClick={async () => {
-                      setAssignLoading(true);
-                      await fetch("/api/admin/organizers/assign", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ eventId:String(previewItem.id), organizerId:assignOrgId || null }) });
-                      setAssignLoading(false);
-                      await fetchContent();
-                    }}
-                    className="px-4 py-2 rounded-lg text-xs font-semibold disabled:opacity-40"
-                    style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}
-                  >{assignLoading ? "…" : "Save"}</button>
-                </div>
-              </div>
-            )}
+            {/* "Assign Organizer" lived here, writing events.organizer_id against
+                the organizers table. Editorial events now carry a plain
+                editorial_owner_name, editable in the event form itself. */}
 
             <div className="flex gap-3 pt-2 border-t" style={{ borderColor:"rgba(232,160,32,0.08)" }}>
               {previewItem.status !== "approved" && (
@@ -1648,14 +1576,13 @@ export default function AdminClient() {
 // ─────────────────────────────────────────────────────────────────────────────
 // EditForm
 // ─────────────────────────────────────────────────────────────────────────────
-function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputStyle, labelCls, genres, cities, artCategories, orgTypes, releaseTypes, musicGenres, spotCategories, approvedOrgs }: {
+function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputStyle, labelCls, genres, cities, artCategories, releaseTypes, musicGenres, spotCategories }: {
   item: ContentItem; tab: string; subtab?: string;
   onSave: (table: string, id: string, data: Record<string, unknown>) => void;
   loading: boolean; error: string;
   inputCls: string; inputStyle: React.CSSProperties; labelCls: string;
   genres: string[]; cities: string[]; artCategories: string[];
-  orgTypes: string[]; releaseTypes: string[]; musicGenres: string[]; spotCategories: string[];
-  approvedOrgs: ContentItem[];
+  releaseTypes: string[]; musicGenres: string[]; spotCategories: string[];
 }) {
   const [form, setForm] = useState<Record<string, unknown>>({ ...item });
   const [showCropper, setShowCropper] = useState(false);
@@ -1689,7 +1616,6 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
 
   function getTable() {
     if (tab === "music") return subtab ?? "music_releases";
-    if (tab === "organizers") return "organizers";
     if (tab === "articles") return "articles";
     return tab;
   }
@@ -1736,13 +1662,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("maps_url","Maps URL")}
           {field("ticket_url","Ticket URL","text",undefined,true)}
           {field("short_description","Short Description","text",undefined,true)}
-          <div>
-            <label className={labelCls}>Organizer</label>
-            <select className={inputCls} style={inputStyle} value={String(form.organizer_id ?? "")} onChange={e => setForm(f => ({ ...f, organizer_id:e.target.value || null }))}>
-              <option value="">— None —</option>
-              {approvedOrgs.map(o => <option key={String(o.id)} value={String(o.id)}>{o.name as string}</option>)}
-            </select>
-          </div>
+          {field("editorial_owner_name","Organizer name")}
           {field("lineup","Lineup (comma-separated)","text",undefined,true)}
           {field("dress_code","Dress Code","text",undefined,true)}
           {field("age_restriction","18+ Age Restriction","checkbox",undefined,true)}
@@ -1771,18 +1691,6 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
             />
           </div>
           {field("featured","Featured","checkbox",undefined,true)}
-        </>)}
-        {tab === "organizers" && (<>
-          {field("name","Name")}
-          {field("type","Type","select",orgTypes)}
-          {field("city","City","select",cities)}
-          {field("avatar","Avatar URL")}
-          {field("cover_image","Cover Image URL")}
-          {field("instagram","Instagram")}
-          {field("facebook","Facebook")}
-          {field("tiktok","TikTok")}
-          {field("website","Website")}
-          {field("about","About","textarea",undefined,true)}
         </>)}
         {tab === "music" && subtab === "releases" && (<>
           {field("title","Title")}

@@ -29,8 +29,6 @@ interface Event {
   featured?: boolean;
   isRadarPick?: boolean;
   type?: string | null;
-  organizerName?: string;
-  organizerSlug?: string;
 }
 
 function getWeekend(): { fri: string; sun: string } {

@@ -13,12 +13,11 @@ export async function GET(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  const [events, articles, organizers, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, spotClaims] = await Promise.all([
+  const [events, articles, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, spotClaims] = await Promise.all([
     // select('*') so the unified admin event form edits a complete row —
     // anything it does not receive would be written back empty on save.
     admin.from('events').select('*').order('created_at', { ascending: false }),
     admin.from('articles').select('id, title, category, published_at, excerpt, content, hero_image, read_time, series, series_order, slug, word_count, updated_at, tags, status, created_at').order('created_at', { ascending: false }),
-    admin.from('organizers').select('id, name, type, city, about, cover_image, avatar, instagram, facebook, tiktok, website, gallery, status, created_at').order('created_at', { ascending: false }),
     admin.from('music_releases').select('id, title, artist, type, genre, cover_image, spotify_url, soundcloud_url, description, is_promoted, status, created_at').order('created_at', { ascending: false }),
     admin.from('mixes').select('id, title, artist, genre, cover_image, soundcloud_url, duration, status, created_at').order('created_at', { ascending: false }),
     admin.from('playlists').select('id, title, platform, embed_url, cover_image, is_sponsored, status, created_at').order('created_at', { ascending: false }),
@@ -33,7 +32,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     events: events.data ?? [],
     articles: articles.data ?? [],
-    organizers: organizers.data ?? [],
     releases: releases.data ?? [],
     mixes: mixes.data ?? [],
     playlists: playlists.data ?? [],

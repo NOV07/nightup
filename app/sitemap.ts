@@ -26,14 +26,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const supabase = getSupabase();
 
-    const [evRes, artRes, mixRes, relRes, profRes, spotRes, orgRes] = await Promise.all([
+    const [evRes, artRes, mixRes, relRes, profRes, spotRes] = await Promise.all([
       supabase.from("events").select("id, updated_at").eq("status", "approved"),
       supabase.from("articles").select("id, updated_at").eq("status", "published"),
       supabase.from("mixes").select("id, updated_at").eq("status", "approved"),
       supabase.from("music_releases").select("id, updated_at").eq("status", "approved"),
       supabase.from("profiles").select("username, updated_at").not("network_tab", "is", null),
       supabase.from("spots").select("slug, updated_at").eq("is_published", true),
-      supabase.from("organizers").select("id, slug, updated_at").eq("status", "approved"),
     ]);
 
     const eventRoutes: MetadataRoute.Sitemap = (evRes.data ?? []).map((e) => ({
@@ -78,14 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    const organizerRoutes: MetadataRoute.Sitemap = (orgRes.data ?? []).map((o) => ({
-      url: `${base}/organizers/${o.slug ?? o.id}`,
-      lastModified: o.updated_at ? new Date(o.updated_at) : now,
-      changeFrequency: "weekly",
-      priority: 0.6,
-    }));
-
-    return [...staticRoutes, ...eventRoutes, ...articleRoutes, ...mixRoutes, ...releaseRoutes, ...profileRoutes, ...spotRoutes, ...organizerRoutes];
+    return [...staticRoutes, ...eventRoutes, ...articleRoutes, ...mixRoutes, ...releaseRoutes, ...profileRoutes, ...spotRoutes];
   } catch {
     return staticRoutes;
   }

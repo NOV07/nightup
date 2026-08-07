@@ -33,8 +33,6 @@ interface EventCardProps {
   featured?: boolean;
   hotCount?: number;
   badge?: string;
-  organizerName?: string;
-  organizerSlug?: string;
   initialSaved?: boolean;
 }
 
@@ -52,7 +50,7 @@ const genreColors: Record<string, string> = {
 
 export default function EventCard({
   id, title, image, image_url, crop, genre, type, price, date, venue, city,
-  interestedCount, goingCount, featured, badge, organizerName, organizerSlug,
+  interestedCount, goingCount, featured, badge,
   initialSaved,
 }: EventCardProps) {
   const [saved, setSaved] = useState(initialSaved ?? false);
@@ -206,15 +204,6 @@ export default function EventCard({
         </div>
 
         <p className="text-xs mb-3" style={{ color: "var(--text-muted)", fontFamily: "var(--font-sans)" }}>{city}</p>
-
-        {organizerName && organizerSlug && (
-          <Link href={`/organizers/${organizerSlug}`}
-            onClick={(e: MouseEvent) => e.stopPropagation()}
-            className="inline-block text-xs mb-3 hover:underline truncate"
-            style={{ color: "#888" }}>
-            by {organizerName}
-          </Link>
-        )}
 
         <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
           <span className="flex items-center gap-1.5 text-xs" style={{ color: "#555", fontFamily: "var(--font-mono)" }}>

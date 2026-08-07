@@ -40,7 +40,7 @@ export default async function EventPage({ params }: Props) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level')
+    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, editorial_owner_name, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
@@ -471,6 +471,19 @@ export default async function EventPage({ params }: Props) {
                 <span style={{ fontSize: 13, color: '#E8A020', flexShrink: 0 }}>→</span>
               </div>
             </Link>
+          </div>
+        )}
+
+        {/* Editorial events have no account behind them — show the owner name as
+            plain text. Deliberately not a link: there is no profile to open. */}
+        {!organizer && event.editorial_owner_name && (
+          <div style={{ marginBottom: 40, paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 14 }}>
+              Organizer
+            </p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>
+              {event.editorial_owner_name}
+            </p>
           </div>
         )}
 
