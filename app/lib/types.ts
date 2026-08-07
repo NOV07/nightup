@@ -3,7 +3,10 @@
 
 export type ProfileType = 'user' | 'organizer' | 'artist' | 'professional' | 'venue' | 'spot'
 
-export type NetworkTab = 'Plan Your Event' | 'For Artists'
+// The values actually stored in profiles.network_tab and filtered on by the
+// /network/* pages. (This previously read 'Plan Your Event' | 'For Artists',
+// neither of which exists in the column.)
+export type NetworkTab = 'Artists' | 'Professionals' | 'Venues'
 
 export interface Profile {
   // ── core (always populated, set at onboarding) ──
@@ -40,6 +43,7 @@ export interface Profile {
   mixcloud_url: string | null
   website: string | null
   booking_email: string | null
+  phone: string | null
   featured_track_url: string | null
   is_available: boolean | null
   price_range: string | null
@@ -47,6 +51,7 @@ export interface Profile {
   announcements: string | null
   genres: string[] | null
   services: string[] | null
+  tags: string[] | null
   section_visibility: Record<string, boolean> | null
 
   // ── network taxonomy (Phase 1 — nullable until set in dashboard Phase 2) ──
@@ -58,6 +63,7 @@ export interface Profile {
   is_verified: boolean
   is_featured: boolean
   plan_tier: string | null
+  professional_status: string | null
 }
 
 export interface SavedEvent {
