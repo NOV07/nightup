@@ -51,8 +51,6 @@ const socials = [
   },
 ];
 
-const MAX_PHOTOS = 5;
-const MAX_PHOTO_SIZE_MB = 2;
 
 function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -230,7 +228,9 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
       label: t("about_card_label"),
       title: <>Φτιάξε <em style={{ fontStyle: "italic", color: "#E8A020" }}>προφίλ</em></>,
       desc: t("about_card_profile_desc"),
-      href: "/submit/professional",
+      // Straight to /upgrade — profiles are created through the upgrade flow.
+      // /submit/professional only redirects here anyway.
+      href: "/upgrade",
     },
     {
       label: t("about_card_label"),
@@ -246,24 +246,16 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
     title: "", venue: "", date: "", time: "", city: "", genre: "", contact: "",
     instagram: "", facebook: "", tiktok: "", website: "",
   });
-  const [profileForm, setProfileForm] = useState({
-    name: "", category: "", location: "", bio: "", contact: "",
-    instagram: "", facebook: "", tiktok: "", website: "",
-  });
   const [eventPhoto, setEventPhoto] = useState<string>("");
   const [eventPhotoError, setEventPhotoError] = useState("");
   const eventPhotoRef = useRef<HTMLInputElement>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [photoError, setPhotoError] = useState("");
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<"contact" | "event" | "profile">("contact");
+  const [activeTab, setActiveTab] = useState<"contact" | "event">("contact");
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  void eventForm; void profileForm; void eventPhoto; void setEventPhoto;
+  void eventForm; void eventPhoto; void setEventPhoto;
   void eventPhotoError; void setEventPhotoError; void eventPhotoRef;
-  void photos; void setPhotos; void photoError; void setPhotoError;
-  void photoInputRef; void activeTab; void setActiveTab; void submitError;
+  void activeTab; void setActiveTab; void submitError;
 
   const tracked = useRef(false);
   useEffect(() => {
@@ -281,19 +273,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
     setEventPhoto(await readFileAsBase64(file));
   };
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhotoError("");
-    const files = Array.from(e.target.files ?? []);
-    if (photos.length + files.length > MAX_PHOTOS) { setPhotoError(`Max ${MAX_PHOTOS} photos allowed.`); return; }
-    const oversized = files.find((f) => f.size > MAX_PHOTO_SIZE_MB * 1024 * 1024);
-    if (oversized) { setPhotoError(`Each photo must be under ${MAX_PHOTO_SIZE_MB}MB.`); return; }
-    const bases = await Promise.all(files.map(readFileAsBase64));
-    setPhotos((prev) => [...prev, ...bases].slice(0, MAX_PHOTOS));
-  };
-
-  const removePhoto = (i: number) => setPhotos((prev) => prev.filter((_, idx) => idx !== i));
-
-  void handleEventPhotoChange; void handlePhotoChange; void removePhoto;
+  void handleEventPhotoChange;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -317,23 +297,6 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
           }),
         });
         if (!res.ok) { const json = await res.json(); setSubmitError(json.error ?? "Submission failed."); return; }
-      } else if (activeTab === "profile") {
-        const res = await fetch("/api/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            table: "professionals",
-            data: {
-              name: profileForm.name, category: profileForm.category,
-              location: profileForm.location, description: profileForm.bio,
-              contact: profileForm.contact,
-              instagram: profileForm.instagram || null, facebook: profileForm.facebook || null,
-              tiktok: profileForm.tiktok || null, website: profileForm.website || null,
-              photos: photos.length > 0 ? photos : null,
-            },
-          }),
-        });
-        if (!res.ok) { const json = await res.json(); setSubmitError(json.error ?? "Submission failed."); return; }
       }
     } catch {
       setSubmitError("Network error. Please try again.");
@@ -342,8 +305,6 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
     setSubmitted(true);
     setEventPhoto("");
     if (eventPhotoRef.current) eventPhotoRef.current.value = "";
-    setPhotos([]);
-    if (photoInputRef.current) photoInputRef.current.value = "";
     setTimeout(() => setSubmitted(false), 6000);
   };
 

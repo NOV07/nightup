@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabase } from '../../lib/supabase'
 
-const VALID_TABLES = ['events', 'professionals'] as const
+// 'professionals' was here for the About page's profile form, which is gone —
+// profiles are created through /upgrade, and the table itself is being dropped.
+const VALID_TABLES = ['events'] as const
 
 export async function POST(req: NextRequest) {
   let body: { table: string; data: Record<string, unknown> }
@@ -20,9 +22,6 @@ export async function POST(req: NextRequest) {
   // Minimum required fields only
   if (table === 'events' && (!data.title || !data.date)) {
     return NextResponse.json({ error: 'Missing required fields: title, date' }, { status: 400 })
-  }
-  if (table === 'professionals' && (!data.name || !data.category)) {
-    return NextResponse.json({ error: 'Missing required fields: name, category' }, { status: 400 })
   }
 
   try {
