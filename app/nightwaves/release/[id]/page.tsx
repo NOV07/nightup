@@ -24,7 +24,9 @@ async function getRelease(id: string) {
       .eq("id", id)
       .eq("status", "approved")
       .single();
-    if (!error && data) return data;
+    // primary_genre is the column every submit/edit form writes; genre is the
+    // legacy single-string column only older admin-created rows still carry.
+    if (!error && data) return { ...data, genre: data.primary_genre ?? data.genre };
   } catch {}
   return null;
 }

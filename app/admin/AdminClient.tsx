@@ -141,7 +141,24 @@ function eventFormDataToRow(data: EventFormData) {
   };
 }
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
-const defaultReleaseForm = { title:"",artist:"",type:"Single",genre:"House",cover_image:"",spotify_url:"",soundcloud_url:"",description:"",release_date:"",is_promoted:false };
+const defaultReleaseForm = {
+  title:"",artist:"",type:"Single",primary_genre:"House",cover_image:"",description:"",release_date:"",label:"",
+  spotify_url:"",soundcloud_url:"",apple_music_url:"",youtube_url:"",bandcamp_url:"",beatport_url:"",deezer_url:"",
+  producers:"",composers:"",featuring_artists:"",mastering_engineer:"",artwork_by:"",
+  is_promoted:false,
+};
+// The credits columns are text[] in Postgres; the admin inputs are comma-separated.
+const RELEASE_LIST_FIELDS = ["producers","composers","featuring_artists"] as const;
+function toReleasePayload(form: Record<string, unknown>) {
+  const out: Record<string, unknown> = { ...form };
+  for (const key of RELEASE_LIST_FIELDS) {
+    const val = out[key];
+    if (typeof val === "string") {
+      out[key] = val.split(",").map(s => s.trim()).filter(Boolean);
+    }
+  }
+  return out;
+}
 const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
@@ -347,7 +364,7 @@ export default function AdminClient() {
     const res = await fetch("/api/admin/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table, id, data }),
+      body: JSON.stringify({ table, id, data: table === "music_releases" ? toReleasePayload(data) : data }),
     });
     setEditLoading(false);
     if (!res.ok) {
@@ -504,7 +521,7 @@ export default function AdminClient() {
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "music_releases", data: { ...releaseForm, profile_id: isEditorial ? null : undefined } }),
+      body: JSON.stringify({ table: "music_releases", data: { ...toReleasePayload(releaseForm), profile_id: isEditorial ? null : undefined } }),
     });
     const json = await res.json();
     setAddLoading(false);
@@ -1268,11 +1285,45 @@ export default function AdminClient() {
                             <div><label className={labelCls}>Title *</label><input required className={inputCls} style={inputStyle} value={releaseForm.title} onChange={e => setReleaseForm(f => ({ ...f, title:e.target.value }))} /></div>
                             <div><label className={labelCls}>Artist *</label><input required className={inputCls} style={inputStyle} value={releaseForm.artist} onChange={e => setReleaseForm(f => ({ ...f, artist:e.target.value }))} /></div>
                             <div><label className={labelCls}>Type</label><select className={inputCls} style={inputStyle} value={releaseForm.type} onChange={e => setReleaseForm(f => ({ ...f, type:e.target.value }))}>{RELEASE_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
-                            <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={releaseForm.genre} onChange={e => setReleaseForm(f => ({ ...f, genre:e.target.value }))}>{MUSIC_GENRES.map(g => <option key={g}>{g}</option>)}</select></div>
+                            <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={releaseForm.primary_genre} onChange={e => setReleaseForm(f => ({ ...f, primary_genre:e.target.value }))}>{MUSIC_GENRES.map(g => <option key={g}>{g}</option>)}</select></div>
                             <div><label className={labelCls}>Cover Image URL</label><input className={inputCls} style={inputStyle} value={releaseForm.cover_image} onChange={e => setReleaseForm(f => ({ ...f, cover_image:e.target.value }))} /></div>
                             <div><label className={labelCls}>Release Date</label><input type="date" className={inputCls} style={inputStyle} value={releaseForm.release_date} onChange={e => setReleaseForm(f => ({ ...f, release_date:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Spotify URL</label><input className={inputCls} style={inputStyle} value={releaseForm.spotify_url} onChange={e => setReleaseForm(f => ({ ...f, spotify_url:e.target.value }))} /></div>
-                            <div><label className={labelCls}>SoundCloud URL</label><input className={inputCls} style={inputStyle} value={releaseForm.soundcloud_url} onChange={e => setReleaseForm(f => ({ ...f, soundcloud_url:e.target.value }))} /></div>
+                            <div><label className={labelCls}>Label</label><input className={inputCls} style={inputStyle} value={releaseForm.label} onChange={e => setReleaseForm(f => ({ ...f, label:e.target.value }))} /></div>
+
+                            <div className="sm:col-span-2 pt-2 border-t" style={{ borderColor:"rgba(232,160,32,0.12)" }}>
+                              <p className="text-xs uppercase tracking-wider" style={{ color:"rgba(255,255,255,0.4)" }}>Streaming links</p>
+                            </div>
+                            {([
+                              ["spotify_url","Spotify URL"],
+                              ["soundcloud_url","SoundCloud URL"],
+                              ["apple_music_url","Apple Music URL"],
+                              ["youtube_url","YouTube URL"],
+                              ["bandcamp_url","Bandcamp URL"],
+                              ["beatport_url","Beatport URL"],
+                              ["deezer_url","Deezer URL"],
+                            ] as const).map(([key, label]) => (
+                              <div key={key}>
+                                <label className={labelCls}>{label}</label>
+                                <input className={inputCls} style={inputStyle} value={releaseForm[key]} onChange={e => setReleaseForm(f => ({ ...f, [key]:e.target.value }))} />
+                              </div>
+                            ))}
+
+                            <div className="sm:col-span-2 pt-2 border-t" style={{ borderColor:"rgba(232,160,32,0.12)" }}>
+                              <p className="text-xs uppercase tracking-wider" style={{ color:"rgba(255,255,255,0.4)" }}>Credits <span className="normal-case">(comma-separated)</span></p>
+                            </div>
+                            {([
+                              ["featuring_artists","Featuring Artists"],
+                              ["producers","Producers"],
+                              ["composers","Composers"],
+                              ["mastering_engineer","Mastering Engineer"],
+                              ["artwork_by","Artwork By"],
+                            ] as const).map(([key, label]) => (
+                              <div key={key}>
+                                <label className={labelCls}>{label}</label>
+                                <input className={inputCls} style={inputStyle} value={releaseForm[key]} onChange={e => setReleaseForm(f => ({ ...f, [key]:e.target.value }))} />
+                              </div>
+                            ))}
+
                             <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={releaseForm.description} onChange={e => setReleaseForm(f => ({ ...f, description:e.target.value }))} /></div>
                             <div className="flex items-center gap-2"><input type="checkbox" id="is_promoted" checked={releaseForm.is_promoted} onChange={e => setReleaseForm(f => ({ ...f, is_promoted:e.target.checked }))} /><label htmlFor="is_promoted" className="text-sm text-gray-300">Promoted</label></div>
                             <div><label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} /> ★ Nightup Editorial</label></div>
@@ -1595,8 +1646,10 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
         {type === "textarea" ? (
           <textarea rows={3} className={inputCls} style={inputStyle} value={String(val)} onChange={e => setForm(f => ({ ...f, [key]:e.target.value }))} />
         ) : type === "select" && options ? (
+          // Keep the stored value selectable even when it predates the option
+          // list, otherwise opening the modal silently rewrites it on save.
           <select className={inputCls} style={inputStyle} value={String(val)} onChange={e => setForm(f => ({ ...f, [key]:e.target.value }))}>
-            {options.map(o => <option key={o}>{o}</option>)}
+            {(val && !options.includes(String(val)) ? [String(val), ...options] : options).map(o => <option key={o}>{o}</option>)}
           </select>
         ) : type === "checkbox" ? (
           <div className="flex items-center gap-2 mt-1">
@@ -1696,11 +1749,22 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("title","Title")}
           {field("artist","Artist")}
           {field("type","Type","select",releaseTypes)}
-          {field("genre","Genre","select",musicGenres)}
+          {field("primary_genre","Genre","select",musicGenres)}
           {field("cover_image","Cover Image URL")}
           {field("release_date","Release Date","date")}
+          {field("label","Label")}
           {field("spotify_url","Spotify URL")}
           {field("soundcloud_url","SoundCloud URL")}
+          {field("apple_music_url","Apple Music URL")}
+          {field("youtube_url","YouTube URL")}
+          {field("bandcamp_url","Bandcamp URL")}
+          {field("beatport_url","Beatport URL")}
+          {field("deezer_url","Deezer URL")}
+          {field("featuring_artists","Featuring Artists (comma-separated)")}
+          {field("producers","Producers (comma-separated)")}
+          {field("composers","Composers (comma-separated)")}
+          {field("mastering_engineer","Mastering Engineer")}
+          {field("artwork_by","Artwork By")}
           {field("description","Description","textarea",undefined,true)}
           {field("is_promoted","Promoted","checkbox",undefined,true)}
         </>)}
