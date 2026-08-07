@@ -21,7 +21,14 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = getSupabaseAdmin()
-  const { error } = await admin.from(table).update({ status: action }).eq('id', id)
+
+  // spots has no `status` column — is_published is its gate, and every public
+  // read filters on it. Sending `status` here returned a 400 for every spot.
+  const patch = table === 'spots'
+    ? { is_published: action === 'approved' }
+    : { status: action }
+
+  const { error } = await admin.from(table).update(patch).eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

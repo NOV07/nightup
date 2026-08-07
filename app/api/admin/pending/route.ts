@@ -38,7 +38,10 @@ export async function GET(req: NextRequest) {
     artists: artists.data ?? [],
     profiles: profiles.data ?? [],
     upgrade_requests: upgradeRequests.data ?? [],
-    spots: spots.data ?? [],
+    // spots gates on is_published, not status. The admin queue keys off status
+    // everywhere, so surface a derived one rather than special-casing the UI —
+    // without it no unpublished spot ever appears in the pending queue.
+    spots: (spots.data ?? []).map(s => ({ ...s, status: s.is_published ? 'approved' : 'pending' })),
     featured_requests: featuredRequests.data ?? [],
     spot_claims: spotClaims.data ?? [],
   })
