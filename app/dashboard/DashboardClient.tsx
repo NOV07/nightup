@@ -92,6 +92,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   )
 
   const isPro = profile.profile_type === 'professional'
+  const isVenue = profile.profile_type === 'venue'
 
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [saving, setSaving] = useState(false)
@@ -183,6 +184,20 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     { label: t('dashboard_pro_check_avatar'), done: !!profile.avatar_url },
   ]
   const proIncomplete = isPro && proChecklist.some(item => !item.done)
+
+  // Venues edit through /dashboard/venue for the same reason.
+  const venueChecklist = [
+    { label: t('dashboard_venue_check_type'), done: !!profile.network_category },
+    { label: t('dashboard_venue_check_bio'), done: !!(profile.bio ?? '').trim() },
+    { label: t('dashboard_venue_check_address'), done: !!(profile.venue_address ?? '').trim() },
+    { label: t('dashboard_venue_check_cover'), done: !!profile.cover_url },
+    { label: t('dashboard_venue_check_contact'), done: !!(profile.booking_email || profile.phone) },
+  ]
+  const venueIncomplete = isVenue && venueChecklist.some(item => !item.done)
+
+  /** The two account types whose profile tab is a wizard entry point rather
+   *  than a form. Kept together so the shared non-wizard branch excludes both. */
+  const usesWizard = isPro || isVenue
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -343,7 +358,11 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   const submitLink: Record<string, { href: string; label: string }> = {
     organizer: { href: '/dashboard/events/new', label: t('dashboard_new_event') },
     artist: { href: '/submit/release', label: t('dashboard_new_release') },
-    venue: { href: '/dashboard/events/new', label: t('dashboard_new_event') },
+    // Same shape as spot: the venue itself is the account's first job, its
+    // events come after.
+    venue: venueIncomplete
+      ? { href: '/dashboard/venue', label: t('dashboard_venue_complete_cta') }
+      : { href: '/dashboard/events/new', label: t('dashboard_new_event') },
     // Points at the spot itself until one exists, then at the event flow —
     // the spot is the account's first job, its events come after.
     spot: ownedSpot
@@ -493,6 +512,24 @@ export default function DashboardClient({ profile, events, releases, savedEvents
           </div>
         )}
 
+        {/* Same nudge for a venue account that has not filled its venue in. */}
+        {venueIncomplete && (
+          <div className="max-w-6xl mx-auto px-4 py-2.5">
+            <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ backgroundColor: '#0F0F1A', border: '1px solid rgba(232,160,32,0.35)' }}>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                <span style={{ color: '#E8A020', fontWeight: 600 }}>{t('dashboard_venue_profile_title')}</span>: {t('dashboard_venue_complete_nudge')}
+              </p>
+              <Link
+                href="/dashboard/venue"
+                className="flex-shrink-0 text-xs font-bold px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
+                style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+              >
+                {t('dashboard_venue_complete_cta')}
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="max-w-6xl mx-auto px-4 flex gap-1">
           {tabs.map(tab => (
@@ -604,8 +641,98 @@ export default function DashboardClient({ profile, events, releases, savedEvents
           </div>
         )}
 
-        {/* ══ TAB: PROFILE (non-professional) ══ */}
-        {activeTab === 'profile' && !isPro && (
+        {/* ══ TAB: PROFILE (venue) ══ */}
+        {activeTab === 'profile' && isVenue && (
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
+            <div className="space-y-8">
+
+              {/* Wizard entry point — venues edit everything through the 4-step
+                  flow, the same way spots, events and professionals do. */}
+              <div className="p-6 rounded-2xl space-y-5" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                <div>
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_venue_profile_title')}</h2>
+                  <p className="text-sm mt-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    {t('dashboard_venue_profile_desc')}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    {t('dashboard_pro_checklist_title')}
+                  </p>
+                  {venueChecklist.map(item => (
+                    <div key={item.label} className="flex items-center gap-2 text-sm">
+                      <span style={{ color: item.done ? '#4ade80' : 'rgba(255,255,255,0.25)' }}>{item.done ? '✓' : '○'}</span>
+                      <span style={{ color: item.done ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.75)' }}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Link
+                  href="/dashboard/venue"
+                  className="inline-block px-8 py-3 rounded-xl font-bold text-sm transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+                >
+                  {venueIncomplete ? t('dashboard_venue_complete_cta') : t('dashboard_venue_edit_cta')}
+                </Link>
+              </div>
+            </div>
+
+            {/* Profile Preview */}
+            <div className="hidden lg:block">
+              <div className="sticky top-6">
+                <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_profile_preview')}</p>
+                <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a0a14', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+                  <div className="relative h-24" style={{ backgroundColor: '#1a1a2e' }}>
+                    {profile.cover_url && <CroppedImage src={profile.cover_url} alt="Banner" crop={getCoverCrop(profile)} sizes="360px" />}
+                  </div>
+                  <div className="px-4 pb-4">
+                    <div className="relative -mt-8 mb-3 w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '2px solid #E8A020', backgroundColor: '#1A1A2E' }}>
+                      {profile.avatar_url ? (
+                        <CroppedImage src={profile.avatar_url} alt={profile.display_name} crop={getAvatarCrop(profile)} sizes="64px" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xl font-bold" style={{ color: '#E8A020' }}>
+                          {profile.display_name[0]?.toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-bold text-white text-sm">{profile.display_name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username}</p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {profile.network_category && (
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
+                          {profile.network_category}
+                        </span>
+                      )}
+                      {profile.venue_capacity && (
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
+                          👥 {profile.venue_capacity}
+                        </span>
+                      )}
+                      {profile.location && (
+                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>📍 {profile.location}</span>
+                      )}
+                    </div>
+                    {profile.bio && (
+                      <p className="text-xs mt-3 leading-relaxed line-clamp-3" style={{ color: 'rgba(255,255,255,0.5)' }}>{profile.bio}</p>
+                    )}
+                  </div>
+                </div>
+                <Link
+                  href={`/profile/${profile.username}`}
+                  target="_blank"
+                  className="mt-3 block text-center text-xs py-2.5 rounded-xl transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                >
+                  {t('dashboard_view_full_profile')}
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ TAB: PROFILE (everyone still on the plain form) ══ */}
+        {activeTab === 'profile' && !usesWizard && (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
 
             {/* Edit Panel */}
@@ -698,38 +825,10 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   </button>
                 </div>
 
-                {/* Network Listing — venue */}
-                {profile.profile_type === 'venue' && (
-                  <div className="space-y-3">
-                    <label className={labelClass}>{t('dashboard_network_listing')}</label>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {/* One pill, naming the tab this account lists under. It
-                          used to read "Artists" — a copy-paste leftover from the
-                          artist block below — with a second greyed "Venues" pill
-                          beside it. */}
-                      <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.12)', border: '0.5px solid rgba(232,160,32,0.3)', color: '#E8A020' }}>
-                        {t('listings_cat_venues')}
-                      </span>
-                    </div>
-                    <div>
-                      <label className={labelClass}>{t('dashboard_venue_type_q')}</label>
-                      {/* Reads network_category, which is what the onChange
-                          writes. Bound to network_subcategory before, so the
-                          select snapped back to the placeholder after every pick. */}
-                      <select
-                        value={form.network_category}
-                        onChange={e => setForm(p => ({ ...p, network_tab: 'Venues', network_category: e.target.value, network_subcategory: '' }))}
-                        className={inputClass}
-                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
-                      >
-                        <option value="">{t('dashboard_select_venue_type')}</option>
-                        {Object.keys(NETWORK['Venues']).map((s: string) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
+                {/* The venue "Network Listing" block used to sit here. Venues
+                    now pick their type in the wizard's step 1, so keeping it
+                    would have been a second, competing way to set
+                    network_category on the same row. */}
 
                 {/* Network Listing — artist */}
                 {profile.profile_type === 'artist' && (
