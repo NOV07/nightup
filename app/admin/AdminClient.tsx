@@ -212,8 +212,11 @@ export default function AdminClient() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string; tab: Tab; subtab?: MusicSubTab } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; tab: Tab; subtab?: MusicSubTab; profileUsername?: string } | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const [deleteAuthUser, setDeleteAuthUser] = useState(false);
+  const [forceConfirmText, setForceConfirmText] = useState("");
+  const [actionResult, setActionResult] = useState("");
   const [previewItem, setPreviewItem] = useState<ContentItem | null>(null);
   const [previewTab, setPreviewTab] = useState<Tab>("events");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -332,7 +335,8 @@ export default function AdminClient() {
       if (subtab === "releases") return "music_releases";
       return subtab ?? "music_releases";
     }
-    if ((PROFILE_TAB_IDS as string[]).includes(tab)) return "profiles";
+    // The Users tab is the same profiles list, unfiltered.
+    if (tab === "users" || (PROFILE_TAB_IDS as string[]).includes(tab)) return "profiles";
     return tab;
   }
 
@@ -348,25 +352,48 @@ export default function AdminClient() {
     await fetchContent();
   }
 
-  async function handleDelete() {
+  function closeConfirmDelete() {
+    setConfirmDelete(null);
+    setDeleteError("");
+    setDeleteAuthUser(false);
+    setForceConfirmText("");
+  }
+
+  async function handleDelete(force = false) {
     if (!confirmDelete) return;
+    const isProfile = !!confirmDelete.profileUsername;
     setActionId(confirmDelete.id);
     setDeleteError("");
     const table = getTableForTab(confirmDelete.tab, confirmDelete.subtab);
     const res = await fetch("/api/admin/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table, id: confirmDelete.id }),
+      body: JSON.stringify({
+        table,
+        id: confirmDelete.id,
+        ...(isProfile ? { force, deleteAuthUser } : {}),
+      }),
     });
+    const json = await res.json().catch(() => ({}));
     setActionId(null);
-    // A refused delete (e.g. a profile that still owns content) must say so
-    // rather than close the dialog as if it had worked.
+    // A refused or half-completed delete must say so rather than close the
+    // dialog as if it had worked.
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
       setDeleteError(json.error ?? `Delete failed (HTTP ${res.status}).`);
       return;
     }
-    setConfirmDelete(null);
+    // Report what actually happened, including whether the auth account went
+    // with it — this is the part that is easiest to assume and be wrong about.
+    if (isProfile) {
+      const authNote =
+        json.authUser === "deleted" ? "login account deleted"
+        : json.authUser === "skipped" ? "login account left in place"
+        : `login account NOT deleted (${json.authUser})`;
+      setActionResult(`@${confirmDelete.profileUsername}: ${(json.steps ?? []).join("; ")} — ${authNote}.`);
+    } else {
+      setActionResult("Deleted.");
+    }
+    closeConfirmDelete();
     await fetchContent();
   }
 
@@ -1046,6 +1073,13 @@ export default function AdminClient() {
               </div>
             )}
 
+            {actionResult && (
+              <div className="mb-5 p-3 rounded-xl text-xs flex items-start justify-between gap-3" style={{ backgroundColor:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.3)", color:"#6ee7b7" }}>
+                <span>{actionResult}</span>
+                <button onClick={() => setActionResult("")} className="flex-shrink-0" style={{ color:"rgba(110,231,183,0.6)" }}>✕</button>
+              </div>
+            )}
+
             {/* ── QUEUE tab ─────────────────────────────────────────────── */}
             {activeTab === "queue" && (() => {
               const queueItems = getQueueItems();
@@ -1134,6 +1168,12 @@ export default function AdminClient() {
                       >
                         {profile.is_featured ? "★ Featured" : "Not featured"}
                       </button>
+                      <button
+                        onClick={() => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: "users", profileUsername: profile.username ?? "" }); }}
+                        title="Delete"
+                        className="px-2 py-1.5 rounded-lg text-sm leading-none"
+                        style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
+                      >🗑️</button>
                     </div>
                   </div>
                 ))}
@@ -1200,7 +1240,7 @@ export default function AdminClient() {
                             >👁</a>
                           )}
                           <button
-                            onClick={() => { setConfirmDelete({ id: String(profile.id), tab: id }); setDeleteError(""); }}
+                            onClick={() => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: id, profileUsername: profile.username ?? "" }); }}
                             title="Delete"
                             className="px-2 py-1.5 rounded-lg text-sm leading-none"
                             style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
@@ -1676,10 +1716,47 @@ export default function AdminClient() {
             {deleteError && (
               <p className="text-xs p-2 rounded-lg" style={{ backgroundColor:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.3)", color:"#fca5a5" }}>{deleteError}</p>
             )}
+            {confirmDelete.profileUsername && (
+              <label className="flex items-start gap-2 text-xs cursor-pointer" style={{ color:"rgba(255,255,255,0.55)" }}>
+                <input
+                  type="checkbox"
+                  checked={deleteAuthUser}
+                  onChange={e => setDeleteAuthUser(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>Also delete the login account (auth user). Leave unchecked to remove only the profile.</span>
+              </label>
+            )}
             <div className="flex gap-3">
-              <button onClick={handleDelete} disabled={actionId === confirmDelete.id} className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40" style={{ backgroundColor:"#dc2626", color:"#fff" }}>{actionId === confirmDelete.id ? "Deleting…" : "Yes, Delete"}</button>
-              <button onClick={() => { setConfirmDelete(null); setDeleteError(""); }} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Cancel</button>
+              <button onClick={() => handleDelete(false)} disabled={actionId === confirmDelete.id} className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40" style={{ backgroundColor:"#dc2626", color:"#fff" }}>{actionId === confirmDelete.id ? "Deleting…" : "Yes, Delete"}</button>
+              <button onClick={closeConfirmDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Cancel</button>
             </div>
+
+            {/* Force delete: destroys the profile's owned content too, so it is
+                deliberately harder to reach than the button above. */}
+            {confirmDelete.profileUsername && (
+              <div className="pt-3 mt-1 border-t space-y-2" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
+                <p className="text-xs font-semibold" style={{ color:"#f59e0b" }}>⚠ Force Delete</p>
+                <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>
+                  Also deletes everything this profile owns (events, releases, listings, gallery) and gives up its claim on any spot. Type <span style={{ color:"#fca5a5", fontFamily:"monospace" }}>{confirmDelete.profileUsername}</span> to enable.
+                </p>
+                <input
+                  value={forceConfirmText}
+                  onChange={e => setForceConfirmText(e.target.value)}
+                  placeholder={confirmDelete.profileUsername}
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                  style={{ backgroundColor:"#0F0F1A", color:"#fff", border:"1px solid #7f1d1d", fontFamily:"monospace" }}
+                />
+                <button
+                  onClick={() => handleDelete(true)}
+                  disabled={forceConfirmText !== confirmDelete.profileUsername || actionId === confirmDelete.id}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{ backgroundColor:"#7f1d1d", color:"#fecaca", border:"2px solid #dc2626" }}
+                >
+                  {actionId === confirmDelete.id ? "Force deleting…" : "⚠ Force Delete everything"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
