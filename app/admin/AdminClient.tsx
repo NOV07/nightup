@@ -176,6 +176,7 @@ export default function AdminClient() {
     releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[],
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; tab: Tab; subtab?: MusicSubTab } | null>(null);
   const [previewItem, setPreviewItem] = useState<ContentItem | null>(null);
@@ -204,14 +205,26 @@ export default function AdminClient() {
 
   const [showAddSpotCropper, setShowAddSpotCropper] = useState(false);
 
+  // A silent failure here leaves every tab at its empty initial state, which
+  // reads exactly like "there is nothing to show". Surface it instead.
   const fetchContent = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/pending");
-      if (res.ok) {
-        const data = await res.json();
-        setAllContent(data);
+      if (!res.ok) {
+        setLoadError(`Could not load admin content (HTTP ${res.status}). The lists below are empty because the request failed, not because there is nothing there.`);
+        return;
       }
+      const { errors, ...data } = await res.json();
+      setAllContent(data);
+      const failed = Object.entries((errors ?? {}) as Record<string, string>);
+      setLoadError(
+        failed.length
+          ? `Some content failed to load and is showing as empty: ${failed.map(([k, m]) => `${k} (${m})`).join("; ")}`
+          : ""
+      );
+    } catch (e) {
+      setLoadError(`Could not load admin content: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setLoading(false);
     }
@@ -977,6 +990,12 @@ export default function AdminClient() {
 
           {/* Content */}
           <div className="px-4 md:px-6 py-6 max-w-5xl" style={{ paddingBottom: "7rem" }}>
+
+            {loadError && (
+              <div className="mb-5 p-3 rounded-xl text-xs" style={{ backgroundColor:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.3)", color:"#fca5a5" }}>
+                {loadError}
+              </div>
+            )}
 
             {/* ── QUEUE tab ─────────────────────────────────────────────── */}
             {activeTab === "queue" && (() => {

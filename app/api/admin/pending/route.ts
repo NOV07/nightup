@@ -18,7 +18,9 @@ export async function GET(req: NextRequest) {
     // anything it does not receive would be written back empty on save.
     admin.from('events').select('*').order('created_at', { ascending: false }),
     admin.from('articles').select('id, title, category, published_at, excerpt, content, hero_image, read_time, series, series_order, slug, word_count, updated_at, tags, status, created_at').order('created_at', { ascending: false }),
-    admin.from('music_releases').select('id, title, artist, type, genre, cover_image, spotify_url, soundcloud_url, description, is_promoted, status, created_at').order('created_at', { ascending: false }),
+    // primary_genre, not genre — the genre column was dropped in the release
+    // refactor and selecting it 400s the whole query.
+    admin.from('music_releases').select('id, title, artist, type, primary_genre, cover_image, spotify_url, soundcloud_url, description, is_promoted, status, created_at').order('created_at', { ascending: false }),
     admin.from('mixes').select('id, title, artist, genre, cover_image, soundcloud_url, duration, status, created_at').order('created_at', { ascending: false }),
     admin.from('playlists').select('id, title, platform, embed_url, cover_image, is_sponsored, status, created_at').order('created_at', { ascending: false }),
     admin.from('artists').select('id, name, origin, about, photo, genres, style_tags, spotify_url, soundcloud_url, instagram, website, status, created_at').order('created_at', { ascending: false }),
@@ -28,6 +30,23 @@ export async function GET(req: NextRequest) {
     admin.from('featured_event_requests').select('id, event_id, profile_id, status, created_at, events(title, date, venue)').order('created_at', { ascending: false }),
     admin.from('spot_claims').select('id, spot_id, profile_id, note, status, created_at, spots(name, slug, city)').order('created_at', { ascending: false }),
   ])
+
+  // A failed query returns data: null, which `?? []` renders as an empty tab —
+  // indistinguishable from a table that really has no rows. That is how the
+  // dropped music_releases.genre column stayed hidden. Report the failures so
+  // the panel can say "this broke" instead of silently showing nothing.
+  const errors = Object.entries({
+    events, articles, releases, mixes, playlists, artists,
+    profiles, upgrade_requests: upgradeRequests, spots,
+    featured_requests: featuredRequests, spot_claims: spotClaims,
+  }).reduce<Record<string, string>>((acc, [key, res]) => {
+    if (res.error) acc[key] = res.error.message
+    return acc
+  }, {})
+
+  for (const [key, message] of Object.entries(errors)) {
+    console.error(`[admin/pending] ${key} query failed: ${message}`)
+  }
 
   return NextResponse.json({
     events: events.data ?? [],
@@ -44,5 +63,6 @@ export async function GET(req: NextRequest) {
     spots: (spots.data ?? []).map(s => ({ ...s, status: s.is_published ? 'approved' : 'pending' })),
     featured_requests: featuredRequests.data ?? [],
     spot_claims: spotClaims.data ?? [],
+    errors,
   })
 }
