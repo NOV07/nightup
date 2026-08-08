@@ -44,8 +44,9 @@ const VISIBILITY_SECTIONS: Record<string, string[]> = {
   venue: ['upcoming_events', 'announcements', 'gallery', 'music_embed', 'booking_info'],
   // 'gallery' is in this list because the wizard's step 3 uploads to
   // creator_gallery and the public profile gates that section on
-  // section_visibility.gallery — whose column default is false. Without a
-  // toggle here a professional could fill a gallery that never rendered.
+  // section_visibility.gallery. New profiles now default it to visible (see
+  // 20260808020000_default_gallery_visible.sql), but older rows carry false and
+  // without a toggle here their owners could not turn the section back on.
   professional: ['gallery', 'portfolio', 'testimonials', 'price_range', 'booking_availability'],
 }
 
