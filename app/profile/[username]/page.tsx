@@ -91,8 +91,10 @@ export default async function ProfilePage({ params }: Props) {
     }
   }
 
-  // Organizer/Venue: find events by profile_id
-  if (profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot') {
+  // Organizer/Venue/Spot/Professional: find events by profile_id. Professionals
+  // are in this list because they can submit events too, so their own events
+  // had nowhere to show on their profile.
+  if (profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot' || profile.profile_type === 'professional') {
     const { data } = await supabase
       .from('events')
       .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, ticket_url')
@@ -531,6 +533,41 @@ export default async function ProfilePage({ params }: Props) {
         {/* ═══ PROFESSIONAL SECTIONS ═══ */}
         {profile.profile_type === 'professional' && (
           <div className="space-y-10 pb-16">
+
+            {/* Upcoming Events — same markup as the organizer / venue / spot
+                block, for professionals who host their own events. */}
+            {visibility.upcoming_events !== false && upcomingEvents.length > 0 && (
+              <section>
+                <h2 className="text-sm font-bold uppercase tracking-widest mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  Upcoming Events
+                </h2>
+                <div className="space-y-3">
+                  {upcomingEvents.map((event: any) => (
+                    <Link key={event.id} href={`/events/${event.id}`}
+                      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '64px', height: '64px' }}>
+                        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white truncate">{event.title}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          {new Date(event.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}{event.time ? ` · ${event.time}` : ""} · {event.venue}
+                        </p>
+                        <span className="text-xs mt-1 inline-block" style={{ color: '#E8A020' }}>{event.city}</span>
+                      </div>
+                      {event.ticket_url && (
+                        <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
+                          className="text-xs px-3 py-1.5 rounded-full flex-shrink-0 font-medium"
+                          style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}>
+                          Tickets
+                        </a>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* About — bio already renders in the header above, so this section
                 carries the taxonomy (tags + services) only. */}

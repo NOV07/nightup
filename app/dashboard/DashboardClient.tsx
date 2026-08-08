@@ -47,7 +47,7 @@ const VISIBILITY_SECTIONS: Record<string, string[]> = {
   // section_visibility.gallery. New profiles now default it to visible (see
   // 20260808020000_default_gallery_visible.sql), but older rows carry false and
   // without a toggle here their owners could not turn the section back on.
-  professional: ['gallery', 'portfolio', 'testimonials', 'price_range', 'booking_availability'],
+  professional: ['upcoming_events', 'gallery', 'portfolio', 'testimonials', 'price_range', 'booking_availability'],
 }
 
 const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
