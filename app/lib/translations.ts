@@ -492,7 +492,9 @@ const translations = {
   dashboard_gallery:            { el: "Gallery", en: "Gallery" },
   dashboard_gallery_desc:       { el: "Πρόσθεσε έως 10 φωτογραφίες για να αναδείξεις τη δουλειά σου", en: "Add up to 10 photos to showcase your work" },
   dashboard_creator_gallery_desc: { el: "Πρόσθεσε έως 12 φωτογραφίες για το δημόσιο προφίλ σου", en: "Add up to 12 photos to your public profile" },
-  dashboard_gallery_max_reached: { el: "Έχεις φτάσει το όριο των 12 φωτογραφιών", en: "You've reached the 12-photo limit" },
+  // No number in the copy: the limit is per-caller now (venues cap at 8), and
+  // the counter beside the heading already shows it.
+  dashboard_gallery_max_reached: { el: "Έχεις φτάσει το όριο φωτογραφιών", en: "You've reached the photo limit" },
   dashboard_gallery_delete_alt: { el: "Διαγραφή φωτογραφίας", en: "Delete photo" },
   dashboard_gallery_move_up:   { el: "Μετακίνηση πάνω", en: "Move up" },
   dashboard_gallery_move_down: { el: "Μετακίνηση κάτω", en: "Move down" },

@@ -6,6 +6,7 @@ import CroppedImage from '@/components/ui/CroppedImage'
 import CreatorGallery from '@/components/ui/CreatorGallery'
 import type { CropBox } from '@/components/ui/CroppedImage'
 import { NETWORK } from '@/app/lib/searchData'
+import { PRICE_RANGES } from '@/app/lib/networkProfile'
 import ProfessionalLivePreview from './ProfessionalLivePreview'
 
 /** The two taxonomy groups, read straight off NETWORK.Professionals so the
@@ -29,10 +30,6 @@ export function groupOfRole(role: string): ProGroup | '' {
   for (const g of PRO_GROUPS) if (ROLES_BY_GROUP[g].includes(role)) return g
   return ''
 }
-
-/** The only values `profiles.price_range` holds today — kept as-is rather than
- *  swapping in a new scale, so existing profiles keep rendering unchanged. */
-export const PRICE_RANGES = ['€', '€€', '€€€'] as const
 
 export const MAX_TAGS = 8
 

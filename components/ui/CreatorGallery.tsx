@@ -7,7 +7,9 @@ import ImageCropper, { type CropBox } from './ImageCropper'
 import CroppedImage from './CroppedImage'
 import { useLanguage } from '@/app/components/LanguageContext'
 
-const MAX_PHOTOS = 12
+/** Ceiling when a caller does not ask for a lower one. Matches the DB trigger
+ *  in the creator_gallery migration, which rejects a 13th row outright. */
+const DEFAULT_MAX_PHOTOS = 12
 const GALLERY_CROP_ASPECT = 1
 
 interface GalleryPhoto {
@@ -25,7 +27,7 @@ function cropOf(photo: GalleryPhoto): CropBox | null {
   return { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height }
 }
 
-export default function CreatorGallery({ profileId }: { profileId: string }) {
+export default function CreatorGallery({ profileId, maxPhotos = DEFAULT_MAX_PHOTOS }: { profileId: string; maxPhotos?: number }) {
   const { t } = useLanguage()
   const [photos, setPhotos] = useState<GalleryPhoto[]>([])
   const [error, setError] = useState('')
@@ -94,7 +96,7 @@ export default function CreatorGallery({ profileId }: { profileId: string }) {
     <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_gallery')}</h2>
-        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{photos.length}/{MAX_PHOTOS}</span>
+        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{photos.length}/{maxPhotos}</span>
       </div>
       <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_creator_gallery_desc')}</p>
 
@@ -155,14 +157,14 @@ export default function CreatorGallery({ profileId }: { profileId: string }) {
             </div>
           </div>
         ))}
-        {photos.length < MAX_PHOTOS && (
+        {photos.length < maxPhotos && (
           <div className="aspect-square rounded-xl overflow-hidden" style={{ border: '0.5px dashed rgba(255,255,255,0.15)' }}>
             <ImageUpload key={photos.length} bucket="creator-gallery" folder="gallery" onUpload={handleUpload} />
           </div>
         )}
       </div>
 
-      {photos.length >= MAX_PHOTOS && (
+      {photos.length >= maxPhotos && (
         <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_gallery_max_reached')}</p>
       )}
     </div>

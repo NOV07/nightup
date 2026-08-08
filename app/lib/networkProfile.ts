@@ -9,6 +9,10 @@ export const TAB_META: Record<NetworkTab, { emoji: string; label: string; slug: 
   Professionals: { emoji: '🤝', label: 'Professionals', slug: 'professionals' },
 }
 
+/** The only values profiles.price_range holds. Shared by the professional and
+ *  venue wizards so neither invents a second scale. */
+export const PRICE_RANGES = ['€', '€€', '€€€'] as const
+
 export const PROFILE_COLUMNS =
   "id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, bio, location, network_tab, network_category, network_subcategory, is_featured, is_verified"
 
