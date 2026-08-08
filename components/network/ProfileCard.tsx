@@ -52,8 +52,13 @@ export default function ProfileCard({ profile, accent = GOLD }: { profile: Profi
             {profile.is_verified && <span style={{ color: accent }} className="text-xs">✓</span>}
             {profile.is_featured && <span style={{ color: accent }} className="text-xs">★</span>}
           </div>
-          {profile.network_subcategory && (
-            <p className="text-xs mt-0.5" style={{ color: accent }}>{profile.network_subcategory}</p>
+          {/* Professionals have no second taxonomy level — network_subcategory is
+              empty for all of them — so fall back to the category, which is the
+              role the card is meant to show. */}
+          {(profile.network_subcategory || profile.network_category) && (
+            <p className="text-xs mt-0.5" style={{ color: accent }}>
+              {profile.network_subcategory || profile.network_category}
+            </p>
           )}
           <div className="mt-2">
             <FollowButton profileId={profile.id} />
