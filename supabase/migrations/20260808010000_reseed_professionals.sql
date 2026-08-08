@@ -1,0 +1,48 @@
+-- Record of a DESTRUCTIVE data operation run by hand on 2026-08-08, after the
+-- `professionals` -> `profiles` unification. Kept here so the wipe is not
+-- invisible in the repo's history. Do NOT re-run: the seed half lived in a
+-- throwaway script (deleted) and the rows already exist.
+--
+-- Backups written first, to _backup/ (gitignored):
+--   professional-profiles-backup-2026-08-08T08-09-21-297Z.json  (35 profiles + every dependent row)
+--   events-backup-2026-08-08T08-09-21-297Z.json                 (all 7 events)
+--
+-- Dependents checked before deleting, and what each one did:
+--   listings.profile_id              6 rows  ON DELETE CASCADE  -> deleted
+--   creator_gallery.profile_id       3 rows  ON DELETE CASCADE  -> deleted
+--   events.profile_id                3 rows  ON DELETE SET NULL -> survived, re-pointed (below)
+--   follows / listing_interests / music_releases / featured_event_requests /
+--   spot_claims / artists / notifications                       0 rows
+--   events.contributors              string-matched, no FK — see the note below
+--
+-- The SET NULL behaviour was established empirically (throwaway profile + event,
+-- deleted, event survived with profile_id null) rather than assumed.
+
+DELETE FROM profiles WHERE profile_type = 'professional';  -- 35 rows
+
+-- Two complete demo professionals were then seeded, one per NETWORK.Professionals
+-- group, with auth users created via the admin API:
+--   demo.pro.events@nightup.gr   -> @prisma_soundlight  'Prisma Sound & Light'  Sound & Lighting     (For Events)
+--   demo.pro.artists@nightup.gr  -> @kyveli_beats       'Kyveli Beats'          Producer / Beatmaker (For Artists)
+-- Both: bio, tags, services, phone, booking_email, website, location 'Αθήνα',
+-- is_available, price_range, booking_info, socials, avatar + cover, 4
+-- creator_gallery photos, is_verified true. Every image URL was verified to
+-- return 200 image/* before insert.
+--
+-- The three events SoundCrew Athens owned (Ρωμαίος & Ιουλιέτα, Athens Padel
+-- Night Cup, Γευσιγνωσία) were re-pointed at Prisma Sound & Light rather than
+-- left ownerless.
+--
+-- events.contributors matches a whole array entry against profiles.display_name
+-- exactly (app/events/[id]/page.tsx, findProfessionalProfile), so the old
+-- role-prefixed entries ("Ήχος: SoundCrew Athens") never resolved to a profile
+-- and rendered as plain text. Those six entries were replaced with the bare
+-- display name, which is what makes the pill a link. 'Kyveli Beats' was appended
+-- to Concrete Sessions Vol. 7 only — a producer does not plausibly contribute to
+-- the theatre / padel / wine-tasting events.
+--
+-- Also fixed while verifying: profiles.section_visibility's column default ships
+-- gallery=false and portfolio=false, so a freshly seeded (or freshly upgraded)
+-- professional had its gallery hidden. Set to true on both seeded rows, and
+-- 'gallery' was added to the professional list in VISIBILITY_SECTIONS so the
+-- Visibility tab can toggle it. The column default itself is unchanged.

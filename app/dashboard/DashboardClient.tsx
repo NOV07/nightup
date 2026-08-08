@@ -42,7 +42,11 @@ const VISIBILITY_SECTIONS: Record<string, string[]> = {
   artist: ['upcoming_events', 'featured_track', 'releases', 'mixes', 'gallery'],
   organizer: ['upcoming_events', 'announcements', 'gallery', 'music_embed', 'booking_info'],
   venue: ['upcoming_events', 'announcements', 'gallery', 'music_embed', 'booking_info'],
-  professional: ['portfolio', 'testimonials', 'price_range', 'booking_availability'],
+  // 'gallery' is in this list because the wizard's step 3 uploads to
+  // creator_gallery and the public profile gates that section on
+  // section_visibility.gallery — whose column default is false. Without a
+  // toggle here a professional could fill a gallery that never rendered.
+  professional: ['gallery', 'portfolio', 'testimonials', 'price_range', 'booking_availability'],
 }
 
 const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
