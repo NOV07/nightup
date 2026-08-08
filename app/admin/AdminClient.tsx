@@ -31,8 +31,42 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
-type Tab = "events" | "articles" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims";
+// The profile tabs are prefixed rather than named "artists"/"venues" directly:
+// getTableForTab derives the table name from the tab id, and a bare "artists"
+// tab would resolve to the music artists table and delete the wrong row.
+type ProfileTab = "profiles-artists" | "profiles-professionals" | "profiles-venues" | "profiles-organizers";
+type Tab = "events" | "articles" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims" | ProfileTab;
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
+
+/** The four profile tabs are the same list filtered by profile_type; only the
+ *  label and the secondary line differ. */
+const PROFILE_TABS: Record<ProfileTab, {
+  profileType: string;
+  label: string;
+  empty: string;
+  secondary: (p: Record<string, any>) => string;
+}> = {
+  "profiles-artists": {
+    profileType: "artist", label: "Artists", empty: "No artists yet.",
+    secondary: p => [Array.isArray(p.genres) ? p.genres.join(", ") : p.genres, p.location].filter(Boolean).join(" · "),
+  },
+  "profiles-professionals": {
+    profileType: "professional", label: "Professionals", empty: "No professionals yet.",
+    secondary: p => [p.network_category, p.network_subcategory, p.location].filter(Boolean).join(" · "),
+  },
+  "profiles-venues": {
+    profileType: "venue", label: "Venues", empty: "No venues yet.",
+    secondary: p => [
+      p.venue_capacity ? `cap. ${p.venue_capacity}` : null,
+      [p.venue_address, p.venue_neighborhood].filter(Boolean).join(", ") || null,
+    ].filter(Boolean).join(" · "),
+  },
+  "profiles-organizers": {
+    profileType: "organizer", label: "Organizers", empty: "No organizers yet.",
+    secondary: p => [p.network_category, p.location].filter(Boolean).join(" · "),
+  },
+};
+const PROFILE_TAB_IDS = Object.keys(PROFILE_TABS) as ProfileTab[];
 type QueueFilter = "all" | "events" | "releases" | "spots" | "articles";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 
@@ -179,6 +213,7 @@ export default function AdminClient() {
   const [loadError, setLoadError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; tab: Tab; subtab?: MusicSubTab } | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const [previewItem, setPreviewItem] = useState<ContentItem | null>(null);
   const [previewTab, setPreviewTab] = useState<Tab>("events");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -297,6 +332,7 @@ export default function AdminClient() {
       if (subtab === "releases") return "music_releases";
       return subtab ?? "music_releases";
     }
+    if ((PROFILE_TAB_IDS as string[]).includes(tab)) return "profiles";
     return tab;
   }
 
@@ -315,13 +351,21 @@ export default function AdminClient() {
   async function handleDelete() {
     if (!confirmDelete) return;
     setActionId(confirmDelete.id);
+    setDeleteError("");
     const table = getTableForTab(confirmDelete.tab, confirmDelete.subtab);
-    await fetch("/api/admin/delete", {
+    const res = await fetch("/api/admin/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ table, id: confirmDelete.id }),
     });
     setActionId(null);
+    // A refused delete (e.g. a profile that still owns content) must say so
+    // rather than close the dialog as if it had worked.
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setDeleteError(json.error ?? `Delete failed (HTTP ${res.status}).`);
+      return;
+    }
     setConfirmDelete(null);
     await fetchContent();
   }
@@ -958,6 +1002,11 @@ export default function AdminClient() {
             <SidebarNavItem label="Nightwaves" tab="music"         badge={pendingByTab.music} />
             <SidebarNavItem label="Spots"      tab="spots"         badge={pendingByTab.spots} />
             <SidebarNavItem label="Magazine"   onClick={() => router.push("/admin/magazine")} />
+
+            <p className="text-xs font-bold uppercase tracking-widest mt-5 mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>People</p>
+            {PROFILE_TAB_IDS.map(id => (
+              <SidebarNavItem key={id} label={PROFILE_TABS[id].label} tab={id} />
+            ))}
           </div>
 
           {/* Logout */}
@@ -1091,6 +1140,79 @@ export default function AdminClient() {
               </div>
             )}
 
+            {/* ── PROFILE tabs (artists / professionals / venues / organizers) ── */}
+            {PROFILE_TAB_IDS.filter(id => id === activeTab).map(id => {
+              const cfg = PROFILE_TABS[id];
+              const rows = (allContent.profiles ?? []).filter((p: any) => p.profile_type === cfg.profileType);
+              return (
+                <div key={id} className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color:"#666" }}>{cfg.label}</h2>
+                    {rows.length > 0 && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor:"#16a34a", color:"#fff" }}>{rows.length}</span>
+                    )}
+                  </div>
+                  {rows.length === 0 && (
+                    <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>{cfg.empty}</p>
+                  )}
+                  {rows.map((profile: any) => {
+                    const secondary = cfg.secondary(profile);
+                    return (
+                      <div key={profile.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:`1px solid ${profile.is_featured ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          {profile.avatar_url && <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />}
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{profile.display_name || profile.username || "—"}</p>
+                            <p className="text-xs text-gray-500 mt-0.5 truncate">@{profile.username}{profile.plan_tier ? ` · ${profile.plan_tier}` : ""}</p>
+                            {secondary && <p className="text-xs mt-0.5 truncate" style={{ color:"rgba(255,255,255,0.35)" }}>{secondary}</p>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {profile.is_verified ? (
+                            <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:"rgba(232,160,32,0.15)", color:"#E8A020" }}>✓ Verified</span>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                await fetch("/api/admin/verify-profile", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ id:profile.id }) });
+                                await fetchContent();
+                              }}
+                              className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
+                              style={{ backgroundColor:"#111120", color:"#666", border:"1px solid #444" }}
+                            >Verify</button>
+                          )}
+                          <button
+                            onClick={() => handleToggleFeaturedProfile(profile.id, !!profile.is_featured)}
+                            title={profile.is_featured ? "Remove Featured" : "Feature"}
+                            className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
+                            style={{ backgroundColor:profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color:profile.is_featured ? "#E8A020" : "#555" }}
+                          >{profile.is_featured ? "★ Featured" : "Not featured"}</button>
+                          {/* No admin-side profile editor exists — the wizards at
+                              /dashboard/* are scoped to the signed-in owner — so this
+                              links out to the public profile instead. */}
+                          {profile.username && (
+                            <a
+                              href={`/profile/${profile.username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="View profile"
+                              className="px-2 py-1.5 rounded-lg text-sm leading-none transition-opacity hover:opacity-80"
+                              style={{ backgroundColor:"#1E2A3A", color:"#E8A020", border:"1px solid #E8A020" }}
+                            >👁</a>
+                          )}
+                          <button
+                            onClick={() => { setConfirmDelete({ id: String(profile.id), tab: id }); setDeleteError(""); }}
+                            title="Delete"
+                            className="px-2 py-1.5 rounded-lg text-sm leading-none"
+                            style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
+                          >🗑️</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
             {/* ── UPGRADES tab ──────────────────────────────────────────── */}
             {activeTab === "upgrades" && (
               <div className="space-y-4">
@@ -1198,7 +1320,7 @@ export default function AdminClient() {
             )}
 
             {/* ── CONTENT tabs (events, articles, music, spots) ── */}
-            {!["queue","users","upgrades","featured","spot-claims"].includes(activeTab) && (
+            {!["queue","users","upgrades","featured","spot-claims", ...PROFILE_TAB_IDS].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
                 {activeTab === "music" && (
@@ -1517,6 +1639,7 @@ export default function AdminClient() {
               { tab:"upgrades" as Tab, label:"Upgrades", badge: pendingByTab.upgrades },
               { tab:"featured" as Tab, label:"Featured", badge: pendingByTab.featured },
               { tab:"spot-claims" as Tab, label:"Spot Claims", badge: pendingByTab["spot-claims"] },
+              ...PROFILE_TAB_IDS.map(id => ({ tab: id as Tab, label: PROFILE_TABS[id].label, badge: 0 })),
             ]).map(({ tab, label, badge }) => (
               <button
                 key={tab}
@@ -1550,9 +1673,12 @@ export default function AdminClient() {
           <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={{ backgroundColor:"#0F0F1A", border:"1px solid #dc2626" }}>
             <p className="text-sm font-semibold">Are you sure?</p>
             <p className="text-xs text-gray-400">This action is permanent and cannot be undone.</p>
+            {deleteError && (
+              <p className="text-xs p-2 rounded-lg" style={{ backgroundColor:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.3)", color:"#fca5a5" }}>{deleteError}</p>
+            )}
             <div className="flex gap-3">
               <button onClick={handleDelete} disabled={actionId === confirmDelete.id} className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40" style={{ backgroundColor:"#dc2626", color:"#fff" }}>{actionId === confirmDelete.id ? "Deleting…" : "Yes, Delete"}</button>
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Cancel</button>
+              <button onClick={() => { setConfirmDelete(null); setDeleteError(""); }} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Cancel</button>
             </div>
           </div>
         </div>

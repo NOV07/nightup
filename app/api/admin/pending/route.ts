@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     admin.from('mixes').select('id, title, artist, genre, cover_image, soundcloud_url, duration, status, created_at').order('created_at', { ascending: false }),
     admin.from('playlists').select('id, title, platform, embed_url, cover_image, is_sponsored, status, created_at').order('created_at', { ascending: false }),
     admin.from('artists').select('id, name, origin, about, photo, genres, style_tags, spotify_url, soundcloud_url, instagram, website, status, created_at').order('created_at', { ascending: false }),
-    admin.from('profiles').select('id, username, display_name, profile_type, avatar_url, is_verified, is_featured, plan_tier, network_tab, network_category, professional_status, created_at').order('created_at', { ascending: false }),
+    admin.from('profiles').select('id, username, display_name, profile_type, avatar_url, is_verified, is_featured, plan_tier, network_tab, network_category, network_subcategory, professional_status, genres, venue_capacity, venue_address, venue_neighborhood, location, created_at').order('created_at', { ascending: false }),
     admin.from('upgrade_requests').select('id, user_id, username, email, specialty, requested_type, bio, status, created_at').order('created_at', { ascending: false }),
     admin.from('spots').select('*').order('created_at', { ascending: false }),
     admin.from('featured_event_requests').select('id, event_id, profile_id, status, created_at, events(title, date, venue)').order('created_at', { ascending: false }),
