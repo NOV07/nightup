@@ -44,8 +44,8 @@ export async function PATCH(
     .single()
 
   if (!profile) return NextResponse.json({ error: 'No profile found' }, { status: 400 })
-  if (!['organizer', 'professional', 'spot'].includes(profile.profile_type)) {
-    return NextResponse.json({ error: 'Only organizers, professionals and spots can edit events' }, { status: 403 })
+  if (!['organizer', 'professional', 'spot', 'venue'].includes(profile.profile_type)) {
+    return NextResponse.json({ error: 'Only organizers, professionals, spots and venues can edit events' }, { status: 403 })
   }
 
   const { data: existing } = await supabase

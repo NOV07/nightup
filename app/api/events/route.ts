@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No profile found. Complete onboarding first.' }, { status: 400 })
   }
 
-  if (!['organizer', 'professional', 'spot'].includes(profile.profile_type)) {
-    return NextResponse.json({ error: 'Only organizers, professionals and spots can submit events' }, { status: 403 })
+  if (!['organizer', 'professional', 'spot', 'venue'].includes(profile.profile_type)) {
+    return NextResponse.json({ error: 'Only organizers, professionals, spots and venues can submit events' }, { status: 403 })
   }
 
   let body: Record<string, unknown>
