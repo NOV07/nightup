@@ -180,7 +180,10 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
       sb.from("events").select("id, title, venue, city").ilike("title", pattern).eq("status", "approved").limit(3),
       sb.from("articles").select("id, title, category").ilike("title", pattern).eq("status", "published").limit(3),
       sb.from("mixes").select("id, title, artist").ilike("title", pattern).eq("status", "approved").limit(2),
-      sb.from("profiles").select("id, username, display_name, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${q}%,network_subcategory.ilike.%${q}%`).limit(4),
+      // network_category matters as much as network_subcategory here: venues and
+      // professionals keep their role in the category and leave the subcategory
+      // empty, so searching one without the other never matched them by type.
+      sb.from("profiles").select("id, username, display_name, network_category, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${q}%,network_category.ilike.%${q}%,network_subcategory.ilike.%${q}%`).limit(4),
       sb.from("spots").select("id, name, slug, category, neighborhood").ilike("name", pattern).eq("is_published", true).limit(2),
       sb.from("music_releases").select("id, title, artist, type").ilike("title", pattern).eq("status", "approved").limit(2),
     ]);
@@ -195,7 +198,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
       found.push({ id: `mix-${m.id}`, title: m.title, subtitle: m.artist, type: "nightwaves", href: `/nightwaves/mix/${m.id}` })
     );
     profRes.data?.forEach((p: any) =>
-      found.push({ id: `prof-${p.id}`, title: p.display_name, subtitle: [p.network_subcategory, p.location].filter(Boolean).join(" · "), type: "profile", href: `/profile/${p.username}` })
+      found.push({ id: `prof-${p.id}`, title: p.display_name, subtitle: [p.network_subcategory || p.network_category, p.location].filter(Boolean).join(" · "), type: "profile", href: `/profile/${p.username}` })
     );
     spotRes.data?.forEach((s: any) =>
       found.push({ id: `spot-${s.id}`, title: s.name, subtitle: [s.category, s.neighborhood].filter(Boolean).join(" · "), type: "spot", href: `/spots/${s.slug}` })
