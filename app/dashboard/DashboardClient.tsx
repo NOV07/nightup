@@ -167,23 +167,17 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     network_subcategory: profile.network_subcategory ?? '',
   })
 
-  // Pro-specific listing fields. These used to be seeded from a parallel
-  // `professionals` row, which most professionals never had — so the form
-  // opened blank for them. They now live on the profile itself.
-  const [proForm, setProForm] = useState({
-    category: profile.network_category ?? '',
-    availability: profile.is_available === false ? 'busy' : 'available',
-    tags: (profile.tags ?? []).join(', '),
-    email: profile.booking_email ?? '',
-    phone: profile.phone ?? '',
-    website: profile.website ?? '',
-    instagram: profile.instagram ?? '',
-    facebook: profile.facebook ?? '',
-    tiktok: profile.tiktok ?? '',
-    youtube: profile.youtube_url ?? '',
-    soundcloud: profile.soundcloud_url ?? '',
-    spotify: profile.spotify_url ?? '',
-  })
+  // Professionals edit everything through the 4-step wizard at
+  // /dashboard/professional, so the dashboard only reports what is still
+  // missing rather than carrying a second copy of the same fields.
+  const proChecklist = [
+    { label: t('dashboard_pro_check_category'), done: !!profile.network_category },
+    { label: t('dashboard_pro_check_bio'), done: !!(profile.bio ?? '').trim() },
+    { label: t('dashboard_pro_check_city'), done: !!(profile.location ?? '').trim() },
+    { label: t('dashboard_pro_check_contact'), done: !!(profile.booking_email || profile.phone) },
+    { label: t('dashboard_pro_check_avatar'), done: !!profile.avatar_url },
+  ]
+  const proIncomplete = isPro && proChecklist.some(item => !item.done)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -253,63 +247,6 @@ export default function DashboardClient({ profile, events, releases, savedEvents
         network_tab: form.network_tab || null,
         network_category: form.network_category || null,
         network_subcategory: form.network_subcategory || null,
-      })
-      .eq('id', profile.id)
-
-    setSaving(false)
-    if (error) {
-      setError(error.message)
-    } else {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-      router.refresh()
-    }
-  }
-
-  // Pro profile save — single write to profiles. This used to also upsert a
-  // parallel `professionals` row, and hardcoded network_tab to 'Artists', which
-  // dropped the profile off /network/professionals (that page filters on
-  // network_tab = 'Professionals').
-  async function handleProSave() {
-    setSaving(true)
-    setError('')
-    setSaved(false)
-
-    const tagsArray = proForm.tags
-      ? proForm.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-      : []
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        display_name: form.display_name,
-        bio: form.bio,
-        location: form.location,
-        avatar_url: form.avatar_url || null,
-        cover_url: form.cover_url || null,
-        avatar_crop_x: form.avatar_crop_x,
-        avatar_crop_y: form.avatar_crop_y,
-        avatar_crop_width: form.avatar_crop_width,
-        avatar_crop_height: form.avatar_crop_height,
-        cover_crop_x: form.cover_crop_x,
-        cover_crop_y: form.cover_crop_y,
-        cover_crop_width: form.cover_crop_width,
-        cover_crop_height: form.cover_crop_height,
-        network_tab: 'Professionals',
-        network_category: form.network_category || proForm.category || null,
-        network_subcategory: form.network_subcategory || null,
-        // former `professionals` columns, now first-class on profiles
-        phone: proForm.phone || null,
-        tags: tagsArray,
-        booking_email: proForm.email || null,
-        is_available: proForm.availability === 'available',
-        website: proForm.website || null,
-        instagram: proForm.instagram || null,
-        facebook: proForm.facebook || null,
-        tiktok: proForm.tiktok || null,
-        youtube_url: proForm.youtube || null,
-        soundcloud_url: proForm.soundcloud || null,
-        spotify_url: proForm.spotify || null,
       })
       .eq('id', profile.id)
 
@@ -407,6 +344,12 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     spot: ownedSpot
       ? { href: '/dashboard/events/new', label: t('dashboard_new_event') }
       : { href: '/dashboard/spots/new', label: 'Καταχώρησε το spot σου' },
+    // A professional's own listing is the thing they publish, so the header CTA
+    // points at the wizard that fills it in.
+    professional: {
+      href: '/dashboard/professional',
+      label: proIncomplete ? t('dashboard_pro_complete_cta') : t('dashboard_pro_edit_cta'),
+    },
   }
 
   const saveButton = (onClick: () => void) => (
@@ -526,6 +469,25 @@ export default function DashboardClient({ profile, events, releases, savedEvents
           </div>
         )}
 
+        {/* Complete-your-profile nudge — where an approved /upgrade request
+            lands a professional whose profile is still mostly empty. */}
+        {proIncomplete && (
+          <div className="max-w-6xl mx-auto px-4 py-2.5">
+            <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl" style={{ backgroundColor: '#0F0F1A', border: '1px solid rgba(232,160,32,0.35)' }}>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                <span style={{ color: '#E8A020', fontWeight: 600 }}>{t('dashboard_pro_profile_title')}</span>: {t('dashboard_pro_complete_nudge')}
+              </p>
+              <Link
+                href="/dashboard/professional"
+                className="flex-shrink-0 text-xs font-bold px-4 py-2 rounded-lg transition-opacity hover:opacity-80"
+                style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+              >
+                {t('dashboard_pro_complete_cta')}
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="max-w-6xl mx-auto px-4 flex gap-1">
           {tabs.map(tab => (
@@ -551,169 +513,36 @@ export default function DashboardClient({ profile, events, releases, savedEvents
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
             <div className="space-y-8">
 
-              {/* Photos */}
+              {/* Wizard entry point — professionals edit everything through the
+                  4-step flow, the same way spots and events do. */}
               <div className="p-6 rounded-2xl space-y-5" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_photos')}</h2>
                 <div>
-                  <label className={labelClass}>{t('dashboard_banner_photo')}</label>
-                  <ImageUpload
-                    folder="banners"
-                    onUpload={(url) => setForm(prev => ({ ...prev, cover_url: url, cover_crop_x: null, cover_crop_y: null, cover_crop_width: null, cover_crop_height: null }))}
-                    existingUrl={form.cover_url}
-                  />
-                  {form.cover_url && (
-                    <button type="button" onClick={() => setShowCoverCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color: '#E8A020' }}>
-                      {t('image_crop_edit')}
-                    </button>
-                  )}
-                  {showCoverCropper && form.cover_url && (
-                    <ImageCropper
-                      imageUrl={form.cover_url}
-                      aspect={COVER_CROP_ASPECT}
-                      initialCrop={getCoverCrop(form)}
-                      onConfirm={(box: CropBox) => {
-                        setForm(prev => ({ ...prev, cover_crop_x: box.crop_x, cover_crop_y: box.crop_y, cover_crop_width: box.crop_width, cover_crop_height: box.crop_height }))
-                        setShowCoverCropper(false)
-                      }}
-                      onCancel={() => setShowCoverCropper(false)}
-                    />
-                  )}
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_pro_profile_title')}</h2>
+                  <p className="text-sm mt-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    {t('dashboard_pro_profile_desc')}
+                  </p>
                 </div>
-                <div>
-                  <label className={labelClass}>{t('dashboard_profile_photo')}</label>
-                  <ImageUpload
-                    folder="avatars"
-                    onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url, avatar_crop_x: null, avatar_crop_y: null, avatar_crop_width: null, avatar_crop_height: null }))}
-                    existingUrl={form.avatar_url}
-                  />
-                  {form.avatar_url && (
-                    <button type="button" onClick={() => setShowAvatarCropper(true)} className="text-xs mt-1.5 hover:opacity-80" style={{ color: '#E8A020' }}>
-                      {t('image_crop_edit')}
-                    </button>
-                  )}
-                  {showAvatarCropper && form.avatar_url && (
-                    <ImageCropper
-                      imageUrl={form.avatar_url}
-                      aspect={AVATAR_CROP_ASPECT}
-                      initialCrop={getAvatarCrop(form)}
-                      onConfirm={(box: CropBox) => {
-                        setForm(prev => ({ ...prev, avatar_crop_x: box.crop_x, avatar_crop_y: box.crop_y, avatar_crop_width: box.crop_width, avatar_crop_height: box.crop_height }))
-                        setShowAvatarCropper(false)
-                      }}
-                      onCancel={() => setShowAvatarCropper(false)}
-                    />
-                  )}
+
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    {t('dashboard_pro_checklist_title')}
+                  </p>
+                  {proChecklist.map(item => (
+                    <div key={item.label} className="flex items-center gap-2 text-sm">
+                      <span style={{ color: item.done ? '#4ade80' : 'rgba(255,255,255,0.25)' }}>{item.done ? '✓' : '○'}</span>
+                      <span style={{ color: item.done ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.75)' }}>{item.label}</span>
+                    </div>
+                  ))}
                 </div>
+
+                <Link
+                  href="/dashboard/professional"
+                  className="inline-block px-8 py-3 rounded-xl font-bold text-sm transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+                >
+                  {proIncomplete ? t('dashboard_pro_complete_cta') : t('dashboard_pro_edit_cta')}
+                </Link>
               </div>
-
-              {/* Basic Info */}
-              <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_basic_info')}</h2>
-                <div>
-                  <label className={labelClass}>{t('dashboard_display_name')}</label>
-                  <input name="display_name" value={form.display_name} onChange={handleChange} className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>{t('dashboard_bio')}</label>
-                  <textarea name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder={t('dashboard_bio_placeholder')} className={`${inputClass} resize-none`} />
-                </div>
-                <div>
-                  <label className={labelClass}>{t('listings_city')}</label>
-                  <input name="location" value={form.location} onChange={handleChange} placeholder={t('dashboard_city_placeholder')} className={inputClass} />
-                </div>
-                {/* Network Listing — professional */}
-                <div className="space-y-3">
-                  <label className={labelClass}>{t('dashboard_network_listing')}</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.12)', border: '0.5px solid rgba(232,160,32,0.3)', color: '#E8A020' }}>
-                      {t('listings_cat_artists')}
-                    </span>
-                  </div>
-                  <div>
-                    <label className={labelClass}>{t('listings_category')}</label>
-                    <select
-                      value={form.network_category}
-                      onChange={e => setForm(p => ({ ...p, network_category: e.target.value, network_subcategory: '' }))}
-                      className={inputClass}
-                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
-                    >
-                      <option value="">{t('dashboard_select_category')}</option>
-                      {Object.keys(NETWORK['Artists'])
-                        .filter(c => c !== 'Venues' && c !== 'Music & Artists')
-                        .map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                  <div>
-                    <p className="text-sm text-white font-medium">{t('dashboard_available_for_booking')}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{t('dashboard_availability_desc')}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setProForm(p => ({ ...p, availability: p.availability === 'available' ? 'busy' : 'available' }))}
-                    className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
-                    style={{ backgroundColor: proForm.availability === 'available' ? '#E8A020' : 'rgba(255,255,255,0.15)' }}
-                  >
-                    <div className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all" style={{ left: proForm.availability === 'available' ? '24px' : '4px' }} />
-                  </button>
-                </div>
-                <div>
-                  <label className={labelClass}>{t('dashboard_tags_label')}</label>
-                  <input
-                    value={proForm.tags}
-                    onChange={e => setProForm(p => ({ ...p, tags: e.target.value }))}
-                    placeholder={t('dashboard_tags_placeholder')}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              {/* Contact */}
-              <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_contact')}</h2>
-                <div>
-                  <label className={labelClass}>{t('dashboard_email')}</label>
-                  <input type="email" value={proForm.email} onChange={e => setProForm(p => ({ ...p, email: e.target.value }))} placeholder="booking@..." className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>{t('dashboard_phone')}</label>
-                  <input type="tel" value={proForm.phone} onChange={e => setProForm(p => ({ ...p, phone: e.target.value }))} placeholder="+30 69..." className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>{t('dashboard_website')}</label>
-                  <input type="url" value={proForm.website} onChange={e => setProForm(p => ({ ...p, website: e.target.value }))} placeholder="https://..." className={inputClass} />
-                </div>
-              </div>
-
-              {/* Social Links */}
-              <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_social_links')}</h2>
-                {[
-                  { key: 'instagram', label: 'Instagram', placeholder: '@handle' },
-                  { key: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...' },
-                  { key: 'tiktok', label: 'TikTok', placeholder: '@handle' },
-                  { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/...' },
-                  { key: 'soundcloud', label: 'SoundCloud', placeholder: 'https://soundcloud.com/...' },
-                  { key: 'spotify', label: 'Spotify', placeholder: 'https://open.spotify.com/...' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label className={labelClass}>{f.label}</label>
-                    <input
-                      value={(proForm as any)[f.key] ?? ''}
-                      onChange={e => setProForm(p => ({ ...p, [f.key]: e.target.value }))}
-                      placeholder={f.placeholder}
-                      className={inputClass}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Gallery — same creator_gallery store artists use, rather than
-                  the old professionals.gallery text[] column. */}
-              <CreatorGallery profileId={profile.id} />
-
-              {saveButton(handleProSave)}
             </div>
 
             {/* Profile Preview */}
@@ -722,38 +551,38 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                 <p className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_profile_preview')}</p>
                 <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a0a14', border: '0.5px solid rgba(255,255,255,0.08)' }}>
                   <div className="relative h-24" style={{ backgroundColor: '#1a1a2e' }}>
-                    {form.cover_url && <CroppedImage src={form.cover_url} alt="Banner" crop={getCoverCrop(form)} sizes="360px" />}
+                    {profile.cover_url && <CroppedImage src={profile.cover_url} alt="Banner" crop={getCoverCrop(profile)} sizes="360px" />}
                   </div>
                   <div className="px-4 pb-4">
                     <div className="relative -mt-8 mb-3 w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '2px solid #E8A020', backgroundColor: '#1A1A2E' }}>
-                      {form.avatar_url ? (
-                        <CroppedImage src={form.avatar_url} alt={form.display_name} crop={getAvatarCrop(form)} sizes="64px" />
+                      {profile.avatar_url ? (
+                        <CroppedImage src={profile.avatar_url} alt={profile.display_name} crop={getAvatarCrop(profile)} sizes="64px" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl font-bold" style={{ color: '#E8A020' }}>
-                          {form.display_name[0]?.toUpperCase()}
+                          {profile.display_name[0]?.toUpperCase()}
                         </div>
                       )}
                     </div>
-                    <p className="font-bold text-white text-sm">{form.display_name || t('dashboard_display_name')}</p>
+                    <p className="font-bold text-white text-sm">{profile.display_name}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username}</p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {(form.network_category || proForm.category) && (
+                      {profile.network_category && (
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
-                          {form.network_category || proForm.category}
+                          {profile.network_category}
                         </span>
                       )}
-                      {form.location && (
-                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>📍 {form.location}</span>
+                      {profile.location && (
+                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>📍 {profile.location}</span>
                       )}
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{
-                        backgroundColor: proForm.availability === 'available' ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
-                        color: proForm.availability === 'available' ? '#4ade80' : 'rgba(255,255,255,0.3)',
+                        backgroundColor: profile.is_available ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)',
+                        color: profile.is_available ? '#4ade80' : 'rgba(255,255,255,0.3)',
                       }}>
-                        {proForm.availability === 'available' ? t('dashboard_available_status') : t('dashboard_busy_status')}
+                        {profile.is_available ? t('dashboard_available_status') : t('dashboard_busy_status')}
                       </span>
                     </div>
-                    {form.bio && (
-                      <p className="text-xs mt-3 leading-relaxed line-clamp-3" style={{ color: 'rgba(255,255,255,0.5)' }}>{form.bio}</p>
+                    {profile.bio && (
+                      <p className="text-xs mt-3 leading-relaxed line-clamp-3" style={{ color: 'rgba(255,255,255,0.5)' }}>{profile.bio}</p>
                     )}
                   </div>
                 </div>
