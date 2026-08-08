@@ -292,6 +292,26 @@ export default async function ProfilePage({ params }: Props) {
                 {profile.price_range}
               </span>
             )}
+            {/* Venue-only: the wizard collects capacity and a street address,
+                and this strip is the only place either belongs. */}
+            {profile.venue_capacity && (
+              <span className="text-xs px-3 py-1.5 rounded-full" style={{
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                color: 'rgba(255,255,255,0.45)',
+                border: '0.5px solid rgba(255,255,255,0.1)',
+              }}>
+                👥 {profile.venue_capacity} άτομα
+              </span>
+            )}
+            {profile.venue_address && (
+              <span className="text-xs px-3 py-1.5 rounded-full" style={{
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                color: 'rgba(255,255,255,0.45)',
+                border: '0.5px solid rgba(255,255,255,0.1)',
+              }}>
+                🏠 {[profile.venue_address, profile.venue_neighborhood].filter(Boolean).join(', ')}
+              </span>
+            )}
             {profile.genres && profile.genres.length > 0 && profile.genres.map((genre: string) => (
               <span key={genre} className="text-xs px-3 py-1.5 rounded-full" style={{
                 backgroundColor: 'rgba(232,160,32,0.08)',

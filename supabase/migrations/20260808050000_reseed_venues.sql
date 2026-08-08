@@ -1,0 +1,36 @@
+-- Record of a DESTRUCTIVE data operation run by hand on 2026-08-08. Kept here
+-- so the wipe is not invisible in the repo's history. Do NOT re-run: the seed
+-- half lived in a throwaway script (deleted) and the rows already exist.
+--
+-- Backup written first, to _backup/ (gitignored):
+--   venue-profiles-backup-2026-08-08T09-17-24-492Z.json
+--     (4 profiles + every dependent table + the 4 auth users behind them)
+--
+-- Dependents checked before deleting — all zero:
+--   creator_gallery, listings, listing_interests, follows (both columns),
+--   events, music_releases, featured_event_requests, spots (owner and claimed),
+--   spot_claims, artists, notifications (both columns), saved_events,
+--   saved_spots, upgrade_requests
+-- No event referenced any of them even by free-text events.venue.
+
+DELETE FROM profiles WHERE profile_type = 'venue';  -- 4 rows
+
+-- The 4 auth users behind them (lostvenue_athens@, skyroof_mykonos@,
+-- villa_ios@, salt_beachbar@mock.nightup.gr) were deleted via
+-- auth.admin.deleteUser — auth.users is not writable from here — so the wipe
+-- left no orphans, the same way the professionals wipe was finished off.
+--
+-- Seeded in their place, matching exactly what venueFormToPayload writes:
+--   demo.venue@nightup.gr -> @kipos_rooftop 'Kipos Rooftop', Rooftop,
+--   capacity 260, Athens / Κουκάκι / Φαλήρου 22, price_range €€, phone,
+--   booking_email, website, instagram, facebook, booking_info, bio,
+--   avatar + cover, 4 creator_gallery photos, is_verified true.
+--   Every image URL verified to return 200 image/* before insert.
+--
+-- One event hosted there was created through POST /api/events with a real
+-- signed-in venue session rather than a direct insert, which is what proves the
+-- venue permission added to that route works: 'Sunset Sessions: Rooftop
+-- Opening', 2026-08-28, full lineup / contributors / gallery / age gate / dress
+-- code. The API always inserts status 'pending', so it was approved afterwards
+-- and `genre` (singular) was set alongside — the card components read that
+-- column while the API only writes the `genres` array.
