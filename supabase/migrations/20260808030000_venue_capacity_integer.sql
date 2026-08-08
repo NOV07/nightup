@@ -1,4 +1,11 @@
--- OPTIONAL — run by hand, or skip. Nothing is blocked on it.
+-- APPLIED 2026-08-08. Do not run again.
+--
+-- Re-running it fails with:
+--   ERROR: function regexp_replace(integer, unknown, unknown, unknown) does not exist
+-- That error is proof the statement already succeeded, not a failure: the
+-- column is integer now, and regexp_replace only takes text. Nothing to fix.
+--
+-- Was OPTIONAL — the app worked either side of it.
 --
 -- The brief asked for a new `capacity integer` column on profiles, on the
 -- premise that no capacity field exists. One does: `venue_capacity`. It is
