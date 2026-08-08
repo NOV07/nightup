@@ -41,6 +41,17 @@ DELETE FROM profiles WHERE profile_type = 'professional';  -- 35 rows
 -- to Concrete Sessions Vol. 7 only — a producer does not plausibly contribute to
 -- the theatre / padel / wine-tasting events.
 --
+-- FOLLOW-UP, 2026-08-08: the DELETE above removed profiles but not the auth
+-- accounts behind them, leaving 25 auth.users rows with no profile. Those were
+-- deleted via auth.admin.deleteUser (no SQL — auth.users is not writable from
+-- here), after backing the full records up to
+--   _backup/orphaned-auth-users-backup-2026-08-08T08-51-25-513Z.json
+-- and confirming every id matched a wiped professional and had zero references
+-- in any user_id / profile_id keyed table or in storage. 25 not 35, because ten
+-- of the wiped profiles (the June 8 batch) never had an auth user at all —
+-- profiles.id has no FK to auth.users, so they were inserted profile-only.
+-- auth.users and profiles are now 17 and 17.
+--
 -- Also fixed while verifying: profiles.section_visibility's column default ships
 -- gallery=false and portfolio=false, so a freshly seeded (or freshly upgraded)
 -- professional had its gallery hidden. Set to true on both seeded rows, and
