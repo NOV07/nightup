@@ -28,6 +28,22 @@ const AMBER = "#F59E0B";
 const BG = "#09090f";
 const BORDER = "rgba(255,255,255,0.07)";
 
+/**
+ * Subcategory chips for a picked network section + category.
+ *
+ * The NETWORK branches are not the same shape: Artists and Venues map a
+ * category straight to an array of subcategories, while Professionals maps a
+ * group ("For Events") to an object of roles. This used to be a single cast to
+ * Record<string, string[]>, which meant picking a Professionals group called
+ * .map() on an object and threw. Both shapes are handled here instead.
+ */
+function netSubcategoriesOf(section: keyof typeof NETWORK, category: string): string[] {
+  const branch = (NETWORK[section] as Record<string, unknown>)[category];
+  if (Array.isArray(branch)) return branch as string[];
+  if (branch && typeof branch === "object") return Object.keys(branch);
+  return [];
+}
+
 const TYPE_LABEL: Record<SearchResult["type"], string> = {
   event: "Event",
   magazine: "Article",
@@ -599,7 +615,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
               {/* Subcategory chips */}
               {netCategory && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
-                  {((NETWORK[netSection] as Record<string, string[]>)[netCategory] ?? []).map((sub) => (
+                  {netSubcategoriesOf(netSection, netCategory).map((sub) => (
                     <button
                       key={sub}
                       onClick={() => setNetSubcategory(netSubcategory === sub ? "" : sub)}

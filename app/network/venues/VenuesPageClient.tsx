@@ -1,10 +1,14 @@
 'use client'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { NETWORK } from '@/app/lib/searchData'
 import { TAB_META, type Profile } from '@/app/lib/networkProfile'
 import CategorySectionsPage, { GOLD } from '@/components/network/CategorySectionsPage'
 
-// Venues has no subcategory taxonomy in NETWORK yet, so the single section
-// carries no chips.
+const VENUE_TYPES = Object.keys(NETWORK.Venues)
+
+// One section, now with a filter chip per venue type. CategorySectionsPage
+// hides a chip whose count is zero, so venues stored before the taxonomy
+// existed (network_category '') simply show up unchipped under "All".
 export default function VenuesPageClient({ profiles }: { profiles: Profile[] }) {
   const { t } = useLanguage()
 
@@ -21,7 +25,7 @@ export default function VenuesPageClient({ profiles }: { profiles: Profile[] }) 
           label: TAB_META.Venues.label,
           intro: t('network_gate_venues_desc'),
           accent: GOLD,
-          subcategories: [],
+          subcategories: VENUE_TYPES,
           profiles,
         },
       ]}

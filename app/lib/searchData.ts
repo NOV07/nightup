@@ -7,7 +7,18 @@ export const NETWORK = {
     "Μπάντα": [],
     "Οργανοπαίχτης": [],
   },
-  "Venues": {},
+  // Venue types for the Greek nightlife / events market. Kept deliberately
+  // short — these are the buckets someone actually filters by, not an
+  // exhaustive list of every kind of room you can rent.
+  "Venues": {
+    "Club": [],
+    "Bar / Lounge": [],
+    "Rooftop": [],
+    "Live Stage": [],
+    "Event Hall": [],
+    "Beach Club": [],
+    "Restaurant": [],
+  },
   "Professionals": {
     "For Events": {
       "Φωτογράφος / Videographer": [],
@@ -28,7 +39,10 @@ export const NETWORK = {
 export function getListingCategory(role: string | null): { group: string; subgroup?: string } | null {
   if (!role) return null
   if (Object.keys(NETWORK.Artists).includes(role)) return { group: "Artists" }
+  // "Venues" as a bare role predates the venue taxonomy and is still stored on
+  // older listings, so it stays recognised alongside the real venue types.
   if (role === "Venues") return { group: "Venues" }
+  if (Object.keys(NETWORK.Venues).includes(role)) return { group: "Venues" }
   if (Object.keys(NETWORK.Professionals["For Events"]).includes(role)) return { group: "Professionals", subgroup: "For Events" }
   if (Object.keys(NETWORK.Professionals["For Artists"]).includes(role)) return { group: "Professionals", subgroup: "For Artists" }
   return null

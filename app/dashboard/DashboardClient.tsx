@@ -703,17 +703,21 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   <div className="space-y-3">
                     <label className={labelClass}>{t('dashboard_network_listing')}</label>
                     <div className="flex items-center gap-2 flex-wrap">
+                      {/* One pill, naming the tab this account lists under. It
+                          used to read "Artists" — a copy-paste leftover from the
+                          artist block below — with a second greyed "Venues" pill
+                          beside it. */}
                       <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.12)', border: '0.5px solid rgba(232,160,32,0.3)', color: '#E8A020' }}>
-                        {t('listings_cat_artists')}
-                      </span>
-                      <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)' }}>
                         {t('listings_cat_venues')}
                       </span>
                     </div>
                     <div>
                       <label className={labelClass}>{t('dashboard_venue_type_q')}</label>
+                      {/* Reads network_category, which is what the onChange
+                          writes. Bound to network_subcategory before, so the
+                          select snapped back to the placeholder after every pick. */}
                       <select
-                        value={form.network_subcategory}
+                        value={form.network_category}
                         onChange={e => setForm(p => ({ ...p, network_tab: 'Venues', network_category: e.target.value, network_subcategory: '' }))}
                         className={inputClass}
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
