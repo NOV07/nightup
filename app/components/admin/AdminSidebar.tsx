@@ -95,8 +95,19 @@ export default function AdminSidebar() {
         ))}
       </div>
 
-      {/* Logout */}
-      <div className="p-3 border-t mt-4" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      {/* Utilities */}
+      <div className="p-3 border-t mt-4 space-y-0.5" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        {/* New tab on purpose: this is for checking a change against the live
+            site without losing your place in the panel. */}
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full text-xs px-3 py-2 rounded-lg text-left transition-opacity hover:opacity-80"
+          style={{ color: "rgba(255,255,255,0.3)" }}
+        >
+          View site ↗
+        </a>
         <button
           onClick={async () => { await adminLogout(); router.refresh(); }}
           className="w-full text-xs px-3 py-2 rounded-lg text-left transition-opacity hover:opacity-80"
