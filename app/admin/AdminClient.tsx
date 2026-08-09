@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import RichTextEditor from "../components/admin/RichTextEditor";
-import { useRouter } from "next/navigation";
+import { useAdminNav } from "../components/admin/AdminNavContext";
+import { PROFILE_TABS, PROFILE_TAB_IDS, type ProfileTab, type Tab } from "./adminTabs";
 import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
 import EventFormSteps, { type EventFormData } from "../../components/events/EventFormSteps";
 import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
@@ -31,42 +32,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
-// The profile tabs are prefixed rather than named "artists"/"venues" directly:
-// getTableForTab derives the table name from the tab id, and a bare "artists"
-// tab would resolve to the music artists table and delete the wrong row.
-type ProfileTab = "profiles-artists" | "profiles-professionals" | "profiles-venues" | "profiles-organizers";
-type Tab = "events" | "articles" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims" | ProfileTab;
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
-
-/** The four profile tabs are the same list filtered by profile_type; only the
- *  label and the secondary line differ. */
-const PROFILE_TABS: Record<ProfileTab, {
-  profileType: string;
-  label: string;
-  empty: string;
-  secondary: (p: Record<string, any>) => string;
-}> = {
-  "profiles-artists": {
-    profileType: "artist", label: "Artists", empty: "No artists yet.",
-    secondary: p => [Array.isArray(p.genres) ? p.genres.join(", ") : p.genres, p.location].filter(Boolean).join(" · "),
-  },
-  "profiles-professionals": {
-    profileType: "professional", label: "Professionals", empty: "No professionals yet.",
-    secondary: p => [p.network_category, p.network_subcategory, p.location].filter(Boolean).join(" · "),
-  },
-  "profiles-venues": {
-    profileType: "venue", label: "Venues", empty: "No venues yet.",
-    secondary: p => [
-      p.venue_capacity ? `cap. ${p.venue_capacity}` : null,
-      [p.venue_address, p.venue_neighborhood].filter(Boolean).join(", ") || null,
-    ].filter(Boolean).join(" · "),
-  },
-  "profiles-organizers": {
-    profileType: "organizer", label: "Organizers", empty: "No organizers yet.",
-    secondary: p => [p.network_category, p.location].filter(Boolean).join(" · "),
-  },
-};
-const PROFILE_TAB_IDS = Object.keys(PROFILE_TABS) as ProfileTab[];
 type QueueFilter = "all" | "events" | "releases" | "spots" | "articles";
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 
@@ -200,11 +166,11 @@ const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_
 const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
 
 export default function AdminClient() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>("queue");
+  // Tab state lives in the shell so the sidebar can drive it from the magazine
+  // routes, which render inside the same layout.
+  const { activeTab, publishCounts } = useAdminNav();
   const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("releases");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [allContent, setAllContent] = useState<AllContent>({
     events:[], articles:[],
     releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[],
@@ -297,6 +263,21 @@ export default function AdminClient() {
     "spot-claims": pendingSpotClaims,
     users: 0,
   };
+
+  // Hand the sidebar badges the numbers derived from the rows already loaded
+  // here, so they stay in step with every approve/delete without a second fetch.
+  useEffect(() => {
+    publishCounts({ totalPending, pendingUpgrades, publishedToday, byTab: pendingByTab });
+    // allContent is the only input; the values above are derived from it.
+  }, [allContent, publishCounts]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Switching tabs from the shell chrome must drop any half-filled add form,
+  // the same way the in-panel nav used to.
+  useEffect(() => {
+    setShowAddForm(false);
+    setAddError("");
+    setAddSuccess("");
+  }, [activeTab]);
 
   // ── Queue helpers ───────────────────────────────────────────────────────────
   function getQueueItems(): QueueItem[] {
@@ -720,37 +701,6 @@ export default function AdminClient() {
   const inputStyle = { backgroundColor: "#0F0F1A", color: "#fff", border: "1px solid #444" };
   const labelCls   = "block text-xs text-gray-400 mb-1";
 
-  // ── Nav helpers ───────────────────────────────────────────────────────────
-  async function doLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    document.cookie = "admin_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.refresh();
-  }
-
-  function SidebarNavItem({ label, tab, badge, onClick }: { label: string; tab?: Tab; badge?: number; onClick?: () => void }) {
-    const active = tab ? activeTab === tab : false;
-    return (
-      <button
-        onClick={() => {
-          if (onClick) { onClick(); return; }
-          if (tab) { setActiveTab(tab); setShowAddForm(false); setAddError(""); setAddSuccess(""); }
-        }}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all text-left"
-        style={{
-          backgroundColor: active ? "rgba(232,160,32,0.12)" : "transparent",
-          color: active ? "#E8A020" : "rgba(255,255,255,0.5)",
-        }}
-      >
-        <span>{label}</span>
-        {!!badge && badge > 0 && (
-          <span className="text-xs px-1.5 py-0.5 rounded-full font-bold leading-none" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>
-            {badge}
-          </span>
-        )}
-      </button>
-    );
-  }
-
   // ── Queue row ─────────────────────────────────────────────────────────────
   const TYPE_LABELS: Record<string, string> = {
     event:"Event", release:"Release", mix:"Mix", artist:"Artist",
@@ -985,87 +935,10 @@ export default function AdminClient() {
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ backgroundColor:"#0F0F1A", color:"#fff", minHeight:"100vh" }}>
-      <div className="flex md:h-screen md:overflow-hidden">
-
-        {/* ── SIDEBAR (desktop) ─────────────────────────────────────────── */}
-        <aside
-          className="hidden md:flex flex-col flex-shrink-0 overflow-y-auto"
-          style={{ width:220, backgroundColor:"#0A0A12", borderRight:"1px solid rgba(255,255,255,0.07)" }}
-        >
-          {/* Logo */}
-          <div className="px-5 pt-6 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="font-bold tracking-widest text-sm" style={{ letterSpacing:"0.18em" }}>NIGHTUP</span>
-              <span className="text-xs px-1.5 py-0.5 rounded font-mono font-bold" style={{ backgroundColor:"rgba(232,160,32,0.15)", color:"#E8A020", border:"1px solid rgba(232,160,32,0.25)" }}>Admin</span>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="mx-3 mb-4 p-3 rounded-xl space-y-2" style={{ backgroundColor:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
-            {[
-              { label:"Pending approval", value:totalPending,    color: totalPending > 0 ? "#E8A020" : "#555" },
-              { label:"Upgrade requests", value:pendingUpgrades, color: pendingUpgrades > 0 ? "#F87171" : "#555" },
-              { label:"Published today",  value:publishedToday,  color: publishedToday > 0 ? "#34D399" : "#555" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="flex items-center justify-between">
-                <span style={{ fontSize:10, fontFamily:"monospace", color:"rgba(255,255,255,0.35)", letterSpacing:"0.06em" }}>{label}</span>
-                <span className="font-bold text-xs" style={{ color }}>{value}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Nav */}
-          <div className="px-3 flex-1">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>Moderation</p>
-            <SidebarNavItem label="Queue"    tab="queue"    badge={pendingByTab.queue} />
-            <SidebarNavItem label="Upgrades" tab="upgrades" badge={pendingByTab.upgrades} />
-            <SidebarNavItem label="Featured" tab="featured" badge={pendingByTab.featured} />
-            <SidebarNavItem label="Spot Claims" tab="spot-claims" badge={pendingByTab["spot-claims"]} />
-            <SidebarNavItem label="Users"    tab="users" />
-
-            <p className="text-xs font-bold uppercase tracking-widest mt-5 mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>Content</p>
-            <SidebarNavItem label="Events"     tab="events"        badge={pendingByTab.events} />
-            <SidebarNavItem label="Nightwaves" tab="music"         badge={pendingByTab.music} />
-            <SidebarNavItem label="Spots"      tab="spots"         badge={pendingByTab.spots} />
-            <SidebarNavItem label="Magazine"   onClick={() => router.push("/admin/magazine")} />
-
-            <p className="text-xs font-bold uppercase tracking-widest mt-5 mb-2 pl-1" style={{ color:"rgba(255,255,255,0.2)", letterSpacing:"0.18em", fontSize:9 }}>People</p>
-            {PROFILE_TAB_IDS.map(id => (
-              <SidebarNavItem key={id} label={PROFILE_TABS[id].label} tab={id} />
-            ))}
-          </div>
-
-          {/* Logout */}
-          <div className="p-3 border-t mt-4" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
-            <button
-              onClick={doLogout}
-              className="w-full text-xs px-3 py-2 rounded-lg text-left transition-opacity hover:opacity-80"
-              style={{ backgroundColor:"transparent", color:"rgba(255,255,255,0.3)" }}
-            >
-              Sign out
-            </button>
-          </div>
-        </aside>
-
-        {/* ── MAIN ─────────────────────────────────────────────────────── */}
-        <main className="flex-1 md:h-screen md:overflow-y-auto">
-
-          {/* Mobile header */}
-          <div className="md:hidden flex items-center justify-between px-4 py-3 border-b" style={{ borderColor:"rgba(255,255,255,0.07)", backgroundColor:"#0A0A12" }}>
-            <div className="flex items-center gap-2">
-              <span className="font-bold tracking-widest text-sm" style={{ letterSpacing:"0.14em" }}>NIGHTUP</span>
-              <span className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ backgroundColor:"rgba(232,160,32,0.15)", color:"#E8A020" }}>Admin</span>
-            </div>
-            {totalPending > 0 && (
-              <span className="text-xs px-2 py-1 rounded-full font-bold" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>
-                {totalPending} pending
-              </span>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="px-4 md:px-6 py-6 max-w-5xl" style={{ paddingBottom: "7rem" }}>
+    <>
+      {/* The sidebar, mobile header and mobile nav come from the shared
+          /admin shell layout — this renders the panel's content area only. */}
+      <div className="px-4 md:px-6 py-6 max-w-5xl" style={{ paddingBottom: "7rem" }}>
 
             {loadError && (
               <div className="mb-5 p-3 rounded-xl text-xs" style={{ backgroundColor:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.3)", color:"#fca5a5" }}>
@@ -1622,90 +1495,7 @@ export default function AdminClient() {
               </>
             )}
 
-          </div>
-        </main>
       </div>
-
-      {/* ── MOBILE BOTTOM NAV ─────────────────────────────────────────────── */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t"
-        style={{ backgroundColor:"#0A0A12", borderColor:"rgba(255,255,255,0.07)", paddingBottom:"env(safe-area-inset-bottom)" }}
-      >
-        {([
-          { tab:"queue" as Tab,         label:"Queue",   icon:"⏳", badge: totalPending },
-          { tab:"events" as Tab,        label:"Events",  icon:"📅", badge: 0 },
-          { tab:"music" as Tab,         label:"Waves",   icon:"🎵", badge: pendingByTab.music },
-          { tab:"users" as Tab,         label:"Users",   icon:"👤", badge: 0 },
-        ]).map(({ tab, label, icon, badge }) => (
-          <button
-            key={tab}
-            onClick={() => { setActiveTab(tab); setShowAddForm(false); setMobileDrawerOpen(false); }}
-            className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 relative transition-opacity"
-            style={{ color: activeTab === tab ? "#E8A020" : "rgba(255,255,255,0.35)" }}
-          >
-            <span style={{ fontSize:18 }}>{icon}</span>
-            <span style={{ fontSize:9, fontFamily:"monospace", letterSpacing:"0.06em" }}>{label}</span>
-            {!!badge && badge > 0 && (
-              <span className="absolute top-2 right-1/4 text-xs px-1 rounded-full font-bold leading-none" style={{ backgroundColor:"#E8A020", color:"#0F0F1A", fontSize:8, padding:"2px 4px" }}>{badge}</span>
-            )}
-          </button>
-        ))}
-        <button
-          onClick={() => setMobileDrawerOpen(true)}
-          className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 transition-opacity"
-          style={{ color:"rgba(255,255,255,0.35)" }}
-        >
-          <span style={{ fontSize:18 }}>···</span>
-          <span style={{ fontSize:9, fontFamily:"monospace", letterSpacing:"0.06em" }}>More</span>
-        </button>
-      </nav>
-
-      {/* ── MOBILE DRAWER ─────────────────────────────────────────────────── */}
-      {mobileDrawerOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-50 flex flex-col justify-end"
-          style={{ backgroundColor:"rgba(0,0,0,0.7)" }}
-          onClick={() => setMobileDrawerOpen(false)}
-        >
-          <div
-            className="rounded-t-2xl p-5 space-y-1"
-            style={{ backgroundColor:"#0F0F1A", border:"1px solid rgba(255,255,255,0.08)" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="w-8 h-1 rounded-full mx-auto mb-4" style={{ backgroundColor:"rgba(255,255,255,0.15)" }} />
-            {([
-              { tab:"spots"    as Tab, label:"Spots",    badge: pendingByTab.spots },
-              { tab:"users"    as Tab, label:"Users",    badge: 0 },
-              { tab:"upgrades" as Tab, label:"Upgrades", badge: pendingByTab.upgrades },
-              { tab:"featured" as Tab, label:"Featured", badge: pendingByTab.featured },
-              { tab:"spot-claims" as Tab, label:"Spot Claims", badge: pendingByTab["spot-claims"] },
-              ...PROFILE_TAB_IDS.map(id => ({ tab: id as Tab, label: PROFILE_TABS[id].label, badge: 0 })),
-            ]).map(({ tab, label, badge }) => (
-              <button
-                key={tab}
-                onClick={() => { setActiveTab(tab); setShowAddForm(false); setMobileDrawerOpen(false); }}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm text-left transition-opacity"
-                style={{ backgroundColor:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.7)" }}
-              >
-                <span>{label}</span>
-                {!!badge && badge > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>{badge}</span>}
-              </button>
-            ))}
-            <button
-              onClick={() => { router.push("/admin/magazine"); setMobileDrawerOpen(false); }}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm text-left"
-              style={{ backgroundColor:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.7)" }}
-            >Magazine</button>
-            <div className="pt-2 border-t" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
-              <button
-                onClick={doLogout}
-                className="w-full px-4 py-3 rounded-xl text-sm text-left"
-                style={{ color:"rgba(248,113,113,0.7)" }}
-              >Sign out</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── DELETE CONFIRM ────────────────────────────────────────────────── */}
       {confirmDelete && (
@@ -1842,7 +1632,7 @@ export default function AdminClient() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

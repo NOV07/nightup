@@ -66,7 +66,8 @@ export default function MagazineAdminPage() {
   }
 
   return (
-    <div style={{ padding: '40px 48px', maxWidth: 1200, margin: '0 auto' }}>
+    // pb-32 clears the shell's fixed mobile bottom nav.
+    <div className="px-4 md:px-12 pt-8 md:pt-10 pb-32" style={{ maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#E8A020', marginBottom: 6 }}>

@@ -175,12 +175,8 @@ function EditorInner() {
       .catch(console.error)
   }, [articleId])
 
-  // hide site nav
-  useEffect(() => {
-    const nav = document.querySelector('header') as HTMLElement | null
-    if (nav) nav.style.display = 'none'
-    return () => { if (nav) nav.style.display = '' }
-  }, [])
+  // The public navbar used to be hidden from here by hand. /admin no longer
+  // renders it at all (see LayoutShell's STANDALONE_ROUTES), so nothing to do.
 
   // ── Save helper ───────────────────────────────────────────
   const save = useCallback(async (articleStatus: 'draft' | 'published') => {
@@ -280,7 +276,9 @@ function EditorInner() {
   const statusColor = { idle: 'transparent', saving: '#5B9CF6', saved: '#34D399', error: '#F87171' }[status]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', position: 'fixed', inset: 0, zIndex: 9999, background: '#0F0F1A' }}>
+    // Flows inside the shared /admin shell rather than covering it, so the
+    // admin sidebar stays visible while writing. pb clears the mobile nav.
+    <div className="pb-20 md:pb-0" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#0F0F1A' }}>
 
       {/* ── Status bar ── */}
       <div style={{ height: 2, background: statusColor, transition: 'background .3s', flexShrink: 0 }} />

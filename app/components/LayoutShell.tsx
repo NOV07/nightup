@@ -40,8 +40,10 @@ function mapSpot(s: any): Spot {
   };
 }
 
-// Routes that render full-screen with no nav/footer/players
-const STANDALONE_ROUTES = ["/coming-soon"];
+// Routes that render full-screen with no nav/footer/players.
+// /admin brings its own chrome (sidebar + mobile nav) from app/admin/layout.tsx,
+// and the public navbar/footer/players have no business inside it.
+const STANDALONE_ROUTES = ["/coming-soon", "/admin"];
 
 // Routes that provide their own bottom FAB and hide the global TonightFAB
 const HIDE_TONIGHT_FAB_ROUTES = ["/events"];
