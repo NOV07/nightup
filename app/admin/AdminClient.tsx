@@ -34,6 +34,26 @@ const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Lati
 
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
 type QueueFilter = "all" | "events" | "releases" | "spots" | "articles";
+
+/** PostgREST embeds that /api/admin/pending attaches for the submitter line.
+ *  They are not columns, so they must be dropped from any update payload —
+ *  EditForm seeds its state from the whole row and posts it back verbatim. */
+const EMBED_KEYS = ["profiles", "owner"];
+
+/** Same problem, different cause. `status` is derived by /api/admin/pending
+ *  because spots gate on is_published while the panel keys off status
+ *  everywhere; `geo` is a generated column Postgres only accepts as DEFAULT.
+ *  Both arrive on the row from select('*') and both 500 the save if echoed
+ *  back — which is why editing a spot never saved. */
+const DERIVED_KEYS: Record<string, string[]> = { spots: ["status", "geo"] };
+
+/** The account a row was submitted from, or null for editorial content, which
+ *  the callers render as the "★ Nightup Editorial" badge instead. */
+function submitterLabel(item: Record<string, any>): string | null {
+  const p = item.profiles ?? item.owner ?? null;
+  if (!p) return null;
+  return p.display_name || (p.username ? `@${p.username}` : null);
+}
 type ItemStatus = "pending" | "approved" | "hidden" | "rejected";
 
 interface ContentItem {
@@ -450,10 +470,15 @@ export default function AdminClient() {
   async function handleEditSave(table: string, id: string, data: Record<string, unknown>) {
     setEditLoading(true);
     setEditError("");
+    // EditForm posts back the row it was seeded with. Anything on that row that
+    // is not a real column — joined embeds, derived fields — has to come off
+    // first or the update fails on the unknown key.
+    const columnsOnly = { ...data };
+    [...EMBED_KEYS, ...(DERIVED_KEYS[table] ?? [])].forEach(k => delete columnsOnly[k]);
     const res = await fetch("/api/admin/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table, id, data: table === "music_releases" ? toReleasePayload(data) : data }),
+      body: JSON.stringify({ table, id, data: table === "music_releases" ? toReleasePayload(columnsOnly) : columnsOnly }),
     });
     setEditLoading(false);
     if (!res.ok) {
@@ -759,6 +784,10 @@ export default function AdminClient() {
           </div>
           <p className="font-medium text-sm truncate text-white">{title}</p>
           {meta && <p className="text-xs truncate" style={{ color:"#666" }}>{meta}</p>}
+          {/* Moderating a submission means knowing who sent it, not just what. */}
+          {submitterLabel(item) && (
+            <p className="text-xs truncate" style={{ color:"rgba(255,255,255,0.3)" }}>by {submitterLabel(item)}</p>
+          )}
           {item.profile_id === null && (
             <span className="text-xs font-mono" style={{ color:"#E8A020" }}>★ Nightup Editorial</span>
           )}
@@ -823,6 +852,9 @@ export default function AdminClient() {
         <div className="min-w-0 flex-1">
           <p className="font-medium text-sm truncate">{primary || "—"}</p>
           {secondary && <p className="text-xs text-gray-500 mt-0.5 truncate">{secondary}</p>}
+          {submitterLabel(item) && (
+            <p className="text-xs truncate mt-0.5" style={{ color:"rgba(255,255,255,0.3)" }}>by {submitterLabel(item)}</p>
+          )}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {item.profile_id === null && (
               <span className="text-xs font-mono" style={{ color:"#E8A020" }}>★ Nightup Editorial</span>
@@ -1766,7 +1798,7 @@ export default function AdminClient() {
               <img src={String(previewItem.image_url || previewItem.cover_image || previewItem.photo || previewItem.avatar || "")} alt="preview" className="w-full rounded-lg object-cover" style={{ maxHeight:200 }} />
             ) : null}
             <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-              {Object.entries(previewItem).filter(([k]) => !["id","created_at","updated_at","photos","gallery","_type","_tab","_subtab"].includes(k)).map(([k, v]) => (
+              {Object.entries(previewItem).filter(([k]) => !["id","created_at","updated_at","photos","gallery","_type","_tab","_subtab", ...EMBED_KEYS].includes(k)).map(([k, v]) => (
                 <div key={k} className={String(v).length > 60 ? "col-span-2" : ""}>
                   <p className="text-xs text-gray-500 mb-0.5 capitalize">{k.replace(/_/g," ")}</p>
                   <p className="text-sm text-white break-words">{Array.isArray(v) ? v.join(", ") : String(v ?? "—")}</p>

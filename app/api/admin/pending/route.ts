@@ -13,20 +13,27 @@ export async function GET(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
+  // Who submitted a row, so the moderation queue can show an account and not
+  // just content. Only these tables carry an owning profile: articles, mixes
+  // and playlists have no such column, and spots reference profiles twice
+  // (owner_id + claimed_by_profile_id) so the embed needs the column hint or
+  // PostgREST refuses it as ambiguous.
+  const SUBMITTER = 'profiles(username, display_name)'
+
   const [events, articles, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, spotClaims, listings] = await Promise.all([
     // select('*') so the unified admin event form edits a complete row —
     // anything it does not receive would be written back empty on save.
-    admin.from('events').select('*').order('created_at', { ascending: false }),
+    admin.from('events').select(`*, ${SUBMITTER}`).order('created_at', { ascending: false }),
     admin.from('articles').select('id, title, category, published_at, excerpt, content, hero_image, read_time, series, series_order, slug, word_count, updated_at, tags, status, created_at').order('created_at', { ascending: false }),
     // primary_genre, not genre — the genre column was dropped in the release
     // refactor and selecting it 400s the whole query.
-    admin.from('music_releases').select('id, title, artist, type, primary_genre, cover_image, spotify_url, soundcloud_url, description, is_promoted, status, created_at').order('created_at', { ascending: false }),
+    admin.from('music_releases').select(`id, title, artist, type, primary_genre, cover_image, spotify_url, soundcloud_url, description, is_promoted, status, created_at, ${SUBMITTER}`).order('created_at', { ascending: false }),
     admin.from('mixes').select('id, title, artist, genre, cover_image, soundcloud_url, duration, status, created_at').order('created_at', { ascending: false }),
     admin.from('playlists').select('id, title, platform, embed_url, cover_image, is_sponsored, status, created_at').order('created_at', { ascending: false }),
-    admin.from('artists').select('id, name, origin, about, photo, genres, style_tags, spotify_url, soundcloud_url, instagram, website, status, created_at').order('created_at', { ascending: false }),
+    admin.from('artists').select(`id, name, origin, about, photo, genres, style_tags, spotify_url, soundcloud_url, instagram, website, status, created_at, ${SUBMITTER}`).order('created_at', { ascending: false }),
     admin.from('profiles').select('id, username, display_name, profile_type, avatar_url, is_verified, is_featured, plan_tier, network_tab, network_category, network_subcategory, professional_status, genres, venue_capacity, venue_address, venue_neighborhood, location, created_at').order('created_at', { ascending: false }),
     admin.from('upgrade_requests').select('id, user_id, username, email, specialty, requested_type, bio, status, created_at').order('created_at', { ascending: false }),
-    admin.from('spots').select('*').order('created_at', { ascending: false }),
+    admin.from('spots').select('*, owner:profiles!owner_id(username, display_name)').order('created_at', { ascending: false }),
     admin.from('featured_event_requests').select('id, event_id, profile_id, status, created_at, events(title, date, venue)').order('created_at', { ascending: false }),
     admin.from('spot_claims').select('id, spot_id, profile_id, note, status, created_at, spots(name, slug, city)').order('created_at', { ascending: false }),
     // No is_active filter: the public board only serves active rows, so the
