@@ -6,7 +6,7 @@
 // getTableForTab derives the table name from the tab id, and a bare "artists"
 // tab would resolve to the music artists table and delete the wrong row.
 export type ProfileTab = "profiles-artists" | "profiles-professionals" | "profiles-venues" | "profiles-organizers";
-export type Tab = "events" | "articles" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims" | ProfileTab;
+export type Tab = "events" | "articles" | "music" | "users" | "upgrades" | "featured" | "queue" | "spots" | "spot-claims" | "listings" | ProfileTab;
 
 /** The four profile tabs are the same list filtered by profile_type; only the
  *  label and the secondary line differ. */
@@ -41,7 +41,7 @@ export const PROFILE_TAB_IDS = Object.keys(PROFILE_TABS) as ProfileTab[];
 
 const TAB_IDS: Tab[] = [
   "queue", "upgrades", "featured", "spot-claims", "users",
-  "events", "music", "spots", "articles",
+  "events", "music", "spots", "listings", "articles",
   ...PROFILE_TAB_IDS,
 ];
 

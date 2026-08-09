@@ -6,7 +6,7 @@ function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
 }
 
-const VALID_TABLES = ['events', 'articles', 'music_releases', 'mixes', 'playlists', 'artists', 'spots', 'profiles']
+const VALID_TABLES = ['events', 'articles', 'music_releases', 'mixes', 'playlists', 'artists', 'spots', 'profiles', 'listings']
 
 // Content a profile owns. A normal delete is refused while any of these still
 // point at it — the operator reassigns or removes the content first. The

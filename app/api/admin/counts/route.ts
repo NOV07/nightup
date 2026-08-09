@@ -87,7 +87,9 @@ export async function GET(req: NextRequest) {
       upgrades: pendingUpgrades,
       featured: pendingFeatured,
       'spot-claims': pendingSpotClaims,
+      // Neither tab has a pending state to surface.
       users: 0,
+      listings: 0,
     },
   })
 }

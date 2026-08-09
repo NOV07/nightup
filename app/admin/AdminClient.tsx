@@ -62,6 +62,9 @@ interface AllContent {
   spots: ContentItem[];
   featured_requests: any[];
   spot_claims: any[];
+  // No `status` column — is_active / is_sponsored booleans are all listings has,
+  // so they never enter the pending queue or the status-driven sections.
+  listings: any[];
 }
 
 // Admin-context fields that live outside the shared EventFormSteps form.
@@ -173,7 +176,7 @@ export default function AdminClient() {
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [allContent, setAllContent] = useState<AllContent>({
     events:[], articles:[],
-    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[],
+    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[], listings:[],
   });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -421,6 +424,27 @@ export default function AdminClient() {
       body: JSON.stringify({ table: "spots", id, data: { featured: !current } }),
     });
     setAllContent(prev => ({ ...prev, spots: prev.spots.map(s => s.id === id ? { ...s, featured: !current } : s) }));
+  }
+
+  /** Listings have two independent flags rather than a status: is_active gates
+   *  whether /network/listings serves the row at all, is_sponsored floats it to
+   *  the top of that board. Both write straight through /api/admin/update. */
+  async function handleToggleListingFlag(id: string, field: "is_active" | "is_sponsored", current: boolean) {
+    setActionId(id);
+    await fetch("/api/admin/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        table: "listings",
+        id,
+        data: { [field]: !current, updated_at: new Date().toISOString() },
+      }),
+    });
+    setActionId(null);
+    setAllContent(prev => ({
+      ...prev,
+      listings: prev.listings.map(l => l.id === id ? { ...l, [field]: !current } : l),
+    }));
   }
 
   async function handleEditSave(table: string, id: string, data: Record<string, unknown>) {
@@ -862,6 +886,106 @@ export default function AdminClient() {
     );
   }
 
+  // ── Listing row ───────────────────────────────────────────────────────────
+  function renderListingRow(listing: any) {
+    const id     = String(listing.id);
+    const busy   = actionId === id;
+    const active = listing.is_active !== false;
+    const poster = listing.profiles ?? null;
+    const meta   = [
+      listing.role,
+      listing.city,
+      listing.date_needed
+        ? new Date(String(listing.date_needed)).toLocaleDateString("el-GR", { day:"numeric", month:"short", year:"numeric" })
+        : null,
+    ].filter(Boolean).join(" · ");
+
+    return (
+      <div
+        key={id}
+        className="p-3 rounded-xl"
+        style={{
+          backgroundColor:"#111120",
+          border:`1px solid ${listing.is_sponsored ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
+          opacity: active ? 1 : 0.55,
+        }}
+      >
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              {/* seeking / offering is the one axis the schema constrains */}
+              <span
+                className="text-xs px-1.5 py-0.5 rounded-full font-bold capitalize leading-none"
+                style={listing.type === "seeking"
+                  ? { backgroundColor:"rgba(91,156,246,0.15)", color:"#5B9CF6" }
+                  : { backgroundColor:"rgba(52,211,153,0.15)", color:"#34D399" }}
+              >{listing.type ?? "—"}</span>
+              {listing.is_sponsored && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full font-bold leading-none" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>★ Sponsored</span>
+              )}
+              {!active && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full leading-none" style={{ backgroundColor:"#2A2A3E", color:"#888" }}>Inactive</span>
+              )}
+            </div>
+            <p className="font-medium text-sm truncate">{listing.title || "—"}</p>
+            {meta && <p className="text-xs text-gray-500 mt-0.5 truncate">{meta}</p>}
+            {listing.description && (
+              <p className="text-xs mt-1 line-clamp-2" style={{ color:"rgba(255,255,255,0.35)" }}>{listing.description}</p>
+            )}
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {poster?.avatar_url && <img src={poster.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover flex-shrink-0" />}
+              <p className="text-xs truncate" style={{ color:"rgba(255,255,255,0.3)" }}>
+                {poster ? `${poster.display_name || poster.username || "—"}${poster.username ? ` · @${poster.username}` : ""}` : "Unknown poster"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => handleToggleListingFlag(id, "is_sponsored", !!listing.is_sponsored)}
+              disabled={busy}
+              title={listing.is_sponsored ? "Remove sponsored" : "Mark sponsored"}
+              className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
+              style={{ backgroundColor: listing.is_sponsored ? "#E8A020" : "#2A2A3E", color: listing.is_sponsored ? "#0F0F1A" : "#666" }}
+            >★</button>
+            <button
+              onClick={() => handleToggleListingFlag(id, "is_active", active)}
+              disabled={busy}
+              className="text-xs px-2 py-1.5 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-40"
+              style={active
+                ? { backgroundColor:"rgba(52,211,153,0.12)", color:"#34D399", border:"1px solid rgba(52,211,153,0.3)" }
+                : { backgroundColor:"#1a1a2e", color:"#666", border:"1px solid #333" }}
+            >{active ? "Deactivate" : "Activate"}</button>
+            <button
+              onClick={() => { closeConfirmDelete(); setConfirmDelete({ id, tab: "listings" }); }}
+              disabled={busy}
+              title="Delete"
+              className="px-2 py-1.5 rounded-lg text-sm leading-none disabled:opacity-40"
+              style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
+            >🗑️</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderListingSection(title: string, rows: any[], badgeBg: string, emptyMsg: string) {
+    return (
+      <div className="mb-7">
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color:"#666" }}>{title}</h2>
+          {rows.length > 0 && (
+            <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ backgroundColor:badgeBg, color:"#fff" }}>{rows.length}</span>
+          )}
+        </div>
+        {rows.length === 0
+          ? <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>{emptyMsg}</p>
+          : <div className="space-y-2">{rows.map(l => renderListingRow(l))}</div>
+        }
+      </div>
+    );
+  }
+
   // ── Add form label for header ─────────────────────────────────────────────
   function addFormLabel() {
     if (activeTab === "music") return musicSubTab.slice(0, -1);
@@ -1126,6 +1250,37 @@ export default function AdminClient() {
               );
             })}
 
+            {/* ── LISTINGS tab ──────────────────────────────────────────── */}
+            {activeTab === "listings" && (() => {
+              const rows = allContent.listings ?? [];
+              // is_active defaults to true in the schema, so only an explicit
+              // false counts as disabled.
+              const active   = rows.filter((l: any) => l.is_active !== false);
+              const inactive = rows.filter((l: any) => l.is_active === false);
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <h1 className="text-base font-bold">Listings</h1>
+                    <a
+                      href="/network/listings"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+                      style={{ backgroundColor:"#1E2A3A", color:"#E8A020", border:"1px solid rgba(232,160,32,0.35)" }}
+                    >Public board ↗</a>
+                  </div>
+                  {loading ? (
+                    <p className="text-sm" style={{ color:"#555" }}>Loading…</p>
+                  ) : (
+                    <>
+                      {renderListingSection("Active", active, "#16a34a", "No active listings.")}
+                      {renderListingSection("Inactive", inactive, "#444", "Nothing deactivated.")}
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* ── UPGRADES tab ──────────────────────────────────────────── */}
             {activeTab === "upgrades" && (
               <div className="space-y-4">
@@ -1233,7 +1388,10 @@ export default function AdminClient() {
             )}
 
             {/* ── CONTENT tabs (events, articles, music, spots) ── */}
-            {!["queue","users","upgrades","featured","spot-claims", ...PROFILE_TAB_IDS].includes(activeTab) && (
+            {/* Listings sit out of this block: it renders Pending/Published/Hidden
+                off a `status` column they do not have, plus an Add form for
+                content the admin authors — listings are posted by creators. */}
+            {!["queue","users","upgrades","featured","spot-claims","listings", ...PROFILE_TAB_IDS].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
                 {activeTab === "music" && (

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  const [events, articles, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, spotClaims] = await Promise.all([
+  const [events, articles, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, spotClaims, listings] = await Promise.all([
     // select('*') so the unified admin event form edits a complete row —
     // anything it does not receive would be written back empty on save.
     admin.from('events').select('*').order('created_at', { ascending: false }),
@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
     admin.from('spots').select('*').order('created_at', { ascending: false }),
     admin.from('featured_event_requests').select('id, event_id, profile_id, status, created_at, events(title, date, venue)').order('created_at', { ascending: false }),
     admin.from('spot_claims').select('id, spot_id, profile_id, note, status, created_at, spots(name, slug, city)').order('created_at', { ascending: false }),
+    // No is_active filter: the public board only serves active rows, so the
+    // panel is the only place an operator can see or revive a disabled one.
+    admin.from('listings').select('*, profiles(display_name, username, avatar_url)').order('created_at', { ascending: false }),
   ])
 
   // A failed query returns data: null, which `?? []` renders as an empty tab —
@@ -38,7 +41,7 @@ export async function GET(req: NextRequest) {
   const errors = Object.entries({
     events, articles, releases, mixes, playlists, artists,
     profiles, upgrade_requests: upgradeRequests, spots,
-    featured_requests: featuredRequests, spot_claims: spotClaims,
+    featured_requests: featuredRequests, spot_claims: spotClaims, listings,
   }).reduce<Record<string, string>>((acc, [key, res]) => {
     if (res.error) acc[key] = res.error.message
     return acc
@@ -63,6 +66,7 @@ export async function GET(req: NextRequest) {
     spots: (spots.data ?? []).map(s => ({ ...s, status: s.is_published ? 'approved' : 'pending' })),
     featured_requests: featuredRequests.data ?? [],
     spot_claims: spotClaims.data ?? [],
+    listings: listings.data ?? [],
     errors,
   })
 }
