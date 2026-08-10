@@ -754,6 +754,65 @@ export default function AdminClient() {
   const inputStyle = { backgroundColor: "#0F0F1A", color: "#fff", border: "1px solid #444" };
   const labelCls   = "block text-xs text-gray-400 mb-1";
 
+  // ── Mobile overflow menu ──────────────────────────────────────────────────
+  /** One entry of a row's "⋯" menu. `href` turns it into a link instead of a
+   *  button — the profile rows need that for "View profile". */
+  type RowMenuAction = {
+    key: string; icon: string; label: string;
+    onClick?: () => void; href?: string;
+    bg?: string; fg: string;
+  };
+
+  /** The "⋯" button plus its dropdown, rendered only under `sm`. Every row type
+   *  that has more actions than fit a phone width folds the extras in here.
+   *  `menuKey` must be unique across row types, hence the prefixes at the call
+   *  sites — a profile id and an event id could otherwise collide. */
+  function renderRowMenu(menuKey: string, actions: RowMenuAction[]) {
+    const open = openMenuId === menuKey;
+    return (
+      <div className="relative flex sm:hidden flex-shrink-0">
+        <button
+          onClick={() => setOpenMenuId(open ? null : menuKey)}
+          title="More actions"
+          aria-label="More actions"
+          aria-expanded={open}
+          className="px-3 py-1.5 rounded-lg text-sm leading-none"
+          style={{ backgroundColor:"#1E2A3A", color:"#aaa", border:"1px solid #444" }}
+        >⋯</button>
+        {open && (
+          <>
+            {/* Click-outside catcher, below the menu in the stack. */}
+            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+            <div
+              className="absolute right-0 top-full mt-1 z-50 rounded-xl overflow-hidden"
+              style={{ minWidth:200, backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.25)", boxShadow:"0 12px 32px rgba(0,0,0,0.6)" }}
+            >
+              {actions.map(a => {
+                const cls = "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left";
+                const st  = { backgroundColor: a.bg ?? "transparent", color: a.fg, borderBottom:"1px solid rgba(232,160,32,0.08)" };
+                const body = (
+                  <>
+                    <span className="w-5 text-center leading-none">{a.icon}</span>
+                    <span>{a.label}</span>
+                  </>
+                );
+                // Closing on select is part of the contract, so it is handled
+                // here rather than at each call site.
+                return a.href ? (
+                  <a key={a.key} href={a.href} target="_blank" rel="noopener noreferrer"
+                    onClick={() => setOpenMenuId(null)} className={cls} style={st}>{body}</a>
+                ) : (
+                  <button key={a.key} onClick={() => { setOpenMenuId(null); a.onClick?.(); }}
+                    className={cls} style={st}>{body}</button>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   // ── Queue row ─────────────────────────────────────────────────────────────
   const TYPE_LABELS: Record<string, string> = {
     event:"Event", release:"Release", mix:"Mix", artist:"Artist",
@@ -861,21 +920,23 @@ export default function AdminClient() {
     function openEdit()    { setEditItem(item); setEditError(""); setPreviewTab(tab); setEditSubtab(subtab); }
     function openPreview() { setPreviewItem(item); setPreviewTab(tab); }
 
-    /** One line of the mobile overflow menu. Closing on select is part of the
-     *  contract, so it is done here rather than at each call site. */
-    function menuItem(key: string, icon: string, label: string, onClick: () => void, colors: { bg?: string; fg: string }) {
-      return (
-        <button
-          key={key}
-          onClick={() => { setOpenMenuId(null); onClick(); }}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left"
-          style={{ backgroundColor: colors.bg ?? "transparent", color: colors.fg, borderBottom:"1px solid rgba(232,160,32,0.08)" }}
-        >
-          <span className="w-5 text-center leading-none">{icon}</span>
-          <span>{label}</span>
-        </button>
-      );
-    }
+    const menuActions: RowMenuAction[] = [
+      ...(showNightupPick ? [{ key:"pick", icon:"⭐", label:(item as any).nightup_pick ? "Remove Nightup Pick" : "Nightup Pick",
+        onClick: () => handleToggleNightupPick(id, !!(item as any).nightup_pick),
+        fg: (item as any).nightup_pick ? "#E8A020" : "rgba(255,255,255,0.55)" }] : []),
+      ...(showRadarPick ? [{ key:"radar", icon:"📡", label:(item as any).is_radar_pick ? "Remove Radar Pick" : "Radar Pick",
+        onClick: () => handleToggleRadarPick(id, !!(item as any).is_radar_pick),
+        fg: (item as any).is_radar_pick ? "#E8A020" : "rgba(255,255,255,0.55)" }] : []),
+      ...(showEventStar ? [{ key:"star", icon:"★", label:isEventFeatured(item) ? "Unfeature" : "Feature",
+        onClick: () => handleToggleFeatured(id, isEventFeatured(item)),
+        fg: isEventFeatured(item) ? "#E8A020" : "rgba(255,255,255,0.55)" }] : []),
+      ...(showSpotStar ? [{ key:"star", icon:"★", label:item.featured ? "Unfeature" : "Feature",
+        onClick: () => handleToggleFeaturedSpot(id, !!item.featured),
+        fg: item.featured ? "#E8A020" : "rgba(255,255,255,0.55)" }] : []),
+      { key:"edit",    icon:"✏️",  label:"Edit",    onClick: openEdit,    fg:"#aaa" },
+      { key:"preview", icon:"👁",  label:"Preview", onClick: openPreview, fg:"#E8A020" },
+      { key:"delete",  icon:"🗑️", label:"Delete",  onClick: () => setConfirmDelete({ id, tab, subtab }), bg:"#450a0a", fg:"#fca5a5" },
+    ];
 
     return (
       <div key={id} className="rounded-xl" style={{ backgroundColor:"#111120", border:`1px solid ${section==="approved" && item.featured ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}>
@@ -898,42 +959,7 @@ export default function AdminClient() {
 
         {/* Mobile: everything but Approve/Hide folds into this menu. Seven
             inline buttons overflow the viewport well before 360px. */}
-        <div className="relative flex sm:hidden flex-shrink-0">
-          <button
-            onClick={() => setOpenMenuId(openMenuId === id ? null : id)}
-            title="More actions"
-            aria-label="More actions"
-            aria-expanded={openMenuId === id}
-            className="px-3 py-1.5 rounded-lg text-sm leading-none"
-            style={{ backgroundColor:"#1E2A3A", color:"#aaa", border:"1px solid #444" }}
-          >⋯</button>
-          {openMenuId === id && (
-            <>
-              {/* Click-outside catcher, below the menu in the stack. */}
-              <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-              <div
-                className="absolute right-0 top-full mt-1 z-50 rounded-xl overflow-hidden"
-                style={{ minWidth:200, backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.25)", boxShadow:"0 12px 32px rgba(0,0,0,0.6)" }}
-              >
-                {showNightupPick && menuItem("pick", "⭐", (item as any).nightup_pick ? "Remove Nightup Pick" : "Nightup Pick",
-                  () => handleToggleNightupPick(id, !!(item as any).nightup_pick),
-                  { fg: (item as any).nightup_pick ? "#E8A020" : "rgba(255,255,255,0.55)" })}
-                {showRadarPick && menuItem("radar", "📡", (item as any).is_radar_pick ? "Remove Radar Pick" : "Radar Pick",
-                  () => handleToggleRadarPick(id, !!(item as any).is_radar_pick),
-                  { fg: (item as any).is_radar_pick ? "#E8A020" : "rgba(255,255,255,0.55)" })}
-                {showEventStar && menuItem("star", "★", isEventFeatured(item) ? "Unfeature" : "Feature",
-                  () => handleToggleFeatured(id, isEventFeatured(item)),
-                  { fg: isEventFeatured(item) ? "#E8A020" : "rgba(255,255,255,0.55)" })}
-                {showSpotStar && menuItem("star", "★", item.featured ? "Unfeature" : "Feature",
-                  () => handleToggleFeaturedSpot(id, !!item.featured),
-                  { fg: item.featured ? "#E8A020" : "rgba(255,255,255,0.55)" })}
-                {menuItem("edit", "✏️", "Edit", openEdit, { fg:"#aaa" })}
-                {menuItem("preview", "👁", "Preview", openPreview, { fg:"#E8A020" })}
-                {menuItem("delete", "🗑️", "Delete", () => setConfirmDelete({ id, tab, subtab }), { bg:"#450a0a", fg:"#fca5a5" })}
-              </div>
-            </>
-          )}
-        </div>
+        {renderRowMenu(`row-${id}`, menuActions)}
 
         <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
           {/* Nightup Pick */}
@@ -1065,7 +1091,9 @@ export default function AdminClient() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* On a phone these three would share the title's line and squeeze it;
+              drop them onto their own full-width line instead. */}
+          <div className="flex items-center gap-1.5 flex-shrink-0 w-full justify-end mt-2 sm:w-auto sm:mt-0">
             <button
               onClick={() => handleToggleListingFlag(id, "is_sponsored", !!listing.is_sponsored)}
               disabled={busy}
@@ -1270,6 +1298,8 @@ export default function AdminClient() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Verification is a state, not an action — it stays on the
+                          row at every width. */}
                       {profile.is_verified ? (
                         <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:"rgba(232,160,32,0.15)", color:"#E8A020" }}>✓ Verified</span>
                       ) : (
@@ -1282,20 +1312,30 @@ export default function AdminClient() {
                           style={{ backgroundColor:"#111120", color:"#666", border:"1px solid #444" }}
                         >Verify</button>
                       )}
-                      <button
-                        onClick={() => handleToggleFeaturedProfile(profile.id, !!profile.is_featured)}
-                        title={profile.is_featured ? "Remove Featured" : "Feature"}
-                        className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
-                        style={{ backgroundColor:profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color:profile.is_featured ? "#E8A020" : "#555" }}
-                      >
-                        {profile.is_featured ? "★ Featured" : "Not featured"}
-                      </button>
-                      <button
-                        onClick={() => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: "users", profileUsername: profile.username ?? "" }); }}
-                        title="Delete"
-                        className="px-2 py-1.5 rounded-lg text-sm leading-none"
-                        style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
-                      >🗑️</button>
+                      <div className="hidden sm:flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleFeaturedProfile(profile.id, !!profile.is_featured)}
+                          title={profile.is_featured ? "Remove Featured" : "Feature"}
+                          className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
+                          style={{ backgroundColor:profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color:profile.is_featured ? "#E8A020" : "#555" }}
+                        >
+                          {profile.is_featured ? "★ Featured" : "Not featured"}
+                        </button>
+                        <button
+                          onClick={() => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: "users", profileUsername: profile.username ?? "" }); }}
+                          title="Delete"
+                          className="px-2 py-1.5 rounded-lg text-sm leading-none"
+                          style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
+                        >🗑️</button>
+                      </div>
+                      {renderRowMenu(`user-${profile.id}`, [
+                        { key:"featured", icon:"★", label: profile.is_featured ? "Remove Featured" : "Feature",
+                          onClick: () => handleToggleFeaturedProfile(profile.id, !!profile.is_featured),
+                          fg: profile.is_featured ? "#E8A020" : "rgba(255,255,255,0.55)" },
+                        { key:"delete", icon:"🗑️", label:"Delete",
+                          onClick: () => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: "users", profileUsername: profile.username ?? "" }); },
+                          bg:"#450a0a", fg:"#fca5a5" },
+                      ])}
                     </div>
                   </div>
                 ))}
@@ -1342,31 +1382,44 @@ export default function AdminClient() {
                               style={{ backgroundColor:"#111120", color:"#666", border:"1px solid #444" }}
                             >Verify</button>
                           )}
-                          <button
-                            onClick={() => handleToggleFeaturedProfile(profile.id, !!profile.is_featured)}
-                            title={profile.is_featured ? "Remove Featured" : "Feature"}
-                            className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
-                            style={{ backgroundColor:profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color:profile.is_featured ? "#E8A020" : "#555" }}
-                          >{profile.is_featured ? "★ Featured" : "Not featured"}</button>
-                          {/* No admin-side profile editor exists — the wizards at
-                              /dashboard/* are scoped to the signed-in owner — so this
-                              links out to the public profile instead. */}
-                          {profile.username && (
-                            <a
-                              href={`/profile/${profile.username}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="View profile"
-                              className="px-2 py-1.5 rounded-lg text-sm leading-none transition-opacity hover:opacity-80"
-                              style={{ backgroundColor:"#1E2A3A", color:"#E8A020", border:"1px solid #E8A020" }}
-                            >👁</a>
-                          )}
-                          <button
-                            onClick={() => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: id, profileUsername: profile.username ?? "" }); }}
-                            title="Delete"
-                            className="px-2 py-1.5 rounded-lg text-sm leading-none"
-                            style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
-                          >🗑️</button>
+                          <div className="hidden sm:flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleToggleFeaturedProfile(profile.id, !!profile.is_featured)}
+                              title={profile.is_featured ? "Remove Featured" : "Feature"}
+                              className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-80"
+                              style={{ backgroundColor:profile.is_featured ? "rgba(232,160,32,0.15)" : "#1a1a2e", color:profile.is_featured ? "#E8A020" : "#555" }}
+                            >{profile.is_featured ? "★ Featured" : "Not featured"}</button>
+                            {/* No admin-side profile editor exists — the wizards at
+                                /dashboard/* are scoped to the signed-in owner — so this
+                                links out to the public profile instead. */}
+                            {profile.username && (
+                              <a
+                                href={`/profile/${profile.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="View profile"
+                                className="px-2 py-1.5 rounded-lg text-sm leading-none transition-opacity hover:opacity-80"
+                                style={{ backgroundColor:"#1E2A3A", color:"#E8A020", border:"1px solid #E8A020" }}
+                              >👁</a>
+                            )}
+                            <button
+                              onClick={() => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: id, profileUsername: profile.username ?? "" }); }}
+                              title="Delete"
+                              className="px-2 py-1.5 rounded-lg text-sm leading-none"
+                              style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}
+                            >🗑️</button>
+                          </div>
+                          {renderRowMenu(`profile-${profile.id}`, [
+                            { key:"featured", icon:"★", label: profile.is_featured ? "Remove Featured" : "Feature",
+                              onClick: () => handleToggleFeaturedProfile(profile.id, !!profile.is_featured),
+                              fg: profile.is_featured ? "#E8A020" : "rgba(255,255,255,0.55)" },
+                            ...(profile.username
+                              ? [{ key:"view", icon:"👁", label:"View profile", href:`/profile/${profile.username}`, fg:"#E8A020" }]
+                              : []),
+                            { key:"delete", icon:"🗑️", label:"Delete",
+                              onClick: () => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: id, profileUsername: profile.username ?? "" }); },
+                              bg:"#450a0a", fg:"#fca5a5" },
+                          ])}
                         </div>
                       </div>
                     );
@@ -1414,7 +1467,7 @@ export default function AdminClient() {
                   <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>No pending requests.</p>
                 )}
                 {allContent.upgrade_requests?.map((req: any) => (
-                  <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
+                  <div key={req.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
                     <div className="min-w-0">
                       <p className="font-medium text-sm">@{req.username}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{req.email} · {req.requested_type ?? "no type"} · {req.specialty}</p>
@@ -1423,8 +1476,8 @@ export default function AdminClient() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {req.status === "pending" ? (
                         <>
-                          <button onClick={async () => { await fetch("/api/admin/approve-upgrade", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"approved" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅</button>
-                          <button onClick={async () => { await fetch("/api/admin/approve-upgrade", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"rejected" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌</button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-upgrade", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"approved" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅<span className="ml-1.5 sm:hidden">Approve</span></button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-upgrade", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"rejected" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌<span className="ml-1.5 sm:hidden">Reject</span></button>
                         </>
                       ) : (
                         <>
@@ -1452,7 +1505,7 @@ export default function AdminClient() {
                   <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>No pending requests.</p>
                 )}
                 {allContent.featured_requests?.map((req: any) => (
-                  <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
+                  <div key={req.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
                     <div className="min-w-0">
                       <p className="font-medium text-sm">{req.events?.title ?? "Unknown event"}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{req.events?.venue} · {req.events?.date}</p>
@@ -1461,8 +1514,8 @@ export default function AdminClient() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {req.status === "pending" ? (
                         <>
-                          <button onClick={async () => { await fetch("/api/admin/approve-featured", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"approved" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅</button>
-                          <button onClick={async () => { await fetch("/api/admin/approve-featured", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"rejected" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌</button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-featured", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"approved" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅<span className="ml-1.5 sm:hidden">Approve</span></button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-featured", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ request_id:req.id, action:"rejected" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌<span className="ml-1.5 sm:hidden">Reject</span></button>
                         </>
                       ) : (
                         <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:req.status==="approved" ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)", color:req.status==="approved" ? "#86efac" : "#fbbf24" }}>
@@ -1483,7 +1536,7 @@ export default function AdminClient() {
                   <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>No pending requests.</p>
                 )}
                 {allContent.spot_claims?.map((claim: any) => (
-                  <div key={claim.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
+                  <div key={claim.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
                     <div className="min-w-0">
                       <p className="font-medium text-sm">
                         {claim.spots?.slug ? (
@@ -1498,8 +1551,8 @@ export default function AdminClient() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {claim.status === "pending" ? (
                         <>
-                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"approved" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅</button>
-                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"rejected" }) }); await fetchContent(); }} className="px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌</button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"approved" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅<span className="ml-1.5 sm:hidden">Approve</span></button>
+                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"rejected" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌<span className="ml-1.5 sm:hidden">Reject</span></button>
                         </>
                       ) : (
                         <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:claim.status==="approved" ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)", color:claim.status==="approved" ? "#86efac" : "#fbbf24" }}>
