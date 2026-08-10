@@ -140,6 +140,10 @@ function EditorInner() {
   const [statusMsg, setStatusMsg] = useState('')
   const [idRef,     setIdRef]     = useState<string | null>(articleId)
 
+  // Mobile only: whether the metadata sheet is unfolded. Desktop renders the
+  // sidebar open at all times and ignores this.
+  const [fieldsOpen, setFieldsOpen] = useState(false)
+
   const contentRef = useRef<JSONContent | null>(null)
   const dirtyRef   = useRef(false)
   const idLive     = useRef<string | null>(articleId)
@@ -283,8 +287,10 @@ function EditorInner() {
       {/* ── Status bar ── */}
       <div style={{ height: 2, background: statusColor, transition: 'background .3s', flexShrink: 0 }} />
       {statusMsg && status !== 'idle' && (
-        <div style={{
-          position: 'fixed', top: 12, right: 20, zIndex: 10000,
+        // On mobile the shell's own header owns the top-right corner, so the
+        // toast drops below it instead of sitting on the pending badge.
+        <div className="fixed right-3 top-16 md:right-5 md:top-3" style={{
+          zIndex: 10000,
           background: status === 'error' ? '#F87171' : '#34D399',
           color: '#08080F', padding: '5px 13px', borderRadius: 4,
           fontFamily: 'monospace', fontSize: 10, fontWeight: 700,
@@ -295,11 +301,23 @@ function EditorInner() {
       )}
 
       {/* ── Body ── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      {/* Column on phones so the sidebar can become a bottom sheet; the desktop
+          row keeps its own overflow so only the editor scrolls. */}
+      <div className="flex flex-col md:flex-row md:overflow-hidden" style={{ flex: 1 }}>
 
         {/* ── Left — Novel editor ── */}
-        <div style={{ flex: 1, overflowY: 'auto', background: '#0F0F1A', padding: '48px 0' }}>
-          <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 32px' }}>
+        <div className="py-6 md:py-12 md:overflow-y-auto" style={{ flex: 1, minWidth: 0, minHeight: 0, background: '#0F0F1A' }}>
+          {/* Getting back to the list must not require unfolding the sheet. */}
+          <div className="md:hidden px-4 pb-3">
+            <a href="/admin/magazine" style={{
+              fontFamily: 'monospace', fontSize: 9, letterSpacing: '.12em',
+              textTransform: 'uppercase', color: 'rgba(237,233,227,.35)',
+              textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5,
+            }}>
+              ← Άρθρα
+            </a>
+          </div>
+          <div className="px-4 md:px-8" style={{ maxWidth: 720, margin: '0 auto' }}>
             <EditorRoot>
               <EditorContent
                 key={articleId ?? 'new'}
@@ -361,23 +379,47 @@ function EditorInner() {
           </div>
         </div>
 
-        {/* ── Right — Sidebar ── */}
-        <aside style={{
-          width: 280, flexShrink: 0,
-          background: '#1A1A28',
-          borderLeft: '1px solid rgba(255,255,255,.08)',
-          overflowY: 'auto', padding: '24px 20px',
-          display: 'flex', flexDirection: 'column', gap: 20,
-        }}>
+        {/* ── Right — Sidebar (desktop) / bottom sheet (mobile) ── */}
+        {/* sticky bottom-20 parks the sheet just above the shell's fixed mobile
+            nav, which is what the outer pb-20 already clears. */}
+        <aside
+          className="sticky bottom-20 z-30 w-full border-t gap-0 md:static md:z-auto md:w-[280px] md:border-t-0 md:border-l md:gap-5 md:px-5 md:py-6 md:overflow-y-auto"
+          style={{
+            flexShrink: 0,
+            background: '#1A1A28',
+            borderColor: 'rgba(255,255,255,.08)',
+            display: 'flex', flexDirection: 'column',
+          }}
+        >
 
-          {/* Back link */}
-          <a href="/admin/magazine" style={{
+          {/* Back link — the mobile copy lives on the editor column instead. */}
+          <a href="/admin/magazine" className="hidden md:flex" style={{
             fontFamily: 'monospace', fontSize: 9, letterSpacing: '.12em',
             textTransform: 'uppercase', color: 'rgba(237,233,227,.35)',
-            textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5,
+            textDecoration: 'none', alignItems: 'center', gap: 5,
           }}>
             ← Άρθρα
           </a>
+
+          {/* Sheet handle — mobile only */}
+          <button
+            onClick={() => setFieldsOpen(o => !o)}
+            aria-expanded={fieldsOpen}
+            className="md:hidden flex items-center justify-between w-full px-4 py-3"
+            style={{
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              fontFamily: 'monospace', fontSize: 9, fontWeight: 600,
+              letterSpacing: '.14em', textTransform: 'uppercase',
+              color: 'rgba(237,233,227,.65)',
+            }}
+          >
+            <span>✎ Στοιχεία άρθρου</span>
+            <span>{fieldsOpen ? '▼' : '▲'}</span>
+          </button>
+
+          {/* Fields — folded away on mobile until asked for, always open on
+              desktop. `hidden` rather than unmounting, so nothing resets. */}
+          <div className={`${fieldsOpen ? 'flex' : 'hidden'} md:flex flex-col gap-5 max-h-[60vh] overflow-y-auto px-4 pb-4 md:max-h-none md:overflow-y-visible md:px-0 md:pb-0`}>
 
           {/* Title */}
           <div>
@@ -518,13 +560,21 @@ function EditorInner() {
             </button>
           </div>
 
+          </div>{/* /fields */}
+
+          {/* Actions — outside the collapsible block, so saving never costs a
+              tap on the handle first. Side by side on mobile, stacked on desktop. */}
+          <div className="flex flex-row gap-2 px-4 py-3 border-t md:flex-col md:gap-5 md:px-0 md:py-0 md:border-t-0"
+            style={{ borderColor: 'rgba(255,255,255,.06)' }}>
+
           {/* Divider */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,.06)' }} />
+          <div className="hidden md:block" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }} />
 
           {/* Buttons */}
           <button
             onClick={() => save('draft')}
             disabled={status === 'saving'}
+            className="flex-1 md:flex-initial"
             style={{
               width: '100%', padding: '10px 0',
               background: 'transparent',
@@ -541,6 +591,7 @@ function EditorInner() {
           <button
             onClick={() => save('published')}
             disabled={status === 'saving'}
+            className="flex-1 md:flex-initial"
             style={{
               width: '100%', padding: '10px 0',
               background: '#E8A020', border: 'none',
@@ -552,6 +603,7 @@ function EditorInner() {
           >
             Δημοσίευση
           </button>
+          </div>{/* /actions */}
         </aside>
       </div>
     </div>

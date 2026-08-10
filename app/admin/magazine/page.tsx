@@ -68,12 +68,12 @@ export default function MagazineAdminPage() {
   return (
     // pb-32 clears the shell's fixed mobile bottom nav.
     <div className="px-4 md:px-12 pt-8 md:pt-10 pb-32" style={{ maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
         <div>
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: '#E8A020', marginBottom: 6 }}>
             Nightup Magazine
           </div>
-          <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 36, fontWeight: 700, color: '#EDE9E3' }}>
+          <h1 className="text-[26px] md:text-[36px]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: '#EDE9E3' }}>
             Articles
           </h1>
         </div>
@@ -88,7 +88,7 @@ export default function MagazineAdminPage() {
         </Link>
       </div>
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,.06)', paddingBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,.06)', paddingBottom: 16 }}>
         {(['all','published','draft','scheduled'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)} style={{
             fontFamily: 'monospace', fontSize: 9, fontWeight: 500,
@@ -117,22 +117,23 @@ export default function MagazineAdminPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {filtered.map(a => (
-            <div key={a.id} style={{
-              display: 'flex', alignItems: 'center', gap: 20,
-              padding: '16px 20px',
+            // Two stacked rows on a phone (art + title, then meta + actions),
+            // one continuous row from md up.
+            <div key={a.id} className="flex flex-col gap-3 py-4 px-4 md:flex-row md:items-center md:gap-5 md:px-5" style={{
               background: '#0D0D1A',
               border: '1px solid rgba(255,255,255,.06)',
               borderRadius: 3,
             }}>
-              <div style={{
-                width: 56, height: 40, borderRadius: 2, flexShrink: 0,
+              <div className="flex items-center gap-3 md:gap-5 md:flex-1 md:min-w-0">
+              <div className="w-10 h-7 md:w-14 md:h-10" style={{
+                borderRadius: 2, flexShrink: 0,
                 background: 'linear-gradient(135deg,#1C1035,#0B0B18)', overflow: 'hidden',
               }}>
                 {a.hero_image && <img src={a.hero_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
                   <span style={{
                     fontFamily: 'monospace', fontSize: 8, fontWeight: 500,
                     letterSpacing: '.14em', textTransform: 'uppercase',
@@ -157,9 +158,13 @@ export default function MagazineAdminPage() {
                   </div>
                 )}
               </div>
+              </div>
 
-              <div style={{ display: 'flex', gap: 16, flexShrink: 0 }}>
-                <div style={{ textAlign: 'right' }}>
+              <div
+                className="flex items-center justify-between gap-3 flex-wrap border-t pt-3 md:justify-start md:gap-4 md:flex-nowrap md:border-t-0 md:pt-0"
+                style={{ flexShrink: 0, borderColor: 'rgba(255,255,255,.06)' }}
+              >
+                <div className="text-left md:text-right">
                   <div style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(237,233,227,.45)' }}>
                     {a.word_count} words · {a.read_time} min
                   </div>
@@ -169,7 +174,7 @@ export default function MagazineAdminPage() {
                       : `Updated ${new Date(a.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <Link href={`/admin/magazine/editor?id=${a.id}`} style={{
                     fontFamily: 'monospace', fontSize: 9, padding: '6px 11px',
                     background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)',
