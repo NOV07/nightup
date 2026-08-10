@@ -201,6 +201,9 @@ export default function AdminClient() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
+  // Mobile only: which row has its overflow ("⋯") action menu open. Desktop
+  // keeps every action inline and never sets this.
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; tab: Tab; subtab?: MusicSubTab; profileUsername?: string } | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [deleteAuthUser, setDeleteAuthUser] = useState(false);
@@ -300,6 +303,7 @@ export default function AdminClient() {
     setShowAddForm(false);
     setAddError("");
     setAddSuccess("");
+    setOpenMenuId(null);
   }, [activeTab]);
 
   // ── Queue helpers ───────────────────────────────────────────────────────────
@@ -847,8 +851,35 @@ export default function AdminClient() {
       : isSpot               ? [item.category, item.subcategory, item.city].filter(Boolean).join(" · ")
       : (item.category as string) || "";
 
+    // The secondary actions, shared between the desktop inline strip and the
+    // mobile "⋯" menu. Each entry keeps the colours its inline button uses.
+    const showNightupPick = tab === "events" && section === "approved";
+    const showRadarPick   = tab === "events" && section === "approved";
+    const showEventStar   = tab === "events" && section === "approved";
+    const showSpotStar    = tab === "spots"  && section === "approved";
+
+    function openEdit()    { setEditItem(item); setEditError(""); setPreviewTab(tab); setEditSubtab(subtab); }
+    function openPreview() { setPreviewItem(item); setPreviewTab(tab); }
+
+    /** One line of the mobile overflow menu. Closing on select is part of the
+     *  contract, so it is done here rather than at each call site. */
+    function menuItem(key: string, icon: string, label: string, onClick: () => void, colors: { bg?: string; fg: string }) {
+      return (
+        <button
+          key={key}
+          onClick={() => { setOpenMenuId(null); onClick(); }}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left"
+          style={{ backgroundColor: colors.bg ?? "transparent", color: colors.fg, borderBottom:"1px solid rgba(232,160,32,0.08)" }}
+        >
+          <span className="w-5 text-center leading-none">{icon}</span>
+          <span>{label}</span>
+        </button>
+      );
+    }
+
     return (
-      <div key={id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:`1px solid ${section==="approved" && item.featured ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}>
+      <div key={id} className="rounded-xl" style={{ backgroundColor:"#111120", border:`1px solid ${section==="approved" && item.featured ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}>
+      <div className="flex items-center justify-between gap-3 p-3">
         <div className="min-w-0 flex-1">
           <p className="font-medium text-sm truncate">{primary || "—"}</p>
           {secondary && <p className="text-xs text-gray-500 mt-0.5 truncate">{secondary}</p>}
@@ -864,7 +895,47 @@ export default function AdminClient() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+
+        {/* Mobile: everything but Approve/Hide folds into this menu. Seven
+            inline buttons overflow the viewport well before 360px. */}
+        <div className="relative flex sm:hidden flex-shrink-0">
+          <button
+            onClick={() => setOpenMenuId(openMenuId === id ? null : id)}
+            title="More actions"
+            aria-label="More actions"
+            aria-expanded={openMenuId === id}
+            className="px-3 py-1.5 rounded-lg text-sm leading-none"
+            style={{ backgroundColor:"#1E2A3A", color:"#aaa", border:"1px solid #444" }}
+          >⋯</button>
+          {openMenuId === id && (
+            <>
+              {/* Click-outside catcher, below the menu in the stack. */}
+              <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+              <div
+                className="absolute right-0 top-full mt-1 z-50 rounded-xl overflow-hidden"
+                style={{ minWidth:200, backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.25)", boxShadow:"0 12px 32px rgba(0,0,0,0.6)" }}
+              >
+                {showNightupPick && menuItem("pick", "⭐", (item as any).nightup_pick ? "Remove Nightup Pick" : "Nightup Pick",
+                  () => handleToggleNightupPick(id, !!(item as any).nightup_pick),
+                  { fg: (item as any).nightup_pick ? "#E8A020" : "rgba(255,255,255,0.55)" })}
+                {showRadarPick && menuItem("radar", "📡", (item as any).is_radar_pick ? "Remove Radar Pick" : "Radar Pick",
+                  () => handleToggleRadarPick(id, !!(item as any).is_radar_pick),
+                  { fg: (item as any).is_radar_pick ? "#E8A020" : "rgba(255,255,255,0.55)" })}
+                {showEventStar && menuItem("star", "★", isEventFeatured(item) ? "Unfeature" : "Feature",
+                  () => handleToggleFeatured(id, isEventFeatured(item)),
+                  { fg: isEventFeatured(item) ? "#E8A020" : "rgba(255,255,255,0.55)" })}
+                {showSpotStar && menuItem("star", "★", item.featured ? "Unfeature" : "Feature",
+                  () => handleToggleFeaturedSpot(id, !!item.featured),
+                  { fg: item.featured ? "#E8A020" : "rgba(255,255,255,0.55)" })}
+                {menuItem("edit", "✏️", "Edit", openEdit, { fg:"#aaa" })}
+                {menuItem("preview", "👁", "Preview", openPreview, { fg:"#E8A020" })}
+                {menuItem("delete", "🗑️", "Delete", () => setConfirmDelete({ id, tab, subtab }), { bg:"#450a0a", fg:"#fca5a5" })}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
           {/* Nightup Pick */}
           {tab === "events" && section === "approved" && (
             <button onClick={() => handleToggleNightupPick(id, !!(item as any).nightup_pick)} title={(item as any).nightup_pick ? "Remove Nightup Pick" : "Nightup Pick"} className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all" style={{ backgroundColor:(item as any).nightup_pick ? "#E8A020" : "#2A2A3E", color:(item as any).nightup_pick ? "#0F0F1A" : "#666" }}>⭐</button>
@@ -898,6 +969,28 @@ export default function AdminClient() {
           {/* Delete */}
           <button onClick={() => setConfirmDelete({ id, tab, subtab })} disabled={busy} title="Delete" className="px-2 py-1.5 rounded-lg text-sm leading-none disabled:opacity-40" style={{ backgroundColor:"#450a0a", color:"#fca5a5" }}>🗑️</button>
         </div>
+      </div>
+
+      {/* Mobile: the two moderation actions stay reachable without opening the
+          menu. At least one of them always renders, so this row is never empty. */}
+      <div className="flex sm:hidden items-stretch gap-2 px-3 py-2.5 border-t" style={{ borderColor:"rgba(232,160,32,0.12)" }}>
+        {section !== "approved" && (
+          <button
+            onClick={() => handleAction(id, "approved", tab, subtab)}
+            disabled={busy}
+            className="flex-1 py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
+            style={{ backgroundColor:"#14532d", color:"#86efac" }}
+          >✅ Approve</button>
+        )}
+        {section !== "hidden" && (
+          <button
+            onClick={() => handleAction(id, isArtist ? "rejected" : "hidden", tab, subtab)}
+            disabled={busy}
+            className="flex-1 py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
+            style={{ backgroundColor:"#78350f", color:"#fbbf24" }}
+          >{isArtist ? "✗ Reject" : "🙈 Hide"}</button>
+        )}
+      </div>
       </div>
     );
   }
@@ -1094,7 +1187,7 @@ export default function AdminClient() {
     <>
       {/* The sidebar, mobile header and mobile nav come from the shared
           /admin shell layout — this renders the panel's content area only. */}
-      <div className="px-4 md:px-6 py-6 max-w-5xl" style={{ paddingBottom: "7rem" }}>
+      <div className="px-4 sm:px-6 py-4 sm:py-6 max-w-5xl" style={{ paddingBottom: "7rem" }}>
 
             {loadError && (
               <div className="mb-5 p-3 rounded-xl text-xs" style={{ backgroundColor:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.3)", color:"#fca5a5" }}>
@@ -1427,7 +1520,8 @@ export default function AdminClient() {
               <>
                 {/* Music sub-tabs */}
                 {activeTab === "music" && (
-                  <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+                  <div className="relative mb-6">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
                     {(["releases","mixes","playlists","artists"] as MusicSubTab[]).map(sub => {
                       const subArr = allContent[sub as keyof AllContent] as ContentItem[] ?? [];
                       const subPending = subArr.filter(i => i.status === "pending").length;
@@ -1435,7 +1529,7 @@ export default function AdminClient() {
                         <button
                           key={sub}
                           onClick={() => { setMusicSubTab(sub); setShowAddForm(false); }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-2 text-xs sm:px-4 sm:text-sm rounded-xl font-medium capitalize transition-all whitespace-nowrap"
                           style={{ backgroundColor:musicSubTab===sub ? "#E8A020" : "#111120", color:musicSubTab===sub ? "#0F0F1A" : "rgba(255,255,255,0.45)", border:`1px solid ${musicSubTab===sub ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}
                         >
                           {sub}
@@ -1443,6 +1537,13 @@ export default function AdminClient() {
                         </button>
                       );
                     })}
+                  </div>
+                  {/* Scroll affordance — the strip can run past the right edge
+                      on narrow phones with no other cue that it does. */}
+                  <div
+                    className="pointer-events-none absolute top-0 bottom-1 right-0 w-8 sm:hidden"
+                    style={{ background:"linear-gradient(to right, rgba(15,15,26,0), #0F0F1A)" }}
+                  />
                   </div>
                 )}
 
@@ -1479,7 +1580,7 @@ export default function AdminClient() {
                   {addSuccess && !showAddForm && <p className="text-green-400 text-sm mb-4">{addSuccess}</p>}
 
                   {showAddForm && (
-                    <div className="p-6 rounded-2xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
+                    <div className="p-4 sm:p-6 rounded-2xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
 
                       {/* EVENT FORM — unified with the public submission flow.
                           The old admin-only form is kept for reference at the
@@ -1744,7 +1845,7 @@ export default function AdminClient() {
       {/* ── EDIT MODAL ────────────────────────────────────────────────────── */}
       {editItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:"rgba(0,0,0,0.85)" }} onClick={e => { if (e.target === e.currentTarget) setEditItem(null); }}>
-          <div className={`relative w-full ${previewTab === "events" ? "max-w-5xl" : "max-w-lg"} max-h-[90vh] overflow-y-auto rounded-2xl p-6`} style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
+          <div className={`relative w-full ${previewTab === "events" ? "max-w-5xl" : "max-w-lg"} max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6`} style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold" style={{ color:"#E8A020" }}>Edit</h2>
               <button onClick={() => setEditItem(null)} className="text-sm px-3 py-1 rounded-lg" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Close</button>
@@ -1789,7 +1890,7 @@ export default function AdminClient() {
       {/* ── PREVIEW MODAL ─────────────────────────────────────────────────── */}
       {previewItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:"rgba(0,0,0,0.8)" }} onClick={e => { if (e.target === e.currentTarget) setPreviewItem(null); }}>
-          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-6 space-y-4" style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6 space-y-4" style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
             <div className="flex items-start justify-between gap-4">
               <h2 className="text-base font-bold" style={{ color:"#E8A020" }}>Preview</h2>
               <button onClick={() => setPreviewItem(null)} className="text-sm px-3 py-1 rounded-lg" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Close</button>
@@ -1797,9 +1898,9 @@ export default function AdminClient() {
             {(previewItem.image_url || previewItem.cover_image || previewItem.photo || previewItem.avatar) ? (
               <img src={String(previewItem.image_url || previewItem.cover_image || previewItem.photo || previewItem.avatar || "")} alt="preview" className="w-full rounded-lg object-cover" style={{ maxHeight:200 }} />
             ) : null}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
               {Object.entries(previewItem).filter(([k]) => !["id","created_at","updated_at","photos","gallery","_type","_tab","_subtab", ...EMBED_KEYS].includes(k)).map(([k, v]) => (
-                <div key={k} className={String(v).length > 60 ? "col-span-2" : ""}>
+                <div key={k} className={String(v).length > 60 ? "sm:col-span-2" : ""}>
                   <p className="text-xs text-gray-500 mb-0.5 capitalize">{k.replace(/_/g," ")}</p>
                   <p className="text-sm text-white break-words">{Array.isArray(v) ? v.join(", ") : String(v ?? "—")}</p>
                 </div>
