@@ -940,7 +940,7 @@ export default function AdminClient() {
 
     return (
       <div key={id} className="rounded-xl" style={{ backgroundColor:"#111120", border:`1px solid ${section==="approved" && item.featured ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}>
-      <div className="flex items-center justify-between gap-3 p-3">
+      <div className="flex items-start sm:items-center justify-between gap-3 p-3">
         <div className="min-w-0 flex-1">
           <p className="font-medium text-sm truncate">{primary || "—"}</p>
           {secondary && <p className="text-xs text-gray-500 mt-0.5 truncate">{secondary}</p>}
@@ -1289,7 +1289,7 @@ export default function AdminClient() {
                   <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>No profiles yet.</p>
                 )}
                 {allContent.profiles?.map((profile: any) => (
-                  <div key={profile.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
+                  <div key={profile.id} className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
                     <div className="flex items-center gap-3 min-w-0">
                       {profile.avatar_url && <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />}
                       <div className="min-w-0">
@@ -1360,7 +1360,7 @@ export default function AdminClient() {
                   {rows.map((profile: any) => {
                     const secondary = cfg.secondary(profile);
                     return (
-                      <div key={profile.id} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:`1px solid ${profile.is_featured ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}>
+                      <div key={profile.id} className="flex items-start sm:items-center justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:`1px solid ${profile.is_featured ? "#E8A020" : "rgba(232,160,32,0.12)"}` }}>
                         <div className="flex items-center gap-3 min-w-0">
                           {profile.avatar_url && <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />}
                           <div className="min-w-0">
