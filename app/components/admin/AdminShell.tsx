@@ -78,7 +78,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
           <AdminSidebar />
 
-          <main className="flex-1 md:h-screen md:overflow-y-auto">
+          {/* min-w-0: a flex item defaults to min-width:auto, so without this
+              any wide row inside pushes main past the viewport and clips its
+              right edge on phones. */}
+          <main className="flex-1 min-w-0 md:h-screen md:overflow-y-auto">
             {/* Mobile header */}
             <div className="md:hidden flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.07)", backgroundColor: "#0A0A12" }}>
               <div className="flex items-center gap-2">
