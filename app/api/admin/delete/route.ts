@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
@@ -115,6 +116,16 @@ export async function POST(req: NextRequest) {
     }, { status: 500 })
   }
   steps.push(`deleted the ${table === 'profiles' ? 'profile' : table} row`)
+
+  // Without this the row lingers on the live site until the page's revalidate
+  // window expires. A force delete also touched the tables in PROFILE_CONTENT,
+  // so those pages need clearing too.
+  revalidatePublicPaths(table)
+  if (table === 'profiles' && force) {
+    for (const owned of new Set(PROFILE_CONTENT.map(e => e.table))) {
+      revalidatePublicPaths(owned)
+    }
+  }
 
   // The auth account is deliberately separate: profiles.id is the auth user id,
   // but removing the login is a bigger action than removing the profile, so it

@@ -181,7 +181,7 @@ export default async function MixPage({ params }: Props) {
               )}
             </div>
 
-            <SocialShare title={mix.title} artist={mix.artist} />
+            <SocialShare />
           </div>
 
           {/* Artist mini card */}
@@ -222,6 +222,19 @@ export default async function MixPage({ params }: Props) {
           <div className="mb-12">
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#444" }}>Listen</p>
             <SoundCloudPlayer track={track} />
+          </div>
+        )}
+
+        {/* Tracklist — free text, one track per line as the admin typed it */}
+        {mix.tracklist && (
+          <div className="mb-12">
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#444" }}>Tracklist</p>
+            <div
+              className="rounded-2xl p-5 text-sm leading-relaxed"
+              style={{ backgroundColor: "#111120", border: "1px solid #1a1a2e", color: "#888", whiteSpace: "pre-line" }}
+            >
+              {mix.tracklist}
+            </div>
           </div>
         )}
 

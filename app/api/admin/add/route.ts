@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
@@ -27,5 +28,9 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Rows land as 'approved', so they are public straight away and the cached
+  // listings need to pick them up.
+  revalidatePublicPaths(table)
   return NextResponse.json({ ok: true, data: inserted })
 }
