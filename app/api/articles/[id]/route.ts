@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
+import { countWords } from '@/app/lib/articleContent'
 
 function getSupabase() {
   return createClient(
@@ -34,12 +35,9 @@ export async function PATCH(
 
   const supabase = getSupabase()
   const body = await req.json()
-  const wordCount = ((body.blocks || []) as any[]).reduce((n, b) => {
-    return n + ((b.text || '') + ' ' + (b.attr || '')).split(/\s+/).filter(Boolean).length
-  }, 0)
 
   const payload: Record<string, any> = {}
-  const fields = ['title','subtitle','excerpt','slug','category','series','tags','blocks',
+  const fields = ['title','subtitle','excerpt','slug','category','series','tags','content',
     'hero_image','hero_alt','seo_title','meta_desc','canonical','status',
     'scheduled_at','visibility','featured','allow_comments','show_related']
   fields.forEach(k => { if (k in body) payload[k] = body[k] })
@@ -55,8 +53,13 @@ export async function PATCH(
     if ('rel'  in body.toggles) payload.show_related   = body.toggles.rel
   }
 
-  payload.word_count = wordCount
-  payload.read_time  = Math.max(1, Math.round(wordCount / 220))
+  // Only recompute when the body actually carried new content, so a metadata
+  // only PATCH does not reset the stats to zero.
+  if ('content' in body) {
+    const wordCount = countWords(body.content)
+    payload.word_count = wordCount
+    payload.read_time  = Math.max(1, Math.round(wordCount / 220))
+  }
 
   if (body.status === 'published') {
     const existing = await supabase.from('articles').select('published_at').eq('id', id).single()

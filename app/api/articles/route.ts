@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
+import { countWords } from '@/app/lib/articleContent'
 
 function getSupabase() {
   return createClient(
@@ -19,9 +20,8 @@ function slugify(s: string): string {
 }
 
 function calcStats(body: any) {
-  const wordCount = ((body.blocks || []) as any[]).reduce((n, b) => {
-    return n + ((b.text || '') + ' ' + (b.attr || '')).split(/\s+/).filter(Boolean).length
-  }, (body.title || '').split(/\s+/).filter(Boolean).length)
+  const wordCount = countWords(body.content)
+    + (body.title || '').split(/\s+/).filter(Boolean).length
   return { wordCount, readTime: Math.max(1, Math.round(wordCount / 220)) }
 }
 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     category:     body.category || 'Feature',
     series:       body.series   || null,
     tags:         body.tags     || [],
-    blocks:       body.blocks   || [],
+    content:      body.content  || null,
     hero_image:   body.hero_image || null,
     status:       body.status    || 'draft',
     word_count:   wordCount,

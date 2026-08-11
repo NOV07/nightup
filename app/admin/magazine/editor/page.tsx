@@ -119,13 +119,27 @@ function inputStyle(extra?: React.CSSProperties): React.CSSProperties {
 
 const CATEGORIES = ['Interviews', 'Features', 'Guides', 'Venues', 'Music', 'Culture', 'Festival']
 
+// Articles are stored as HTML. Rows written before that switch hold a
+// serialised TipTap JSON doc instead; TipTap accepts either shape as `content`,
+// so we only need to tell them apart and let the editor re-emit HTML on save.
+function parseStoredContent(raw: unknown): JSONContent | string | null {
+  if (!raw) return null
+  if (typeof raw !== 'string') return raw as JSONContent
+  if (!raw.trimStart().startsWith('{')) return raw
+  try {
+    return JSON.parse(raw) as JSONContent
+  } catch {
+    return raw
+  }
+}
+
 // ── Main editor ────────────────────────────────────────────────
 function EditorInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const articleId = searchParams.get('id')
 
-  const [content,      setContent]      = useState<JSONContent | null>(null)
+  const [content,      setContent]      = useState<JSONContent | string | null>(null)
   const [title,        setTitle]        = useState('')
   const [subtitle,     setSubtitle]     = useState('')
   const [category,     setCategory]     = useState('Features')
@@ -144,9 +158,15 @@ function EditorInner() {
   // sidebar open at all times and ignores this.
   const [fieldsOpen, setFieldsOpen] = useState(false)
 
-  const contentRef = useRef<JSONContent | null>(null)
+  // Holds the editor's HTML, refreshed on every keystroke and once on mount.
+  const contentRef = useRef<string | null>(null)
   const dirtyRef   = useRef(false)
   const idLive     = useRef<string | null>(articleId)
+
+  // TipTap only reads `content` when the editor instance is created, so the
+  // editor must not mount until the fetch below has resolved — otherwise it
+  // comes up empty and the article's real content never reaches it.
+  const [loaded, setLoaded] = useState(!articleId)
 
   // keep live ref in sync
   useEffect(() => { idLive.current = idRef }, [idRef])
@@ -166,17 +186,10 @@ function EditorInner() {
         setHeroImage(article.hero_image || null)
         setPublishedAt(article.published_at ? article.published_at.slice(0, 10) : '')
         setFeatured(article.featured || false)
-        if (article.content) {
-          try {
-            const parsed = typeof article.content === 'string'
-              ? JSON.parse(article.content)
-              : article.content
-            setContent(parsed)
-            contentRef.current = parsed
-          } catch {}
-        }
+        setContent(parseStoredContent(article.content))
       })
       .catch(console.error)
+      .finally(() => setLoaded(true))
   }, [articleId])
 
   // The public navbar used to be hidden from here by hand. /admin no longer
@@ -195,8 +208,7 @@ function EditorInner() {
       hero_image: heroImage,
       published_at: publishedAt ? new Date(publishedAt).toISOString() : null,
       featured,
-      content: contentRef.current ? JSON.stringify(contentRef.current) : null,
-      blocks:  [],
+      content: contentRef.current || null,
       status:  articleStatus,
     }
 
@@ -318,14 +330,21 @@ function EditorInner() {
             </a>
           </div>
           <div className="px-4 md:px-8" style={{ maxWidth: 720, margin: '0 auto' }}>
+            {!loaded ? null : (
             <EditorRoot>
               <EditorContent
                 key={articleId ?? 'new'}
                 className="novel-editor"
-                initialContent={content ?? undefined}
+                // A legacy row may hand back a JSON doc rather than an HTML
+                // string; TipTap takes both, novel's prop type only names one.
+                initialContent={(content ?? undefined) as any}
                 extensions={extensions}
+                // Seeds the ref before the first keystroke, so saving an
+                // untouched article rewrites what it already had — and
+                // normalises a legacy JSON row to HTML on its next save.
+                onCreate={({ editor }) => { contentRef.current = editor.getHTML() }}
                 onUpdate={({ editor }) => {
-                  contentRef.current = editor.getJSON()
+                  contentRef.current = editor.getHTML()
                   dirtyRef.current = true
                 }}
                 editorProps={{
@@ -376,6 +395,7 @@ function EditorInner() {
                 </EditorCommand>
               </EditorContent>
             </EditorRoot>
+            )}
           </div>
         </div>
 

@@ -54,7 +54,6 @@ interface Article {
   read_time: number | null;
   image: string;
   excerpt: string;
-  blocks: any[];
   content: string;
   series: string | null;
   series_order: number | null;
@@ -70,7 +69,6 @@ function mapArticle(data: any): Article {
     read_time: data.read_time ?? null,
     image: data.hero_image ?? "",
     excerpt: data.excerpt ?? "",
-    blocks: data.blocks ?? [],
     content: data.content ?? "",
     series: data.series ?? null,
     series_order: data.series_order ?? null,
@@ -282,50 +280,9 @@ export default async function MagazineArticlePage({ params }: Props) {
           {/* Main content */}
           <div>
             <div className="article-content">
-              {Array.isArray(article.blocks) && article.blocks.length > 0 ? (
-                article.blocks.map((block: any, i: number) => {
-                  if (block.type === 'paragraph' && block.text) return <p key={i}>{block.text}</p>
-                  if (block.type === 'h2' && block.text) return <h2 key={i}>{block.text}</h2>
-                  if (block.type === 'h3' && block.text) return <h3 key={i}>{block.text}</h3>
-                  if (block.type === 'quote' && block.text) return (
-                    <blockquote key={i}>
-                      <p>{block.text}</p>
-                      {block.attr && <cite>{block.attr}</cite>}
-                    </blockquote>
-                  )
-                  if (block.type === 'tip' && block.text) return (
-                    <div key={i} className="nightup-tip">💡 {block.text}</div>
-                  )
-                  if (block.type === 'highlight' && block.text) return (
-                    <div key={i} className="nightup-highlight">{block.text}</div>
-                  )
-                  if (block.type === 'image' && block.src) return (
-                    <figure key={i}>
-                      {block.src.startsWith('data:') ? (
-                        <img src={block.src} alt={block.caption || ''} style={{width:'100%',borderRadius:'8px'}} />
-                      ) : (
-                        <Image
-                          src={block.src}
-                          alt={block.caption || ''}
-                          width={1200}
-                          height={675}
-                          sizes="(max-width: 768px) 100vw, 720px"
-                          style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
-                        />
-                      )}
-                      {block.caption && <figcaption>{block.caption}</figcaption>}
-                    </figure>
-                  )
-                  if (block.type === 'divider') return <hr key={i} style={{borderColor:'rgba(232,160,32,0.2)',margin:'32px 0'}} />
-                  if (block.type === 'source' && block.text) return (
-                    <div key={i} className="nightup-source">
-                      <span>⊕ {block.text}</span>
-                      {block.url && <a href={block.url} target="_blank" rel="noopener noreferrer">{block.url}</a>}
-                    </div>
-                  )
-                  return null
-                })
-              ) : article.content ? (
+              {/* The editor writes HTML into `content`. The old `blocks` array
+                  is retired — nothing populates it any more. */}
+              {article.content ? (
                 <div dangerouslySetInnerHTML={{ __html: article.content }} />
               ) : (
                 <p style={{color:'rgba(255,255,255,0.4)'}}>No content yet.</p>
