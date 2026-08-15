@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { usePlayerStore } from "./PlayerContext";
+import { useRegisterModalOpen } from "./ModalStateContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -18,6 +19,12 @@ export default function MusicPlayerBar() {
   // Expanded (Spotify/SoundCloud-style) view — pure UI state, local to this
   // component so PlayerContext (playback logic) stays untouched.
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Reuses the same signal RadioStrip already listens to for modals: the
+  // expanded card covers the same mobile viewport area the radio widget
+  // floats in, so it hides (display: none, see .rs-modal-open) exactly
+  // like it does for any other modal, and reappears on collapse/close.
+  useRegisterModalOpen("expanded-player", isExpanded);
 
   // Auto-dismiss after 3s when there's an error
   useEffect(() => {
