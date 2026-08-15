@@ -24,11 +24,24 @@ export default function MusicPlayerBar() {
   const barRef = useRef<HTMLDivElement>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
 
-  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const seekFromClientX = useCallback((clientX: number) => {
     if (!barRef.current || !duration) return;
     const rect = barRef.current.getBoundingClientRect();
-    seekTo(Math.floor(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration));
+    seekTo(Math.floor(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * duration));
   }, [duration, seekTo]);
+
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    seekFromClientX(e.clientX);
+  }, [seekFromClientX]);
+
+  // Drag-to-seek on touch — mirrors handleSeek, but touch has no hover state
+  // to preview against, so this seeks live as the finger moves.
+  const handleTouchSeek = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    e.preventDefault();
+    seekFromClientX(touch.clientX);
+  }, [seekFromClientX]);
 
   if (!currentTrack) return null;
 
@@ -105,8 +118,10 @@ export default function MusicPlayerBar() {
               )}
 
               <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", minWidth: "120px" }}>
+                {/* Vertical padding here gives touch a bigger "fat finger" hit
+                    area than the visual bar inside it — the bar itself stays
+                    thin, but taps/drags a few px above or below it still seek. */}
                 <div
-                  ref={barRef}
                   onClick={handleSeek}
                   onMouseMove={(e) => {
                     if (!barRef.current || !duration) return;
@@ -114,52 +129,61 @@ export default function MusicPlayerBar() {
                     const pctHover = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                     setHoverTime(Math.floor(pctHover * duration));
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.height = "12px")}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.height = "10px";
+                  onMouseEnter={e => { const bar = barRef.current; if (bar) bar.style.height = "12px"; }}
+                  onMouseLeave={() => {
+                    const bar = barRef.current;
+                    if (bar) bar.style.height = "";
                     setHoverTime(null);
                   }}
-                  className="flex-1 rounded-full cursor-pointer relative group"
-                  style={{ backgroundColor: "#1A1A2E", height: "10px", transition: "height 0.15s" }}
+                  onTouchStart={handleTouchSeek}
+                  onTouchMove={handleTouchSeek}
+                  className="flex-1 cursor-pointer relative group"
+                  style={{ padding: "8px 0" }}
                 >
-                  <div className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ width: `${pct}%`, backgroundColor: "#E8A020", boxShadow: "0 0 6px rgba(232,160,32,0.4)", transition: "width 0.3s" }} />
-                  {duration > 0 && (
-                    <div style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: `${pct}%`,
-                      transform: "translate(-50%, -50%)",
-                      width: "10px",
-                      height: "10px",
-                      borderRadius: "50%",
-                      backgroundColor: "#E8A020",
-                      boxShadow: "0 0 8px rgba(232,160,32,0.6)",
-                      pointerEvents: "none",
-                      transition: "left 0.3s",
-                    }} />
-                  )}
-                  {hoverTime !== null && (
-                    <div style={{
-                      position: "absolute",
-                      bottom: "12px",
-                      left: `${pct}%`,
-                      transform: "translateX(-50%)",
-                      background: "#1A1A2E",
-                      border: "1px solid rgba(232,160,32,0.3)",
-                      borderRadius: "4px",
-                      padding: "2px 6px",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "9px",
-                      color: "#E8A020",
-                      whiteSpace: "nowrap",
-                      pointerEvents: "none",
-                    }}>
-                      {fmt(hoverTime)}
-                    </div>
-                  )}
+                  <div
+                    ref={barRef}
+                    className="rounded-full relative h-3.5 md:h-2.5"
+                    style={{ backgroundColor: "#1A1A2E", transition: "height 0.15s" }}
+                  >
+                    <div className="absolute inset-y-0 left-0 rounded-full"
+                      style={{ width: `${pct}%`, backgroundColor: "#E8A020", boxShadow: "0 0 6px rgba(232,160,32,0.4)", transition: "width 0.3s" }} />
+                    {duration > 0 && (
+                      <div style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: `${pct}%`,
+                        transform: "translate(-50%, -50%)",
+                        width: "10px",
+                        height: "10px",
+                        borderRadius: "50%",
+                        backgroundColor: "#E8A020",
+                        boxShadow: "0 0 8px rgba(232,160,32,0.6)",
+                        pointerEvents: "none",
+                        transition: "left 0.3s",
+                      }} />
+                    )}
+                    {hoverTime !== null && (
+                      <div style={{
+                        position: "absolute",
+                        bottom: "12px",
+                        left: `${pct}%`,
+                        transform: "translateX(-50%)",
+                        background: "#1A1A2E",
+                        border: "1px solid rgba(232,160,32,0.3)",
+                        borderRadius: "4px",
+                        padding: "2px 6px",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "9px",
+                        color: "#E8A020",
+                        whiteSpace: "nowrap",
+                        pointerEvents: "none",
+                      }}>
+                        {fmt(hoverTime)}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <span className="text-xs font-mono flex-shrink-0 tabular-nums" style={{ color: "#555" }}>
+                <span className="hidden sm:inline text-xs font-mono flex-shrink-0 tabular-nums" style={{ color: "#555" }}>
                   {duration > 0 ? `${fmt(position)} / ${fmt(duration)}` : "--:--"}
                 </span>
               </div>
@@ -178,8 +202,8 @@ export default function MusicPlayerBar() {
               className="w-14 accent-amber-500" aria-label="Volume" />
           </div>
           <button onClick={clearTrack}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
-            style={{ color: "#444" }} aria-label="Close player">
+            className="w-11 h-11 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 text-white/50 md:text-[#444]"
+            aria-label="Close player">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
