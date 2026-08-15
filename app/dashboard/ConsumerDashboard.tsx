@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { Lang, TranslationKey } from '../lib/translations'
+import { networkCategoryLabel } from '../lib/searchData'
 
 const GOLD = '#E8A020'
 const SURFACE = '#1A1A28'
@@ -271,7 +272,7 @@ export default function ConsumerDashboard({ name, savedEvents, upcomingEvents, s
                     key={p.id}
                     href={`/profile/${p.username}`}
                     title={p.display_name}
-                    sub={[p.network_category, p.location].filter(Boolean).join(' · ')}
+                    sub={[networkCategoryLabel(p.network_category, lang), p.location].filter(Boolean).join(' · ')}
                   />
                 ))}
               </div>

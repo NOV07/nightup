@@ -36,6 +36,21 @@ export const NETWORK = {
   },
 } as const
 
+// English display labels for the Greek NETWORK category values. The values
+// themselves stay Greek — they are what profiles.network_category stores and
+// what every filter matches on. Only the rendered text is translated.
+export const NETWORK_CATEGORY_EN: Record<string, string> = {
+  "Τραγουδιστής": "Singer",
+  "Μπάντα": "Band",
+  "Οργανοπαίχτης": "Instrumentalist",
+  "Φωτογράφος / Videographer": "Photographer / Videographer",
+}
+
+export function networkCategoryLabel(value: string | null | undefined, lang: string): string {
+  if (!value) return ""
+  return lang === "en" ? NETWORK_CATEGORY_EN[value] ?? value : value
+}
+
 export function getListingCategory(role: string | null): { group: string; subgroup?: string } | null {
   if (!role) return null
   if (Object.keys(NETWORK.Artists).includes(role)) return { group: "Artists" }

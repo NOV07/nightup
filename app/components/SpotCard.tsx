@@ -30,6 +30,7 @@ export default function SpotCard({
   const [saved, setSaved] = useState(initialSaved ?? false);
   const pathname = usePathname();
   const router = useRouter();
+  const { t: tToast } = useLanguage();
   const img = spot.coverImage || PLACE;
   // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
   const crop = spot.coverImage ? spot.crop : null;
@@ -48,10 +49,10 @@ export default function SpotCard({
         });
         if (res.status === 401) {
           setSaved(false);
-          toast('Συνδέσου για να το αποθηκεύσεις', {
+          toast(tToast('toast_sign_in_save'), {
             duration: 5000,
             action: {
-              label: 'Σύνδεση',
+              label: tToast('toast_sign_in'),
               onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
             },
           });

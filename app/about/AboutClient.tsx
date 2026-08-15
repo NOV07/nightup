@@ -220,13 +220,13 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
   const CARDS: Array<{ label: string; title: React.ReactNode; desc: string; href: string }> = [
     {
       label: t("about_card_label"),
-      title: <>Πρόσθεσε <em style={{ fontStyle: "italic", color: "#E8A020" }}>event</em></>,
+      title: <>{t("about_card_event_t1")} <em style={{ fontStyle: "italic", color: "#E8A020" }}>{t("about_card_event_t2")}</em></>,
       desc: t("about_card_event_desc"),
       href: "/submit/event",
     },
     {
       label: t("about_card_label"),
-      title: <>Φτιάξε <em style={{ fontStyle: "italic", color: "#E8A020" }}>προφίλ</em></>,
+      title: <>{t("about_card_profile_t1")} <em style={{ fontStyle: "italic", color: "#E8A020" }}>{t("about_card_profile_t2")}</em></>,
       desc: t("about_card_profile_desc"),
       // Straight to /upgrade — profiles are created through the upgrade flow.
       // /submit/professional only redirects here anyway.
@@ -234,8 +234,8 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
     },
     {
       label: t("about_card_label"),
-      title: <>Στείλε <em style={{ fontStyle: "italic", color: "#E8A020" }}>μουσική</em></>,
-      desc: "Νέο release ή mix; Στείλ' το για το Nightwaves.",
+      title: <>{t("about_card_music_t1")} <em style={{ fontStyle: "italic", color: "#E8A020" }}>{t("about_card_music_t2")}</em></>,
+      desc: t("about_card_music_desc"),
       href: "/submit/release",
     },
   ];
@@ -425,8 +425,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
             className={`about-lede ${spectral.className}`}
             style={{ fontStyle: "italic", fontSize: "18px", color: "#8A8A99", lineHeight: 1.65, maxWidth: "560px", marginTop: 0 }}
           >
-            Events, χώροι, μουσική, ιστορίες. Μαζεμένα σε ένα μέρος.
-            Για να ξέρεις πάντα τι παίζει, πού παίζει, και ποιος το κάνει.
+            {t("about_hero_lede")}
           </p>
           <div style={{ display: "flex", gap: "32px", marginTop: "36px", flexWrap: "wrap" }}>
             <StatItem target={liveStats.events} label="Events" />
@@ -574,8 +573,8 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
           }}
         >
           <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-            <Link href="/privacy" className="legal-link">Πολιτική Απορρήτου</Link>
-            <Link href="/terms" className="legal-link">Όροι Χρήσης</Link>
+            <Link href="/privacy" className="legal-link">{t("legal_privacy")}</Link>
+            <Link href="/terms" className="legal-link">{t("legal_terms")}</Link>
             <Link href="/cookies" className="legal-link">Cookies</Link>
           </div>
           <p

@@ -2,8 +2,12 @@
 import { useState } from 'react'
 import SpotCard from '@/app/components/SpotCard'
 import CroppedImage from '@/components/ui/CroppedImage'
-import { SPOT_CATEGORIES, SPOT_CROP_ASPECT, type Spot } from '@/app/spots/types'
-import { serializeOpeningHours, type SpotFormData } from './SpotFormSteps'
+import { SPOT_CATEGORIES, SPOT_CROP_ASPECT, loc, type Spot } from '@/app/spots/types'
+import { serializeOpeningHours, DAY_LABELS_EN, CLOSED, type SpotFormData, type Day } from './SpotFormSteps'
+import { GalleryPlayBadge } from '@/components/ui/GalleryLightbox'
+import type { GalleryItem } from '@/app/lib/types'
+import { useLanguage } from '@/app/components/LanguageContext'
+import type { TranslationKey } from '@/app/lib/translations'
 
 const GOLD = '#E8A020'
 
@@ -21,15 +25,16 @@ const ghostStyle: React.CSSProperties = {
   fontSize: 12,
 }
 
-function Ghost({ label, atStep }: { label: string; atStep: number }) {
-  return <span style={ghostStyle}>{label} — βήμα {atStep}</span>
+function Ghost({ labelKey, atStep }: { labelKey: TranslationKey; atStep: number }) {
+  const { t } = useLanguage()
+  return <span style={ghostStyle}>{t(labelKey)} — {t('wizard_ghost_step')} {atStep}</span>
 }
 
 /** The form state as the domain object the public components consume. */
-export function formToSpot(form: SpotFormData): Spot & { gallery: string[]; openingHours: Record<string, string> } {
+export function formToSpot(form: SpotFormData, nameFallback = 'Το spot σου'): Spot & { gallery: GalleryItem[]; openingHours: Record<string, string> } {
   return {
     id: 'preview',
-    name: form.name || 'Το spot σου',
+    name: form.name || nameFallback,
     slug: 'preview',
     category: (form.category || 'drink') as Spot['category'],
     subcategory: form.subcategory || null,
@@ -54,7 +59,8 @@ export function formToSpot(form: SpotFormData): Spot & { gallery: string[]; open
 }
 
 function CardTab({ form }: { form: SpotFormData }) {
-  const spot = formToSpot(form)
+  const { t, lang } = useLanguage()
+  const spot = formToSpot(form, lang === 'en' ? 'Your spot' : 'Το spot σου')
   return (
     <div>
       {/* The card is a Link and carries its own save button; neither should do
@@ -64,7 +70,7 @@ function CardTab({ form }: { form: SpotFormData }) {
       </div>
       <div style={{ marginTop: 14 }}>
         <p style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
-          Συμπαγής μορφή
+          {t('wizard_compact')}
         </p>
         <div style={{ pointerEvents: 'none' }}>
           <SpotCard spot={spot} compact />
@@ -75,6 +81,7 @@ function CardTab({ form }: { form: SpotFormData }) {
 }
 
 function PageTab({ form, step }: { form: SpotFormData; step: number }) {
+  const { t, lang } = useLanguage()
   const cat = SPOT_CATEGORIES.find(c => c.key === form.category)
   const hours = serializeOpeningHours(form.opening_hours)
   const contact = [form.phone, form.website, form.instagram].filter(Boolean)
@@ -93,7 +100,7 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
           <CroppedImage src={form.cover_image} alt="" crop={form.crop} sizes="380px" />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Ghost label="Εξώφυλλο" atStep={FIELD_STEP.cover_image} />
+            <Ghost labelKey="wizard_cover" atStep={FIELD_STEP.cover_image} />
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,15,26,0.95) 0%, rgba(15,15,26,0) 55%)', pointerEvents: 'none' }} />
@@ -105,7 +112,7 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
               backgroundColor: 'rgba(232,160,32,0.18)', color: GOLD,
               border: '1px solid rgba(232,160,32,0.4)', backdropFilter: 'blur(6px)',
             }}>
-              {cat.emoji} {cat.label}
+              {cat.emoji} {loc(lang, cat.label, cat.label_en)}
             </span>
           </div>
         )}
@@ -114,17 +121,17 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
       {/* Body */}
       <div style={{ padding: '18px 18px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h3 style={{ fontFamily: 'var(--font-spectral), Georgia, serif', fontSize: 22, lineHeight: 1.2, color: 'white', fontWeight: 600 }}>
-          {form.name || <Ghost label="Όνομα" atStep={FIELD_STEP.name} />}
+          {form.name || <Ghost labelKey="wizard_name" atStep={FIELD_STEP.name} />}
         </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
-            {form.subcategory || <span style={ghostStyle}>Υποκατηγορία</span>}
+            {form.subcategory || <span style={ghostStyle}>{t('wizard_subcategory')}</span>}
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
             {form.address || form.city
               ? `📍 ${[form.address, form.neighborhood, form.city].filter(Boolean).join(', ')}`
-              : <Ghost label="Τοποθεσία" atStep={FIELD_STEP.address} />}
+              : <Ghost labelKey="wizard_step_location" atStep={FIELD_STEP.address} />}
           </div>
           {form.price_level > 0 && (
             <div style={{ fontSize: 12, fontWeight: 700, color: GOLD }}>{'€'.repeat(form.price_level)}</div>
@@ -137,26 +144,26 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
             {form.description}
           </p>
         ) : step < FIELD_STEP.description && (
-          <Ghost label="Περιγραφή" atStep={FIELD_STEP.description} />
+          <Ghost labelKey="wizard_description" atStep={FIELD_STEP.description} />
         )}
 
         {/* Opening hours */}
         {Object.keys(hours).length > 0 ? (
           <div>
             <p style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', marginBottom: 7 }}>
-              Ωράριο
+              {t('spots_hours')}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {Object.entries(hours).map(([day, hrs]) => (
                 <div key={day} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>{day}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.8)' }}>{hrs}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>{lang === 'en' ? DAY_LABELS_EN[day as Day] ?? day : day}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.8)' }}>{lang === 'en' && hrs === CLOSED ? t('wizard_closed') : hrs}</span>
                 </div>
               ))}
             </div>
           </div>
         ) : step < FIELD_STEP.opening_hours && (
-          <Ghost label="Ωράριο" atStep={FIELD_STEP.opening_hours} />
+          <Ghost labelKey="spots_hours" atStep={FIELD_STEP.opening_hours} />
         )}
 
         {/* Gallery strip */}
@@ -166,9 +173,17 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
               Gallery
             </p>
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-              {form.gallery.map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: 58, height: 58, flexShrink: 0, objectFit: 'cover', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)' }} />
-              ))}
+              {form.gallery.map((item, i) => {
+                const thumb = item.type === 'video' ? item.poster : item.url
+                return (
+                  <div key={i} style={{ position: 'relative', width: 58, height: 58, flexShrink: 0, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    {thumb
+                      ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.06)' }} />}
+                    {item.type === 'video' && <GalleryPlayBadge size={22} />}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -188,7 +203,7 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
             ))}
           </div>
         ) : step < FIELD_STEP.phone && (
-          <Ghost label="Επικοινωνία" atStep={FIELD_STEP.phone} />
+          <Ghost labelKey="wizard_step_contact" atStep={FIELD_STEP.phone} />
         )}
       </div>
     </div>
@@ -196,6 +211,7 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
 }
 
 export default function SpotLivePreview({ form, step }: { form: SpotFormData; step: number }) {
+  const { t } = useLanguage()
   const [tab, setTab] = useState<'card' | 'page'>('card')
 
   const tabStyle = (on: boolean): React.CSSProperties => ({
@@ -212,8 +228,8 @@ export default function SpotLivePreview({ form, step }: { form: SpotFormData; st
         display: 'flex', gap: 6, marginBottom: 14, padding: 4, borderRadius: 12,
         backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <button type="button" onClick={() => setTab('card')} style={tabStyle(tab === 'card')}>Κάρτα</button>
-        <button type="button" onClick={() => setTab('page')} style={tabStyle(tab === 'page')}>Σελίδα</button>
+        <button type="button" onClick={() => setTab('card')} style={tabStyle(tab === 'card')}>{t('wizard_card_tab')}</button>
+        <button type="button" onClick={() => setTab('page')} style={tabStyle(tab === 'page')}>{t('wizard_page_tab')}</button>
       </div>
 
       {tab === 'card' ? <CardTab form={form} /> : <PageTab form={form} step={step} />}

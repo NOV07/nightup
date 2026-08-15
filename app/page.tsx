@@ -10,6 +10,7 @@ import HeroSlider from "./components/HeroSlider";
 import NightwavesHomeCard from "./components/NightwavesHomeCard";
 import { formatPrice } from "./lib/formatPrice";
 import T from "./components/T";
+import TranslatedText from "./components/TranslatedText";
 
 export const dynamic = "force-dynamic";
 
@@ -192,7 +193,17 @@ export default async function HomePage() {
       eyebrow: { el: "ΕΚΔΗΛΩΣΗ ΤΗΣ ΕΒΔΟΜΑΔΑΣ", en: "EVENT OF THE WEEK" } as { el: string; en: string },
       title: e.title,
       subtitle: `${e.venue} · ${e.city}`,
-      meta: [new Date(e.date).toLocaleDateString("el-GR", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).toUpperCase(), e.venue, formatPrice(e.price) || "είσοδος ελεύθερη"],
+      meta: [
+        {
+          el: new Date(e.date).toLocaleDateString("el-GR", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).toUpperCase(),
+          en: new Date(e.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).toUpperCase(),
+        },
+        e.venue,
+        {
+          el: formatPrice(e.price, "el") || "είσοδος ελεύθερη",
+          en: formatPrice(e.price, "en") || "free entry",
+        },
+      ],
       ctaLabel: { el: "Εισιτήρια", en: "Tickets" } as { el: string; en: string },
       ctaHref: `/events/${e.id}`,
       image: e.image || undefined,
@@ -332,13 +343,13 @@ export default async function HomePage() {
                   fontWeight: 400, lineHeight: 1.3,
                   color: "var(--text-primary)", marginBottom: "8px",
                 }} className="discover-card-title">
-                  {latestArticles[0].title}
+                  <TranslatedText text={latestArticles[0].title} />
                 </h3>
                 <p style={{
                   fontFamily: "var(--font-serif)", fontStyle: "italic",
                   fontSize: "13px", lineHeight: 1.65,
                   color: "var(--text-secondary)", marginBottom: "10px",
-                }}>{latestArticles[0].excerpt}</p>
+                }}><TranslatedText text={latestArticles[0].excerpt} /></p>
                 <p style={{
                   fontFamily: "var(--font-mono)", fontSize: "8px",
                   letterSpacing: "0.08em", textTransform: "uppercase",
@@ -383,7 +394,7 @@ export default async function HomePage() {
                   fontWeight: 400, lineHeight: 1.35,
                   color: "var(--text-primary)",
                 }} className="discover-card-title">
-                  {latestArticles[1].title}
+                  <TranslatedText text={latestArticles[1].title} />
                 </h3>
                 <p style={{
                   fontFamily: "var(--font-mono)", fontSize: "8px",

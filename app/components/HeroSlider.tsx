@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "./LanguageContext";
+import TranslatedText from "./TranslatedText";
 
 interface Slide {
   id: string;
@@ -10,7 +11,7 @@ interface Slide {
   eyebrow: string | { el: string; en: string };
   title: string;
   subtitle: string;
-  meta: string[];
+  meta: (string | { el: string; en: string })[];
   ctaLabel: string | { el: string; en: string };
   ctaHref: string;
   image?: string;
@@ -197,7 +198,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
             maxWidth: "560px", marginBottom: "8px",
           }}
         >
-          {slide.title}
+          {slide.type === "article" ? <TranslatedText text={slide.title} /> : slide.title}
         </h1>
         <p style={{
           fontFamily: "var(--font-serif)",
@@ -206,7 +207,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
           maxWidth: "440px", lineHeight: 1.6,
           marginBottom: "18px",
         }}>
-          {slide.subtitle}
+          {slide.type === "article" ? <TranslatedText text={slide.subtitle} /> : slide.subtitle}
         </p>
         <div style={{
           display: "flex", alignItems: "center",
@@ -218,7 +219,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
               fontSize: "9px", letterSpacing: "0.1em",
               textTransform: "uppercase",
               color: "var(--text-muted)",
-            }}>{m}</span>
+            }}>{typeof m === "object" ? m[lang] : m}</span>
           ))}
         </div>
       </div>

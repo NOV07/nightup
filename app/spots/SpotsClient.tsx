@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import SpotCard from "../components/SpotCard";
-import { SPOT_CATEGORIES, SUBCATEGORIES, type Spot, type SpotCategory } from "./types";
+import { SPOT_CATEGORIES, SUBCATEGORIES, loc, type Spot, type SpotCategory } from "./types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { useLanguage } from "../components/LanguageContext";
 
 export default function SpotsClient({ spots }: { spots: Spot[] }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [active, setActive] = useState<SpotCategory>("drink");
   const [subFilter, setSubFilter] = useState<Record<string, string | null>>({});
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -138,7 +138,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                   transition: "all .25s cubic-bezier(.22,.61,.36,1)",
                 }}
               >
-                <SpotCategoryIcon category={c.key} size={14} /> {c.label}
+                <SpotCategoryIcon category={c.key} size={14} /> {loc(lang, c.label, c.label_en)}
               </button>
             );
           })}
@@ -160,7 +160,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                   <div>
                     <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <SpotCategoryIcon category={c.key} size={14} />
-                      {c.label}
+                      {loc(lang, c.label, c.label_en)}
                     </p>
                     <div style={{ width: '24px', height: '1px', background: '#E8A020', marginTop: '6px' }} />
                   </div>
@@ -186,7 +186,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                       onClick={() => setSubFilter((p) => ({ ...p, [c.key]: on ? null : sub.value }))}
                       style={subChipStyle(on)}
                     >
-                      {sub.label} · {n}
+                      {loc(lang, sub.label, sub.label_en)} · {n}
                     </button>
                   );
                 })}

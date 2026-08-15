@@ -1,6 +1,7 @@
 "use client";
 
 import { type SearchTab } from "../../components/SearchBar";
+import { useLanguage } from "./LanguageContext";
 
 interface NavSearchProps {
   activeTab: SearchTab | null;
@@ -15,6 +16,7 @@ const MagnifyingGlass = ({ stroke }: { stroke: string }) => (
 );
 
 export default function NavSearch({ activeTab, onTabClick }: NavSearchProps) {
+  const { t } = useLanguage();
   const isOpen = activeTab !== null;
 
   return (
@@ -22,7 +24,7 @@ export default function NavSearch({ activeTab, onTabClick }: NavSearchProps) {
       <button
         type="button"
         onClick={() => onTabClick("search")}
-        aria-label="Αναζήτηση"
+        aria-label={t("search_title")}
         style={{
           display: "flex",
           alignItems: "center",

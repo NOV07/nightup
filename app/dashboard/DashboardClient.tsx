@@ -11,7 +11,7 @@ import CroppedImage from '../../components/ui/CroppedImage'
 import { getAvatarCrop, getCoverCrop } from '../lib/profileCrop'
 import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import UpgradeModal from '@/components/auth/UpgradeModal'
-import { NETWORK, CITIES } from '../lib/searchData'
+import { NETWORK, CITIES, networkCategoryLabel } from '../lib/searchData'
 import ConsumerDashboard from './ConsumerDashboard'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '../lib/translations'
@@ -85,7 +85,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   ownedSpot?: any | null
 }) {
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -367,7 +367,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     // the spot is the account's first job, its events come after.
     spot: ownedSpot
       ? { href: '/dashboard/events/new', label: t('dashboard_new_event') }
-      : { href: '/dashboard/spots/new', label: 'Καταχώρησε το spot σου' },
+      : { href: '/dashboard/spots/new', label: t('dashboard_submit_spot') },
     // A professional's own listing is the thing they publish, so the header CTA
     // points at the wizard that fills it in.
     professional: {
@@ -610,7 +610,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {profile.network_category && (
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
-                          {profile.network_category}
+                          {networkCategoryLabel(profile.network_category, lang)}
                         </span>
                       )}
                       {profile.location && (
@@ -701,7 +701,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {profile.network_category && (
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}>
-                          {profile.network_category}
+                          {networkCategoryLabel(profile.network_category, lang)}
                         </span>
                       )}
                       {profile.venue_capacity && (
@@ -1051,7 +1051,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
             {profile.profile_type === 'spot' && (
               <div className="mb-8">
                 <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  Το spot σου
+                  {t('dashboard_your_spot')}
                 </h3>
                 {ownedSpot ? (
                   <div className="flex items-center gap-4 p-4 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
@@ -1094,14 +1094,14 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                 ) : (
                   <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                     <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                      Δεν έχεις καταχωρήσει ακόμα το spot σου.
+                      {t('dashboard_no_spot_yet')}
                     </p>
                     <Link
                       href="/dashboard/spots/new"
                       className="inline-block text-xs px-4 py-2 rounded-lg font-medium"
                       style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
                     >
-                      Καταχώρησε το spot σου
+                      {t('dashboard_submit_spot')}
                     </Link>
                   </div>
                 )}

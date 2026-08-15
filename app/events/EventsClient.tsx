@@ -360,8 +360,8 @@ export default function EventsClient({
               className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
               style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}
             >
-              {modalWhen}
-              <button onClick={clearModalWhen} aria-label="Καθαρισμός ημερομηνίας" className="leading-none">×</button>
+              {({ "Απόψε": t("filter_tonight"), "Αύριο": t("filter_tomorrow"), "Σαββατοκύριακο": t("filter_weekend") } as Record<string, string>)[modalWhen] ?? modalWhen}
+              <button onClick={clearModalWhen} aria-label={t("events_clear")} className="leading-none">×</button>
             </span>
           )}
           {modalMood && (
@@ -369,8 +369,8 @@ export default function EventsClient({
               className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
               style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}
             >
-              {modalMood}
-              <button onClick={clearModalMood} aria-label="Καθαρισμός mood" className="leading-none">×</button>
+              {modalMood.startsWith("filter_") ? t(modalMood as Parameters<typeof t>[0]) : modalMood}
+              <button onClick={clearModalMood} aria-label={t("events_clear")} className="leading-none">×</button>
             </span>
           )}
           {modalCity && (
@@ -378,8 +378,8 @@ export default function EventsClient({
               className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
               style={{ backgroundColor: "rgba(232,160,32,0.1)", color: "#E8A020", border: "1px solid rgba(232,160,32,0.25)" }}
             >
-              {modalCity}
-              <button onClick={clearModalCity} aria-label="Καθαρισμός πόλης" className="leading-none">×</button>
+              {({ "Αθήνα": t("filter_athens"), "Θεσσαλονίκη": t("filter_thessaloniki"), "Όλη η Ελλάδα": t("filter_all_greece") } as Record<string, string>)[modalCity] ?? modalCity}
+              <button onClick={clearModalCity} aria-label={t("events_clear")} className="leading-none">×</button>
             </span>
           )}
           <button
@@ -387,7 +387,7 @@ export default function EventsClient({
             className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors hover:bg-white/5"
             style={{ color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.1)" }}
           >
-            Καθαρισμός
+            {t("events_clear")}
           </button>
         </div>
       )}
@@ -707,10 +707,10 @@ export default function EventsClient({
                 marginBottom: "10px",
               }}
             >
-              Σύντομα
+              {t("events_soon_title")}
             </p>
             <p style={{ fontSize: "13px", color: "#3A3A4A" }}>
-              Ετοιμάζουμε events για αυτή την κατηγορία.
+              {t("events_soon_body")}
             </p>
           </div>
         ) : (

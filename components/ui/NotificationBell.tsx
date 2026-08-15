@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/app/components/LanguageContext'
+import TranslatedText from '@/app/components/TranslatedText'
 
 interface Actor {
   display_name: string
@@ -23,12 +25,21 @@ interface ApiResponse {
   unread_count: number
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, lang: 'el' | 'en'): string {
   const now = new Date()
   const d = new Date(dateStr)
   const diffMins  = Math.floor((now.getTime() - d.getTime()) / 60000)
   const diffHours = Math.floor(diffMins / 60)
   const diffDays  = Math.floor(diffHours / 24)
+
+  if (lang === 'en') {
+    if (diffMins < 1)   return 'just now'
+    if (diffMins < 60)  return `${diffMins} min ago`
+    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
+    if (diffDays === 1) return 'yesterday'
+    if (diffDays < 7)   return `${diffDays} days ago`
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  }
 
   if (diffMins < 1)   return 'μόλις τώρα'
   if (diffMins < 60)  return `πριν ${diffMins} ${diffMins === 1 ? 'λεπτό' : 'λεπτά'}`
@@ -48,6 +59,7 @@ export default function NotificationBell() {
   const [open, setOpen]   = useState(false)
   const ref               = useRef<HTMLDivElement>(null)
   const router            = useRouter()
+  const { t, lang }       = useLanguage()
 
   async function fetchNotifications() {
     try {
@@ -96,7 +108,7 @@ export default function NotificationBell() {
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
-        aria-label="Ειδοποιήσεις"
+        aria-label={t('notif_title')}
         style={{
           position: 'relative',
           background: 'none',
@@ -156,14 +168,14 @@ export default function NotificationBell() {
               color: '#F4F4F5',
               fontWeight: 600,
             }}>
-              Ειδοποιήσεις
+              {t('notif_title')}
             </span>
             {data.unread_count > 0 && (
               <button
                 onClick={markAllRead}
                 style={{ fontSize: 11, color: '#E8A020', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
-                Σήμαν όλες ως διαβασμένες
+                {t('notif_mark_all')}
               </button>
             )}
           </div>
@@ -171,7 +183,7 @@ export default function NotificationBell() {
           {/* Body */}
           {data.notifications.length === 0 ? (
             <div style={{ padding: '40px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.40)', fontSize: 13 }}>
-              Δεν έχεις ειδοποιήσεις ακόμα
+              {t('notif_empty')}
             </div>
           ) : (
             data.notifications.map((n, i) => (
@@ -213,15 +225,15 @@ export default function NotificationBell() {
                     lineHeight: 1.4,
                     marginBottom: n.body ? 4 : 2,
                   }}>
-                    {n.title}
+                    <TranslatedText text={n.title} />
                   </p>
                   {n.body && (
                     <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', lineHeight: 1.4, marginBottom: 4 }}>
-                      {n.body}
+                      <TranslatedText text={n.body} />
                     </p>
                   )}
                   <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
-                    {timeAgo(n.created_at)}
+                    {timeAgo(n.created_at, lang)}
                   </p>
                 </div>
               </div>

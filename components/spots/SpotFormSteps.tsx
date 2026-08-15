@@ -1,12 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
 import ImageUpload from '@/components/ui/ImageUpload'
+import GalleryUpload from '@/components/ui/GalleryUpload'
+import { GalleryPlayBadge } from '@/components/ui/GalleryLightbox'
+import type { GalleryItem } from '@/app/lib/types'
 import ImageCropper, { type CropBox } from '@/components/ui/ImageCropper'
 import CroppedImage from '@/components/ui/CroppedImage'
 import {
-  SPOT_CATEGORIES, SUBCATEGORIES, SPOT_CROP_ASPECT, type SpotCategory,
+  SPOT_CATEGORIES, SUBCATEGORIES, SPOT_CROP_ASPECT, loc, type SpotCategory,
 } from '@/app/spots/types'
 import SpotLivePreview from './SpotLivePreview'
+import { useLanguage } from '@/app/components/LanguageContext'
+import type { TranslationKey } from '@/app/lib/translations'
 
 // Same list the event wizard offers — spots had no city constant of its own.
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
@@ -20,11 +25,18 @@ export const CLOSED = 'Κλειστά'
 export const DAYS = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'] as const
 export type Day = (typeof DAYS)[number]
 
-const STEPS = [
-  { n: 1, title: 'Τα βασικά' },
-  { n: 2, title: 'Τοποθεσία' },
-  { n: 3, title: 'Φωτογραφίες & Ώρες' },
-  { n: 4, title: 'Επικοινωνία' },
+// Stored values stay Greek (they are what the DB and public page hold) — only
+// the wizard's display flips with the language toggle.
+export const DAY_LABELS_EN: Record<Day, string> = {
+  'Δευτέρα': 'Monday', 'Τρίτη': 'Tuesday', 'Τετάρτη': 'Wednesday', 'Πέμπτη': 'Thursday',
+  'Παρασκευή': 'Friday', 'Σάββατο': 'Saturday', 'Κυριακή': 'Sunday',
+}
+
+const STEPS: { n: number; titleKey: TranslationKey }[] = [
+  { n: 1, titleKey: 'wizard_step_basics' },
+  { n: 2, titleKey: 'wizard_step_location' },
+  { n: 3, titleKey: 'wizard_step_photos_hours' },
+  { n: 4, titleKey: 'wizard_step_contact' },
 ]
 
 // ── Style tokens (module-level — no state dependency) ─────────────────────
@@ -55,7 +67,7 @@ export interface SpotFormData {
   lng: number | null
   cover_image: string
   crop: CropBox | null
-  gallery: string[]
+  gallery: GalleryItem[]
   opening_hours: Record<Day, DayHours>
   phone: string
   website: string
@@ -166,6 +178,7 @@ function Err({ stepErrors, k }: { stepErrors: Record<string, string>; k: string 
 }
 
 function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) => void }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 36 }}>
       {STEPS.map((s, i) => (
@@ -187,7 +200,7 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
               color: step === s.n ? '#E8A020' : s.n < step ? 'rgba(232,160,32,0.6)' : 'rgba(255,255,255,0.25)',
               whiteSpace: 'nowrap',
             }}>
-              {s.title}
+              {t(s.titleKey)}
             </span>
           </div>
           {i < STEPS.length - 1 && (
@@ -205,11 +218,12 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
 function Step1({ form, set, stepErrors }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
 }) {
+  const { t, lang } = useLanguage()
   const subs = form.category ? SUBCATEGORIES[form.category] : []
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Κατηγορία *</label>
+        <label style={lbl}>{t('wizard_category')} *</label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
           {SPOT_CATEGORIES.map(c => {
             const on = form.category === c.key
@@ -227,8 +241,8 @@ function Step1({ form, set, stepErrors }: {
                   border: `1px solid ${on ? 'rgba(232,160,32,0.45)' : 'rgba(255,255,255,0.1)'}`,
                 }}>
                 <div style={{ fontSize: 22, lineHeight: 1 }}>{c.emoji}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, color: on ? '#E8A020' : 'white' }}>{c.label}</div>
-                <div style={{ fontSize: 10, marginTop: 3, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>{c.sub}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, color: on ? '#E8A020' : 'white' }}>{loc(lang, c.label, c.label_en)}</div>
+                <div style={{ fontSize: 10, marginTop: 3, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>{loc(lang, c.sub, c.sub_en)}</div>
               </button>
             )
           })}
@@ -238,7 +252,7 @@ function Step1({ form, set, stepErrors }: {
 
       {form.category && (
         <div>
-          <label style={lbl}>Υποκατηγορία</label>
+          <label style={lbl}>{t('wizard_subcategory')}</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {subs.map(s => {
               const on = form.subcategory === s.value
@@ -251,7 +265,7 @@ function Step1({ form, set, stepErrors }: {
                     color: on ? '#E8A020' : 'rgba(255,255,255,0.4)',
                     border: `1px solid ${on ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
                   }}>
-                  {s.label}
+                  {loc(lang, s.label, s.label_en)}
                 </button>
               )
             })}
@@ -260,8 +274,8 @@ function Step1({ form, set, stepErrors }: {
       )}
 
       <div>
-        <label style={lbl}>Όνομα *</label>
-        <input style={inp} value={form.name} onChange={e => set('name', e.target.value)} placeholder="π.χ. Κήπος Rooftop" />
+        <label style={lbl}>{t('wizard_name')} *</label>
+        <input style={inp} value={form.name} onChange={e => set('name', e.target.value)} placeholder={t('spot_wizard_name_ph')} />
         <Err stepErrors={stepErrors} k="name" />
       </div>
     </div>
@@ -271,14 +285,15 @@ function Step1({ form, set, stepErrors }: {
 function Step2({ form, set, stepErrors }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Πόλη *</label>
+        <label style={lbl}>{t('wizard_city')} *</label>
         <div style={{ position: 'relative' }}>
           <select style={{ ...inp, appearance: 'none', cursor: 'pointer', backgroundColor: '#0F0F1A' }}
             value={form.city} onChange={e => set('city', e.target.value)}>
-            <option value="">Διάλεξε πόλη...</option>
+            <option value="">{t('wizard_pick_city')}</option>
             {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#E8A020', pointerEvents: 'none' }}>▾</span>
@@ -287,13 +302,13 @@ function Step2({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>Γειτονιά</label>
-        <input style={inp} value={form.neighborhood} onChange={e => set('neighborhood', e.target.value)} placeholder="π.χ. Κουκάκι" />
+        <label style={lbl}>{t('wizard_neighborhood')}</label>
+        <input style={inp} value={form.neighborhood} onChange={e => set('neighborhood', e.target.value)} placeholder={t('wizard_neigh_ph')} />
       </div>
 
       <div>
-        <label style={lbl}>Διεύθυνση *</label>
-        <input style={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder="π.χ. Φαλήρου 22, Αθήνα 117 42" />
+        <label style={lbl}>{t('wizard_address')} *</label>
+        <input style={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder={t('wizard_address_ph')} />
         <Err stepErrors={stepErrors} k="address" />
       </div>
 
@@ -303,15 +318,15 @@ function Step2({ form, set, stepErrors }: {
           padding: '12px 14px', borderRadius: 12, marginBottom: 10,
           backgroundColor: 'rgba(232,160,32,0.07)', border: '1px solid rgba(232,160,32,0.22)',
         }}>
-          <p style={{ fontSize: 12, color: '#E8A020', fontWeight: 700, marginBottom: 6 }}>Πώς βρίσκεις το σωστό link</p>
+          <p style={{ fontSize: 12, color: '#E8A020', fontWeight: 700, marginBottom: 6 }}>{t('spot_maps_help_title')}</p>
           <ol style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, paddingLeft: 16, margin: 0 }}>
-            <li>Άνοιξε το Google Maps σε <strong style={{ color: 'rgba(255,255,255,0.85)' }}>browser</strong>, όχι στην εφαρμογή.</li>
-            <li>Βρες το σημείο σου στον χάρτη.</li>
-            <li>Αντίγραψε το URL από τη <strong style={{ color: 'rgba(255,255,255,0.85)' }}>μπάρα διευθύνσεων</strong>.</li>
+            <li>{t('spot_maps_help_1a')} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>browser</strong>{t('spot_maps_help_1b')}</li>
+            <li>{t('spot_maps_help_2')}</li>
+            <li>{t('spot_maps_help_3a')} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{t('spot_maps_help_3b')}</strong>.</li>
           </ol>
           <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 8, lineHeight: 1.6 }}>
-            Πρέπει να περιέχει συντεταγμένες, κάτι σαν <code style={{ color: '#E8A020' }}>@37.97,23.72</code>.
-            Το link από το κουμπί «Κοινοποίηση» της εφαρμογής στο κινητό <strong style={{ color: 'rgba(255,255,255,0.7)' }}>δεν δουλεύει</strong> εδώ.
+            {t('spot_maps_note_1')} <code style={{ color: '#E8A020' }}>@37.97,23.72</code>.
+            {' '}{t('spot_maps_note_2a')} <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{t('spot_maps_note_2b')}</strong> {t('spot_maps_note_2c')}
           </p>
         </div>
         <input style={inp} value={form.maps_url}
@@ -325,7 +340,7 @@ function Step2({ form, set, stepErrors }: {
         <Err stepErrors={stepErrors} k="maps_url" />
         {form.lat != null && form.lng != null && (
           <p style={{ fontSize: 12, color: '#22c55e', marginTop: 6 }}>
-            ✓ Συντεταγμένες: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+            ✓ {t('wizard_coords')}: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
           </p>
         )}
       </div>
@@ -335,16 +350,17 @@ function Step2({ form, set, stepErrors }: {
 
 function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropper, setShowCropper }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
-  onGalleryAdd: (url: string) => void
+  onGalleryAdd: (item: GalleryItem) => void
   onGalleryRemove: (i: number) => void
   showCropper: boolean
   setShowCropper: (v: boolean) => void
 }) {
+  const { t, lang } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* Cover */}
       <div>
-        <label style={lbl}>Εξώφυλλο *</label>
+        <label style={lbl}>{t('wizard_cover')} *</label>
         {form.cover_image ? (
           <div>
             <div style={{ position: 'relative', width: '100%', aspectRatio: `${SPOT_CROP_ASPECT}`, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -353,11 +369,11 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <button type="button" onClick={() => setShowCropper(true)}
                 style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, cursor: 'pointer', backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.3)' }}>
-                Προσαρμογή κάδρου
+                {t('wizard_adjust_crop')}
               </button>
               <button type="button" onClick={() => { set('cover_image', ''); set('crop', null) }}
                 style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, cursor: 'pointer', backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Αφαίρεση
+                {t('common_remove')}
               </button>
             </div>
           </div>
@@ -384,15 +400,18 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
         <label style={lbl}>
           Gallery{' '}
           <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'rgba(255,255,255,0.40)' }}>
-            (προαιρετικό, έως {MAX_GALLERY})
+            {t('wizard_gallery_optional_max')} {MAX_GALLERY})
           </span>
         </label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 10 }}>
-          {form.gallery.map((url, i) => (
-            <div key={`${url}-${i}`} className="group"
+          {form.gallery.map((item, i) => (
+            <div key={`${item.url}-${i}`} className="group"
               style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              <button type="button" onClick={() => onGalleryRemove(i)} aria-label="Αφαίρεση φωτογραφίας"
+              {(item.type === 'video' ? item.poster : item.url)
+                ? <img src={item.type === 'video' ? item.poster : item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                : <div style={{ width: '100%', height: '100%' }} />}
+              {item.type === 'video' && <GalleryPlayBadge size={26} />}
+              <button type="button" onClick={() => onGalleryRemove(i)} aria-label={t('wizard_remove_file')}
                 className="opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, cursor: 'pointer', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', border: 'none' }}>
                 ×
@@ -401,7 +420,7 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
           ))}
           {form.gallery.length < MAX_GALLERY && (
             <div style={{ aspectRatio: '1 / 1', borderRadius: 12, overflow: 'hidden', border: '1px dashed rgba(255,255,255,0.15)' }}>
-              <ImageUpload folder="spots" onUpload={onGalleryAdd} />
+              <GalleryUpload context="spot" onUpload={onGalleryAdd} />
             </div>
           )}
         </div>
@@ -409,16 +428,16 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
 
       {/* Opening hours */}
       <div>
-        <label style={lbl}>Ωράριο</label>
+        <label style={lbl}>{t('spots_hours')}</label>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.30)', marginBottom: 10 }}>
-          Άφησε κενή όποια μέρα δεν θέλεις να εμφανίζεται.
+          {t('wizard_hours_hint')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {DAYS.map(day => {
             const v = form.opening_hours[day]
             return (
               <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 92, flexShrink: 0, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{day}</span>
+                <span style={{ width: 92, flexShrink: 0, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{lang === 'en' ? DAY_LABELS_EN[day] : day}</span>
                 <button type="button"
                   onClick={() => set('opening_hours', { ...form.opening_hours, [day]: { closed: !v.closed, hours: '' } })}
                   style={{
@@ -427,14 +446,14 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
                     color: v.closed ? '#ef4444' : '#22c55e',
                     border: `1px solid ${v.closed ? 'rgba(239,68,68,0.35)' : 'rgba(34,197,94,0.3)'}`,
                   }}>
-                  {v.closed ? CLOSED : 'Ανοιχτά'}
+                  {v.closed ? t('wizard_closed') : t('wizard_open')}
                 </button>
                 <input
                   style={{ ...inp, padding: '9px 14px', opacity: v.closed ? 0.35 : 1 }}
                   disabled={v.closed}
                   value={v.hours}
                   onChange={e => set('opening_hours', { ...form.opening_hours, [day]: { closed: false, hours: e.target.value } })}
-                  placeholder="π.χ. 18:00-02:00" />
+                  placeholder={t('wizard_hours_ph')} />
               </div>
             )
           })}
@@ -447,20 +466,26 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
 function Step4({ form, set, stepErrors }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
 }) {
+  const { t, lang } = useLanguage()
   const cat = SPOT_CATEGORIES.find(c => c.key === form.category)
   const hours = serializeOpeningHours(form.opening_hours)
+  const catLabel = cat ? loc(lang, cat.label, cat.label_en) : undefined
+  const subLabelDef = form.category && form.subcategory
+    ? SUBCATEGORIES[form.category]?.find(s => s.value === form.subcategory)
+    : null
+  const subLabel = subLabelDef ? loc(lang, subLabelDef.label, subLabelDef.label_en) : form.subcategory
   const summary: { label: string; value: string }[] = [
-    { label: 'Κατηγορία', value: [cat?.label, form.subcategory].filter(Boolean).join(' · ') || '—' },
-    { label: 'Τοποθεσία', value: [form.address, form.neighborhood, form.city].filter(Boolean).join(', ') || '—' },
-    { label: 'Συντεταγμένες', value: form.lat != null && form.lng != null ? `${form.lat.toFixed(5)}, ${form.lng.toFixed(5)}` : '—' },
-    { label: 'Φωτογραφίες', value: `${form.cover_image ? 1 : 0} εξώφυλλο · ${form.gallery.length} gallery` },
+    { label: t('wizard_category'), value: [catLabel, subLabel].filter(Boolean).join(' · ') || '—' },
+    { label: t('wizard_step_location'), value: [form.address, form.neighborhood, form.city].filter(Boolean).join(', ') || '—' },
+    { label: t('wizard_coords'), value: form.lat != null && form.lng != null ? `${form.lat.toFixed(5)}, ${form.lng.toFixed(5)}` : '—' },
+    { label: t('dashboard_photos'), value: `${form.cover_image ? 1 : 0} ${t('wizard_photos_cover_count')} · ${form.gallery.length} gallery` },
   ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Τηλέφωνο</label>
-        <input style={inp} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="π.χ. 210 1234567" />
+        <label style={lbl}>{t('dashboard_phone')}</label>
+        <input style={inp} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder={t('wizard_phone_ph')} />
       </div>
 
       <div>
@@ -474,7 +499,7 @@ function Step4({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>Εύρος τιμών</label>
+        <label style={lbl}>{t('wizard_price_range')}</label>
         <div style={{ display: 'flex', gap: 8 }}>
           {[1, 2, 3, 4].map(level => {
             const on = form.price_level === level
@@ -495,21 +520,21 @@ function Step4({ form, set, stepErrors }: {
 
       <div>
         <label style={lbl}>
-          Περιγραφή *{' '}
+          {t('wizard_description')} *{' '}
           <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
             {form.description.length}/600
           </span>
         </label>
         <textarea style={{ ...inp, minHeight: 110, resize: 'vertical' }} maxLength={600}
           value={form.description} onChange={e => set('description', e.target.value)}
-          placeholder="Τι κάνει το σημείο σου ξεχωριστό;" />
+          placeholder={t('spot_desc_ph')} />
         <Err stepErrors={stepErrors} k="description" />
       </div>
 
       {/* Review */}
       <div style={{ padding: '16px 18px', borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
-          Έλεγχος πριν την υποβολή
+          {t('wizard_review_heading')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {summary.map(row => (
@@ -519,11 +544,15 @@ function Step4({ form, set, stepErrors }: {
             </div>
           ))}
           <div style={{ display: 'flex', gap: 12, fontSize: 12.5 }}>
-            <span style={{ width: 108, flexShrink: 0, color: 'rgba(255,255,255,0.35)' }}>Ωράριο</span>
+            <span style={{ width: 108, flexShrink: 0, color: 'rgba(255,255,255,0.35)' }}>{t('spots_hours')}</span>
             <span style={{ color: 'rgba(255,255,255,0.8)' }}>
               {Object.keys(hours).length === 0
                 ? '—'
-                : Object.entries(hours).map(([d, h]) => `${d}: ${h}`).join(' · ')}
+                : Object.entries(hours).map(([d, h]) => {
+                    const day = lang === 'en' ? DAY_LABELS_EN[d as Day] ?? d : d
+                    const val = lang === 'en' && h === CLOSED ? t('wizard_closed') : h
+                    return `${day}: ${val}`
+                  }).join(' · ')}
             </span>
           </div>
         </div>
@@ -533,6 +562,7 @@ function Step4({ form, set, stepErrors }: {
 }
 
 export default function SpotFormSteps({ initialData, onSubmit, loading, error, isEdit = false }: Props) {
+  const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<SpotFormData>({ ...DEFAULTS, ...initialData })
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({})
@@ -552,8 +582,8 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     setStepErrors(prev => ({ ...prev, [k]: '' }))
   }
 
-  function addGalleryImage(url: string) {
-    setForm(prev => prev.gallery.length >= MAX_GALLERY ? prev : { ...prev, gallery: [...prev.gallery, url] })
+  function addGalleryImage(item: GalleryItem) {
+    setForm(prev => prev.gallery.length >= MAX_GALLERY ? prev : { ...prev, gallery: [...prev.gallery, item] })
   }
 
   function removeGalleryImage(index: number) {
@@ -563,24 +593,24 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
   function validate(n: number): Record<string, string> {
     const e: Record<string, string> = {}
     if (n === 1) {
-      if (!form.category) e.category = 'Διάλεξε κατηγορία'
-      if (!form.name.trim()) e.name = 'Το όνομα είναι υποχρεωτικό'
+      if (!form.category) e.category = t('err_pick_category')
+      if (!form.name.trim()) e.name = t('err_name_required')
     }
     if (n === 2) {
-      if (!form.city) e.city = 'Διάλεξε πόλη'
-      if (!form.address.trim()) e.address = 'Η διεύθυνση είναι υποχρεωτική'
+      if (!form.city) e.city = t('err_pick_city')
+      if (!form.address.trim()) e.address = t('err_address_required')
       if (!form.maps_url.trim()) {
-        e.maps_url = 'Το Google Maps link είναι υποχρεωτικό'
+        e.maps_url = t('err_maps_required')
       } else if (form.lat == null || form.lng == null) {
         // Never let a required-coordinate spot through with nulls.
-        e.maps_url = 'Δεν βρήκαμε συντεταγμένες σε αυτό το link. Άνοιξε το Google Maps σε browser και αντίγραψε το URL από τη μπάρα διευθύνσεων — πρέπει να περιέχει κάτι σαν @37.97,23.72'
+        e.maps_url = t('err_maps_no_coords')
       }
     }
     if (n === 3) {
-      if (!form.cover_image) e.cover_image = 'Χρειάζεται μια φωτογραφία εξωφύλλου'
+      if (!form.cover_image) e.cover_image = t('err_cover_required')
     }
     if (n === 4) {
-      if (!form.description.trim()) e.description = 'Η περιγραφή είναι υποχρεωτική'
+      if (!form.description.trim()) e.description = t('err_desc_required')
     }
     return e
   }
@@ -618,7 +648,7 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
               backgroundColor: 'rgba(232,160,32,0.10)', color: '#E8A020',
               border: '1px solid rgba(232,160,32,0.35)',
             }}>
-            👁 Προεπισκόπηση
+            👁 {t('wizard_preview')}
           </button>
         )}
 
@@ -626,7 +656,7 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
 
         <div style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '32px 28px' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 24 }}>
-            {STEPS[step - 1].title}
+            {t(STEPS[step - 1].titleKey)}
           </h2>
 
           {step === 1 && <Step1 form={form} set={set} stepErrors={stepErrors} />}
@@ -648,18 +678,18 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
             {step > 1 && (
               <button type="button" onClick={back}
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Πίσω
+                {t('common_back')}
               </button>
             )}
             {step < 4 ? (
               <button type="button" onClick={next}
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
-                Συνέχεια
+                {t('event_form_continue')}
               </button>
             ) : (
               <button type="button" onClick={handleFinalSubmit} disabled={loading}
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1, backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
-                {loading ? 'Αποθήκευση...' : isEdit ? 'Αποθήκευση αλλαγών' : 'Υποβολή spot'}
+                {loading ? t('dashboard_saving') : isEdit ? t('wizard_save_changes') : t('wizard_submit_spot')}
               </button>
             )}
           </div>
@@ -669,7 +699,7 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
       {/* Desktop: sticky side-by-side preview */}
       {!isMobile && (
         <aside style={{ position: 'sticky', top: 0 }}>
-          <p style={{ ...lbl, marginBottom: 12 }}>Προεπισκόπηση</p>
+          <p style={{ ...lbl, marginBottom: 12 }}>{t('wizard_preview')}</p>
           <SpotLivePreview form={form} step={step} />
         </aside>
       )}
@@ -681,10 +711,10 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
           <div onClick={e => e.stopPropagation()}
             style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', backgroundColor: '#111120', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTop: '0.5px solid rgba(255,255,255,0.10)', padding: '18px 16px 28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <p style={{ ...lbl, marginBottom: 0 }}>Προεπισκόπηση</p>
+              <p style={{ ...lbl, marginBottom: 0 }}>{t('wizard_preview')}</p>
               <button type="button" onClick={() => setPreviewOpen(false)}
                 style={{ padding: '6px 14px', borderRadius: 999, fontSize: 12, cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Κλείσιμο
+                {t('common_close')}
               </button>
             </div>
             <SpotLivePreview form={form} step={step} />

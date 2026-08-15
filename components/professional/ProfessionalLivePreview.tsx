@@ -4,6 +4,9 @@ import ProfileCard from '@/components/network/ProfileCard'
 import CroppedImage from '@/components/ui/CroppedImage'
 import type { Profile } from '@/app/lib/networkProfile'
 import { GROUP_META, type ProfessionalFormData } from './ProfessionalFormSteps'
+import { useLanguage } from '@/app/components/LanguageContext'
+import { networkCategoryLabel } from '@/app/lib/searchData'
+import type { TranslationKey } from '@/app/lib/translations'
 
 const GOLD = '#E8A020'
 
@@ -20,16 +23,23 @@ const ghostStyle: React.CSSProperties = {
   fontSize: 12,
 }
 
-function Ghost({ label, atStep }: { label: string; atStep: number }) {
-  return <span style={ghostStyle}>{label} — βήμα {atStep}</span>
+function Ghost({ labelKey, atStep }: { labelKey: TranslationKey; atStep: number }) {
+  const { t } = useLanguage()
+  return <span style={ghostStyle}>{t(labelKey)} — {t('wizard_ghost_step')} {atStep}</span>
+}
+
+// For placeholder labels that are not translation keys (e.g. "Tags").
+function GhostStepLabel({ atStep }: { atStep: number }) {
+  const { t } = useLanguage()
+  return <>{t('wizard_ghost_step')} {atStep}</>
 }
 
 /** The form state as the row shape the network components consume. */
-export function formToProfile(form: ProfessionalFormData, id: string, username: string, isVerified: boolean): Profile {
+export function formToProfile(form: ProfessionalFormData, id: string, username: string, isVerified: boolean, nameFallback = 'Το προφίλ σου'): Profile {
   return {
     id,
     username,
-    display_name: form.display_name || 'Το προφίλ σου',
+    display_name: form.display_name || nameFallback,
     avatar_url: form.avatar_url || null,
     avatar_crop_x: form.avatar_crop?.crop_x ?? null,
     avatar_crop_y: form.avatar_crop?.crop_y ?? null,
@@ -48,12 +58,13 @@ export function formToProfile(form: ProfessionalFormData, id: string, username: 
 function CardTab({ form, id, username, isVerified }: {
   form: ProfessionalFormData; id: string; username: string; isVerified: boolean
 }) {
+  const { lang } = useLanguage()
   const accent = form.group ? GROUP_META[form.group].accent : GOLD
   // The card is a Link and carries its own follow button; neither should do
   // anything from inside a preview.
   return (
     <div style={{ pointerEvents: 'none' }}>
-      <ProfileCard profile={formToProfile(form, id, username, isVerified)} accent={accent} />
+      <ProfileCard profile={formToProfile(form, id, username, isVerified, lang === 'en' ? 'Your profile' : 'Το προφίλ σου')} accent={accent} />
     </div>
   )
 }
@@ -61,6 +72,7 @@ function CardTab({ form, id, username, isVerified }: {
 function PageTab({ form, step, username, isVerified }: {
   form: ProfessionalFormData; step: number; username: string; isVerified: boolean
 }) {
+  const { lang } = useLanguage()
   const socials = [
     form.instagram && 'Instagram',
     form.facebook && 'Facebook',
@@ -90,7 +102,7 @@ function PageTab({ form, step, username, isVerified }: {
             width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'linear-gradient(135deg, #0e0e1c 0%, #1a1a2e 50%, #0e0e1c 100%)',
           }}>
-            <Ghost label="Εξώφυλλο" atStep={FIELD_STEP.cover_url} />
+            <Ghost labelKey="wizard_cover" atStep={FIELD_STEP.cover_url} />
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(15,15,26,0.8) 100%)', pointerEvents: 'none' }} />
@@ -114,7 +126,7 @@ function PageTab({ form, step, username, isVerified }: {
           <div style={{ minWidth: 0, paddingBottom: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: 17, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>
-                {form.display_name || <Ghost label="Όνομα" atStep={FIELD_STEP.display_name} />}
+                {form.display_name || <Ghost labelKey="wizard_name" atStep={FIELD_STEP.display_name} />}
               </h3>
               {isVerified && (
                 <span style={{
@@ -137,10 +149,10 @@ function PageTab({ form, step, username, isVerified }: {
               fontSize: 10.5, padding: '3px 9px', borderRadius: 999,
               backgroundColor: 'rgba(232,160,32,0.08)', color: GOLD, border: '0.5px solid rgba(232,160,32,0.2)',
             }}>
-              {form.network_category}
+              {networkCategoryLabel(form.network_category, lang)}
             </span>
           ) : (
-            <Ghost label="Ειδικότητα" atStep={FIELD_STEP.network_category} />
+            <Ghost labelKey="dashboard_pro_check_category" atStep={FIELD_STEP.network_category} />
           )}
         </div>
 
@@ -150,7 +162,7 @@ function PageTab({ form, step, username, isVerified }: {
             {form.bio}
           </p>
         ) : step < FIELD_STEP.bio ? null : (
-          <div style={{ marginBottom: 12 }}><Ghost label="Περιγραφή" atStep={FIELD_STEP.bio} /></div>
+          <div style={{ marginBottom: 12 }}><Ghost labelKey="wizard_description" atStep={FIELD_STEP.bio} /></div>
         )}
 
         {/* Socials + contact pills */}
@@ -172,7 +184,7 @@ function PageTab({ form, step, username, isVerified }: {
             ))}
           </div>
         ) : step < FIELD_STEP.booking_email && (
-          <div style={{ marginBottom: 12 }}><Ghost label="Επικοινωνία" atStep={FIELD_STEP.booking_email} /></div>
+          <div style={{ marginBottom: 12 }}><Ghost labelKey="wizard_step_contact" atStep={FIELD_STEP.booking_email} /></div>
         )}
 
         {/* Quick info strip */}
@@ -190,7 +202,7 @@ function PageTab({ form, step, username, isVerified }: {
               fontSize: 10.5, padding: '4px 11px', borderRadius: 999,
               backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.45)', border: '0.5px solid rgba(255,255,255,0.1)',
             }}>📍 {form.location}</span>
-          ) : step < FIELD_STEP.location && <Ghost label="Πόλη" atStep={FIELD_STEP.location} />}
+          ) : step < FIELD_STEP.location && <Ghost labelKey="wizard_city" atStep={FIELD_STEP.location} />}
           {form.price_range && (
             <span style={{
               fontSize: 10.5, padding: '4px 11px', borderRadius: 999,
@@ -214,7 +226,7 @@ function PageTab({ form, step, username, isVerified }: {
               ))}
             </div>
           ) : (
-            <Ghost label="Tags" atStep={FIELD_STEP.tags} />
+            <span style={ghostStyle}>Tags — <GhostStepLabel atStep={FIELD_STEP.tags} /></span>
           )}
         </div>
 
@@ -247,6 +259,7 @@ export default function ProfessionalLivePreview({ form, step, username, profileI
   profileId: string
   isVerified?: boolean
 }) {
+  const { t } = useLanguage()
   const [tab, setTab] = useState<'card' | 'page'>('card')
 
   const tabStyle = (on: boolean): React.CSSProperties => ({
@@ -263,8 +276,8 @@ export default function ProfessionalLivePreview({ form, step, username, profileI
         display: 'flex', gap: 6, marginBottom: 14, padding: 4, borderRadius: 12,
         backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <button type="button" onClick={() => setTab('card')} style={tabStyle(tab === 'card')}>Κάρτα</button>
-        <button type="button" onClick={() => setTab('page')} style={tabStyle(tab === 'page')}>Σελίδα</button>
+        <button type="button" onClick={() => setTab('card')} style={tabStyle(tab === 'card')}>{t('wizard_card_tab')}</button>
+        <button type="button" onClick={() => setTab('page')} style={tabStyle(tab === 'page')}>{t('wizard_page_tab')}</button>
       </div>
 
       {tab === 'card'

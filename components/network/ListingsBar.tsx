@@ -1,6 +1,8 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import InterestButton from '@/components/ui/InterestButton'
+import { useLanguage } from '@/app/components/LanguageContext'
+import { networkCategoryLabel } from '@/app/lib/searchData'
 
 export interface Listing {
   id: string
@@ -21,6 +23,7 @@ export interface Listing {
 const GOLD = '#E8A020'
 
 export default function ListingsBar({ listings }: { listings: Listing[] }) {
+  const { lang } = useLanguage()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
@@ -104,7 +107,7 @@ export default function ListingsBar({ listings }: { listings: Listing[] }) {
             {/* Top row: role + sponsored badge */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ color: GOLD, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-                {listing.role}
+                {networkCategoryLabel(listing.role, lang)}
               </span>
               {listing.is_sponsored && (
                 <span style={{

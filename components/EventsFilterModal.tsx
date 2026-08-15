@@ -156,7 +156,7 @@ export default function EventsFilterModal({ onClose, onApply }: EventsFilterModa
 
           <button
             onClick={onClose}
-            aria-label="Κλείσιμο"
+            aria-label={t('common_close')}
             style={{
               fontSize: 20,
               lineHeight: 1,

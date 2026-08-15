@@ -2,19 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Spot } from "../types";
+import { SUBCATEGORIES, loc, type Spot } from "../types";
 import { useLanguage } from "../../components/LanguageContext";
+import TranslatedText from "../../components/TranslatedText";
 import CroppedImage from "../../../components/ui/CroppedImage";
+import GalleryLightbox, { GalleryPlayBadge } from "../../../components/ui/GalleryLightbox";
+import type { GalleryItem } from "../../lib/types";
 
-type FullSpot = Spot & { gallery: string[]; openingHours: Record<string, string> | null };
+type FullSpot = Spot & { gallery: GalleryItem[]; openingHours: Record<string, string> | null };
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80";
 
+// Opening-hours day keys and the "closed" marker are stored in Greek in the DB.
+const DAY_EN: Record<string, string> = {
+  "Δευτέρα": "Monday", "Τρίτη": "Tuesday", "Τετάρτη": "Wednesday", "Πέμπτη": "Thursday",
+  "Παρασκευή": "Friday", "Σάββατο": "Saturday", "Κυριακή": "Sunday",
+};
+
 export default function SpotProfileClient({ spot, currentProfileId, claimedByProfileId }: { spot: FullSpot; currentProfileId: string | null; claimedByProfileId: string | null }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [claimOpen, setClaimOpen] = useState(false);
   const [claimNote, setClaimNote] = useState("");
   const [claimState, setClaimState] = useState<"idle" | "submitting" | "success" | "pending" | "error">("idle");
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const submitClaim = async () => {
     setClaimState("submitting");
@@ -38,7 +48,12 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
   const CAT_LABEL: Record<string, string> = {
     food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
     show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
+    art: t("tonight_cat_art"), wellness: t("tonight_cat_wellness"),
   };
+  const subcatDef = spot.subcategory
+    ? SUBCATEGORIES[spot.category]?.find((s) => s.value === spot.subcategory)
+    : null;
+  const subcatLabel = subcatDef ? loc(lang, subcatDef.label, subcatDef.label_en) : spot.subcategory;
   const cover = spot.coverImage || PLACE;
   // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
   const coverCrop = spot.coverImage ? spot.crop : null;
@@ -59,7 +74,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
             <span style={{ alignSelf: "flex-start", marginBottom: 12, background: "rgba(10,10,18,0.78)", color: "#E8A020", fontSize: 10, fontWeight: 700, letterSpacing: "0.6px", padding: "5px 10px", borderRadius: 4, border: "1px solid rgba(232,160,32,0.15)" }}>{t("spots_sponsored")}</span>
           )}
           <div style={{ fontSize: 11, letterSpacing: "2.5px", textTransform: "uppercase", color: "#E8A020", fontWeight: 700 }}>
-            {CAT_LABEL[spot.category]}{spot.subcategory ? ` · ${spot.subcategory}` : ""}
+            {CAT_LABEL[spot.category]}{subcatLabel ? ` · ${subcatLabel}` : ""}
           </div>
           <h1 style={{ fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 44, letterSpacing: "-1.2px", marginTop: 8, lineHeight: 1 }}>{spot.name}</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14, fontSize: 14, color: "#A1A1AA" }}>
@@ -73,7 +88,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
       <div style={{ maxWidth: "56rem", margin: "0 auto", padding: "32px 24px 80px", display: "grid", gridTemplateColumns: "1fr", gap: 28 }}>
         {/* Description */}
         {spot.description && (
-          <p style={{ fontSize: 16, lineHeight: 1.65, color: "#D4D4D8", maxWidth: 640 }}>{spot.description}</p>
+          <p style={{ fontSize: 16, lineHeight: 1.65, color: "#D4D4D8", maxWidth: 640 }}><TranslatedText text={spot.description} /></p>
         )}
 
         {/* Gallery */}
@@ -81,9 +96,24 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
           <div>
             <h2 style={sectionTitle}>Gallery</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 12, marginTop: 14 }}>
-              {spot.gallery.map((g, i) => (
-                <div key={i} style={{ height: 130, borderRadius: 6, backgroundImage: `url('${g}')`, backgroundSize: "cover", backgroundPosition: "center" }} />
-              ))}
+              {spot.gallery.map((g, i) => {
+                const thumb = g.type === "video" ? g.poster : g.url;
+                return (
+                  <div
+                    key={i}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${g.type === "video" ? t("media_video") : t("media_photo")} ${i + 1}`}
+                    onClick={() => setLightboxIndex(i)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLightboxIndex(i); }
+                    }}
+                    style={{ position: "relative", cursor: "pointer", height: 130, borderRadius: 6, backgroundImage: thumb ? `url('${thumb}')` : undefined, backgroundColor: thumb ? undefined : "rgba(255,255,255,0.06)", backgroundSize: "cover", backgroundPosition: "center" }}
+                  >
+                    {g.type === "video" && <GalleryPlayBadge size={38} />}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -103,7 +133,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
             <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6, maxWidth: 320 }}>
               {Object.entries(spot.openingHours).map(([day, hrs]) => (
                 <div key={day} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#A1A1AA", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span>{day}</span><span style={{ color: "#F4F4F5" }}>{String(hrs)}</span>
+                  <span>{lang === "en" ? DAY_EN[day] ?? day : day}</span><span style={{ color: "#F4F4F5" }}>{lang === "en" && String(hrs) === "Κλειστά" ? "Closed" : String(hrs)}</span>
                 </div>
               ))}
             </div>
@@ -163,6 +193,10 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
           </a>
         )}
       </div>
+
+      {lightboxIndex !== null && (
+        <GalleryLightbox items={spot.gallery} startIndex={lightboxIndex} onClose={() => setLightboxIndex(null)} />
+      )}
     </div>
   );
 }

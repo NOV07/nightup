@@ -2,12 +2,14 @@
 import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function FollowButton({ profileId }: { profileId: string }) {
   const [following, setFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+  const { t } = useLanguage()
 
   useEffect(() => {
     fetch(`/api/follows?profile_id=${profileId}`)
@@ -30,10 +32,10 @@ export default function FollowButton({ profileId }: { profileId: string }) {
         })
         if (res.status === 401) {
           setFollowing(false)
-          toast('Συνδέσου για να ακολουθήσεις', {
+          toast(t('toast_sign_in_follow'), {
             duration: 5000,
             action: {
-              label: 'Σύνδεση',
+              label: t('toast_sign_in'),
               onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
             },
           })
@@ -43,10 +45,10 @@ export default function FollowButton({ profileId }: { profileId: string }) {
         const res = await fetch(`/api/follows?profile_id=${profileId}`, { method: 'DELETE' })
         if (res.status === 401) {
           setFollowing(true)
-          toast('Συνδέσου για να ακολουθήσεις', {
+          toast(t('toast_sign_in_follow'), {
             duration: 5000,
             action: {
-              label: 'Σύνδεση',
+              label: t('toast_sign_in'),
               onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
             },
           })
@@ -75,7 +77,7 @@ export default function FollowButton({ profileId }: { profileId: string }) {
         transition: 'all 0.2s',
       }}
     >
-      {following ? 'Ακολουθώ' : 'Ακολούθησε'}
+      {following ? t('follow_following') : t('follow_follow')}
     </button>
   )
 }

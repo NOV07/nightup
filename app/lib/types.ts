@@ -3,6 +3,35 @@
 
 export type ProfileType = 'user' | 'organizer' | 'artist' | 'professional' | 'venue' | 'spot'
 
+/** One entry in a gallery. Galleries used to be plain URL strings; they now
+ *  carry a media type so a clip can render as a real <video> in the lightbox.
+ *  `poster` is a still frame captured client-side at upload, used for the grid
+ *  thumbnail (video items never autoplay outside the lightbox). */
+export type GalleryItem = { url: string; type: 'image' | 'video'; poster?: string }
+
+/** Normalises one stored entry. Rows written before the media-type migration
+ *  are bare strings, and the migration is applied by hand — so every read path
+ *  goes through this rather than assuming the new shape. */
+export function toGalleryItem(raw: unknown): GalleryItem | null {
+  if (typeof raw === 'string') return raw ? { url: raw, type: 'image' } : null
+  if (raw && typeof raw === 'object') {
+    const o = raw as Record<string, unknown>
+    if (typeof o.url === 'string' && o.url) {
+      return {
+        url: o.url,
+        type: o.type === 'video' ? 'video' : 'image',
+        ...(typeof o.poster === 'string' && o.poster ? { poster: o.poster } : {}),
+      }
+    }
+  }
+  return null
+}
+
+export function toGalleryItems(raw: unknown): GalleryItem[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map(toGalleryItem).filter((i): i is GalleryItem => i !== null)
+}
+
 // The values actually stored in profiles.network_tab and filtered on by the
 // /network/* pages. (This previously read 'Plan Your Event' | 'For Artists',
 // neither of which exists in the column.)

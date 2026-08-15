@@ -281,7 +281,7 @@ export default function ListingsPageClient({ listings }: { listings: Listing[] }
             <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
               <path d="M1 2h12M3 6h8M5 10h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            Φίλτρα
+            {t('listings_filters')}
             {activeFilterCount > 0 && (
               <span style={{
                 backgroundColor: GOLD, color: NAVY,
@@ -310,7 +310,7 @@ export default function ListingsPageClient({ listings }: { listings: Listing[] }
               overflowY: 'auto', padding: '24px 20px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: '#F4F4F5' }}>Φίλτρα</span>
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#F4F4F5' }}>{t('listings_filters')}</span>
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
                   style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}

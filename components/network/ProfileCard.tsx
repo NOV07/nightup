@@ -4,6 +4,7 @@ import FollowButton from '@/components/ui/FollowButton'
 import CroppedImage from '@/components/ui/CroppedImage'
 import { getAvatarCrop } from '@/app/lib/profileCrop'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { networkCategoryLabel } from '@/app/lib/searchData'
 import type { Profile } from '@/app/lib/networkProfile'
 
 const GOLD = '#E8A020'
@@ -14,7 +15,7 @@ const BORDER = 'rgba(232,160,32,0.12)'
 // `accent` lets a whole section carry its own colour (the Professionals page
 // runs "For Artists" in blue); everything else defaults to gold.
 export default function ProfileCard({ profile, accent = GOLD }: { profile: Profile; accent?: string }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
   const accentSoft = accent === GOLD ? 'rgba(232,160,32,0.12)' : 'rgba(96,165,250,0.12)'
   const accentBorder = accent === GOLD ? BORDER : 'rgba(96,165,250,0.12)'
@@ -57,7 +58,7 @@ export default function ProfileCard({ profile, accent = GOLD }: { profile: Profi
               role the card is meant to show. */}
           {(profile.network_subcategory || profile.network_category) && (
             <p className="text-xs mt-0.5" style={{ color: accent }}>
-              {profile.network_subcategory || profile.network_category}
+              {networkCategoryLabel(profile.network_subcategory || profile.network_category, lang)}
             </p>
           )}
           <div className="mt-2">

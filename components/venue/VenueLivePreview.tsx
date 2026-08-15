@@ -4,6 +4,8 @@ import ProfileCard from '@/components/network/ProfileCard'
 import CroppedImage from '@/components/ui/CroppedImage'
 import type { Profile } from '@/app/lib/networkProfile'
 import type { VenueFormData } from './VenueFormSteps'
+import { useLanguage } from '@/app/components/LanguageContext'
+import type { TranslationKey } from '@/app/lib/translations'
 
 const GOLD = '#E8A020'
 
@@ -21,16 +23,17 @@ const ghostStyle: React.CSSProperties = {
   fontSize: 12,
 }
 
-function Ghost({ label, atStep }: { label: string; atStep: number }) {
-  return <span style={ghostStyle}>{label} — βήμα {atStep}</span>
+function Ghost({ labelKey, atStep }: { labelKey: TranslationKey; atStep: number }) {
+  const { t } = useLanguage()
+  return <span style={ghostStyle}>{t(labelKey)} — {t('wizard_ghost_step')} {atStep}</span>
 }
 
 /** The form state as the row shape the network components consume. */
-export function formToProfile(form: VenueFormData, id: string, username: string, isVerified: boolean): Profile {
+export function formToProfile(form: VenueFormData, id: string, username: string, isVerified: boolean, nameFallback = 'Ο χώρος σου'): Profile {
   return {
     id,
     username,
-    display_name: form.display_name || 'Ο χώρος σου',
+    display_name: form.display_name || nameFallback,
     avatar_url: form.avatar_url || null,
     avatar_crop_x: form.avatar_crop?.crop_x ?? null,
     avatar_crop_y: form.avatar_crop?.crop_y ?? null,
@@ -51,11 +54,12 @@ export function formToProfile(form: VenueFormData, id: string, username: string,
 function CardTab({ form, id, username, isVerified }: {
   form: VenueFormData; id: string; username: string; isVerified: boolean
 }) {
+  const { lang } = useLanguage()
   // The card is a Link and carries its own follow button; neither should do
   // anything from inside a preview.
   return (
     <div style={{ pointerEvents: 'none' }}>
-      <ProfileCard profile={formToProfile(form, id, username, isVerified)} accent={GOLD} />
+      <ProfileCard profile={formToProfile(form, id, username, isVerified, lang === 'en' ? 'Your venue' : 'Ο χώρος σου')} accent={GOLD} />
     </div>
   )
 }
@@ -63,6 +67,7 @@ function CardTab({ form, id, username, isVerified }: {
 function PageTab({ form, step, username, isVerified }: {
   form: VenueFormData; step: number; username: string; isVerified: boolean
 }) {
+  const { t } = useLanguage()
   const capacity = parseInt(form.capacity, 10)
   const hasCapacity = Number.isFinite(capacity) && capacity > 0
   const contactPills = [form.website && 'Website', form.instagram && 'Instagram'].filter(Boolean) as string[]
@@ -86,7 +91,7 @@ function PageTab({ form, step, username, isVerified }: {
             width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'linear-gradient(135deg, #0e0e1c 0%, #1a1a2e 50%, #0e0e1c 100%)',
           }}>
-            <Ghost label="Εξώφυλλο" atStep={FIELD_STEP.cover_url} />
+            <Ghost labelKey="wizard_cover" atStep={FIELD_STEP.cover_url} />
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(15,15,26,0.8) 100%)', pointerEvents: 'none' }} />
@@ -110,7 +115,7 @@ function PageTab({ form, step, username, isVerified }: {
           <div style={{ minWidth: 0, paddingBottom: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: 17, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>
-                {form.display_name || <Ghost label="Όνομα" atStep={FIELD_STEP.display_name} />}
+                {form.display_name || <Ghost labelKey="wizard_name" atStep={FIELD_STEP.display_name} />}
               </h3>
               {isVerified && (
                 <span style={{
@@ -136,14 +141,14 @@ function PageTab({ form, step, username, isVerified }: {
               {form.network_category}
             </span>
           ) : (
-            <Ghost label="Τύπος" atStep={FIELD_STEP.network_category} />
+            <Ghost labelKey="wizard_type" atStep={FIELD_STEP.network_category} />
           )}
           {hasCapacity && (
             <span style={{
               fontSize: 10.5, padding: '3px 9px', borderRadius: 999,
               backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', border: '0.5px solid rgba(255,255,255,0.1)',
             }}>
-              👥 {capacity} άτομα
+              👥 {capacity} {t('profile_capacity_people')}
             </span>
           )}
         </div>
@@ -154,7 +159,7 @@ function PageTab({ form, step, username, isVerified }: {
             {form.bio}
           </p>
         ) : step < FIELD_STEP.bio ? null : (
-          <div style={{ marginBottom: 12 }}><Ghost label="Περιγραφή" atStep={FIELD_STEP.bio} /></div>
+          <div style={{ marginBottom: 12 }}><Ghost labelKey="wizard_description" atStep={FIELD_STEP.bio} /></div>
         )}
 
         {/* Contact pills */}
@@ -176,7 +181,7 @@ function PageTab({ form, step, username, isVerified }: {
             ))}
           </div>
         ) : step < FIELD_STEP.phone && (
-          <div style={{ marginBottom: 12 }}><Ghost label="Επικοινωνία" atStep={FIELD_STEP.phone} /></div>
+          <div style={{ marginBottom: 12 }}><Ghost labelKey="wizard_step_contact" atStep={FIELD_STEP.phone} /></div>
         )}
 
         {/* Quick info strip */}
@@ -186,13 +191,13 @@ function PageTab({ form, step, username, isVerified }: {
               fontSize: 10.5, padding: '4px 11px', borderRadius: 999,
               backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.45)', border: '0.5px solid rgba(255,255,255,0.1)',
             }}>📍 {fullAddress}</span>
-          ) : step < FIELD_STEP.address && <Ghost label="Τοποθεσία" atStep={FIELD_STEP.address} />}
+          ) : step < FIELD_STEP.address && <Ghost labelKey="wizard_step_location" atStep={FIELD_STEP.address} />}
           {form.price_range ? (
             <span style={{
               fontSize: 10.5, padding: '4px 11px', borderRadius: 999,
               backgroundColor: 'rgba(232,160,32,0.06)', color: GOLD, border: '0.5px solid rgba(232,160,32,0.18)',
             }}>{form.price_range}</span>
-          ) : step < FIELD_STEP.price_range && <Ghost label="Εύρος τιμών" atStep={FIELD_STEP.price_range} />}
+          ) : step < FIELD_STEP.price_range && <Ghost labelKey="wizard_price_range" atStep={FIELD_STEP.price_range} />}
         </div>
 
         {/* Upcoming events — the venue profile page leads with this section once
@@ -206,7 +211,7 @@ function PageTab({ form, step, username, isVerified }: {
             backgroundColor: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.10)',
           }}>
             <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
-              Τα events που θα ανεβάσεις εμφανίζονται εδώ.
+              {t('venue_preview_events_here')}
             </p>
           </div>
         </div>
@@ -222,6 +227,7 @@ export default function VenueLivePreview({ form, step, username, profileId, isVe
   profileId: string
   isVerified?: boolean
 }) {
+  const { t } = useLanguage()
   const [tab, setTab] = useState<'card' | 'page'>('card')
 
   const tabStyle = (on: boolean): React.CSSProperties => ({
@@ -238,8 +244,8 @@ export default function VenueLivePreview({ form, step, username, profileId, isVe
         display: 'flex', gap: 6, marginBottom: 14, padding: 4, borderRadius: 12,
         backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <button type="button" onClick={() => setTab('card')} style={tabStyle(tab === 'card')}>Κάρτα</button>
-        <button type="button" onClick={() => setTab('page')} style={tabStyle(tab === 'page')}>Σελίδα</button>
+        <button type="button" onClick={() => setTab('card')} style={tabStyle(tab === 'card')}>{t('wizard_card_tab')}</button>
+        <button type="button" onClick={() => setTab('page')} style={tabStyle(tab === 'page')}>{t('wizard_page_tab')}</button>
       </div>
 
       {tab === 'card'

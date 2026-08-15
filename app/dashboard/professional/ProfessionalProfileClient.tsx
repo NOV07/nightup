@@ -6,8 +6,10 @@ import { createBrowserClient } from '@supabase/ssr'
 import ProfessionalFormSteps, {
   profileToProForm, proFormToPayload, type ProfessionalFormData,
 } from '@/components/professional/ProfessionalFormSteps'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function ProfessionalProfileClient({ profile }: { profile: any }) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -45,10 +47,10 @@ export default function ProfessionalProfileClient({ profile }: { profile: any })
           ← Dashboard
         </Link>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', margin: '10px 0 4px' }}>
-          Το επαγγελματικό σου προφίλ
+          {t('pro_client_title')}
         </h1>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)' }}>
-          Συμπλήρωσέ το για να εμφανίζεσαι στο Network και να σε βρίσκουν για συνεργασίες.
+          {t('pro_client_sub')}
         </p>
       </div>
 

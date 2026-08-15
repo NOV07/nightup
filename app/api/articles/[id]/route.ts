@@ -2,7 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
-import { countWords } from '@/app/lib/articleContent'
+import { countWords, isMissingSourcesColumn } from '@/app/lib/articleContent'
+import { sanitizeArticleHtml, sanitizeSources } from '@/app/lib/sanitizeArticle'
 
 function getSupabase() {
   return createClient(
@@ -42,6 +43,10 @@ export async function PATCH(
     'scheduled_at','visibility','featured','allow_comments','show_related']
   fields.forEach(k => { if (k in body) payload[k] = body[k] })
 
+  // Both are rendered into the page as markup, so neither is stored raw.
+  if ('content' in body) payload.content = sanitizeArticleHtml(body.content)
+  if ('sources' in body) payload.sources = sanitizeSources(body.sources)
+
   if ('author'          in body) payload.author_name     = body.author
   if ('author_role'     in body) payload.author_role     = body.author_role
   if ('author_bio'      in body) payload.author_bio      = body.author_bio
@@ -56,7 +61,7 @@ export async function PATCH(
   // Only recompute when the body actually carried new content, so a metadata
   // only PATCH does not reset the stats to zero.
   if ('content' in body) {
-    const wordCount = countWords(body.content)
+    const wordCount = countWords(payload.content)
     payload.word_count = wordCount
     payload.read_time  = Math.max(1, Math.round(wordCount / 220))
   }
@@ -66,8 +71,16 @@ export async function PATCH(
     if (!existing.data?.published_at) payload.published_at = new Date().toISOString()
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('articles').update(payload).eq('id', id).select().single()
+
+  // See isMissingSourcesColumn: a pending migration must not block saving.
+  if (isMissingSourcesColumn(error)) {
+    const { sources: _dropped, ...withoutSources } = payload
+    ;({ data, error } = await supabase
+      .from('articles').update(withoutSources).eq('id', id).select().single())
+  }
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ article: data })
 }

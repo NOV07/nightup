@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 interface Props {
   listingId: string
@@ -13,6 +14,7 @@ export default function InterestButton({ listingId, initialCount }: Props) {
   const [count, setCount] = useState(initialCount)
   const router = useRouter()
   const pathname = usePathname()
+  const { t } = useLanguage()
 
   async function handleClick(e: React.MouseEvent) {
     e.preventDefault()
@@ -27,10 +29,10 @@ export default function InterestButton({ listingId, initialCount }: Props) {
     if (res.status === 401) {
       setSent(false)
       setCount(c => c - 1)
-      toast('Συνδέσου για να εκδηλώσεις ενδιαφέρον', {
+      toast(t('toast_sign_in_interest'), {
         duration: 5000,
         action: {
-          label: 'Σύνδεση',
+          label: t('toast_sign_in'),
           onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
         },
       })
@@ -63,7 +65,7 @@ export default function InterestButton({ listingId, initialCount }: Props) {
         flexShrink: 0,
       }}
     >
-      {sent ? '✓ Έστειλες' : 'Ενδιαφέρομαι'}
+      {sent ? t('interest_sent') : t('events_interested')}
     </button>
   )
 }

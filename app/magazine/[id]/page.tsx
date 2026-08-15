@@ -14,6 +14,72 @@ function formatSlug(slug: string) {
   return slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
+/** Sources live in their own `articles.sources` column (see
+ *  20260814010000_article_sources.sql). Rows read before that migration is
+ *  applied simply have no sources, and the section renders nothing. */
+function ArticleSources({ sources }: { sources: unknown }) {
+  if (!Array.isArray(sources)) return null;
+
+  const entries = sources
+    .filter((s): s is { title?: string; url?: string } => !!s && typeof s === "object")
+    .map(s => ({ title: (s.title || "").trim(), url: (s.url || "").trim() }))
+    .filter(s => s.title || s.url);
+
+  if (!entries.length) return null;
+
+  return (
+    <section className="mt-12 pt-8" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      <h2
+        className="text-xs uppercase mb-5"
+        style={{ color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", fontWeight: 700 }}
+      >
+        <T k="article_sources" />
+      </h2>
+      <ol className="space-y-3">
+        {entries.map((source, i) => {
+          // Already validated server-side; this only decides how to label it.
+          let domain = "";
+          try { domain = new URL(source.url).hostname.replace(/^www\./, ""); } catch { domain = ""; }
+          const label = source.title || domain || source.url;
+
+          return (
+            <li key={i} className="flex gap-3 items-baseline">
+              <span
+                className="text-xs shrink-0"
+                style={{ color: "#E8A020", fontWeight: 700, minWidth: "1.2em" }}
+              >
+                {i + 1}.
+              </span>
+              <div className="min-w-0">
+                {source.url ? (
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm hover:underline break-words"
+                    style={{ color: "rgba(255,255,255,0.85)" }}
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  <span className="text-sm break-words" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    {label}
+                  </span>
+                )}
+                {domain && (
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    {domain}
+                  </p>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
 function extractFirstBlockquote(html: string): string | null {
   const match = html.match(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/i);
   if (!match) return null;
@@ -58,6 +124,7 @@ interface Article {
   series: string | null;
   series_order: number | null;
   featured: boolean;
+  sources: { title: string; url: string }[];
 }
 
 function mapArticle(data: any): Article {
@@ -72,6 +139,8 @@ function mapArticle(data: any): Article {
     content: data.content ?? "",
     series: data.series ?? null,
     series_order: data.series_order ?? null,
+    // Absent until 20260814010000_article_sources.sql is applied.
+    sources: Array.isArray(data.sources) ? data.sources : [],
     featured: (data as any).featured ?? false,
   };
 }
@@ -288,6 +357,8 @@ export default async function MagazineArticlePage({ params }: Props) {
                 <p style={{color:'rgba(255,255,255,0.4)'}}>No content yet.</p>
               )}
             </div>
+
+            <ArticleSources sources={article.sources} />
           </div>
 
           {/* Sidebar */}
@@ -331,10 +402,10 @@ export default async function MagazineArticlePage({ params }: Props) {
 
       {/* ── 3. QUOTE CALLOUT ──────────────────────────────────── */}
       {firstBlockquote && (
-        <div style={{ backgroundColor: "rgba(232,160,32,0.04)", padding: "64px 24px", margin: "64px 0" }}>
+        <div style={{ backgroundColor: "rgba(232,160,32,0.04)", padding: "36px 24px", margin: "36px 0" }}>
           <div className="max-w-2xl mx-auto text-center">
             <div
-              style={{ fontSize: "80px", color: "#E8A020", lineHeight: "0.8", fontFamily: "Georgia, serif", marginBottom: "16px", userSelect: "none" }}
+              style={{ fontSize: "56px", color: "#E8A020", lineHeight: "0.8", fontFamily: "Georgia, serif", marginBottom: "12px", userSelect: "none" }}
             >
               &ldquo;
             </div>

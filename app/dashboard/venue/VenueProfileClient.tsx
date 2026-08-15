@@ -6,8 +6,10 @@ import { createBrowserClient } from '@supabase/ssr'
 import VenueFormSteps, {
   profileToVenueForm, venueFormToPayload, type VenueFormData,
 } from '@/components/venue/VenueFormSteps'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function VenueProfileClient({ profile }: { profile: any }) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -50,10 +52,10 @@ export default function VenueProfileClient({ profile }: { profile: any }) {
           ← Dashboard
         </Link>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', margin: '10px 0 4px' }}>
-          Ο χώρος σου
+          {t('venue_client_title')}
         </h1>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)' }}>
-          Συμπλήρωσέ τον για να εμφανίζεσαι στο Network και να σε βρίσκουν για events.
+          {t('venue_client_sub')}
         </p>
       </div>
 

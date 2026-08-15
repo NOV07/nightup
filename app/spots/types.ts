@@ -1,4 +1,5 @@
 import type { CropBox } from '../../components/ui/CroppedImage';
+import type { GalleryItem } from '../lib/types';
 
 /** Missing on rows returned by the spots_nearby() PostGIS RPC (its column
  *  list is fixed in the SQL function) — those spots render without a crop. */
@@ -34,92 +35,97 @@ export interface Spot {
   isSponsored: boolean;
   claimedByProfileId: string | null;
   featured?: boolean;
-  gallery?: string[];
+  gallery?: GalleryItem[];
   openingHours?: Record<string, string> | null;
 }
 
+/** Pick the Greek or English variant of a hardcoded label pair. */
+export function loc(lang: string, el: string, en: string): string {
+  return lang === 'en' ? en : el;
+}
+
 export const SPOT_CATEGORIES: {
-  key: SpotCategory; emoji: string; label: string; sub: string;
+  key: SpotCategory; emoji: string; label: string; label_en: string; sub: string; sub_en: string;
 }[] = [
-  { key: 'drink',     emoji: '🍸', label: 'Ποτό',              sub: 'cocktails · rooftop bar · wine & spirits · μπύρα' },
-  { key: 'food',      emoji: '🍽',  label: 'Φαγητό',            sub: 'street food · κινέζικο · brunch' },
-  { key: 'nightlife', emoji: '🎵', label: 'Νύχτα',             sub: 'club · bar hopping · live music' },
-  { key: 'show',      emoji: '🎬', label: 'Διασκέδαση',         sub: 'stand-up comedy · σινεμά · θέατρο' },
-  { key: 'chill',     emoji: '☕', label: 'Χαλαρά',            sub: 'καφές · γλυκό / παγωτό · picnic vibes' },
-  { key: 'activity',  emoji: '🎯', label: 'Δραστηριότητα',     sub: 'bowling · escape room · επιτραπέζια' },
-  { key: 'art',       emoji: '🎨', label: 'Τέχνη & Κουλτούρα', sub: 'μουσείο · art gallery · βιβλιοπωλείο / reading' },
-  { key: 'wellness',  emoji: '🌿', label: 'Ευεξία',             sub: 'sunset spot · yoga / meditation · θαλασσινό μπάνιο · βόλτα φύση' },
+  { key: 'drink',     emoji: '🍸', label: 'Ποτό',              label_en: 'Drinks',        sub: 'cocktails · rooftop bar · wine & spirits · μπύρα', sub_en: 'cocktails · rooftop bar · wine & spirits · beer' },
+  { key: 'food',      emoji: '🍽',  label: 'Φαγητό',            label_en: 'Food',          sub: 'street food · κινέζικο · brunch', sub_en: 'street food · chinese · brunch' },
+  { key: 'nightlife', emoji: '🎵', label: 'Νύχτα',             label_en: 'Nightlife',     sub: 'club · bar hopping · live music', sub_en: 'club · bar hopping · live music' },
+  { key: 'show',      emoji: '🎬', label: 'Διασκέδαση',         label_en: 'Entertainment', sub: 'stand-up comedy · σινεμά · θέατρο', sub_en: 'stand-up comedy · cinema · theatre' },
+  { key: 'chill',     emoji: '☕', label: 'Χαλαρά',            label_en: 'Chill',         sub: 'καφές · γλυκό / παγωτό · picnic vibes', sub_en: 'coffee · dessert / ice cream · picnic vibes' },
+  { key: 'activity',  emoji: '🎯', label: 'Δραστηριότητα',     label_en: 'Activity',      sub: 'bowling · escape room · επιτραπέζια', sub_en: 'bowling · escape room · board games' },
+  { key: 'art',       emoji: '🎨', label: 'Τέχνη & Κουλτούρα', label_en: 'Art & Culture', sub: 'μουσείο · art gallery · βιβλιοπωλείο / reading', sub_en: 'museum · art gallery · bookstore / reading' },
+  { key: 'wellness',  emoji: '🌿', label: 'Ευεξία',             label_en: 'Wellness',      sub: 'sunset spot · yoga / meditation · θαλασσινό μπάνιο · βόλτα φύση', sub_en: 'sunset spot · yoga / meditation · sea swim · nature walk' },
 ];
 
 export const MOODS = [
-  { key: 'chill', emoji: '😌', label: 'Χαλαρά',      desc: 'low key vibes' },
-  { key: 'wild',  emoji: '🔥', label: 'Έξαλλα',      desc: 'non stop μέχρι πρωί' },
-  { key: 'food',  emoji: '🍽',  label: 'Φαγητό',      desc: 'foodie night' },
-  { key: 'diff',  emoji: '🎭', label: 'Κάτι αλλιώς', desc: 'κάτι διαφορετικό' },
+  { key: 'chill', emoji: '😌', label: 'Χαλαρά',      label_en: 'Chill',               desc: 'low key vibes',        desc_en: 'low key vibes' },
+  { key: 'wild',  emoji: '🔥', label: 'Έξαλλα',      label_en: 'Wild',                desc: 'non stop μέχρι πρωί',  desc_en: 'non stop till morning' },
+  { key: 'food',  emoji: '🍽',  label: 'Φαγητό',      label_en: 'Food',                desc: 'foodie night',         desc_en: 'foodie night' },
+  { key: 'diff',  emoji: '🎭', label: 'Κάτι αλλιώς', label_en: 'Something different', desc: 'κάτι διαφορετικό',     desc_en: 'a different kind of night' },
 ] as const;
 
 // Υποκατηγορίες ανά κατηγορία. Το "value" πρέπει να ταιριάζει με
 // το subcategory των spots στη DB. Όσες δεν έχουν spots ακόμα,
 // εμφανίζονται με κατάσταση "σύντομα".
-export const SUBCATEGORIES: Record<SpotCategory, { label: string; value: string }[]> = {
+export const SUBCATEGORIES: Record<SpotCategory, { label: string; label_en: string; value: string }[]> = {
   food: [
-    { label: "Σουβλάκι", value: "σουβλάκι" },
-    { label: "Μπέργκερ", value: "burger" },
-    { label: "Σούσι", value: "σούσι" },
-    { label: "Ιταλικό", value: "ιταλικό" },
-    { label: "Μεζεδοπωλείο", value: "μεζεδοπωλείο" },
-    { label: "Brunch", value: "brunch" },
-    { label: "Vegan", value: "vegan" },
-    { label: "Θαλασσινά", value: "θαλασσινά" },
-    { label: "Creative", value: "creative" },
-    { label: "Street food", value: "street food" },
+    { label: "Σουβλάκι", label_en: "Souvlaki", value: "σουβλάκι" },
+    { label: "Μπέργκερ", label_en: "Burger", value: "burger" },
+    { label: "Σούσι", label_en: "Sushi", value: "σούσι" },
+    { label: "Ιταλικό", label_en: "Italian", value: "ιταλικό" },
+    { label: "Μεζεδοπωλείο", label_en: "Meze", value: "μεζεδοπωλείο" },
+    { label: "Brunch", label_en: "Brunch", value: "brunch" },
+    { label: "Vegan", label_en: "Vegan", value: "vegan" },
+    { label: "Θαλασσινά", label_en: "Seafood", value: "θαλασσινά" },
+    { label: "Creative", label_en: "Creative", value: "creative" },
+    { label: "Street food", label_en: "Street food", value: "street food" },
   ],
   drink: [
-    { label: "Cocktail bar", value: "cocktail bar" },
-    { label: "Wine bar", value: "wine bar" },
-    { label: "Rooftop", value: "rooftop bar" },
-    { label: "All-day bar", value: "all-day bar" },
-    { label: "Μπυραρία", value: "μπυραρία" },
-    { label: "Σφηνάδικο", value: "σφηνάδικο" },
+    { label: "Cocktail bar", label_en: "Cocktail bar", value: "cocktail bar" },
+    { label: "Wine bar", label_en: "Wine bar", value: "wine bar" },
+    { label: "Rooftop", label_en: "Rooftop", value: "rooftop bar" },
+    { label: "All-day bar", label_en: "All-day bar", value: "all-day bar" },
+    { label: "Μπυραρία", label_en: "Beer bar", value: "μπυραρία" },
+    { label: "Σφηνάδικο", label_en: "Shots bar", value: "σφηνάδικο" },
   ],
   nightlife: [
-    { label: "Club", value: "club" },
-    { label: "Underground / Techno", value: "underground" },
-    { label: "Mainstream", value: "mainstream" },
-    { label: "Live stage", value: "live stage" },
-    { label: "Μπουζούκια", value: "μπουζούκια" },
-    { label: "Disco / Retro", value: "disco" },
+    { label: "Club", label_en: "Club", value: "club" },
+    { label: "Underground / Techno", label_en: "Underground / Techno", value: "underground" },
+    { label: "Mainstream", label_en: "Mainstream", value: "mainstream" },
+    { label: "Live stage", label_en: "Live stage", value: "live stage" },
+    { label: "Μπουζούκια", label_en: "Bouzoukia", value: "μπουζούκια" },
+    { label: "Disco / Retro", label_en: "Disco / Retro", value: "disco" },
   ],
   show: [
-    { label: "Stand-up", value: "stand-up comedy" },
-    { label: "Live μουσική", value: "live stage" },
-    { label: "Θέατρο", value: "θέατρο" },
-    { label: "Σινεμά", value: "σινεμά" },
-    { label: "Performance", value: "performance" },
+    { label: "Stand-up", label_en: "Stand-up", value: "stand-up comedy" },
+    { label: "Live μουσική", label_en: "Live music", value: "live stage" },
+    { label: "Θέατρο", label_en: "Theatre", value: "θέατρο" },
+    { label: "Σινεμά", label_en: "Cinema", value: "σινεμά" },
+    { label: "Performance", label_en: "Performance", value: "performance" },
   ],
   chill: [
-    { label: "Specialty καφέ", value: "specialty καφέ" },
-    { label: "All-day café", value: "all-day café" },
-    { label: "Γλυκό", value: "γλυκό" },
-    { label: "Τσάι / Brunch", value: "τσάι" },
+    { label: "Specialty καφέ", label_en: "Specialty coffee", value: "specialty καφέ" },
+    { label: "All-day café", label_en: "All-day café", value: "all-day café" },
+    { label: "Γλυκό", label_en: "Dessert", value: "γλυκό" },
+    { label: "Τσάι / Brunch", label_en: "Tea / Brunch", value: "τσάι" },
   ],
   activity: [
-    { label: "Escape room", value: "escape room" },
-    { label: "Bowling", value: "bowling" },
-    { label: "Board games", value: "board game café" },
-    { label: "Μπιλιάρδο", value: "μπιλιάρδο" },
-    { label: "Καρτ", value: "καρτ" },
-    { label: "Mini golf / Arcade", value: "arcade" },
+    { label: "Escape room", label_en: "Escape room", value: "escape room" },
+    { label: "Bowling", label_en: "Bowling", value: "bowling" },
+    { label: "Board games", label_en: "Board games", value: "board game café" },
+    { label: "Μπιλιάρδο", label_en: "Billiards", value: "μπιλιάρδο" },
+    { label: "Καρτ", label_en: "Karting", value: "καρτ" },
+    { label: "Mini golf / Arcade", label_en: "Mini golf / Arcade", value: "arcade" },
   ],
   art: [
-    { label: "Μουσείο", value: "μουσείο" },
-    { label: "Art Gallery", value: "art gallery" },
-    { label: "Βιβλιοπωλείο / Reading", value: "βιβλιοπωλείο" },
+    { label: "Μουσείο", label_en: "Museum", value: "μουσείο" },
+    { label: "Art Gallery", label_en: "Art Gallery", value: "art gallery" },
+    { label: "Βιβλιοπωλείο / Reading", label_en: "Bookstore / Reading", value: "βιβλιοπωλείο" },
   ],
   wellness: [
-    { label: "Sunset Spot", value: "sunset spot" },
-    { label: "Yoga / Meditation", value: "yoga" },
-    { label: "Θαλασσινό Μπάνιο", value: "θαλάσσια" },
-    { label: "Βόλτα Φύση", value: "φύση" },
+    { label: "Sunset Spot", label_en: "Sunset Spot", value: "sunset spot" },
+    { label: "Yoga / Meditation", label_en: "Yoga / Meditation", value: "yoga" },
+    { label: "Θαλασσινό Μπάνιο", label_en: "Sea Swim", value: "θαλάσσια" },
+    { label: "Βόλτα Φύση", label_en: "Nature Walk", value: "φύση" },
   ],
 };

@@ -8,24 +8,24 @@ const SURFACE = '#1A1A2E'
 const BORDER = 'rgba(232,160,32,0.15)'
 
 const EVENT_ITEMS = [
-  { id: 'artist',   emoji: '🎵', label: 'Artist',                   tab: 'Artists',       category: '' },
-  { id: 'venue',    emoji: '🏛', label: 'Venue / Χώρος',            tab: 'Venues',        category: '' },
-  { id: 'photo',    emoji: '📸', label: 'Φωτογράφος / Videographer', tab: 'Professionals', category: 'Φωτογράφος / Videographer' },
-  { id: 'sound',    emoji: '🔊', label: 'Sound & Lighting',          tab: 'Professionals', category: 'Sound & Lighting' },
-  { id: 'catering', emoji: '🍽', label: 'Catering',                  tab: 'Professionals', category: 'Catering' },
-  { id: 'deco',     emoji: '🎨', label: 'Decoration',                tab: 'Professionals', category: 'Decoration' },
+  { id: 'artist',   emoji: '🎵', label: 'Artist',                   label_en: 'Artist',                     tab: 'Artists',       category: '' },
+  { id: 'venue',    emoji: '🏛', label: 'Venue / Χώρος',            label_en: 'Venue / Space',              tab: 'Venues',        category: '' },
+  { id: 'photo',    emoji: '📸', label: 'Φωτογράφος / Videographer', label_en: 'Photographer / Videographer', tab: 'Professionals', category: 'Φωτογράφος / Videographer' },
+  { id: 'sound',    emoji: '🔊', label: 'Sound & Lighting',          label_en: 'Sound & Lighting',           tab: 'Professionals', category: 'Sound & Lighting' },
+  { id: 'catering', emoji: '🍽', label: 'Catering',                  label_en: 'Catering',                   tab: 'Professionals', category: 'Catering' },
+  { id: 'deco',     emoji: '🎨', label: 'Decoration',                label_en: 'Decoration',                 tab: 'Professionals', category: 'Decoration' },
 ]
 
 const ARTIST_ITEMS = [
-  { id: 'studio',   emoji: '🎙', label: 'Studio / Rehearsal',        tab: 'Professionals', category: 'Studio / Rehearsal' },
-  { id: 'producer', emoji: '🎛', label: 'Producer / Beatmaker',      tab: 'Professionals', category: 'Producer / Beatmaker' },
-  { id: 'mix',      emoji: '🎚', label: 'Mix & Master Engineer',     tab: 'Professionals', category: 'Mix & Master Engineer' },
-  { id: 'photo2',   emoji: '📸', label: 'Φωτογράφος / Videographer', tab: 'Professionals', category: 'Φωτογράφος / Videographer' },
-  { id: 'video',    emoji: '🎬', label: 'Video Director',            tab: 'Professionals', category: 'Video Director' },
-  { id: 'booking',  emoji: '📋', label: 'Booking Agent / Manager',   tab: 'Professionals', category: 'Booking Agent / Manager' },
+  { id: 'studio',   emoji: '🎙', label: 'Studio / Rehearsal',        label_en: 'Studio / Rehearsal',         tab: 'Professionals', category: 'Studio / Rehearsal' },
+  { id: 'producer', emoji: '🎛', label: 'Producer / Beatmaker',      label_en: 'Producer / Beatmaker',       tab: 'Professionals', category: 'Producer / Beatmaker' },
+  { id: 'mix',      emoji: '🎚', label: 'Mix & Master Engineer',     label_en: 'Mix & Master Engineer',      tab: 'Professionals', category: 'Mix & Master Engineer' },
+  { id: 'photo2',   emoji: '📸', label: 'Φωτογράφος / Videographer', label_en: 'Photographer / Videographer', tab: 'Professionals', category: 'Φωτογράφος / Videographer' },
+  { id: 'video',    emoji: '🎬', label: 'Video Director',            label_en: 'Video Director',             tab: 'Professionals', category: 'Video Director' },
+  { id: 'booking',  emoji: '📋', label: 'Booking Agent / Manager',   label_en: 'Booking Agent / Manager',    tab: 'Professionals', category: 'Booking Agent / Manager' },
 ]
 
-interface Item { id: string; emoji: string; label: string; tab: string; category: string }
+interface Item { id: string; emoji: string; label: string; label_en: string; tab: string; category: string }
 
 interface Profile {
   id: string
@@ -49,7 +49,8 @@ interface Props {
 }
 
 export default function NetworkGuidedModal({ onClose, profiles, initialIntent }: Props) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+  const itemLabel = (item: Item) => (lang === 'en' ? item.label_en : item.label)
   const [step, setStep] = useState<'intent' | 'have' | 'missing' | 'location' | 'results'>(initialIntent ? 'have' : 'intent')
   const [intent, setIntent] = useState<'event' | 'artist' | null>(initialIntent ?? null)
   const [have, setHave] = useState<Set<string>>(new Set())
@@ -163,7 +164,7 @@ export default function NetworkGuidedModal({ onClose, profiles, initialIntent }:
           {/* STEP 1 — Intent */}
           {step === 'intent' && (
             <>
-              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Τι ετοιμάζεις;</h2>
+              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>{t("fab_plan_event")}</h2>
               <p className="text-white/40 text-sm mb-5">{t("guided_intro_sub")}</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -196,7 +197,7 @@ export default function NetworkGuidedModal({ onClose, profiles, initialIntent }:
               <button onClick={() => { setStep('intent'); setHave(new Set()) }} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
                 {t("guided_back")}
               </button>
-              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Τι έχεις ήδη;</h2>
+              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>{t("guided_have_title")}</h2>
               <p className="text-white/40 text-sm mb-4">{t("guided_checklist_sub")}</p>
               <div className="space-y-2 mb-5">
                 {items.map(item => {
@@ -213,7 +214,7 @@ export default function NetworkGuidedModal({ onClose, profiles, initialIntent }:
                       </div>
                       <span className="text-sm">{item.emoji}</span>
                       <span className="text-sm font-medium" style={{ color: checked ? 'rgba(255,255,255,0.50)' : 'white', textDecoration: checked ? 'line-through' : 'none' }}>
-                        {item.label}
+                        {itemLabel(item)}
                       </span>
                     </button>
                   )
@@ -235,7 +236,7 @@ export default function NetworkGuidedModal({ onClose, profiles, initialIntent }:
               <button onClick={() => setStep('have')} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
                 {t("guided_back")}
               </button>
-              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Αυτά σου λείπουν</h2>
+              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>{t("guided_missing_title")}</h2>
               <p className="text-white/40 text-sm mb-4">{t("guided_what_need_sub")}</p>
               <div className="grid grid-cols-2 gap-3">
                 {missing.map(item => (
@@ -248,7 +249,7 @@ export default function NetworkGuidedModal({ onClose, profiles, initialIntent }:
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.055)' }}
                   >
                     <span className="text-xl">{item.emoji}</span>
-                    <span className="text-white text-xs font-semibold leading-snug">{item.label}</span>
+                    <span className="text-white text-xs font-semibold leading-snug">{itemLabel(item)}</span>
                   </button>
                 ))}
               </div>
@@ -261,7 +262,7 @@ export default function NetworkGuidedModal({ onClose, profiles, initialIntent }:
               <button onClick={() => setStep('missing')} className="text-white/40 hover:text-white text-sm mb-4 flex items-center gap-1 transition">
                 {t("guided_back")}
               </button>
-              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>Πού ψάχνεις;</h2>
+              <h2 className="mb-1" style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>{t("career_step_city_title")}</h2>
               <p className="text-white/40 text-sm mb-4">{t("guided_city_sub")}</p>
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -292,7 +293,7 @@ export default function NetworkGuidedModal({ onClose, profiles, initialIntent }:
               </button>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">{activeItem.emoji}</span>
-                <h2 style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>{activeItem.label}</h2>
+                <h2 style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontWeight: 700, fontSize: 28, letterSpacing: '-0.8px', color: '#F4F4F5' }}>{itemLabel(activeItem)}</h2>
               </div>
               <p className="text-white/40 text-sm mb-4">
                 {filteredProfiles.length} {filteredProfiles.length === 1 ? t("network_results_one") : t("network_results_many")}

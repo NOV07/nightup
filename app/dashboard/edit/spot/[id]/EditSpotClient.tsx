@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import SpotFormSteps, {
   spotFormToPayload, deserializeOpeningHours, type SpotFormData,
 } from '@/components/spots/SpotFormSteps'
+import { toGalleryItems } from '@/app/lib/types'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 /** The stored row, back into the wizard's state shape. */
 function spotToForm(spot: any): Partial<SpotFormData> {
@@ -24,7 +26,7 @@ function spotToForm(spot: any): Partial<SpotFormData> {
     crop: hasCrop
       ? { crop_x: spot.crop_x, crop_y: spot.crop_y, crop_width: spot.crop_width, crop_height: spot.crop_height }
       : null,
-    gallery: Array.isArray(spot.gallery) ? spot.gallery : [],
+    gallery: toGalleryItems(spot.gallery),
     opening_hours: deserializeOpeningHours(spot.opening_hours),
     phone: spot.phone ?? '',
     website: spot.website ?? '',
@@ -35,6 +37,7 @@ function spotToForm(spot: any): Partial<SpotFormData> {
 }
 
 export default function EditSpotClient({ spot }: { spot: any }) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -53,7 +56,7 @@ export default function EditSpotClient({ spot }: { spot: any }) {
     setLoading(false)
 
     if (!res.ok) {
-      setError(json.error ?? 'Κάτι πήγε στραβά. Δοκίμασε ξανά.')
+      setError(json.error ?? t('spot_form_error_generic'))
       return
     }
 
@@ -63,11 +66,11 @@ export default function EditSpotClient({ spot }: { spot: any }) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0F0F1A', padding: '32px 16px' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', marginBottom: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>Επεξεργασία spot</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>{t('spot_edit_heading')}</h1>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)' }}>{spot.name}</p>
         {!spot.is_published && (
           <p style={{ fontSize: 13, color: '#E8A020', marginTop: 10 }}>
-            Σε αναμονή έγκρισης — δεν εμφανίζεται ακόμα δημόσια.
+            {t('spot_edit_pending')}
           </p>
         )}
       </div>

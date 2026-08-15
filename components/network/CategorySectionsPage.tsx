@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { networkCategoryLabel } from '@/app/lib/searchData'
 import type { Profile } from '@/app/lib/networkProfile'
 import CinematicHero from '@/components/network/CinematicHero'
 import ProfileCard from '@/components/network/ProfileCard'
@@ -52,7 +53,7 @@ function chipStyle(active: boolean, accent: string): React.CSSProperties {
 export default function CategorySectionsPage({
   eyebrow, titleBefore, titleEm, subtitle, sections,
 }: Props) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const visible = sections.filter(s => s.profiles.length > 0)
 
   const [active, setActive] = useState(visible[0]?.id ?? '')
@@ -154,7 +155,7 @@ export default function CategorySectionsPage({
                         onClick={() => setSubFilter(p => ({ ...p, [section.id]: on ? null : name }))}
                         style={chipStyle(on, section.accent)}
                       >
-                        {name} · {n}
+                        {networkCategoryLabel(name, lang)} · {n}
                       </button>
                     )
                   })}

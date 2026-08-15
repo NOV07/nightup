@@ -11,6 +11,7 @@ import { ArtistsIcon, VenuesIcon, ProfessionalsIcon, ListingsIcon } from '@/comp
 import { TAB_META, type NetworkTab, type Profile } from '@/app/lib/networkProfile'
 import { type TranslationKey } from '../lib/translations'
 import { useNetworkProfiles } from '../components/NetworkProfilesContext'
+import { networkCategoryLabel } from '../lib/searchData'
 import { useLanguage } from '../components/LanguageContext'
 import { getAvatarCrop } from '../lib/profileCrop'
 import CroppedImage from '../../components/ui/CroppedImage'
@@ -84,6 +85,7 @@ const HERO_SHORTCUTS: {
 
 // ── Compact profile card (used in the sponsored-first panel) ───────────
 function CompactProfileCard({ profile }: { profile: Profile }) {
+  const { lang } = useLanguage()
   const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
   return (
     <Link
@@ -124,7 +126,7 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
           {profile.is_verified && <span style={{ color: GOLD }} className="text-xs flex-shrink-0">✓</span>}
         </div>
         {profile.network_subcategory && (
-          <p className="text-xs mt-0.5 truncate" style={{ color: GOLD }}>{profile.network_subcategory}</p>
+          <p className="text-xs mt-0.5 truncate" style={{ color: GOLD }}>{networkCategoryLabel(profile.network_subcategory, lang)}</p>
         )}
         {profile.location && (
           <p className="text-[11px] mt-0.5 text-white/40 truncate">📍 {profile.location}</p>
@@ -136,6 +138,7 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
 
 // ── Compact listing card (panel counterpart of the ListingsBar card) ───
 function CompactListingCard({ listing }: { listing: Listing }) {
+  const { lang } = useLanguage()
   return (
     <div
       style={{
@@ -151,7 +154,7 @@ function CompactListingCard({ listing }: { listing: Listing }) {
     >
       {listing.is_sponsored && <span style={BADGE_STYLE}>Sponsored</span>}
       <span style={{ color: GOLD, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-        {listing.role}
+        {networkCategoryLabel(listing.role, lang)}
       </span>
       <p
         className="line-clamp-2"
@@ -163,7 +166,7 @@ function CompactListingCard({ listing }: { listing: Listing }) {
         {[
           listing.city,
           listing.date_needed
-            ? new Date(listing.date_needed).toLocaleDateString('el-GR', { day: 'numeric', month: 'short' })
+            ? new Date(listing.date_needed).toLocaleDateString(lang === 'en' ? 'en-GB' : 'el-GR', { day: 'numeric', month: 'short' })
             : null,
         ].filter(Boolean).join(' · ')}
       </p>

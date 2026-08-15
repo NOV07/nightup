@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../../components/ui/ImageUpload'
+import { useLanguage } from '../components/LanguageContext'
 
 export default function OnboardingClient() {
+  const { t } = useLanguage()
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
@@ -47,14 +49,14 @@ export default function OnboardingClient() {
       <div className="w-full max-w-lg">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">
-            Καλώς ήρθες στο <span className="text-[#E8A020]">Nightup</span>
+            {t('onboarding_welcome_pre')} <span className="text-[#E8A020]">Nightup</span>
           </h1>
-          <p className="text-white/50">Φτιάξε το προφίλ σου για να ξεκινήσεις</p>
+          <p className="text-white/50">{t('onboarding_sub')}</p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-white/60 text-sm mb-1.5 block">Profile Photo (optional)</label>
+            <label className="text-white/60 text-sm mb-1.5 block">{t('onboarding_photo_label')}</label>
             <ImageUpload
               folder="avatars"
               onUpload={(url) => setAvatarUrl(url)}
@@ -63,7 +65,7 @@ export default function OnboardingClient() {
 
           <div>
             <input
-              placeholder="Username (π.χ. djvoid)"
+              placeholder={t('onboarding_username_ph')}
               value={username}
               onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
               className={inputClass}
@@ -72,14 +74,14 @@ export default function OnboardingClient() {
           </div>
 
           <input
-            placeholder="Εμφανιζόμενο όνομα (π.χ. DJ Void)"
+            placeholder={t('onboarding_display_ph')}
             value={displayName}
             onChange={e => setDisplayName(e.target.value)}
             className={inputClass}
           />
 
           <textarea
-            placeholder="Bio (προαιρετικό)"
+            placeholder={t('onboarding_bio_ph')}
             value={bio}
             onChange={e => setBio(e.target.value)}
             rows={3}
@@ -87,7 +89,7 @@ export default function OnboardingClient() {
           />
 
           <input
-            placeholder="Instagram handle (προαιρετικό)"
+            placeholder={t('onboarding_instagram_ph')}
             value={instagram}
             onChange={e => setInstagram(e.target.value)}
             className={inputClass}
@@ -101,7 +103,7 @@ export default function OnboardingClient() {
               disabled={loading || !username || !displayName}
               className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
             >
-              {loading ? 'Δημιουργία...' : 'Δημιούργησε προφίλ →'}
+              {loading ? t('onboarding_creating') : t('onboarding_create')}
             </button>
           </div>
         </div>

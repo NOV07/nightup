@@ -4,6 +4,8 @@ import { getSupabase } from "../../lib/supabase";
 import { createClient } from "../../lib/supabase-server";
 import type { Spot } from "../types";
 import { spotCropFromRow } from "../types";
+import type { GalleryItem } from "../../lib/types";
+import { toGalleryItems } from "../../lib/types";
 import SpotProfileClient from "./SpotProfileClient";
 
 export const revalidate = 300;
@@ -29,9 +31,9 @@ async function getSpot(slug: string): Promise<Spot | null> {
       rating: data.rating, phone: data.phone, website: data.website,
       instagram: data.instagram, isSponsored: data.is_sponsored === true,
       claimedByProfileId: data.claimed_by_profile_id ?? null,
-      gallery: Array.isArray(data.gallery) ? data.gallery : [],
+      gallery: toGalleryItems(data.gallery),
       openingHours: data.opening_hours ?? null,
-    } as Spot & { gallery: string[]; openingHours: any };
+    } as Spot & { gallery: GalleryItem[]; openingHours: any };
   } catch { return null; }
 }
 

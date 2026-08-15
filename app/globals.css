@@ -330,6 +330,19 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
   background: rgba(232,160,32,.08) !important;
 }
 
+/* ── Novel inline-format bubble ──
+   EditorBubble forwards className but not style, so the chrome lives here. */
+.novel-bubble {
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: #1A1A28;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  z-index: 99999;
+}
+
 /* ── Article rich-text content ───────────────────────────── */
 .article-content h2 { color: #fff; font-size: 26px; font-weight: 600; margin: 32px 0 16px; }
 .article-content h3 { color: #fff; font-size: 20px; font-weight: 500; margin: 24px 0 12px; }

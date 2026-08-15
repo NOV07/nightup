@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 import ContactPill from '@/app/components/ContactPill'
 import T from '@/app/components/T'
+import NetworkCategoryText from '@/app/components/NetworkCategoryText'
 import { getEventCoverImage, getEventCrop } from '@/app/lib/getEventCoverImage'
 import { getAvatarCrop, getCoverCrop } from '@/app/lib/profileCrop'
 import CroppedImage from '@/components/ui/CroppedImage'
+import ProfileGallery, { type ProfileGalleryPhoto } from '@/components/ui/ProfileGallery'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
 
@@ -51,15 +53,28 @@ export default async function ProfilePage({ params }: Props) {
   // Fetch content based on profile type
   let upcomingEvents: any[] = []
   let releases: any[] = []
-  let galleryPhotos: { id: string; image_url: string; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null }[] = []
+  let galleryPhotos: ProfileGalleryPhoto[] = []
 
   if (profile.profile_type === 'artist' || profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'professional' || profile.profile_type === 'spot') {
-    const { data } = await supabase
+    const LEGACY_COLS = 'id, image_url, crop_x, crop_y, crop_width, crop_height'
+    const { data, error } = await supabase
       .from('creator_gallery')
-      .select('id, image_url, crop_x, crop_y, crop_width, crop_height')
+      .select(`${LEGACY_COLS}, media_type, poster_url`)
       .eq('profile_id', profile.id)
       .order('display_order', { ascending: true })
-    galleryPhotos = data ?? []
+
+    if (error) {
+      // media_type / poster_url are added by 20260814000000_gallery_media_type.sql,
+      // which is run by hand. Until it is, fall back rather than blanking the gallery.
+      const { data: legacy } = await supabase
+        .from('creator_gallery')
+        .select(LEGACY_COLS)
+        .eq('profile_id', profile.id)
+        .order('display_order', { ascending: true })
+      galleryPhotos = (legacy ?? []) as ProfileGalleryPhoto[]
+    } else {
+      galleryPhotos = (data ?? []) as ProfileGalleryPhoto[]
+    }
   }
 
   // Artist: find events where display_name appears in lineup
@@ -221,8 +236,8 @@ export default async function ProfilePage({ params }: Props) {
                     border: '0.5px solid rgba(232,160,32,0.2)',
                   }}>
                     {profile.network_subcategory
-                      ? `${profile.network_category} · ${profile.network_subcategory}`
-                      : profile.network_category}
+                      ? <><NetworkCategoryText value={profile.network_category} /> · <NetworkCategoryText value={profile.network_subcategory} /></>
+                      : <NetworkCategoryText value={profile.network_category} />}
                   </span>
                 )}
               </div>
@@ -300,7 +315,7 @@ export default async function ProfilePage({ params }: Props) {
                 color: 'rgba(255,255,255,0.45)',
                 border: '0.5px solid rgba(255,255,255,0.1)',
               }}>
-                👥 {profile.venue_capacity} άτομα
+                👥 {profile.venue_capacity} <T k="profile_capacity_people" />
               </span>
             )}
             {profile.venue_address && (
@@ -438,13 +453,7 @@ export default async function ProfilePage({ params }: Props) {
                 <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   Gallery
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {galleryPhotos.map((photo) => (
-                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
-                      <CroppedImage src={photo.image_url} alt="" crop={photo.crop_x != null && photo.crop_y != null && photo.crop_width != null && photo.crop_height != null ? { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height } : null} className="hover:scale-105 transition-transform duration-300" sizes="(max-width: 640px) 50vw, 33vw" />
-                    </div>
-                  ))}
-                </div>
+                <ProfileGallery photos={galleryPhotos} />
               </section>
             )}
 
@@ -525,13 +534,7 @@ export default async function ProfilePage({ params }: Props) {
                 <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   Gallery
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {galleryPhotos.map((photo) => (
-                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
-                      <CroppedImage src={photo.image_url} alt="" crop={photo.crop_x != null && photo.crop_y != null && photo.crop_width != null && photo.crop_height != null ? { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height } : null} className="hover:scale-105 transition-transform duration-300" sizes="(max-width: 640px) 50vw, 33vw" />
-                    </div>
-                  ))}
-                </div>
+                <ProfileGallery photos={galleryPhotos} />
               </section>
             )}
 
@@ -632,13 +635,7 @@ export default async function ProfilePage({ params }: Props) {
                 <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   Gallery
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {galleryPhotos.map((photo) => (
-                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden">
-                      <CroppedImage src={photo.image_url} alt="" crop={photo.crop_x != null && photo.crop_y != null && photo.crop_width != null && photo.crop_height != null ? { crop_x: photo.crop_x, crop_y: photo.crop_y, crop_width: photo.crop_width, crop_height: photo.crop_height } : null} className="hover:scale-105 transition-transform duration-300" sizes="(max-width: 640px) 50vw, 33vw" />
-                    </div>
-                  ))}
-                </div>
+                <ProfileGallery photos={galleryPhotos} />
               </section>
             )}
 

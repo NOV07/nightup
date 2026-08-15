@@ -2,7 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
-import { countWords } from '@/app/lib/articleContent'
+import { countWords, isMissingSourcesColumn } from '@/app/lib/articleContent'
+import { sanitizeArticleHtml, sanitizeSources } from '@/app/lib/sanitizeArticle'
 
 function getSupabase() {
   return createClient(
@@ -55,11 +56,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { wordCount, readTime } = calcStats(body)
+  // The magazine page renders this straight into the DOM, so it is sanitised
+  // before it is stored rather than on the way out.
+  const content = sanitizeArticleHtml(body.content)
+  const { wordCount, readTime } = calcStats({ ...body, content })
   const slug = (body.slug || slugify(body.title || '')).trim()
   if (!slug) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
 
-  const { data, error } = await supabase.from('articles').insert({
+  const row = {
     title:        body.title,
     subtitle:     body.subtitle || null,
     excerpt:      body.excerpt  || null,
@@ -67,12 +71,20 @@ export async function POST(req: NextRequest) {
     category:     body.category || 'Feature',
     series:       body.series   || null,
     tags:         body.tags     || [],
-    content:      body.content  || null,
+    content:      content || null,
+    sources:      sanitizeSources(body.sources),
     hero_image:   body.hero_image || null,
     status:       body.status    || 'draft',
     word_count:   wordCount,
     read_time:    readTime,
-  }).select().single()
+  }
+
+  let { data, error } = await supabase.from('articles').insert(row).select().single()
+
+  if (isMissingSourcesColumn(error)) {
+    const { sources: _dropped, ...withoutSources } = row
+    ;({ data, error } = await supabase.from('articles').insert(withoutSources).select().single())
+  }
 
   if (error) {
     console.error('Supabase insert error:', error)

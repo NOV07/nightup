@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { FiChevronUp, FiChevronDown, FiX, FiCrop } from 'react-icons/fi'
-import ImageUpload from './ImageUpload'
+import GalleryUpload from './GalleryUpload'
+import { GalleryPlayBadge } from './GalleryLightbox'
 import ImageCropper, { type CropBox } from './ImageCropper'
 import CroppedImage from './CroppedImage'
 import { useLanguage } from '@/app/components/LanguageContext'
+import type { GalleryItem } from '@/app/lib/types'
 
 /** Ceiling when a caller does not ask for a lower one. Matches the DB trigger
  *  in the creator_gallery migration, which rejects a 13th row outright. */
@@ -16,11 +18,16 @@ interface GalleryPhoto {
   id: string
   image_url: string
   display_order: number
+  media_type?: string | null
+  poster_url?: string | null
   crop_x: number | null
   crop_y: number | null
   crop_width: number | null
   crop_height: number | null
 }
+
+const LEGACY_COLS = 'id, image_url, display_order, crop_x, crop_y, crop_width, crop_height'
+const MEDIA_COLS = `${LEGACY_COLS}, media_type, poster_url`
 
 function cropOf(photo: GalleryPhoto): CropBox | null {
   if (photo.crop_x == null || photo.crop_y == null || photo.crop_width == null || photo.crop_height == null) return null
@@ -32,6 +39,9 @@ export default function CreatorGallery({ profileId, maxPhotos = DEFAULT_MAX_PHOT
   const [photos, setPhotos] = useState<GalleryPhoto[]>([])
   const [error, setError] = useState('')
   const [croppingId, setCroppingId] = useState<string | null>(null)
+  /** False until 20260814000000_gallery_media_type.sql has been applied. Reads
+   *  fall back to the legacy column list so the gallery keeps working. */
+  const [hasMediaCols, setHasMediaCols] = useState(true)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,25 +50,45 @@ export default function CreatorGallery({ profileId, maxPhotos = DEFAULT_MAX_PHOT
 
   useEffect(() => {
     let cancelled = false
-    supabase
-      .from('creator_gallery')
-      .select('id, image_url, display_order, crop_x, crop_y, crop_width, crop_height')
-      .eq('profile_id', profileId)
-      .order('display_order', { ascending: true })
-      .then(({ data }) => { if (!cancelled && data) setPhotos(data as GalleryPhoto[]) })
+    const load = async () => {
+      const query = (cols: string) => supabase
+        .from('creator_gallery')
+        .select(cols)
+        .eq('profile_id', profileId)
+        .order('display_order', { ascending: true })
+
+      let { data, error } = await query(MEDIA_COLS)
+      if (error) {
+        setHasMediaCols(false)
+        ;({ data } = await query(LEGACY_COLS))
+      }
+      if (!cancelled && data) setPhotos(data as unknown as GalleryPhoto[])
+    }
+    load()
     return () => { cancelled = true }
   }, [profileId])
 
-  async function handleUpload(url: string) {
+  async function handleUpload(item: GalleryItem) {
     setError('')
     const nextOrder = photos.length ? Math.max(...photos.map(p => p.display_order)) + 1 : 0
+
+    // Images omit the new columns so uploads keep working before the migration
+    // is applied; a video genuinely needs them and will fail loudly without.
+    const row: Record<string, unknown> = {
+      profile_id: profileId, image_url: item.url, display_order: nextOrder,
+    }
+    if (item.type === 'video') {
+      row.media_type = 'video'
+      if (item.poster) row.poster_url = item.poster
+    }
+
     const { data, error } = await supabase
       .from('creator_gallery')
-      .insert({ profile_id: profileId, image_url: url, display_order: nextOrder })
-      .select('id, image_url, display_order, crop_x, crop_y, crop_width, crop_height')
+      .insert(row)
+      .select(hasMediaCols ? MEDIA_COLS : LEGACY_COLS)
       .single()
     if (error) { setError(error.message); return }
-    setPhotos(prev => [...prev, data as GalleryPhoto])
+    setPhotos(prev => [...prev, data as unknown as GalleryPhoto])
   }
 
   async function handleCropConfirm(id: string, box: CropBox) {
@@ -105,16 +135,27 @@ export default function CreatorGallery({ profileId, maxPhotos = DEFAULT_MAX_PHOT
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {photos.map((photo, i) => (
           <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden group" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
-            <CroppedImage src={photo.image_url} alt={`Gallery ${i + 1}`} crop={cropOf(photo)} sizes="200px" />
-            <button
-              type="button"
-              onClick={() => setCroppingId(photo.id)}
-              aria-label={t('image_crop_edit')}
-              className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white' }}
-            >
-              <FiCrop size={12} />
-            </button>
+            {photo.media_type === 'video' ? (
+              <>
+                {photo.poster_url
+                  ? <CroppedImage src={photo.poster_url} alt={`Gallery ${i + 1}`} crop={cropOf(photo)} sizes="200px" />
+                  : <div className="w-full h-full" style={{ background: 'rgba(255,255,255,0.06)' }} />}
+                <GalleryPlayBadge size={28} />
+              </>
+            ) : (
+              <CroppedImage src={photo.image_url} alt={`Gallery ${i + 1}`} crop={cropOf(photo)} sizes="200px" />
+            )}
+            {photo.media_type !== 'video' && (
+              <button
+                type="button"
+                onClick={() => setCroppingId(photo.id)}
+                aria-label={t('image_crop_edit')}
+                className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white' }}
+              >
+                <FiCrop size={12} />
+              </button>
+            )}
             {croppingId === photo.id && (
               <ImageCropper
                 imageUrl={photo.image_url}
@@ -159,7 +200,7 @@ export default function CreatorGallery({ profileId, maxPhotos = DEFAULT_MAX_PHOT
         ))}
         {photos.length < maxPhotos && (
           <div className="aspect-square rounded-xl overflow-hidden" style={{ border: '0.5px dashed rgba(255,255,255,0.15)' }}>
-            <ImageUpload key={photos.length} bucket="creator-gallery" folder="gallery" onUpload={handleUpload} />
+            <GalleryUpload key={photos.length} context="profile" onUpload={handleUpload} />
           </div>
         )}
       </div>

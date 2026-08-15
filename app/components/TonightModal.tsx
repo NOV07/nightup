@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import SpotCard from "./SpotCard";
-import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, type Spot, type SpotCategory } from "../spots/types";
+import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, loc, type Spot, type SpotCategory } from "../spots/types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { getEventMood } from "../lib/eventMood";
 import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
@@ -48,7 +48,7 @@ function buildNight(all: Spot[], mood: string): Spot[] {
 
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const WALKS = [t("tonight_walk_2"), t("tonight_walk_4")];
   const SPOT_CAT_LABELS: Record<SpotCategory, string> = {
     food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
@@ -171,7 +171,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   );
   const now = new Date();
   const days = t("tonight_days").split(",");
-  const kicker = `${days[now.getDay()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}  Αθήνα`;
+  const kicker = `${days[now.getDay()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}  ${t("filter_athens")}`;
+  const activeCatDef = SPOT_CATEGORIES.find((c) => c.key === activeCat);
 
   if (!open) return null;
 
@@ -205,8 +206,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                       onMouseLeave={(e)=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor="rgba(255,255,255,0.055)";}}>
                       <SpotCategoryIcon category={c.key} size={22} />
                       <div>
-                        <div style={S.tileLabel}>{c.label}</div>
-                        <div style={S.tileSub}>{c.sub}</div>
+                        <div style={S.tileLabel}>{loc(lang, c.label, c.label_en)}</div>
+                        <div style={S.tileSub}>{loc(lang, c.sub, c.sub_en)}</div>
                       </div>
                     </button>
                   ))}
@@ -228,7 +229,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
               <div>
                 <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_back")}</button>
                 <div style={S.resHead}>
-                  {SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label} <em style={S.em}>· {t("tonight_vibe_q")}</em>
+                  {activeCatDef ? loc(lang, activeCatDef.label, activeCatDef.label_en) : null} <em style={S.em}>· {t("tonight_vibe_q")}</em>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 18 }}>
                   <button onClick={() => goResults(null)} style={S.subChip}>{t("tonight_all_sub")}</button>
@@ -246,7 +247,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                           cursor: disabled ? "default" : "pointer",
                         }}
                       >
-                        {sub.label}{disabled ? ` · ${t("tonight_coming_soon")}` : ` · ${count}`}
+                        {loc(lang, sub.label, sub.label_en)}{disabled ? ` · ${t("tonight_coming_soon")}` : ` · ${count}`}
                       </button>
                     );
                   })}
@@ -259,9 +260,13 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
               <div>
                 <button onClick={() => setView("subcats")} style={S.back}>{t("tonight_back")}</button>
                 <div style={S.resHead}>
-                  {activeSub
-                    ? SUBCATEGORIES[activeCat].find((x) => x.value === activeSub)?.label ?? activeSub
-                    : SPOT_CATEGORIES.find((c)=>c.key===activeCat)?.label}
+                  {(() => {
+                    if (activeSub) {
+                      const s = SUBCATEGORIES[activeCat].find((x) => x.value === activeSub);
+                      return s ? loc(lang, s.label, s.label_en) : activeSub;
+                    }
+                    return activeCatDef ? loc(lang, activeCatDef.label, activeCatDef.label_en) : null;
+                  })()}
                   {" "}<em style={S.em}>· {t("tonight_near")}</em>
                 </div>
                 <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -293,7 +298,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                 </div>
                 {matchedEvent && (
                   <Link href={`/events/${matchedEvent.id}`} onClick={handleClose} style={S.eventCard}>
-                    <div style={S.eventKicker}>🎉 Ή δοκίμασε ένα event απόψε</div>
+                    <div style={S.eventKicker}>🎉 {t("tonight_try_event")}</div>
                     <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
                       <div style={{ position: "relative", ...S.eventImg }}>
                         <CroppedImage src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} crop={getEventCrop(matchedEvent)} sizes="52px" style={{ borderRadius: S.eventImg.borderRadius }} />
@@ -327,8 +332,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                       onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.borderColor="rgba(232,160,32,0.15)";}}
                       onMouseLeave={(e)=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor="rgba(255,255,255,0.055)";}}>
                       <div style={{ fontSize: 25 }}>{m.emoji}</div>
-                      <div style={S.moodLabel}>{m.label}</div>
-                      <div style={S.moodDesc}>{m.desc}</div>
+                      <div style={S.moodLabel}>{loc(lang, m.label, m.label_en)}</div>
+                      <div style={S.moodDesc}>{loc(lang, m.desc, m.desc_en)}</div>
                     </button>
                   ))}
                 </div>

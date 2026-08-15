@@ -8,6 +8,8 @@ import type { CropBox } from '@/components/ui/CroppedImage'
 import { NETWORK } from '@/app/lib/searchData'
 import { PRICE_RANGES } from '@/app/lib/networkProfile'
 import VenueLivePreview from './VenueLivePreview'
+import { useLanguage } from '@/app/components/LanguageContext'
+import type { TranslationKey } from '@/app/lib/translations'
 
 /** Venue types, read off NETWORK.Venues so the wizard cannot drift from
  *  /network/venues, which builds its filter chips from the same keys. */
@@ -34,11 +36,11 @@ const AVATAR_CROP_ASPECT = 1
  *  crops at 3:1 — not the 16:9 spots and events use for their card art. */
 const COVER_CROP_ASPECT = 3
 
-const STEPS = [
-  { n: 1, title: 'Τα βασικά' },
-  { n: 2, title: 'Τοποθεσία' },
-  { n: 3, title: 'Φωτογραφίες' },
-  { n: 4, title: 'Επικοινωνία' },
+const STEPS: { n: number; titleKey: TranslationKey }[] = [
+  { n: 1, titleKey: 'wizard_step_basics' },
+  { n: 2, titleKey: 'wizard_step_location' },
+  { n: 3, titleKey: 'wizard_step_photos' },
+  { n: 4, titleKey: 'wizard_step_contact' },
 ]
 
 // ── Style tokens (module-level — no state dependency) ─────────────────────
@@ -170,6 +172,7 @@ function Err({ stepErrors, k }: { stepErrors: Record<string, string>; k: string 
 }
 
 function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) => void }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 36 }}>
       {STEPS.map((s, i) => (
@@ -191,7 +194,7 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
               color: step === s.n ? '#E8A020' : s.n < step ? 'rgba(232,160,32,0.6)' : 'rgba(255,255,255,0.25)',
               whiteSpace: 'nowrap',
             }}>
-              {s.title}
+              {t(s.titleKey)}
             </span>
           </div>
           {i < STEPS.length - 1 && (
@@ -209,10 +212,11 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
 function Step1({ form, set, stepErrors }: {
   form: VenueFormData; set: SetField; stepErrors: Record<string, string>
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Τύπος χώρου *</label>
+        <label style={lbl}>{t('wizard_venue_type')} *</label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
           {VENUE_TYPES.map(type => {
             const on = form.network_category === type
@@ -235,36 +239,36 @@ function Step1({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>Όνομα *</label>
+        <label style={lbl}>{t('wizard_name')} *</label>
         <input style={inp} value={form.display_name} onChange={e => set('display_name', e.target.value)}
-          placeholder="π.χ. Kipos Rooftop" />
+          placeholder={t('spot_wizard_name_ph')} />
         <Err stepErrors={stepErrors} k="display_name" />
       </div>
 
       <div>
         <label style={lbl}>
-          Χωρητικότητα{' '}
+          {t('wizard_capacity')}{' '}
           <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'rgba(255,255,255,0.40)' }}>
-            (άτομα)
+            {t('wizard_capacity_people')}
           </span>
         </label>
         <input style={inp} type="number" min={1} inputMode="numeric"
           value={form.capacity}
           onChange={e => set('capacity', e.target.value)}
-          placeholder="π.χ. 350" />
+          placeholder={t('venue_capacity_ph')} />
         <Err stepErrors={stepErrors} k="capacity" />
       </div>
 
       <div>
         <label style={lbl}>
-          Περιγραφή *{' '}
+          {t('wizard_description')} *{' '}
           <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
             {form.bio.length}/600
           </span>
         </label>
         <textarea style={{ ...inp, minHeight: 110, resize: 'vertical' }} maxLength={600}
           value={form.bio} onChange={e => set('bio', e.target.value)}
-          placeholder="Τι κάνει τον χώρο σου ξεχωριστό;" />
+          placeholder={t('venue_desc_ph')} />
         <Err stepErrors={stepErrors} k="bio" />
       </div>
     </div>
@@ -274,14 +278,15 @@ function Step1({ form, set, stepErrors }: {
 function Step2({ form, set, stepErrors }: {
   form: VenueFormData; set: SetField; stepErrors: Record<string, string>
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Πόλη *</label>
+        <label style={lbl}>{t('wizard_city')} *</label>
         <div style={{ position: 'relative' }}>
           <select style={{ ...inp, appearance: 'none', cursor: 'pointer', backgroundColor: '#0F0F1A' }}
             value={form.city} onChange={e => set('city', e.target.value)}>
-            <option value="">Διάλεξε πόλη...</option>
+            <option value="">{t('wizard_pick_city')}</option>
             {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#E8A020', pointerEvents: 'none' }}>▾</span>
@@ -291,20 +296,20 @@ function Step2({ form, set, stepErrors }: {
 
       <div>
         <label style={lbl}>
-          Γειτονιά{' '}
+          {t('wizard_neighborhood')}{' '}
           <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'rgba(255,255,255,0.40)' }}>
-            (προαιρετικό)
+            {t('wizard_optional')}
           </span>
         </label>
-        <input style={inp} value={form.neighborhood} onChange={e => set('neighborhood', e.target.value)} placeholder="π.χ. Κουκάκι" />
+        <input style={inp} value={form.neighborhood} onChange={e => set('neighborhood', e.target.value)} placeholder={t('wizard_neigh_ph')} />
       </div>
 
       <div>
-        <label style={lbl}>Διεύθυνση *</label>
-        <input style={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder="π.χ. Φαλήρου 22, Αθήνα 117 42" />
+        <label style={lbl}>{t('wizard_address')} *</label>
+        <input style={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder={t('wizard_address_ph')} />
         <Err stepErrors={stepErrors} k="address" />
         <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.30)', marginTop: 6 }}>
-          Απλό κείμενο — δεν χρειάζεται link χάρτη.
+          {t('wizard_address_hint')}
         </p>
       </div>
     </div>
@@ -319,11 +324,12 @@ function Step3({ form, set, stepErrors, profileId, showAvatarCropper, setShowAva
   showCoverCropper: boolean
   setShowCoverCropper: (v: boolean) => void
 }) {
+  const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* Cover */}
       <div>
-        <label style={lbl}>Εξώφυλλο *</label>
+        <label style={lbl}>{t('wizard_cover')} *</label>
         {form.cover_url ? (
           <div>
             <div style={{ position: 'relative', width: '100%', aspectRatio: `${COVER_CROP_ASPECT}`, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -332,11 +338,11 @@ function Step3({ form, set, stepErrors, profileId, showAvatarCropper, setShowAva
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <button type="button" onClick={() => setShowCoverCropper(true)}
                 style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, cursor: 'pointer', backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.3)' }}>
-                Προσαρμογή κάδρου
+                {t('wizard_adjust_crop')}
               </button>
               <button type="button" onClick={() => { set('cover_url', ''); set('cover_crop', null) }}
                 style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, cursor: 'pointer', backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Αφαίρεση
+                {t('common_remove')}
               </button>
             </div>
           </div>
@@ -361,7 +367,7 @@ function Step3({ form, set, stepErrors, profileId, showAvatarCropper, setShowAva
       {/* Avatar — the network card leads with it, so a venue without one shows
           as a two-letter initial box on /network/venues. */}
       <div>
-        <label style={lbl}>Λογότυπο</label>
+        <label style={lbl}>{t('wizard_logo')}</label>
         {form.avatar_url ? (
           <div>
             <div style={{ position: 'relative', width: 140, height: 140, borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -370,11 +376,11 @@ function Step3({ form, set, stepErrors, profileId, showAvatarCropper, setShowAva
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <button type="button" onClick={() => setShowAvatarCropper(true)}
                 style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, cursor: 'pointer', backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.3)' }}>
-                Προσαρμογή κάδρου
+                {t('wizard_adjust_crop')}
               </button>
               <button type="button" onClick={() => { set('avatar_url', ''); set('avatar_crop', null) }}
                 style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, cursor: 'pointer', backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Αφαίρεση
+                {t('common_remove')}
               </button>
             </div>
           </div>
@@ -398,7 +404,7 @@ function Step3({ form, set, stepErrors, profileId, showAvatarCropper, setShowAva
       {/* Gallery — the same creator_gallery store the other profile types use.
           It writes on upload rather than on submit, so it is live immediately. */}
       <div>
-        <label style={lbl}>Gallery (έως {MAX_GALLERY})</label>
+        <label style={lbl}>Gallery {t('wizard_gallery_max')} {MAX_GALLERY})</label>
         <CreatorGallery profileId={profileId} maxPhotos={MAX_GALLERY} />
       </div>
     </div>
@@ -408,22 +414,25 @@ function Step3({ form, set, stepErrors, profileId, showAvatarCropper, setShowAva
 function Step4({ form, set, stepErrors }: {
   form: VenueFormData; set: SetField; stepErrors: Record<string, string>
 }) {
+  const { t } = useLanguage()
   const capacity = parseInt(form.capacity, 10)
+  const coverLbl = t('wizard_cover').toLowerCase()
+  const logoLbl = t('wizard_logo').toLowerCase()
   const summary: { label: string; value: string }[] = [
-    { label: 'Όνομα', value: form.display_name.trim() || '—' },
-    { label: 'Τύπος', value: form.network_category || '—' },
-    { label: 'Χωρητικότητα', value: Number.isFinite(capacity) && capacity > 0 ? `${capacity} άτομα` : '—' },
-    { label: 'Τοποθεσία', value: [form.address, form.neighborhood, form.city].filter(Boolean).join(', ') || '—' },
-    { label: 'Φωτογραφίες', value: `${form.cover_url ? 'εξώφυλλο ✓' : 'εξώφυλλο —'} · ${form.avatar_url ? 'λογότυπο ✓' : 'λογότυπο —'}` },
-    { label: 'Επικοινωνία', value: [form.phone, form.booking_email, form.website, form.instagram].filter(c => c.trim()).join(' · ') || '—' },
-    { label: 'Εύρος τιμών', value: form.price_range || '—' },
+    { label: t('wizard_name'), value: form.display_name.trim() || '—' },
+    { label: t('wizard_type'), value: form.network_category || '—' },
+    { label: t('wizard_capacity'), value: Number.isFinite(capacity) && capacity > 0 ? `${capacity} ${t('profile_capacity_people')}` : '—' },
+    { label: t('wizard_step_location'), value: [form.address, form.neighborhood, form.city].filter(Boolean).join(', ') || '—' },
+    { label: t('dashboard_photos'), value: `${form.cover_url ? `${coverLbl} ✓` : `${coverLbl} —`} · ${form.avatar_url ? `${logoLbl} ✓` : `${logoLbl} —`}` },
+    { label: t('wizard_step_contact'), value: [form.phone, form.booking_email, form.website, form.instagram].filter(c => c.trim()).join(' · ') || '—' },
+    { label: t('wizard_price_range'), value: form.price_range || '—' },
   ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>Τηλέφωνο</label>
-        <input style={inp} type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="π.χ. 210 1234567" />
+        <label style={lbl}>{t('dashboard_phone')}</label>
+        <input style={inp} type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder={t('wizard_phone_ph')} />
       </div>
 
       <div>
@@ -443,7 +452,7 @@ function Step4({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>Εύρος τιμών</label>
+        <label style={lbl}>{t('wizard_price_range')}</label>
         <div style={{ display: 'flex', gap: 8 }}>
           {PRICE_RANGES.map(range => {
             const on = form.price_range === range
@@ -465,7 +474,7 @@ function Step4({ form, set, stepErrors }: {
       {/* Review */}
       <div style={{ padding: '16px 18px', borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
-          Έλεγχος πριν την υποβολή
+          {t('wizard_review_heading')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {summary.map(row => (
@@ -483,6 +492,7 @@ function Step4({ form, set, stepErrors }: {
 export default function VenueFormSteps({
   profileId, username, isVerified = false, initialData, onSubmit, loading, error,
 }: Props) {
+  const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<VenueFormData>({ ...DEFAULTS, ...initialData })
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({})
@@ -506,24 +516,24 @@ export default function VenueFormSteps({
   function validate(n: number): Record<string, string> {
     const e: Record<string, string> = {}
     if (n === 1) {
-      if (!form.network_category) e.network_category = 'Διάλεξε τύπο χώρου'
-      if (!form.display_name.trim()) e.display_name = 'Το όνομα είναι υποχρεωτικό'
+      if (!form.network_category) e.network_category = t('err_pick_venue_type')
+      if (!form.display_name.trim()) e.display_name = t('err_name_required')
       if (form.capacity.trim()) {
         const c = parseInt(form.capacity, 10)
-        if (!Number.isFinite(c) || c <= 0) e.capacity = 'Η χωρητικότητα πρέπει να είναι θετικός αριθμός'
+        if (!Number.isFinite(c) || c <= 0) e.capacity = t('err_capacity_positive')
       }
-      if (!form.bio.trim()) e.bio = 'Η περιγραφή είναι υποχρεωτική'
+      if (!form.bio.trim()) e.bio = t('err_desc_required')
     }
     if (n === 2) {
-      if (!form.city) e.city = 'Διάλεξε πόλη'
-      if (!form.address.trim()) e.address = 'Η διεύθυνση είναι υποχρεωτική'
+      if (!form.city) e.city = t('err_pick_city')
+      if (!form.address.trim()) e.address = t('err_address_required')
     }
     if (n === 3) {
-      if (!form.cover_url) e.cover_url = 'Χρειάζεται μια φωτογραφία εξωφύλλου'
+      if (!form.cover_url) e.cover_url = t('err_cover_required')
     }
     if (n === 4) {
       if (form.booking_email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.booking_email.trim())) {
-        e.booking_email = 'Το email δεν μοιάζει σωστό'
+        e.booking_email = t('err_email_invalid')
       }
     }
     return e
@@ -562,7 +572,7 @@ export default function VenueFormSteps({
               backgroundColor: 'rgba(232,160,32,0.10)', color: '#E8A020',
               border: '1px solid rgba(232,160,32,0.35)',
             }}>
-            👁 Προεπισκόπηση
+            👁 {t('wizard_preview')}
           </button>
         )}
 
@@ -570,7 +580,7 @@ export default function VenueFormSteps({
 
         <div style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '32px 28px' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 24 }}>
-            {STEPS[step - 1].title}
+            {t(STEPS[step - 1].titleKey)}
           </h2>
 
           {step === 1 && <Step1 form={form} set={set} stepErrors={stepErrors} />}
@@ -592,18 +602,18 @@ export default function VenueFormSteps({
             {step > 1 && (
               <button type="button" onClick={back}
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Πίσω
+                {t('common_back')}
               </button>
             )}
             {step < 4 ? (
               <button type="button" onClick={next}
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
-                Συνέχεια
+                {t('event_form_continue')}
               </button>
             ) : (
               <button type="button" onClick={handleFinalSubmit} disabled={loading}
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1, backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
-                {loading ? 'Αποθήκευση...' : 'Αποθήκευση χώρου'}
+                {loading ? t('dashboard_saving') : t('wizard_save_venue')}
               </button>
             )}
           </div>
@@ -613,7 +623,7 @@ export default function VenueFormSteps({
       {/* Desktop: sticky side-by-side preview */}
       {!isMobile && (
         <aside style={{ position: 'sticky', top: 0 }}>
-          <p style={{ ...lbl, marginBottom: 12 }}>Προεπισκόπηση</p>
+          <p style={{ ...lbl, marginBottom: 12 }}>{t('wizard_preview')}</p>
           <VenueLivePreview form={form} step={step} username={username} profileId={profileId} isVerified={isVerified} />
         </aside>
       )}
@@ -625,10 +635,10 @@ export default function VenueFormSteps({
           <div onClick={e => e.stopPropagation()}
             style={{ width: '100%', maxHeight: '88vh', overflowY: 'auto', backgroundColor: '#111120', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTop: '0.5px solid rgba(255,255,255,0.10)', padding: '18px 16px 28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <p style={{ ...lbl, marginBottom: 0 }}>Προεπισκόπηση</p>
+              <p style={{ ...lbl, marginBottom: 0 }}>{t('wizard_preview')}</p>
               <button type="button" onClick={() => setPreviewOpen(false)}
                 style={{ padding: '6px 14px', borderRadius: 999, fontSize: 12, cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Κλείσιμο
+                {t('common_close')}
               </button>
             </div>
             <VenueLivePreview form={form} step={step} username={username} profileId={profileId} isVerified={isVerified} />

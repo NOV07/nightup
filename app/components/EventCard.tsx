@@ -56,7 +56,7 @@ export default function EventCard({
   const [saved, setSaved] = useState(initialSaved ?? false);
   const pathname = usePathname();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const CATEGORY_LABEL_KEYS: Record<string, string> = {
     culture: "event_cat_culture",
@@ -84,10 +84,10 @@ export default function EventCard({
         });
         if (res.status === 401) {
           setSaved(false);
-          toast('Συνδέσου για να το αποθηκεύσεις', {
+          toast(t('toast_sign_in_save'), {
             duration: 5000,
             action: {
-              label: 'Σύνδεση',
+              label: t('toast_sign_in'),
               onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
             },
           });
@@ -104,7 +104,7 @@ export default function EventCard({
   const hasRealImage = Boolean(image_url || image);
   const imgSrc = image_url || image || FALLBACK_IMAGE;
 
-  const displayPrice = formatPrice(price);
+  const displayPrice = formatPrice(price, lang);
 
   const formattedDate = new Date(date).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short",
