@@ -591,6 +591,13 @@ section:hover .hero-arrow { opacity: 1 !important; }
     border-radius: 18px 18px 0 0 !important;
     transform-origin: bottom center !important;
   }
+
+  /* MusicPlayerBar (88px tall, offset 8px + safe-area) is also a full-width
+     bottom bar on mobile — when a track is playing, push the radio bar up
+     above it so the two don't overlap. */
+  .radio-strip-desktop.radio-strip-player-active {
+    bottom: calc(env(safe-area-inset-bottom) + 100px) !important;
+  }
 }
 
 

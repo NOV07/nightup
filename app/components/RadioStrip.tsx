@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRadio, STATIONS } from "./RadioContext";
 import type { RadioStatus } from "./RadioContext";
+import { usePlayerStore } from "./PlayerContext";
 
 // ── Per-station visual metadata ───────────────────────────────────────────────
 const META: Record<string, { emoji: string; genre: string; tagline: string }> = {
@@ -80,6 +81,11 @@ export default function RadioStrip() {
     currentStation, status, isPlaying, isMuted,
     volume, currentTrack, playStation, togglePlay, setVolume, toggleMute,
   } = useRadio();
+  // MusicPlayerBar (track/mix playback) is a separate widget that can be
+  // active at the same time as the live radio stream. On mobile both become
+  // full-bleed bottom bars, so push this one up above the player bar's
+  // 88px height (+8px offset) to avoid the two stacking on top of each other.
+  const { currentTrack: playingTrack } = usePlayerStore();
 
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -122,7 +128,7 @@ export default function RadioStrip() {
   return (
     <div
       ref={ref}
-      className="radio-strip-desktop"
+      className={`radio-strip-desktop${playingTrack ? " radio-strip-player-active" : ""}`}
       tabIndex={0}
       onKeyDown={onKeyDown}
       aria-label="Nightwaves Radio"

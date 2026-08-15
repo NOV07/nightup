@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { usePlayerStore } from "./PlayerContext";
 
 interface Message {
   role: "user" | "bot";
@@ -37,9 +38,27 @@ export default function Chatbot() {
   const dragging = useRef(false);
   const dragOffset = useRef({ dx: 0, dy: 0 });
 
+  const { currentTrack: playingTrack } = usePlayerStore();
+
   useEffect(() => {
     setPos({ x: window.innerWidth - BUBBLE_SIZE - EDGE_PAD, y: window.innerHeight - BUBBLE_SIZE - 80 });
   }, []);
+
+  // MusicPlayerBar is a full-width 88px bar pinned to the bottom on mobile.
+  // The bubble's default resting spot sits inside that footprint, so nudge it
+  // up while a track is playing — but only if it's actually in the danger
+  // zone, so a bubble the user already dragged elsewhere isn't disturbed.
+  // Desktop layout (MusicPlayerBar's md:+ sizing/position) is untouched.
+  useEffect(() => {
+    if (window.innerWidth > 768) return;
+    const clearance = playingTrack ? 104 : 0;
+    setPos((p) => {
+      if (!p) return p;
+      const maxY = window.innerHeight - BUBBLE_SIZE - EDGE_PAD - clearance;
+      if (p.y <= maxY) return p;
+      return { ...p, y: maxY };
+    });
+  }, [playingTrack]);
 
   const clamp = useCallback((x: number, y: number) => ({
     x: Math.max(EDGE_PAD, Math.min(window.innerWidth - BUBBLE_SIZE - EDGE_PAD, x)),
