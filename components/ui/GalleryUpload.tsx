@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import type { GalleryItem } from '@/app/lib/types'
 import { GalleryPlayBadge } from './GalleryLightbox'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { compressImage } from '@/app/lib/compressImage'
 
 /** Server-side duration checking would mean shipping ffmpeg just to parse a
  *  container header, so the limit is enforced here instead. */
@@ -146,7 +147,8 @@ export default function GalleryUpload({ context, onUpload, items, onRemove, max 
           onUpload({ url: uploaded.url, type: 'video', ...(posterUrl ? { poster: posterUrl } : {}) })
           accepted++
         } else {
-          const uploaded = await postFile(file, file.name, context)
+          const compressed = await compressImage(file)
+          const uploaded = await postFile(compressed, compressed.name, context)
           onUpload({ url: uploaded.url, type: uploaded.type })
           accepted++
         }

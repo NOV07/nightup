@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { compressImage } from '@/app/lib/compressImage'
 
 interface ImageUploadProps {
   onUpload: (url: string) => void
@@ -40,12 +41,13 @@ export default function ImageUpload({ onUpload, existingUrl, folder = 'general',
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not logged in'); setUploading(false); return }
 
-    const ext = file.name.split('.').pop()
+    const uploadFile = await compressImage(file)
+    const ext = uploadFile.name.split('.').pop()
     const filename = `${user.id}/${folder}/${Date.now()}.${ext}`
 
     const { data, error } = await supabase.storage
       .from(bucket)
-      .upload(filename, file, { upsert: true })
+      .upload(filename, uploadFile, { upsert: true })
 
     if (error) {
       setError(error.message)

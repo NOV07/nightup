@@ -4,6 +4,7 @@ import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
 import ImageUpload from '@/components/ui/ImageUpload'
 import EventLivePreview from './EventLivePreview'
+import { compressImage } from '@/app/lib/compressImage'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Hip-Hop', 'R&B', 'Laika', 'Entechno', 'Rock', 'Open Air', 'Other']
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
@@ -613,8 +614,9 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
     if (!file) return
     setUploading(true)
     setUploadError('')
+    const compressed = await compressImage(file)
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file', compressed)
     const res = await fetch('/api/events/upload', { method: 'POST', body: fd })
     const json = await res.json()
     if (!res.ok) { setUploadError(json.error ?? t('event_form_upload_failed')); setUploading(false); return }

@@ -6,10 +6,16 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   { key: "X-DNS-Prefetch-Control", value: "on" },
+  // 2 years, per the standard HSTS preload-list requirement, plus subdomains.
+  // Safe to add outright since the whole site is already HTTPS-only on Vercel;
+  // no CSP yet (see security audit notes) — that needs an audit of every
+  // external domain the app legitimately loads before it can be added safely.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 ];
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",
@@ -32,14 +38,6 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: securityHeaders,
-      },
-      {
-        source: "/cms/:path*",
-        headers: [
-          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
       },
     ];
   },

@@ -11,8 +11,9 @@ import NightwavesHomeCard from "./components/NightwavesHomeCard";
 import { formatPrice } from "./lib/formatPrice";
 import T from "./components/T";
 import TranslatedText from "./components/TranslatedText";
+import { jsonLdScript } from "./lib/jsonLd";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: { absolute: "Nightup.gr – Find Your Night" },
@@ -238,7 +239,7 @@ export default async function HomePage() {
   return (
     <>
     <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(websiteJsonLd) }} />
       <FadeInObserver />
 
       {/* ── HERO SLIDER ── */}

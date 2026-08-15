@@ -72,9 +72,12 @@ export async function POST(req: NextRequest) {
   const payload: Record<string, unknown> = {}
   SPOT_FIELDS.forEach(k => { if (k in body) payload[k] = body[k] })
 
-  const { data: existingSlugs } = await supabase.from('spots').select('slug')
+  // Only slugs that share the candidate's root can possibly collide with it
+  // (root, root-2, root-3, …) — no need to pull the whole table.
+  const slugRoot = slugify(String(body.name)) || 'spot'
+  const { data: existingSlugs } = await supabase.from('spots').select('slug').ilike('slug', `${slugRoot}%`)
   const slug = uniqueSlug(
-    slugify(String(body.name)),
+    slugRoot,
     new Set((existingSlugs ?? []).map(r => r.slug).filter(Boolean) as string[]),
   )
 
