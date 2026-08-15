@@ -32,8 +32,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/?message=auth_error`)
   }
 
-  // Password reset and other flows pass ?next= to land on a specific page
-  if (next) {
+  // Password reset and other flows pass ?next= to land on a specific page.
+  // Restricted to same-site relative paths — string-concatenating onto
+  // `origin` already keeps this off other hosts today, but this allowlist
+  // is what actually guarantees it stays that way if that construction
+  // ever changes (e.g. to `new URL(next, origin)`, which would not be safe).
+  if (next && next.startsWith('/') && !next.startsWith('//')) {
     return NextResponse.redirect(`${origin}${next}`)
   }
 

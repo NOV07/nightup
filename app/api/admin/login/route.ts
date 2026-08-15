@@ -1,5 +1,20 @@
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { signAdminToken } from '@/app/lib/adminAuth'
+
+/** Constant-time password check — plain `!==` leaks timing info character
+ *  by character via V8's short-circuiting string comparison. */
+function passwordMatches(candidate: string, expected: string): boolean {
+  const a = Buffer.from(candidate)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length) {
+    // Still run a comparison of equal length so a length mismatch doesn't
+    // return measurably faster than a same-length wrong guess.
+    crypto.timingSafeEqual(a, a)
+    return false
+  }
+  return crypto.timingSafeEqual(a, b)
+}
 
 const RATE_LIMIT_MAX = 5
 const RATE_LIMIT_WINDOW_MS = 1000 * 60 * 15 // 15 minutes
@@ -33,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   const { password } = await req.json()
 
-  if (!password || password !== process.env.ADMIN_PASSWORD) {
+  if (!password || typeof password !== 'string' || !passwordMatches(password, process.env.ADMIN_PASSWORD!)) {
     return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
   }
 

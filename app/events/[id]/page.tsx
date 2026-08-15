@@ -7,6 +7,7 @@ import { logQueryError } from '../../lib/logQueryError'
 import { formatPrice } from '../../lib/formatPrice'
 import { getEventCoverImage, getEventCrop } from '../../lib/getEventCoverImage'
 import { getAvatarCrop } from '../../lib/profileCrop'
+import { jsonLdScript } from '../../lib/jsonLd'
 import EventHeroImage from '../../components/EventHeroImage'
 import CroppedImage from '../../../components/ui/CroppedImage'
 import T from '../../components/T'
@@ -222,7 +223,7 @@ export default async function EventPage({ params }: Props) {
 
   return (
     <div style={{ backgroundColor: '#0F0F1A', minHeight: '100vh', color: '#fff' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(eventJsonLd) }} />
 
       {/* Hero */}
       <EventHeroImage imageUrl={getEventCoverImage(event)} crop={getEventCrop(event)} title={event.title ?? ""} genre={event.genre ?? undefined} venue={event.venue ?? undefined} date={event.date ?? undefined} />
