@@ -4,14 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { LiveStats } from "./page";
 import { useLanguage } from "../components/LanguageContext";
-import { Spectral } from "next/font/google";
-
-const spectral = Spectral({
-  subsets: ["latin", "latin-ext"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
 
 const socials = [
   {
@@ -101,8 +93,7 @@ function StatItem({ target, label }: { target: number; label: string }) {
   return (
     <div ref={ref}>
       <div
-        className={spectral.className}
-        style={{ fontSize: "28px", color: "#fff", lineHeight: 1, fontWeight: 300 }}
+        style={{ fontFamily: "var(--font-spectral)", fontSize: "28px", color: "#fff", lineHeight: 1, fontWeight: 300 }}
       >
         {display}
       </div>
@@ -122,20 +113,17 @@ function SectionHeader({ num, title, sub }: { num: string; title: string; sub: s
       style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
     >
       <span
-        className={spectral.className}
-        style={{ fontStyle: "italic", color: "#E8A020", fontSize: "13px", flexShrink: 0 }}
+        style={{ fontFamily: "var(--font-spectral)", fontStyle: "italic", color: "#E8A020", fontSize: "13px", flexShrink: 0 }}
       >
         {num}
       </span>
       <h2
-        className={spectral.className}
-        style={{ fontWeight: 300, fontSize: "30px", color: "#fff", lineHeight: 1 }}
+        style={{ fontFamily: "var(--font-spectral)", fontWeight: 300, fontSize: "30px", color: "#fff", lineHeight: 1 }}
       >
         {title}
       </h2>
       <p
-        className={spectral.className}
-        style={{ fontStyle: "italic", color: "#5A5A6A", fontSize: "14px", marginLeft: "auto", flexShrink: 0 }}
+        style={{ fontFamily: "var(--font-spectral)", fontStyle: "italic", color: "#5A5A6A", fontSize: "14px", marginLeft: "auto", flexShrink: 0 }}
       >
         {sub}
       </p>
@@ -407,7 +395,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
 
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '860px', margin: '0 auto', padding: '0 48px' }}>
           <div id="hero-eyebrow" style={{ fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#E8A020', marginBottom: '10px', opacity: 0, fontFamily: 'var(--font-sans)' }}>About</div>
-          <h1 className={`about-hero-h1 ${spectral.className}`} style={{ fontWeight: 300, fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#fff', lineHeight: 1.15, margin: 0, minHeight: '4rem' }}>
+          <h1 className="about-hero-h1" style={{ fontFamily: 'var(--font-spectral)', fontWeight: 300, fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#fff', lineHeight: 1.15, margin: 0, minHeight: '4rem' }}>
             <span id="hero-typed"></span>
             <span id="hero-cursor" style={{ display: 'inline-block', width: '2px', height: '0.85em', background: '#E8A020', verticalAlign: 'middle', marginLeft: '3px', animation: 'cn-blink 0.7s step-end infinite' }} />
           </h1>
@@ -422,8 +410,8 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
         {/* ── Hero lede + stats ─────────────────────────────── */}
         <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: "64px", marginBottom: "64px" }}>
           <p
-            className={`about-lede ${spectral.className}`}
-            style={{ fontStyle: "italic", fontSize: "18px", color: "#8A8A99", lineHeight: 1.65, maxWidth: "560px", marginTop: 0 }}
+            className="about-lede"
+            style={{ fontFamily: "var(--font-spectral)", fontStyle: "italic", fontSize: "18px", color: "#8A8A99", lineHeight: 1.65, maxWidth: "560px", marginTop: 0 }}
           >
             {t("about_hero_lede")}
           </p>
@@ -450,14 +438,12 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
                   {card.label}
                 </p>
                 <h3
-                  className={spectral.className}
-                  style={{ fontWeight: 300, fontSize: "20px", color: "#fff", lineHeight: 1.2, marginBottom: "10px" }}
+                  style={{ fontFamily: "var(--font-spectral)", fontWeight: 300, fontSize: "20px", color: "#fff", lineHeight: 1.2, marginBottom: "10px" }}
                 >
                   {card.title}
                 </h3>
                 <p
-                  className={spectral.className}
-                  style={{ fontStyle: "italic", fontSize: "12px", color: "#8A8A99", lineHeight: 1.6, marginBottom: "24px" }}
+                  style={{ fontFamily: "var(--font-spectral)", fontStyle: "italic", fontSize: "12px", color: "#8A8A99", lineHeight: 1.6, marginBottom: "24px" }}
                 >
                   {card.desc}
                 </p>
@@ -475,8 +461,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
           <div style={{ maxWidth: "620px" }}>
             {submitted ? (
               <div
-                className={spectral.className}
-                style={{ fontStyle: "italic", fontSize: "16px", color: "#5A5A6A", padding: "32px 0" }}
+                style={{ fontFamily: "var(--font-spectral)", fontStyle: "italic", fontSize: "16px", color: "#5A5A6A", padding: "32px 0" }}
               >
                 {t("about_form_received")}
               </div>
@@ -513,8 +498,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
                 />
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "16px", flexWrap: "wrap", gap: "12px" }}>
                   <p
-                    className={spectral.className}
-                    style={{ fontStyle: "italic", fontSize: "13px", color: "#5A5A6A" }}
+                    style={{ fontFamily: "var(--font-spectral)", fontStyle: "italic", fontSize: "13px", color: "#5A5A6A" }}
                   >
                     {t("about_form_reply24")}
                   </p>
@@ -554,8 +538,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
               >
                 {s.icon}
                 <span
-                  className={spectral.className}
-                  style={{ fontSize: "12px", color: "#fff", fontWeight: 400 }}
+                  style={{ fontFamily: "var(--font-spectral)", fontSize: "12px", color: "#fff", fontWeight: 400 }}
                 >
                   {s.label}
                 </span>
@@ -578,8 +561,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
             <Link href="/cookies" className="legal-link">Cookies</Link>
           </div>
           <p
-            className={spectral.className}
-            style={{ fontStyle: "italic", fontSize: "11px", color: "#5A5A6A" }}
+            style={{ fontFamily: "var(--font-spectral)", fontStyle: "italic", fontSize: "11px", color: "#5A5A6A" }}
           >
             © 2026 Nightup. Made for the nightlife.
           </p>
