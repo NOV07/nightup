@@ -10,8 +10,10 @@ import { getAvatarCrop } from '../../lib/profileCrop'
 import { jsonLdScript } from '../../lib/jsonLd'
 import EventHeroImage from '../../components/EventHeroImage'
 import CroppedImage from '../../../components/ui/CroppedImage'
+import EventGallery from './EventGallery'
 import T from '../../components/T'
 import type { TranslationKey } from '../../lib/translations'
+import { toGalleryItems } from '../../lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,7 +70,7 @@ export default async function EventPage({ params }: Props) {
     ? event.contributors.split(',').map((s: string) => s.trim()).filter(Boolean)
     : []
 
-  const gallery: string[] = Array.isArray(event.gallery) ? event.gallery.filter(Boolean) : []
+  const gallery = toGalleryItems(event.gallery)
 
   // Entry conditions worth calling out above the ticket CTA
   const infoCards: { key: TranslationKey; value: string }[] = []
@@ -416,16 +418,7 @@ export default async function EventPage({ params }: Props) {
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 12 }}>
               <T k="event_gallery_heading" />
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-              {gallery.map((url, i) => (
-                <div key={i} style={{
-                  position: 'relative', aspectRatio: '1 / 1', borderRadius: 12, overflow: 'hidden',
-                  backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                }}>
-                  <CroppedImage src={url} alt={`${event.title} ${i + 1}`} sizes="(max-width: 680px) 45vw, 220px" />
-                </div>
-              ))}
-            </div>
+            <EventGallery items={gallery} alt={event.title} />
           </div>
         )}
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import TranslatedArticleBody from "../../components/TranslatedArticleBody";
+import ArticleBody from "./ArticleBody";
 import T from "../../components/T";
 
 interface Props { params: Promise<{ id: string }>; }
@@ -352,7 +353,7 @@ export default async function MagazineArticlePage({ params }: Props) {
               {/* The editor writes HTML into `content`. The old `blocks` array
                   is retired — nothing populates it any more. */}
               {article.content ? (
-                <div dangerouslySetInnerHTML={{ __html: article.content }} />
+                <ArticleBody html={article.content} />
               ) : (
                 <p style={{color:'rgba(255,255,255,0.4)'}}>No content yet.</p>
               )}
