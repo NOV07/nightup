@@ -310,7 +310,10 @@ export default function MusicPlayerBar() {
                       const pctHover = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                       setHoverTime(Math.floor(pctHover * duration));
                     }}
-                    onMouseEnter={e => { const bar = barRef.current; if (bar) bar.style.height = "12px"; }}
+                    onMouseEnter={e => {
+                      if (!window.matchMedia("(hover: hover)").matches) return;
+                      const bar = barRef.current; if (bar) bar.style.height = "16px";
+                    }}
                     onMouseLeave={() => {
                       const bar = barRef.current;
                       if (bar) bar.style.height = "";
@@ -323,7 +326,7 @@ export default function MusicPlayerBar() {
                   >
                     <div
                       ref={barRef}
-                      className="rounded-full relative h-3.5 md:h-2.5"
+                      className="rounded-full relative h-3.5"
                       style={{ backgroundColor: "#1A1A2E", transition: "height 0.15s" }}
                     >
                       <div className="absolute inset-y-0 left-0 rounded-full"
@@ -384,7 +387,7 @@ export default function MusicPlayerBar() {
                 className="w-14 accent-amber-500" aria-label="Volume" />
             </div>
             <button onClick={(e) => { e.stopPropagation(); clearTrack(); }}
-              className="w-11 h-11 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 text-white/50 md:text-[#444]"
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 text-white/50 md:text-[#444]"
               aria-label="Close player">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
