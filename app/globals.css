@@ -647,12 +647,13 @@ section:hover .hero-arrow { opacity: 1 !important; }
 
   /* Discover grid: asymmetric → stacked */
   .discover-grid-responsive {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: auto !important;
   }
   .discover-grid-responsive > * {
     grid-column: 1 !important;
     grid-row: auto !important;
+    min-width: 0 !important;
   }
 
   /* Magazine grid: 3 col → 1 col */
