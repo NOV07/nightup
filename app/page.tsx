@@ -84,6 +84,9 @@ export default async function HomePage() {
   const _m = String(_now.getMonth() + 1).padStart(2, "0");
   const _d = String(_now.getDate()).padStart(2, "0");
   const today = `${_y}-${_m}-${_d}`;
+  const _weekEndDate = new Date(_now);
+  _weekEndDate.setDate(_weekEndDate.getDate() + 7);
+  const weekEnd = `${_weekEndDate.getFullYear()}-${String(_weekEndDate.getMonth() + 1).padStart(2, "0")}-${String(_weekEndDate.getDate()).padStart(2, "0")}`;
 
   try {
     const supabase = getSupabase();
@@ -163,6 +166,7 @@ export default async function HomePage() {
       popularCards = picked.map((e: any) => toCard(e, "📈 Popular"));
 
       allThisWeekCards = evRes.data
+        .filter((e: any) => e.date <= weekEnd)
         .slice(0, 8)
         .map((e: any) => toCard(e, ""));
     }
