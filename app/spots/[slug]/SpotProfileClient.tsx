@@ -83,7 +83,7 @@ export default function SpotProfileClient({ spot }: { spot: FullSpot }) {
         {/* Map button */}
         {mapUrl && (
           <a href={mapUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, maxWidth: 280, boxShadow: "0 12px 30px rgba(232,160,32,0.25)" }}>
+            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, maxWidth: 280, boxShadow: "0 12px 30px rgba(232,160,32,0.25)" }}>
             📍 Άνοιξε στον χάρτη
           </a>
         )}
