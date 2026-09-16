@@ -456,7 +456,7 @@ export default async function HomePage() {
 
       {/* ── ON NIGHTWAVES ── */}
       {newReleases.length > 0 && (
-      <section style={{
+      <section className="nightwaves-section" style={{
         padding: "0 32px 64px",
         borderTop: "1px solid rgba(255,255,255,0.06)",
       }}>
