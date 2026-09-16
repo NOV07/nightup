@@ -596,7 +596,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
               {/* Subcategory chips */}
               {netCategory && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
-                  {((NETWORK[netSection] as Record<string, string[]>)[netCategory] ?? []).map((sub) => (
+                  {((NETWORK[netSection] as unknown as Record<string, string[]>)[netCategory] ?? []).map((sub) => (
                     <button
                       key={sub}
                       onClick={() => setNetSubcategory(netSubcategory === sub ? "" : sub)}

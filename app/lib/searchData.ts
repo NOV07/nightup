@@ -7,7 +7,14 @@ export const NETWORK = {
     "Μπάντα": [],
     "Οργανοπαίχτης": [],
   },
-  "Venues": {},
+  "Venues": {
+    "Club": [],
+    "Bar / Lounge": [],
+    "Rooftop": [],
+    "Beach Bar": [],
+    "Event Space": [],
+    "Other": [],
+  },
   "Professionals": {
     "For Events": {
       "Φωτογράφος / Videographer": [],
