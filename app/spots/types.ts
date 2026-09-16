@@ -54,7 +54,7 @@ export const SPOT_CATEGORIES: {
   { key: 'chill',     emoji: '☕', label: 'Χαλαρά',            label_en: 'Chill',         sub: 'καφές · γλυκό / παγωτό · picnic vibes', sub_en: 'coffee · dessert / ice cream · picnic vibes' },
   { key: 'activity',  emoji: '🎯', label: 'Δραστηριότητα',     label_en: 'Activity',      sub: 'bowling · escape room · επιτραπέζια', sub_en: 'bowling · escape room · board games' },
   { key: 'art',       emoji: '🎨', label: 'Τέχνη & Κουλτούρα', label_en: 'Art & Culture', sub: 'μουσείο · art gallery · βιβλιοπωλείο / reading', sub_en: 'museum · art gallery · bookstore / reading' },
-  { key: 'wellness',  emoji: '🌿', label: 'Ευεξία',             label_en: 'Wellness',      sub: 'sunset spot · yoga / meditation · θαλασσινό μπάνιο · βόλτα φύση', sub_en: 'sunset spot · yoga / meditation · sea swim · nature walk' },
+  { key: 'wellness',  emoji: '🌿', label: 'Ευεξία',             label_en: 'Wellness',      sub: 'sunset spot · yoga / meditation · θαλάσσιο μπάνιο · βόλτα στη φύση', sub_en: 'sunset spot · yoga / meditation · sea swim · nature walk' },
 ];
 
 export const MOODS = [
@@ -125,7 +125,7 @@ export const SUBCATEGORIES: Record<SpotCategory, { label: string; label_en: stri
   wellness: [
     { label: "Sunset Spot", label_en: "Sunset Spot", value: "sunset spot" },
     { label: "Yoga / Meditation", label_en: "Yoga / Meditation", value: "yoga" },
-    { label: "Θαλασσινό Μπάνιο", label_en: "Sea Swim", value: "θαλάσσια" },
-    { label: "Βόλτα Φύση", label_en: "Nature Walk", value: "φύση" },
+    { label: "Θαλάσσιο Μπάνιο", label_en: "Sea Swim", value: "θαλάσσια" },
+    { label: "Βόλτα στη Φύση", label_en: "Nature Walk", value: "φύση" },
   ],
 };

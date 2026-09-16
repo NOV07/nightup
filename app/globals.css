@@ -666,7 +666,7 @@ section:hover .hero-arrow { opacity: 1 !important; }
   }
 
   /* Section horizontal padding */
-  .events, .discover-section {
+  .events, .discover-section, .nightwaves-section {
     padding-left: 16px !important;
     padding-right: 16px !important;
   }

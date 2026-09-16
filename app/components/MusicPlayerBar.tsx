@@ -60,12 +60,13 @@ export default function MusicPlayerBar() {
     >
       <div className="px-4 flex items-center gap-3 h-[88px]">
 
-        {/* Cover + info — fixed 120px */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, width: "120px" }}>
+        {/* Cover + info — 88px on mobile so it doesn't crowd out the controls
+            block once the close button also needs 44px there; 120px from md:. */}
+        <div className="flex items-center gap-2 flex-shrink-0 w-[88px] md:w-[120px]">
           <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ outline: "1px solid rgba(232,160,32,0.25)" }}>
             <Image src={currentTrack.cover || FALLBACK} alt={currentTrack.title} fill sizes="40px" className="object-cover" />
           </div>
-          <div style={{ minWidth: 0, maxWidth: "72px" }}>
+          <div className="min-w-0 max-w-[40px] md:max-w-[72px]">
             <p className="text-xs font-semibold truncate" style={{ color: "#E8A020" }}>{currentTrack.artist}</p>
             <p className="text-xs truncate" style={{ color: "#bbb" }}>{currentTrack.title}</p>
           </div>
@@ -94,7 +95,7 @@ export default function MusicPlayerBar() {
             <div className="flex items-center gap-2.5">
               {(currentTrack?.type === 'playlist' || currentTrack?.type === 'mix') && (
                 <button onClick={prevTrack}
-                  className="w-7 h-7 flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-70"
+                  className="hidden min-[420px]:flex w-7 h-7 items-center justify-center flex-shrink-0 transition-opacity hover:opacity-70"
                   style={{ color: "#888" }} aria-label="Previous">
                   <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
                 </button>
@@ -111,13 +112,13 @@ export default function MusicPlayerBar() {
               </button>
               {(currentTrack?.type === 'playlist' || currentTrack?.type === 'mix') && (
                 <button onClick={nextTrack}
-                  className="w-7 h-7 flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-70"
+                  className="hidden min-[420px]:flex w-7 h-7 items-center justify-center flex-shrink-0 transition-opacity hover:opacity-70"
                   style={{ color: "#888" }} aria-label="Next">
                   <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2.5-6 6-4.25v8.5L8.5 12zM16 6h2v12h-2z"/></svg>
                 </button>
               )}
 
-              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", minWidth: "120px" }}>
+              <div className="min-w-[60px] md:min-w-[120px]" style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
                 {/* Vertical padding here gives touch a bigger "fat finger" hit
                     area than the visual bar inside it — the bar itself stays
                     thin, but taps/drags a few px above or below it still seek. */}
