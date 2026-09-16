@@ -33,7 +33,7 @@ export const SPOT_CATEGORIES: {
   { key: 'chill',     emoji: '☕', label: 'Χαλαρά',            sub: 'καφές · γλυκό / παγωτό · picnic vibes' },
   { key: 'activity',  emoji: '🎯', label: 'Δραστηριότητα',     sub: 'bowling · escape room · επιτραπέζια' },
   { key: 'art',       emoji: '🎨', label: 'Τέχνη & Κουλτούρα', sub: 'μουσείο · art gallery · βιβλιοπωλείο / reading' },
-  { key: 'wellness',  emoji: '🌿', label: 'Ευεξία',             sub: 'sunset spot · yoga / meditation · θαλασσινό μπάνιο · βόλτα φύση' },
+  { key: 'wellness',  emoji: '🌿', label: 'Ευεξία',             sub: 'sunset spot · yoga / meditation · θαλάσσιο μπάνιο · βόλτα στη φύση' },
 ];
 
 export const MOODS = [
@@ -104,7 +104,7 @@ export const SUBCATEGORIES: Record<SpotCategory, { label: string; value: string 
   wellness: [
     { label: "Sunset Spot", value: "sunset spot" },
     { label: "Yoga / Meditation", value: "yoga" },
-    { label: "Θαλασσινό Μπάνιο", value: "θαλάσσια" },
-    { label: "Βόλτα Φύση", value: "φύση" },
+    { label: "Θαλάσσιο Μπάνιο", value: "θαλάσσια" },
+    { label: "Βόλτα στη Φύση", value: "φύση" },
   ],
 };
