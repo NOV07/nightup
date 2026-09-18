@@ -835,67 +835,28 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   <div className="space-y-3">
                     <label className={labelClass}>{t('dashboard_network_listing')}</label>
                     <div className="flex gap-2">
-                      {(['Artists', 'Artists'] as const).map(tab => (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => setForm(p => ({ ...p, network_tab: tab, network_category: '', network_subcategory: '' }))}
-                          className="text-xs px-3 py-2 rounded-lg transition-all"
-                          style={{
-                            backgroundColor: form.network_tab === tab ? '#E8A020' : 'rgba(255,255,255,0.05)',
-                            color: form.network_tab === tab ? '#09090f' : 'rgba(255,255,255,0.45)',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontFamily: 'var(--font-sans)',
-                          }}
-                        >
-                          {t('listings_cat_artists')}
-                        </button>
-                      ))}
+                      <span
+                        className="text-xs px-3 py-2 rounded-lg"
+                        style={{ backgroundColor: '#E8A020', color: '#09090f', fontFamily: 'var(--font-sans)' }}
+                      >
+                        {t('listings_cat_artists')}
+                      </span>
                     </div>
 
-                    {form.network_tab === 'Artists' && (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)' }}>
-                            {t('dashboard_music_artists')}
-                          </span>
-                        </div>
-                        <div>
-                          <label className={labelClass}>{t('dashboard_role')}</label>
-                          <select
-                            value={form.network_subcategory}
-                            onChange={e => setForm(p => ({ ...p, network_tab: 'Artists', network_category: e.target.value, network_subcategory: '' }))}
-                            className={inputClass}
-                            style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
-                          >
-                            <option value="">{t('dashboard_select_role')}</option>
-                            {Object.keys(NETWORK['Artists']).map((s: string) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </>
-                    )}
-
-                    {form.network_tab === 'Artists' && (
-                      <>
-                        <div>
-                          <label className={labelClass}>{t('listings_category')}</label>
-                          <select
-                            value={form.network_category}
-                            onChange={e => setForm(p => ({ ...p, network_category: e.target.value, network_subcategory: '' }))}
-                            className={inputClass}
-                            style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
-                          >
-                            <option value="">{t('dashboard_select_category')}</option>
-                            {Object.keys(NETWORK['Artists']).map(c => (
-                              <option key={c} value={c}>{c}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </>
-                    )}
+                    <div>
+                      <label className={labelClass}>{t('dashboard_role')}</label>
+                      <select
+                        value={form.network_category}
+                        onChange={e => setForm(p => ({ ...p, network_tab: 'Artists', network_category: e.target.value }))}
+                        className={inputClass}
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
+                      >
+                        <option value="">{t('dashboard_select_role')}</option>
+                        {Object.keys(NETWORK['Artists']).map((s: string) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
 
