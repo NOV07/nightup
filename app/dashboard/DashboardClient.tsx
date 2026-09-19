@@ -846,8 +846,8 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     <div>
                       <label className={labelClass}>{t('dashboard_role')}</label>
                       <select
-                        value={form.network_category}
-                        onChange={e => setForm(p => ({ ...p, network_tab: 'Artists', network_category: e.target.value }))}
+                        value={form.network_subcategory}
+                        onChange={e => setForm(p => ({ ...p, network_tab: 'Artists', network_subcategory: e.target.value }))}
                         className={inputClass}
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', colorScheme: 'dark' }}
                       >

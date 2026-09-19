@@ -157,7 +157,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
             ) : !claimOpen ? (
               <button
                 onClick={() => setClaimOpen(true)}
-                style={{ marginTop: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, border: "none", cursor: "pointer" }}
+                style={{ marginTop: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, border: "none", cursor: "pointer" }}
               >
                 {t("spots_claim_cta")}
               </button>
@@ -176,7 +176,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
                 <button
                   onClick={submitClaim}
                   disabled={claimState === "submitting"}
-                  style={{ marginTop: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, border: "none", cursor: claimState === "submitting" ? "default" : "pointer", opacity: claimState === "submitting" ? 0.7 : 1 }}
+                  style={{ marginTop: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "linear-gradient(100deg,#E8A020,#F5B335)", color: "#1a1407", fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, padding: "14px 24px", borderRadius: 6, border: "none", cursor: claimState === "submitting" ? "default" : "pointer", opacity: claimState === "submitting" ? 0.7 : 1 }}
                 >
                   {claimState === "submitting" ? t("spots_claim_submitting") : t("spots_claim_submit")}
                 </button>
