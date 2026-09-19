@@ -554,8 +554,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
               >
                 {s.icon}
                 <span
-                  className={spectral.className}
-                  style={{ fontSize: "12px", color: "#fff", fontWeight: 400 }}
+                  style={{ fontSize: "12px", color: "#fff", fontWeight: 400, fontFamily: "var(--font-sans)" }}
                 >
                   {s.label}
                 </span>
