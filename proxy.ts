@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
   const host = request.headers.get('host') ?? ''
   const { pathname } = request.nextUrl
 
-  if (PRODUCTION_HOSTS.has(host) && pathname !== '/coming-soon') {
+  if (process.env.COMING_SOON_MODE === 'true' && PRODUCTION_HOSTS.has(host) && pathname !== '/coming-soon') {
     const url = request.nextUrl.clone()
     url.pathname = '/coming-soon'
     return NextResponse.redirect(url, { status: 302 })
