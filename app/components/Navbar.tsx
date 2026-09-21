@@ -210,7 +210,7 @@ export default function Navbar() {
       {/* Mobile slide-down */}
       {open && (
         <div
-          className="fixed inset-0 z-30 md:hidden flex flex-col"
+          className="fixed inset-0 z-[35] md:hidden flex flex-col"
           style={{
             backgroundColor: "rgba(10,10,18,0.97)",
             backdropFilter: "blur(20px)",
