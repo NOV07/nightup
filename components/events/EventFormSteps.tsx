@@ -18,6 +18,9 @@ const ADMIN_EVENT_TYPES: { value: string; label: string }[] = [
   { value: 'other', label: 'Άλλα' },
 ]
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
+// Sentinel for the "other city" option — never stored; picking it reveals a free
+// text field and form.city holds whatever the user types there.
+const OTHER_CITY = '__other__'
 
 const STEPS: { n: number; titleKey: TranslationKey }[] = [
   { n: 1, titleKey: 'event_form_step_basics' },
@@ -232,7 +235,7 @@ function GalleryUrlInput({ onAdd }: { onAdd: (url: string) => void }) {
   )
 }
 
-function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, handleImageChange, onGalleryAdd, onGalleryRemove, isAdmin }: {
+function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, handleImageChange, onGalleryAdd, onGalleryRemove, isAdmin, showCityOther, onCitySelect }: {
   form: EventFormData
   set: SetField
   stepErrors: Record<string, string>
@@ -243,6 +246,8 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
   onGalleryAdd: (url: string) => void
   onGalleryRemove: (index: number) => void
   isAdmin: boolean
+  showCityOther: boolean
+  onCitySelect: (value: string) => void
 }) {
   const { t } = useLanguage()
   return (
@@ -266,12 +271,18 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
           <label style={lbl}>{t('listings_city')} *</label>
           <div style={{ position: 'relative' }}>
             <select style={{ ...inp, appearance: 'none', cursor: 'pointer', backgroundColor: '#0F0F1A' }}
-              value={form.city} onChange={e => set('city', e.target.value)}>
+              value={showCityOther ? OTHER_CITY : form.city} onChange={e => onCitySelect(e.target.value)}>
               <option value="">{t('event_form_select_city')}</option>
               {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value={OTHER_CITY}>{t('event_form_city_other')}</option>
             </select>
             <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#E8A020', pointerEvents: 'none' }}>▾</span>
           </div>
+          {showCityOther && (
+            <input style={{ ...inp, marginTop: 8 }} value={form.city} required
+              onChange={e => set('city', e.target.value)}
+              placeholder={t('event_form_city_other_placeholder')} />
+          )}
           <Err stepErrors={stepErrors} k="city" />
         </div>
       </div>
@@ -566,6 +577,9 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   const [uploadError, setUploadError] = useState('')
   const [isMobile, setIsMobile] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  // Sticky once the user picks "other city", so the text field stays open while
+  // it is still empty. An existing event whose city is off the list opens it too.
+  const [cityOther, setCityOther] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Held in a ref so an inline onChange prop does not re-fire the effect.
@@ -583,6 +597,19 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   const set: SetField = (k, v) => {
     setForm(prev => ({ ...prev, [k]: v }))
     setStepErrors(prev => ({ ...prev, [k]: '' }))
+  }
+
+  const showCityOther = cityOther || (!!form.city && !CITIES.includes(form.city))
+
+  function selectCity(value: string) {
+    if (value === OTHER_CITY) {
+      setCityOther(true)
+      // Re-picking "other" on an already custom city keeps what is typed.
+      if (CITIES.includes(form.city)) set('city', '')
+      return
+    }
+    setCityOther(false)
+    set('city', value)
   }
 
   function addGalleryImage(url: string) {
@@ -676,7 +703,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
         </h2>
 
         {step === 1 && <Step1 form={form} set={set} toggleGenre={toggleGenre} stepErrors={stepErrors} isAdmin={isAdmin} />}
-        {step === 2 && <Step2 form={form} set={set} stepErrors={stepErrors} uploading={uploading} uploadError={uploadError} fileInputRef={fileInputRef} handleImageChange={handleImageChange} onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage} isAdmin={isAdmin} />}
+        {step === 2 && <Step2 form={form} set={set} stepErrors={stepErrors} uploading={uploading} uploadError={uploadError} fileInputRef={fileInputRef} handleImageChange={handleImageChange} onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage} isAdmin={isAdmin} showCityOther={showCityOther} onCitySelect={selectCity} />}
         {step === 3 && <Step3 form={form} set={set} stepErrors={stepErrors} />}
         {step === 4 && <Step4 form={form} set={set} stepErrors={stepErrors} isAdmin={isAdmin} isEdit={isEdit} />}
 

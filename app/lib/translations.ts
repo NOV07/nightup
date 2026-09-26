@@ -713,6 +713,8 @@ const translations = {
   event_form_start_time_label:  { el: "Ώρα Έναρξης", en: "Start Time" },
   event_form_end_time_label:    { el: "Ώρα Λήξης", en: "End Time" },
   event_form_select_city:       { el: "Επίλεξε πόλη...", en: "Select city..." },
+  event_form_city_other:        { el: "Άλλη πόλη...", en: "Other city..." },
+  event_form_city_other_placeholder: { el: "Γράψε την πόλη", en: "Type the city" },
   event_form_venue_label:       { el: "Venue", en: "Venue" },
   event_form_venue_placeholder: { el: "π.χ. Club Rodos, Fabric, Tresor", en: "e.g. Club Rodos, Fabric, Tresor" },
   event_form_address_label:     { el: "Διεύθυνση", en: "Address" },
