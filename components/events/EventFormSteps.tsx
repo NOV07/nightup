@@ -5,7 +5,7 @@ import type { TranslationKey } from '@/app/lib/translations'
 import ImageUpload from '@/components/ui/ImageUpload'
 import EventLivePreview from './EventLivePreview'
 import { compressImage } from '@/app/lib/compressImage'
-import { CURRENCIES, type CurrencyCode, currencySymbol } from '@/app/lib/formatPrice'
+import { CURRENCIES, type CurrencyCode, currencySymbol, formatMoney } from '@/app/lib/formatPrice'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Hip-Hop', 'R&B', 'Laika', 'Entechno', 'Rock', 'Open Air', 'Other']
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
@@ -388,9 +388,17 @@ function Step3({ form, set, stepErrors }: {
         <div>
           <label style={lbl}>{t('event_form_currency_label')}</label>
           <select style={inp} value={form.currency} onChange={e => set('currency', e.target.value as CurrencyCode)}>
-            {CURRENCIES.map(c => (
-              <option key={c} value={c} style={{ backgroundColor: '#111120' }}>{currencySymbol(c)} {c}</option>
-            ))}
+            {CURRENCIES.map(c => {
+              // The code alone for CHF, whose "symbol" is the code — "CHF CHF" reads
+              // as a stutter. The rest pair up as "kr SEK", which is what tells the
+              // three crowns apart in the list.
+              const sym = currencySymbol(c)
+              return (
+                <option key={c} value={c} style={{ backgroundColor: '#111120' }}>
+                  {sym === c ? c : `${sym} ${c}`}
+                </option>
+              )
+            })}
           </select>
         </div>
       </div>
@@ -521,7 +529,7 @@ function Step4({ form, set, stepErrors, isAdmin, isEdit }: {
             [t('event_form_date_label'), form.date ? `${form.date} ${form.start_time}` : '—'],
             [t('event_form_venue_label'), form.venue ? `${form.venue}, ${form.city}` : '—'],
             [t('dashboard_genres'), form.genres.join(', ') || '—'],
-            [t('event_form_review_price_label'), form.price ? `${currencySymbol(form.currency)}${form.price}` : t('event_form_free')],
+            [t('event_form_review_price_label'), form.price ? formatMoney(form.price, form.currency) : t('event_form_free')],
             [t('event_age_restriction_heading'), form.age_restriction_level === 'none' ? t('event_form_age_none') : form.age_restriction_level],
             [t('event_gallery_heading'), form.gallery.length ? String(form.gallery.length) : '—'],
           ].map(([label, value]) => (
