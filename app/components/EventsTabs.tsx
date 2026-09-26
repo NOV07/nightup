@@ -153,6 +153,7 @@ export default function EventTabs({ thisWeekCards, hotPopularCards }: EventTabsP
                   genre={e.genre}
                   type={e.type}
                   price={e.price}
+                  currency={e.currency}
                   date={e.date}
                   time={e.time}
                   venue={e.venue}

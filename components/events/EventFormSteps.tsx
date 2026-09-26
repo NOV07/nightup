@@ -5,6 +5,7 @@ import type { TranslationKey } from '@/app/lib/translations'
 import ImageUpload from '@/components/ui/ImageUpload'
 import EventLivePreview from './EventLivePreview'
 import { compressImage } from '@/app/lib/compressImage'
+import { CURRENCIES, type CurrencyCode, currencySymbol } from '@/app/lib/formatPrice'
 
 const GENRES = ['Techno', 'House', 'Deep House', 'Hip-Hop', 'R&B', 'Laika', 'Entechno', 'Rock', 'Open Air', 'Other']
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
@@ -63,6 +64,7 @@ export interface EventFormData {
   gallery: string[]
   ticket_url: string
   price: string
+  currency: CurrencyCode
   age_restriction_level: AgeLevel
   dress_code: string
   lineup: string
@@ -83,7 +85,7 @@ type SetField = <K extends keyof EventFormData>(k: K, v: EventFormData[K]) => vo
 const DEFAULTS: EventFormData = {
   title: '', genres: [], type: '', short_description: '', full_description: '',
   date: '', start_time: '', end_time: '', venue: '', city: '', address: '',
-  maps_url: '', image_url: '', gallery: [], ticket_url: '', price: '',
+  maps_url: '', image_url: '', gallery: [], ticket_url: '', price: '', currency: 'EUR',
   age_restriction_level: 'none',
   dress_code: '', lineup: '', contributors: '', instagram: '', facebook: '', tiktok: '',
   contact_email: '', terms_accepted: false,
@@ -378,9 +380,19 @@ function Step3({ form, set, stepErrors }: {
         <input style={inp} value={form.ticket_url} onChange={e => set('ticket_url', e.target.value)} placeholder="https://..." />
       </div>
 
-      <div>
-        <label style={lbl}>{t('event_form_price_label')}</label>
-        <input style={inp} type="number" min={0} value={form.price} onChange={e => set('price', e.target.value)} placeholder={t('event_form_price_placeholder')} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 12 }}>
+        <div>
+          <label style={lbl}>{t('event_form_price_label')}</label>
+          <input style={inp} type="number" min={0} value={form.price} onChange={e => set('price', e.target.value)} placeholder={t('event_form_price_placeholder')} />
+        </div>
+        <div>
+          <label style={lbl}>{t('event_form_currency_label')}</label>
+          <select style={inp} value={form.currency} onChange={e => set('currency', e.target.value as CurrencyCode)}>
+            {CURRENCIES.map(c => (
+              <option key={c} value={c} style={{ backgroundColor: '#111120' }}>{currencySymbol(c)} {c}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div style={{ padding: '14px 16px', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)',
@@ -509,7 +521,7 @@ function Step4({ form, set, stepErrors, isAdmin, isEdit }: {
             [t('event_form_date_label'), form.date ? `${form.date} ${form.start_time}` : '—'],
             [t('event_form_venue_label'), form.venue ? `${form.venue}, ${form.city}` : '—'],
             [t('dashboard_genres'), form.genres.join(', ') || '—'],
-            [t('event_form_review_price_label'), form.price ? `€${form.price}` : t('event_form_free')],
+            [t('event_form_review_price_label'), form.price ? `${currencySymbol(form.currency)}${form.price}` : t('event_form_free')],
             [t('event_age_restriction_heading'), form.age_restriction_level === 'none' ? t('event_form_age_none') : form.age_restriction_level],
             [t('event_gallery_heading'), form.gallery.length ? String(form.gallery.length) : '—'],
           ].map(([label, value]) => (

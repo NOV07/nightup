@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
+import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
 
 // Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
 // Duplicated rather than imported: that module is a client component.
@@ -68,10 +69,14 @@ export async function PATCH(
     return NextResponse.json({ error: `age_restriction_level must be one of: ${AGE_LEVELS.join(', ')}` }, { status: 400 })
   }
 
+  if ('currency' in body && !(CURRENCIES as readonly string[]).includes(String(body.currency))) {
+    return NextResponse.json({ error: `currency must be one of: ${CURRENCIES.join(', ')}` }, { status: 400 })
+  }
+
   const allowed = [
     'title', 'genres', 'type', 'short_description', 'full_description',
     'date', 'time', 'end_time', 'venue', 'city', 'address', 'maps_url', 'image_url',
-    'gallery', 'ticket_url', 'price', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
+    'gallery', 'ticket_url', 'price', 'currency', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
     'instagram', 'facebook', 'tiktok', 'contact_email',
     // legacy fields kept for backwards compat
     'genre', 'description', 'min_age',
@@ -79,9 +84,9 @@ export async function PATCH(
   const payload: Record<string, unknown> = {}
   allowed.forEach(k => { if (k in body) payload[k] = body[k] })
 
-  const rawPrice = body.price
-  const price = rawPrice ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, '')) || null : null
-  payload.price = price
+  // Only when the caller actually sent a price: the unconditional assignment
+  // this replaces wiped the stored price on any partial PATCH.
+  if ('price' in payload) payload.price = parsePriceInput(payload.price as string | number | null)
 
   const { data, error } = await supabase
     .from('events')

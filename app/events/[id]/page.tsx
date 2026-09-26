@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
 import { logQueryError } from '../../lib/logQueryError'
-import { formatPrice } from '../../lib/formatPrice'
+import { formatPrice, normalizeCurrency, parsePriceInput } from '../../lib/formatPrice'
 import { getEventCoverImage, getEventCrop } from '../../lib/getEventCoverImage'
 import { getAvatarCrop } from '../../lib/profileCrop'
 import { jsonLdScript } from '../../lib/jsonLd'
@@ -43,7 +43,7 @@ export default async function EventPage({ params }: Props) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, profile_id, editorial_owner_name, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level')
+    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, currency, profile_id, editorial_owner_name, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
@@ -81,7 +81,7 @@ export default async function EventPage({ params }: Props) {
     infoCards.push({ key: 'event_form_dress_code_label', value: event.dress_code })
   }
 
-  const priceLabel = formatPrice(event.price)
+  const priceLabel = formatPrice(event.price, 'el', event.currency)
 
   const formattedDate = event.date
     ? new Date(event.date).toLocaleDateString('en-GB', {
@@ -211,8 +211,8 @@ export default async function EventPage({ params }: Props) {
     ...(event.price ? {
       "offers": {
         "@type": "Offer",
-        "price": parseFloat(String(event.price).replace(/[^0-9.]/g, '')) || 0,
-        "priceCurrency": "EUR",
+        "price": parsePriceInput(event.price) ?? 0,
+        "priceCurrency": normalizeCurrency(event.currency),
         "availability": "https://schema.org/InStock",
       },
     } : {}),

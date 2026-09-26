@@ -93,7 +93,7 @@ export default async function HomePage() {
     const [evRes, artRes, relRes, mixFeedRes, playFeedRes] = await Promise.all([
       supabase
         .from("events")
-        .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick, type")
+        .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, currency, date, time, venue, city, interested_count, going_count, nightup_pick, is_radar_pick, type")
         .eq("status", "approved")
         .gte("date", today)
         .order("date", { ascending: true })
@@ -111,7 +111,7 @@ export default async function HomePage() {
 
     const toCard = (e: any, badge: string) => ({
       id: String(e.id), title: e.title, image: getEventCoverImage(e), crop: getEventCrop(e),
-      genre: e.genre, price: e.price ?? "", date: e.date, time: e.time ?? "",
+      genre: e.genre, price: e.price ?? "", currency: e.currency ?? "EUR", date: e.date, time: e.time ?? "",
       venue: e.venue, city: e.city,
       interestedCount: e.interested_count ?? 0, goingCount: e.going_count ?? 0,
       featured: e.featured ?? false,
@@ -205,8 +205,8 @@ export default async function HomePage() {
         },
         e.venue,
         {
-          el: formatPrice(e.price, "el") || "είσοδος ελεύθερη",
-          en: formatPrice(e.price, "en") || "free entry",
+          el: formatPrice(e.price, "el", e.currency) || "είσοδος ελεύθερη",
+          en: formatPrice(e.price, "en", e.currency) || "free entry",
         },
       ],
       ctaLabel: { el: "Εισιτήρια", en: "Tickets" } as { el: string; en: string },

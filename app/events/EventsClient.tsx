@@ -19,7 +19,8 @@ interface Event {
   title: string;
   image: string;
   genre: string;
-  price: string;
+  price: string | number | null;
+  currency?: string | null;
   date: string;
   time: string;
   venue: string;

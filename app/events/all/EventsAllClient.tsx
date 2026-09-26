@@ -10,7 +10,8 @@ import { useLanguage } from "../../components/LanguageContext";
 const PAGE_SIZE = 12;
 
 interface Event {
-  id: string; title: string; image: string; crop?: CropBox | null; genre: string; price: string;
+  id: string; title: string; image: string; crop?: CropBox | null; genre: string;
+  price: string | number | null; currency?: string | null;
   date: string; time: string; venue: string; city: string;
   interestedCount: number; goingCount: number; featured?: boolean;
   isRadarPick?: boolean; type?: string | null;

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import EventFormSteps, { EventFormData } from '../../../../../components/events/EventFormSteps'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { normalizeCurrency, parsePriceInput } from '@/app/lib/formatPrice'
 
 export default function EditEventClient({ event }: { event: any }) {
   const router = useRouter()
@@ -27,6 +28,7 @@ export default function EditEventClient({ event }: { event: any }) {
     gallery:           Array.isArray(event.gallery) ? event.gallery : [],
     ticket_url:        event.ticket_url ?? '',
     price:             event.price ? String(event.price).replace(/[^0-9.]/g, '') : '',
+    currency:          normalizeCurrency(event.currency),
     age_restriction_level: event.age_restriction_level ?? 'none',
     dress_code:        event.dress_code ?? '',
     lineup:            Array.isArray(event.lineup) ? event.lineup.join(', ') : (event.lineup ?? ''),
@@ -69,7 +71,8 @@ export default function EditEventClient({ event }: { event: any }) {
         image_url:         data.image_url || null,
         gallery:           data.gallery,
         ticket_url:        data.ticket_url || null,
-        price:             data.price ? `€${data.price}` : null,
+        price:             parsePriceInput(data.price),
+        currency:          data.currency,
         age_restriction_level: data.age_restriction_level,
         dress_code:        data.dress_code || null,
         lineup,

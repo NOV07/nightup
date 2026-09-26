@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import EventFormSteps, { EventFormData } from '../../../../components/events/EventFormSteps'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { parsePriceInput } from '@/app/lib/formatPrice'
 
 export default function NewEventClient({ venueDefaults }: { venueDefaults?: { venue: string; city: string; address: string } | null }) {
   const router = useRouter()
@@ -41,7 +42,8 @@ export default function NewEventClient({ venueDefaults }: { venueDefaults?: { ve
         image_url:         data.image_url || null,
         gallery:           data.gallery,
         ticket_url:        data.ticket_url || null,
-        price:             data.price ? `€${data.price}` : null,
+        price:             parsePriceInput(data.price),
+        currency:          data.currency,
         age_restriction_level: data.age_restriction_level,
         dress_code:        data.dress_code || null,
         lineup,

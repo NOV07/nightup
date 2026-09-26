@@ -30,7 +30,7 @@ export default async function EventsAllPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, date, time, venue, city, interested_count, going_count, type")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, currency, date, time, venue, city, interested_count, going_count, type")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true });
@@ -43,6 +43,7 @@ export default async function EventsAllPage() {
         crop: getEventCrop(e),
         genre: e.genre,
         price: e.price ?? "",
+        currency: e.currency ?? "EUR",
         date: e.date,
         time: e.time ?? "",
         venue: e.venue,

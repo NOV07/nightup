@@ -6,6 +6,7 @@ import { useAdminNav } from "../components/admin/AdminNavContext";
 import { PROFILE_TABS, PROFILE_TAB_IDS, type ProfileTab, type Tab } from "./adminTabs";
 import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
 import EventFormSteps, { type EventFormData } from "../../components/events/EventFormSteps";
+import { CURRENCIES, normalizeCurrency, parsePriceInput } from "../lib/formatPrice";
 import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
 import { SPOT_CROP_ASPECT } from "../spots/types";
 
@@ -117,6 +118,7 @@ function eventItemToFormData(item: Record<string, any>): Partial<EventFormData> 
     gallery:           Array.isArray(item.gallery) ? item.gallery : [],
     ticket_url:        item.ticket_url ?? "",
     price:             item.price ? String(item.price).replace(/[^0-9.]/g, "") : "",
+    currency:          normalizeCurrency(item.currency),
     age_restriction_level: item.age_restriction_level ?? "none",
     dress_code:        item.dress_code ?? "",
     lineup:            Array.isArray(item.lineup) ? item.lineup.join(", ") : (item.lineup ?? ""),
@@ -153,7 +155,10 @@ function eventFormDataToRow(data: EventFormData) {
     image_url:         data.image_url || null,
     gallery:           data.gallery,
     ticket_url:        data.ticket_url || null,
-    price:             data.price ? `€${data.price}` : null,
+    // Numeric, never "€22" — events.price is a numeric column and a string with
+    // the symbol in it made the insert (and so admin approve) fail.
+    price:             parsePriceInput(data.price),
+    currency:          data.currency,
     age_restriction_level: data.age_restriction_level,
     dress_code:        data.dress_code || null,
     lineup:            data.lineup.split(",").map(s => s.trim()).filter(Boolean),
@@ -2032,7 +2037,14 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
   }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSave(getTable(), String(item.id), form); }} className="space-y-4">
+    <form onSubmit={e => {
+      e.preventDefault();
+      // This quick-edit form posts the row as typed, so the price input has to be
+      // coerced here too — events.price is numeric and an empty or symbol-bearing
+      // string is rejected by the column.
+      const payload = tab === "events" ? { ...form, price: parsePriceInput(form.price as string) } : form;
+      onSave(getTable(), String(item.id), payload);
+    }} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {tab === "events" && (<>
           {field("title","Title")}
@@ -2043,7 +2055,8 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("genre","Primary Genre","select",genres)}
           {field("city","City","select",cities)}
           {field("type","Event Type","select",["Club Night","Live Show","Festival","Open Air","Private Party","Other"])}
-          {field("price","Price")}
+          {field("price","Price","number")}
+          {field("currency","Currency","select",[...CURRENCIES])}
           {field("image_url","Image URL")}
           {form.image_url ? (
             <div className="flex items-end pb-1">

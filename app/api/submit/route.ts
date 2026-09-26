@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabase } from '../../lib/supabase'
+import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
 
 // 'professionals' was here for the About page's profile form, which is gone —
 // profiles are created through /upgrade, and the table itself is being dropped.
@@ -13,7 +14,7 @@ const VALID_TABLES = ['events'] as const
 const EVENT_FIELDS = [
   'title', 'genres', 'type', 'short_description', 'full_description',
   'date', 'time', 'end_time', 'venue', 'city', 'address', 'maps_url', 'image_url',
-  'gallery', 'ticket_url', 'price', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
+  'gallery', 'ticket_url', 'price', 'currency', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
   'instagram', 'facebook', 'tiktok', 'contact_email',
 ]
 
@@ -38,6 +39,13 @@ export async function POST(req: NextRequest) {
 
   const payload: Record<string, unknown> = {}
   EVENT_FIELDS.forEach((k) => { if (k in data) payload[k] = data[k] })
+
+  // Unauthenticated endpoint — the numeric column and the currency CHECK both
+  // get their input normalised here rather than trusting the caller.
+  if ('price' in payload) payload.price = parsePriceInput(payload.price as string | number | null)
+  if ('currency' in payload && !(CURRENCIES as readonly string[]).includes(String(payload.currency))) {
+    return NextResponse.json({ error: `currency must be one of: ${CURRENCIES.join(', ')}` }, { status: 400 })
+  }
 
   try {
     const supabase = getSupabase()

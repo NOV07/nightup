@@ -734,6 +734,7 @@ const translations = {
   event_form_ticket_url_label:  { el: "URL Εισιτηρίων", en: "Ticket URL" },
   event_form_price_label:       { el: "Τιμή (άφησέ το κενό για Δωρεάν)", en: "Price (leave empty for Free)" },
   event_form_price_placeholder: { el: "π.χ. 15", en: "e.g. 15" },
+  event_form_currency_label:    { el: "Νόμισμα", en: "Currency" },
   event_form_age_restriction_label: { el: "Όριο Ηλικίας", en: "Age Restriction" },
   event_form_age_restriction_desc: { el: "Το ελάχιστο όριο ηλικίας για είσοδο στο event", en: "The minimum age required for entry to the event" },
   event_form_age_none:          { el: "Χωρίς όριο", en: "No restriction" },

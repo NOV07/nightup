@@ -22,6 +22,7 @@ interface HotEventCardProps {
   genre: string;
   type?: string | null;
   price: string | number | null | undefined;
+  currency?: string | null;
   date: string;
   time?: string;
   venue: string;
@@ -33,7 +34,7 @@ interface HotEventCardProps {
 }
 
 export default function HotEventCard({
-  id, title, image, crop, genre, type, price, date, time, venue, isRadarPick, showHotBadge = false,
+  id, title, image, crop, genre, type, price, currency, date, time, venue, isRadarPick, showHotBadge = false,
   variant = "large", initialSaved,
 }: HotEventCardProps) {
   const [saved, setSaved] = useState(initialSaved ?? false);
@@ -89,7 +90,7 @@ export default function HotEventCard({
   const hasRealImage = Boolean(image);
   const imgSrc = image || FALLBACK;
 
-  const displayPrice = formatPrice(price, lang);
+  const displayPrice = formatPrice(price, lang, currency);
 
   const formattedDate = new Date(date).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short",

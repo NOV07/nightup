@@ -24,6 +24,7 @@ interface EventCardProps {
   genre: string;
   type?: string | null;
   price: string | number | null | undefined;
+  currency?: string | null;
   date: string;
   venue: string;
   city: string;
@@ -49,7 +50,7 @@ const genreColors: Record<string, string> = {
 };
 
 export default function EventCard({
-  id, title, image, image_url, crop, genre, type, price, date, venue, city,
+  id, title, image, image_url, crop, genre, type, price, currency, date, venue, city,
   interestedCount, goingCount, featured, badge,
   initialSaved,
 }: EventCardProps) {
@@ -104,7 +105,7 @@ export default function EventCard({
   const hasRealImage = Boolean(image_url || image);
   const imgSrc = image_url || image || FALLBACK_IMAGE;
 
-  const displayPrice = formatPrice(price, lang);
+  const displayPrice = formatPrice(price, lang, currency);
 
   const formattedDate = new Date(date).toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short",

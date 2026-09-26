@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Spectral } from 'next/font/google'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { EventFormData } from './EventFormSteps'
+import { currencySymbol } from '@/app/lib/formatPrice'
 
 const spectral = Spectral({
   subsets: ['latin', 'latin-ext'],
@@ -133,7 +134,7 @@ export default function EventLivePreview({ form, step }: { form: EventFormData; 
           <div style={{ fontSize: 12, fontWeight: 700, color: GOLD }}>
             {step < FIELD_STEP.price && !form.price
               ? <Ghost label={t('event_form_review_price_label')} atStep={FIELD_STEP.price} />
-              : (form.price ? `€${form.price}` : t('event_form_free'))}
+              : (form.price ? `${currencySymbol(form.currency)}${form.price}` : t('event_form_free'))}
           </div>
         </div>
 
