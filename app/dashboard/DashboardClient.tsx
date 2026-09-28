@@ -87,6 +87,8 @@ export default function DashboardClient({ profile, events, releases, savedEvents
 }) {
   const router = useRouter()
   const { t, lang } = useLanguage()
+  // Stat counters: 1.284 in Greek, 1,284 in English.
+  const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString(lang === 'el' ? 'el-GR' : 'en-GB')
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -1085,29 +1087,29 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     <div className="mb-4">
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                          <p className="text-xl font-bold text-white">{totalViews}</p>
+                          <p className="text-xl font-bold text-white">{fmt(totalViews)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_views')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                          <p className="text-xl font-bold text-white">{profile.view_count ?? 0}</p>
+                          <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_profile_views')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                          <p className="text-xl font-bold text-white">{totalGoing}</p>
+                          <p className="text-xl font-bold text-white">{fmt(totalGoing)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_going')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                          <p className="text-xl font-bold text-white">{totalInterested}</p>
+                          <p className="text-xl font-bold text-white">{fmt(totalInterested)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_interested')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                          <p className="text-xl font-bold text-white">{savedEventsCount ?? 0}</p>
+                          <p className="text-xl font-bold text-white">{fmt(savedEventsCount)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_saved')}</p>
                         </div>
                       </div>
                       {topEvent && (
                         <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                          🏆 {t('dashboard_top_event')}: {topEvent.title} ({topEvent.going_count ?? 0} {t('dashboard_top_event_going')})
+                          🏆 {t('dashboard_top_event')}: {topEvent.title} ({fmt(topEvent.going_count)} {t('dashboard_top_event_going')})
                         </p>
                       )}
                     </div>
@@ -1137,7 +1139,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
                         </div>
                         <span className="text-xs flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          👁 {event.view_count ?? 0} · 👥 {event.going_count ?? 0} · ⭐ {event.interested_count ?? 0}
+                          👁 {fmt(event.view_count)} · 👥 {fmt(event.going_count)} · ⭐ {fmt(event.interested_count)}
                         </span>
                         <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
                           backgroundColor: event.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
@@ -1183,19 +1185,19 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                 <div className="mb-4">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{profile.view_count ?? 0}</p>
+                      <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Profile Views</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{(artistBookings ?? []).length}</p>
+                      <p className="text-xl font-bold text-white">{fmt((artistBookings ?? []).length)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Upcoming Bookings</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{releases.length}</p>
+                      <p className="text-xl font-bold text-white">{fmt(releases.length)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Releases</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{(receivedInterests ?? []).length}</p>
+                      <p className="text-xl font-bold text-white">{fmt((receivedInterests ?? []).length)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Listing Interests</p>
                     </div>
                   </div>
@@ -1280,19 +1282,19 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                 <div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{profile.view_count ?? 0}</p>
+                      <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Profile Views</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{(professionalContributions ?? []).length}</p>
+                      <p className="text-xl font-bold text-white">{fmt((professionalContributions ?? []).length)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Event Contributions</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{activeListingsCount}</p>
+                      <p className="text-xl font-bold text-white">{fmt(activeListingsCount)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Active Listings</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{totalListingInterests}</p>
+                      <p className="text-xl font-bold text-white">{fmt(totalListingInterests)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Listing Interests</p>
                     </div>
                   </div>
