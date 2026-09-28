@@ -8,7 +8,7 @@ import { sendEmail, escapeHtml } from '@/app/lib/email'
 const APPROVAL_COPY: Record<string, { label: string; perks: string[]; start: string }> = {
   organizer: {
     label: 'Event Organiser',
-    perks: ['Ανέβασμα events', 'Προφίλ στο Network', 'Στατιστικά για τα events σου (προβολές, πηγαίνουν, ενδιαφέρονται)'],
+    perks: ['Ανέβασμα events', 'Προφίλ στο Network', 'Στατιστικά για τα events σου (προβολές, θα πάνε, ενδιαφέρονται)'],
     start: 'https://nightup.gr/dashboard/events/new',
   },
   artist: {
