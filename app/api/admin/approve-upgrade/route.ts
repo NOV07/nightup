@@ -3,6 +3,34 @@ import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { sendEmail, escapeHtml } from '@/app/lib/email'
 
+// What each creator type actually gets in the dashboard, and where to start.
+// Keys match REQUESTABLE_TYPES in app/api/upgrade-request/route.ts.
+const APPROVAL_COPY: Record<string, { label: string; perks: string[]; start: string }> = {
+  organizer: {
+    label: 'Event Organiser',
+    perks: ['Ανέβασμα events', 'Προφίλ στο Network', 'Στατιστικά για τα events σου (προβολές, πηγαίνουν, ενδιαφέρονται)'],
+    start: 'https://nightup.gr/dashboard/events/new',
+  },
+  artist: {
+    label: 'Artist',
+    perks: ['Προφίλ στο Network', 'Music releases', 'Στατιστικά για το προφίλ σου'],
+    start: 'https://nightup.gr/submit/release',
+  },
+  spot: {
+    label: 'Spot',
+    perks: ['Καταχώρηση του spot σου', 'Ανέβασμα events για το spot σου', 'Στατιστικά για τα events σου'],
+    start: 'https://nightup.gr/dashboard/spots/new',
+  },
+  professional: {
+    label: 'Professional',
+    perks: ['Επαγγελματική καταχώρηση στο Network'],
+    start: 'https://nightup.gr/dashboard/professional',
+  },
+}
+
+// Requests from before requested_type existed get the dashboard as a neutral start.
+const DEFAULT_START = 'https://nightup.gr/dashboard'
+
 export async function POST(req: NextRequest) {
   if (!verifyAdminToken(req.cookies.get('admin_auth')?.value)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -60,6 +88,13 @@ export async function POST(req: NextRequest) {
   if (action === 'approved') {
     // Email the user. The approval itself is already committed, so a failed
     // send is logged inside sendEmail rather than turned into an error here.
+    const copy = APPROVAL_COPY[request.requested_type as string]
+    const start = copy?.start ?? DEFAULT_START
+    const startLabel = start.replace('https://', '')
+    const approvedLine = copy
+      ? `Η αίτησή σου ως ${copy.label} εγκρίθηκε. Από τώρα έχεις πρόσβαση σε:`
+      : 'Η αίτησή σου εγκρίθηκε.'
+
     await sendEmail({
       route: 'approve-upgrade',
       recipientType: 'creator',
@@ -68,26 +103,20 @@ export async function POST(req: NextRequest) {
       html: `
         <h2>Καλωσήρθες στο Nightup ως Creator!</h2>
         <p>Γεια σου <strong>@${escapeHtml(request.username)}</strong>,</p>
-        <p>Η αίτησή σου εγκρίθηκε. Από τώρα έχεις πρόσβαση σε:</p>
-        <ul>
-          <li>Ανέβασμα events</li>
-          <li>Network profile</li>
-          <li>Music releases</li>
-        </ul>
-        <p>Μπες στο dashboard σου και ξεκίνα: <a href="https://nightup.gr/dashboard">nightup.gr/dashboard</a></p>
-        <p>— Η ομάδα του Nightup</p>
+        <p>${approvedLine}</p>
+        ${copy ? `<ul>${copy.perks.map((p) => `<li>${p}</li>`).join('')}</ul>` : ''}
+        <p>Ξεκίνα από εδώ: <a href="${start}">${startLabel}</a></p>
+        <p>Η ομάδα του Nightup</p>
       `,
       text: [
         `Γεια σου @${request.username},`,
         '',
-        'Η αίτησή σου εγκρίθηκε. Από τώρα έχεις πρόσβαση σε:',
-        '- Ανέβασμα events',
-        '- Network profile',
-        '- Music releases',
+        approvedLine,
+        ...(copy ? copy.perks.map((p) => `- ${p}`) : []),
         '',
-        'Μπες στο dashboard σου και ξεκίνα: https://nightup.gr/dashboard',
+        `Ξεκίνα από εδώ: ${start}`,
         '',
-        '— Η ομάδα του Nightup',
+        'Η ομάδα του Nightup',
       ].join('\n'),
     })
   }
