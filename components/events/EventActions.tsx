@@ -30,43 +30,31 @@ export default function EventActions({ eventId, goingCount, interestedCount }: P
   const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
-  const { saved, setSaved, pending: savePending, toggle: toggleSave } = useSaveEvent(eventId);
+  const { saved, pending: savePending, toggle: toggleSave } = useSaveEvent(eventId);
 
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const [counts, setCounts] = useState({ going: goingCount, interested: interestedCount });
   const [reactPending, setReactPending] = useState(false);
   // Once the user has clicked, a slow initial load must not overwrite what they chose.
-  const touched = useRef({ save: false, react: false });
+  const touched = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/events/react?eventId=${encodeURIComponent(eventId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((body: { reactions?: string[] } | null) => {
-        if (cancelled || touched.current.react || !body?.reactions) return;
+        if (cancelled || touched.current || !body?.reactions) return;
         const current = body.reactions.find((r): r is Reaction => r === "going" || r === "interested");
         setReaction(current ?? null);
       })
       .catch(() => {});
-    // 401 for logged-out visitors, which simply leaves the heart empty.
-    fetch("/api/saved/events")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((ids: string[] | null) => {
-        if (cancelled || touched.current.save || !Array.isArray(ids)) return;
-        setSaved(ids.includes(eventId));
-      })
-      .catch(() => {});
+    // The heart's initial state is loaded by useSaveEvent itself.
     return () => { cancelled = true; };
-  }, [eventId, setSaved]);
-
-  function handleSave() {
-    touched.current.save = true;
-    toggleSave();
-  }
+  }, [eventId]);
 
   async function handleReact(type: Reaction) {
     if (reactPending) return;
-    touched.current.react = true;
+    touched.current = true;
 
     const prevReaction = reaction;
     const prevCounts = counts;
@@ -146,7 +134,7 @@ export default function EventActions({ eventId, goingCount, interestedCount }: P
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
-          onClick={handleSave}
+          onClick={toggleSave}
           disabled={savePending}
           aria-label={t(saved ? "event_unsave_aria" : "event_save_aria")}
           aria-pressed={saved}
