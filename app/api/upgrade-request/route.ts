@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     route: 'upgrade-request',
     recipientType: 'admin',
     to: 'nightupsocial@gmail.com',
-    subject: `🎯 Νέο Creator Request — @${profile.username}`,
+    subject: `Νέο Creator Request: @${profile.username}`,
     html: `
       <h2>Νέο Creator Upgrade Request</h2>
       <p><strong>Username:</strong> @${escapeHtml(profile.username)}</p>

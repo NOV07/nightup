@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       route: 'approve-upgrade',
       recipientType: 'creator',
       to: request.email,
-      subject: '🎉 Έγινες Creator στο Nightup!',
+      subject: 'Έγινες Creator στο Nightup',
       html: `
         <h2>Καλωσήρθες στο Nightup ως Creator!</h2>
         <p>Γεια σου <strong>@${escapeHtml(request.username)}</strong>,</p>
