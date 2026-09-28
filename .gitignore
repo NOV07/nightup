@@ -47,3 +47,6 @@ next-env.d.ts
 
 # local DB dumps from one-off seed/maintenance scripts — never commit
 /_backup/
+
+# graphify knowledge-graph output
+/graphify-out/
