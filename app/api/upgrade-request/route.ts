@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail, escapeHtml } from '@/app/lib/email'
 
 // Keep in sync with the tile ids in components/auth/UpgradeModal.tsx and with
 // ProfileType in app/lib/types.ts. Rejecting anything else keeps stale clients
@@ -68,21 +66,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 
-  // Send email to admin
-  await resend.emails.send({
-    from: 'onboarding@resend.dev',
+  // Notify the admin. A failed send is logged inside sendEmail and does not
+  // fail the request: the row is already in and shows up in the admin panel.
+  await sendEmail({
+    route: 'upgrade-request',
+    recipientType: 'admin',
     to: 'nightupsocial@gmail.com',
     subject: `🎯 Νέο Creator Request — @${profile.username}`,
     html: `
       <h2>Νέο Creator Upgrade Request</h2>
-      <p><strong>Username:</strong> @${profile.username}</p>
-      <p><strong>Email:</strong> ${user.email}</p>
-      <p><strong>Τύπος:</strong> ${requested_type}</p>
-      <p><strong>Ειδικότητα:</strong> ${specialty}</p>
-      <p><strong>Bio:</strong> ${bio}</p>
+      <p><strong>Username:</strong> @${escapeHtml(profile.username)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(user.email)}</p>
+      <p><strong>Τύπος:</strong> ${escapeHtml(requested_type)}</p>
+      <p><strong>Ειδικότητα:</strong> ${escapeHtml(specialty)}</p>
+      <p><strong>Bio:</strong> ${escapeHtml(bio)}</p>
       <hr/>
-      <p>Για να εγκρίνεις, πήγαινε Supabase → profiles → βρες τον user → βάλε <code>plan_tier = 'creator'</code></p>
+      <p>Για έγκριση ή απόρριψη: <a href="https://nightup.gr/admin">nightup.gr/admin</a>, ενότητα αιτήσεων creator.</p>
     `,
+    text: [
+      'Νέο Creator Upgrade Request',
+      '',
+      `Username: @${profile.username}`,
+      `Email: ${user.email}`,
+      `Τύπος: ${requested_type}`,
+      `Ειδικότητα: ${specialty}`,
+      `Bio: ${bio}`,
+      '',
+      'Για έγκριση ή απόρριψη: https://nightup.gr/admin, ενότητα αιτήσεων creator.',
+    ].join('\n'),
   })
 
   return NextResponse.json({ success: true })

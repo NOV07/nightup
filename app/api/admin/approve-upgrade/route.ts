@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail, escapeHtml } from '@/app/lib/email'
 
 export async function POST(req: NextRequest) {
   if (!verifyAdminToken(req.cookies.get('admin_auth')?.value)) {
@@ -60,14 +58,16 @@ export async function POST(req: NextRequest) {
     .eq('id', request_id)
 
   if (action === 'approved') {
-    // Email the user
-    await resend.emails.send({
-      from: 'onboarding@resend.dev',
+    // Email the user. The approval itself is already committed, so a failed
+    // send is logged inside sendEmail rather than turned into an error here.
+    await sendEmail({
+      route: 'approve-upgrade',
+      recipientType: 'creator',
       to: request.email,
       subject: '🎉 Έγινες Creator στο Nightup!',
       html: `
         <h2>Καλωσήρθες στο Nightup ως Creator!</h2>
-        <p>Γεια σου <strong>@${request.username}</strong>,</p>
+        <p>Γεια σου <strong>@${escapeHtml(request.username)}</strong>,</p>
         <p>Η αίτησή σου εγκρίθηκε. Από τώρα έχεις πρόσβαση σε:</p>
         <ul>
           <li>Ανέβασμα events</li>
@@ -77,6 +77,18 @@ export async function POST(req: NextRequest) {
         <p>Μπες στο dashboard σου και ξεκίνα: <a href="https://nightup.gr/dashboard">nightup.gr/dashboard</a></p>
         <p>— Η ομάδα του Nightup</p>
       `,
+      text: [
+        `Γεια σου @${request.username},`,
+        '',
+        'Η αίτησή σου εγκρίθηκε. Από τώρα έχεις πρόσβαση σε:',
+        '- Ανέβασμα events',
+        '- Network profile',
+        '- Music releases',
+        '',
+        'Μπες στο dashboard σου και ξεκίνα: https://nightup.gr/dashboard',
+        '',
+        '— Η ομάδα του Nightup',
+      ].join('\n'),
     })
   }
 
