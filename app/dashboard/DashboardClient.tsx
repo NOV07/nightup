@@ -1084,28 +1084,28 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{totalViews}</p>
-                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Views</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_views')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{profile.view_count ?? 0}</p>
-                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Profile Views</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_profile_views')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{totalGoing}</p>
-                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Going</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_going')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{totalInterested}</p>
-                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Interested</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_interested')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{savedEventsCount ?? 0}</p>
-                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Saved</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_saved')}</p>
                         </div>
                       </div>
                       {topEvent && (
                         <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                          🏆 Top event: {topEvent.title} ({topEvent.going_count ?? 0} going)
+                          🏆 {t('dashboard_top_event')}: {topEvent.title} ({topEvent.going_count ?? 0} {t('dashboard_top_event_going')})
                         </p>
                       )}
                     </div>
