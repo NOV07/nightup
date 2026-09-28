@@ -13,7 +13,33 @@ function isReactionType(v: unknown): v is ReactionType {
   return typeof v === 'string' && (REACTION_TYPES as readonly string[]).includes(v)
 }
 
+const OPPOSITE: Record<ReactionType, ReactionType> = { going: 'interested', interested: 'going' }
+
+// GET ?eventId=xxx — the current user's reactions to one event.
+// Logged-out visitors get an empty list rather than a 401, so the event page
+// can call this unconditionally on load.
+export async function GET(req: NextRequest) {
+  const eventId = req.nextUrl.searchParams.get('eventId')
+  if (!eventId) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ reactions: [] })
+
+  const { data, error } = await supabase
+    .from('event_reactions')
+    .select('reaction_type')
+    .eq('event_id', eventId)
+    .eq('user_id', user.id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ reactions: (data ?? []).map((r) => r.reaction_type) })
+}
+
 // POST { eventId, reactionType } — react to an event
+// Going and Interested are mutually exclusive: the opposite reaction is
+// removed first. The table allows both, so this is enforced here only; the
+// delete fires the count trigger, so both counters stay correct.
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -30,6 +56,15 @@ export async function POST(req: NextRequest) {
   if (!eventId || !isReactionType(reactionType)) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
+
+  const { error: clearError } = await supabase
+    .from('event_reactions')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('user_id', user.id)
+    .eq('reaction_type', OPPOSITE[reactionType])
+
+  if (clearError) return NextResponse.json({ error: clearError.message }, { status: 500 })
 
   const { error } = await supabase
     .from('event_reactions')

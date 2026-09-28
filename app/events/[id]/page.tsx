@@ -11,6 +11,7 @@ import { jsonLdScript } from '../../lib/jsonLd'
 import EventHeroImage from '../../components/EventHeroImage'
 import CroppedImage from '../../../components/ui/CroppedImage'
 import EventGallery from './EventGallery'
+import EventActions from '../../../components/events/EventActions'
 import T from '../../components/T'
 import type { TranslationKey } from '../../lib/translations'
 import { toGalleryItems } from '../../lib/types'
@@ -43,7 +44,7 @@ export default async function EventPage({ params }: Props) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, currency, profile_id, editorial_owner_name, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level')
+    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, currency, profile_id, editorial_owner_name, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level, going_count, interested_count')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
@@ -269,6 +270,13 @@ export default async function EventPage({ params }: Props) {
             <span>{priceLabel || <T k="events_free_entry_fallback" />}</span>
           </div>
         </div>
+
+        {/* Save / Going / Interested */}
+        <EventActions
+          eventId={event.id}
+          goingCount={event.going_count ?? 0}
+          interestedCount={event.interested_count ?? 0}
+        />
 
         {/* Info cards */}
         {infoCards.length > 0 && (

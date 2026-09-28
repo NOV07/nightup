@@ -455,6 +455,15 @@ const translations = {
   // ── Toasts ──────────────────────────────────────────────
   toast_sign_in_save: { el: "Συνδέσου για να το αποθηκεύσεις", en: "Sign in to save it" },
   toast_sign_in:      { el: "Σύνδεση", en: "Sign in" },
+  toast_sign_in_react: { el: "Συνδέσου για να δηλώσεις αν θα πας", en: "Sign in to say if you're going" },
+
+  // ── Event page actions (save / going / interested) ─────────
+  event_save_aria:             { el: "Αποθήκευση", en: "Save" },
+  event_unsave_aria:           { el: "Αφαίρεση από τα αποθηκευμένα", en: "Remove from saved" },
+  event_count_going_one:       { el: "πηγαίνει", en: "going" },
+  event_count_going_other:     { el: "πηγαίνουν", en: "going" },
+  event_count_interested_one:  { el: "ενδιαφέρεται", en: "interested" },
+  event_count_interested_other: { el: "ενδιαφέρονται", en: "interested" },
   home_tab_week:      { el: "Αυτή την εβδομάδα", en: "This week" },
   home_tab_popular:   { el: "Πιο δημοφιλή", en: "Most popular" },
 

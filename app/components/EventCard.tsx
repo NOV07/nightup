@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { MouseEvent } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
-import { toast } from "sonner";
 import { RadarBadge } from "./RadarBadge";
+import { useSaveEvent } from "../lib/useSaveEvent";
 import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
 import EventImageFallback from "./EventImageFallback";
@@ -54,9 +52,7 @@ export default function EventCard({
   interestedCount, goingCount, featured, badge,
   initialSaved,
 }: EventCardProps) {
-  const [saved, setSaved] = useState(initialSaved ?? false);
-  const pathname = usePathname();
-  const router = useRouter();
+  const { saved, toggle } = useSaveEvent(id, initialSaved);
   const { t, lang } = useLanguage();
 
   const CATEGORY_LABEL_KEYS: Record<string, string> = {
@@ -71,35 +67,10 @@ export default function EventCard({
     other:   "rgba(5,150,105,0.85)",
   };
 
-  async function handleSave(e: MouseEvent) {
+  function handleSave(e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const next = !saved;
-    setSaved(next);
-    try {
-      if (next) {
-        const res = await fetch('/api/saved/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ event_id: id }),
-        });
-        if (res.status === 401) {
-          setSaved(false);
-          toast(t('toast_sign_in_save'), {
-            duration: 5000,
-            action: {
-              label: t('toast_sign_in'),
-              onClick: () => router.push(`/sign-in?redirect=${encodeURIComponent(pathname)}`),
-            },
-          });
-          return;
-        }
-      } else {
-        await fetch(`/api/saved/events?event_id=${id}`, { method: 'DELETE' });
-      }
-    } catch {
-      setSaved(!next);
-    }
+    toggle();
   }
   const color  = genreColors[genre] ?? "#E8A020";
   const hasRealImage = Boolean(image_url || image);
@@ -164,7 +135,8 @@ export default function EventCard({
         <button
           className="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
           onClick={handleSave}
-          aria-label="Save event"
+          aria-label={t(saved ? "event_unsave_aria" : "event_save_aria")}
+          aria-pressed={saved}
         >
           {saved
             ? <FaHeart size={14} style={{ color: "#E8A020" }} />
