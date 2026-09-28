@@ -50,7 +50,9 @@ const HIDE_TONIGHT_FAB_ROUTES = ["/events"];
 
 // Routes (and any nested routes below them) where "what are you doing tonight"
 // has no relevance — the FAB/modal must not mount at all here, not just hide.
-const TONIGHT_FAB_EXCLUDED_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about", "/admin"];
+// /dashboard and /upgrade are account screens; on /upgrade the FAB also sat on
+// top of the "become a creator" modal.
+const TONIGHT_FAB_EXCLUDED_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about", "/admin", "/dashboard", "/upgrade"];
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
