@@ -13,6 +13,7 @@ import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES, networkCategoryLabel } from '../lib/searchData'
 import ConsumerDashboard from './ConsumerDashboard'
+import ScrollTabBar from '@/components/ui/ScrollTabBar'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '../lib/translations'
 
@@ -531,12 +532,13 @@ export default function DashboardClient({ profile, events, releases, savedEvents
         )}
 
         {/* Tabs */}
-        <div className="max-w-6xl mx-auto px-4 flex gap-1">
+        <ScrollTabBar activeKey={activeTab} className="max-w-6xl mx-auto px-4 gap-1 scroll-px-4">
           {tabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="px-4 py-2.5 text-sm font-medium transition-all"
+              data-active={activeTab === tab.key}
+              className="px-4 py-2.5 text-sm font-medium transition-all shrink-0 whitespace-nowrap snap-start"
               style={{
                 color: activeTab === tab.key ? '#E8A020' : 'rgba(255,255,255,0.35)',
                 borderBottom: activeTab === tab.key ? '2px solid #E8A020' : '2px solid transparent',
@@ -545,7 +547,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
               {tab.label}
             </button>
           ))}
-        </div>
+        </ScrollTabBar>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
