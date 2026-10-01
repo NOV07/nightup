@@ -1283,19 +1283,19 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Profile Views</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_views')}</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt((professionalContributions ?? []).length)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Event Contributions</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_contributions')}</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt(activeListingsCount)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Active Listings</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_listings')}</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt(totalListingInterests)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Listing Interests</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_interests')}</p>
                     </div>
                   </div>
 
