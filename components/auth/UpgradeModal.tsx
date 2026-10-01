@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { networkCategoryLabel } from '@/app/lib/searchData'
+import { PRO_GROUPS, ROLES_BY_GROUP, GROUP_META } from '@/components/professional/ProfessionalFormSteps'
 
 const TYPES_BASE = [
   { id: 'organizer', emoji: '🎪', label: 'Event Organiser', sub: null as string[] | null },
@@ -10,11 +12,20 @@ const TYPES_BASE = [
 ]
 
 export default function UpgradeModal({ onClose }: { onClose: () => void }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   // "Event venue" is kept out of upgrade_prof_cat's comma list — it is the
   // one subcategory that maps to its own profile_type (see handleSubmit).
   const venueSub = t("upgrade_prof_cat_venue")
-  const profSubs = [...t("upgrade_prof_cat").split(","), venueSub]
+  // Professional subcategories, grouped exactly like the Professional wizard's
+  // own Step1 (ROLES_BY_GROUP) so this list can't drift from it. Values are
+  // the stable network_category strings, not translated labels — "Event venue"
+  // is appended to "For Events" for display only, ROLES_BY_GROUP itself is
+  // untouched since it isn't a real network_category.
+  const profGroups = PRO_GROUPS.map(g => ({
+    group: g,
+    roles: g === 'For Events' ? [...ROLES_BY_GROUP[g], venueSub] : ROLES_BY_GROUP[g],
+  }))
+  const profSubs = profGroups.flatMap(g => g.roles)
   const TYPES = TYPES_BASE.map(type =>
     type.id === 'professional' ? { ...type, sub: profSubs } : type
   )
@@ -101,7 +112,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
               <p className="text-white/40 text-sm mt-1">
                 {step === 'type' && t("upgrade_creator_type_q")}
                 {step === 'sub' && t("upgrade_choose_specialty")}
-                {step === 'bio' && `${currentType?.label}${selectedSub ? ` · ${selectedSub}` : ''}`}
+                {step === 'bio' && `${currentType?.label}${selectedSub ? ` · ${networkCategoryLabel(selectedSub, lang)}` : ''}`}
               </p>
             </div>
 
@@ -135,7 +146,42 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
             )}
 
             {/* Step 2 — Subcategory tiles */}
-            {step === 'sub' && currentType?.sub && (
+            {step === 'sub' && selectedType === 'professional' && (
+              <div className="space-y-5">
+                {profGroups.map(({ group, roles }) => (
+                  <div key={group}>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: GROUP_META[group].accent }}>
+                      {t(GROUP_META[group].labelKey)}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {roles.map(role => (
+                        <button
+                          key={role}
+                          onClick={() => { setSelectedSub(role); setStep('bio') }}
+                          className="flex items-center justify-center py-4 text-sm font-medium text-white text-center transition-all"
+                          style={{
+                            backgroundColor: surface,
+                            border: `1px solid ${border}`,
+                            borderRadius: 6,
+                          }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = gold
+                            ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(232,160,32,0.06)'
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = border
+                            ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = surface
+                          }}
+                        >
+                          {networkCategoryLabel(role, lang)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {step === 'sub' && selectedType !== 'professional' && currentType?.sub && (
               <div className="grid grid-cols-2 gap-3">
                 {currentType.sub.map(s => (
                   <button
