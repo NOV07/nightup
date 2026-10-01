@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { sendEmail, escapeHtml } from '@/app/lib/email'
+import { tr } from '@/app/lib/translations'
 
 // Keep in sync with the tile ids in components/auth/UpgradeModal.tsx and with
 // ProfileType in app/lib/types.ts. Rejecting anything else keeps stale clients
 // (which sent the old 'organiser' spelling) from poisoning the column.
-const REQUESTABLE_TYPES = ['organizer', 'artist', 'spot', 'professional'] as const
+// 'venue' is not its own tile — it is UpgradeModal's "Event venue" Professional
+// subcategory, gated below by VENUE_SPECIALTY_SUFFIXES.
+const REQUESTABLE_TYPES = ['organizer', 'artist', 'spot', 'professional', 'venue'] as const
+
+// Only a specialty that ends with this exact subcategory label (in either
+// language) may request 'venue' — i.e. only UpgradeModal's Professional →
+// "Event venue" path, never an arbitrary 'venue' request.
+const VENUE_SPECIALTY_SUFFIXES = [
+  ` - ${tr('upgrade_prof_cat_venue', 'el')}`,
+  ` - ${tr('upgrade_prof_cat_venue', 'en')}`,
+]
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -20,6 +31,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
   if (!REQUESTABLE_TYPES.includes(requested_type)) {
+    return NextResponse.json({ error: 'Invalid creator type' }, { status: 400 })
+  }
+  if (requested_type === 'venue' && !VENUE_SPECIALTY_SUFFIXES.some(s => String(specialty).endsWith(s))) {
     return NextResponse.json({ error: 'Invalid creator type' }, { status: 400 })
   }
 
