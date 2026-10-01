@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CITIES, GENRES, NETWORK } from "../app/lib/searchData";
 import { useLanguage } from "../app/components/LanguageContext";
 import { networkCategoryLabel } from "../app/lib/searchData";
+import { useHideTonightFab } from "../app/components/TonightFabVisibilityContext";
 
 export type SearchTab = "search" | "events" | "network";
 
@@ -115,6 +116,8 @@ const activeChipStyle: React.CSSProperties = {
 export default function SearchBar({ open, activeTab, onClose, onTabChange }: SearchBarProps) {
   const { t, lang } = useLanguage();
   const router = useRouter();
+  // The mobile panel opens from the bottom, right where the FAB sits.
+  useHideTonightFab("search-panel", open);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
