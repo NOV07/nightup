@@ -33,6 +33,16 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
 const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
+// upgrade_requests.requested_type is a plain string (organizer/artist/spot/
+// professional/venue) — 'venue' is the odd one out (a Professional
+// subcategory in UpgradeModal, not its own tile), so it gets a label that
+// can't be mistaken for a generic professional request.
+function upgradeRequestedTypeLabel(requestedType: string | null): string {
+  if (!requestedType) return "no type";
+  if (requestedType === "venue") return "Venue (Χώρος εκδηλώσεων)";
+  return requestedType;
+}
+
 type MusicSubTab = "releases" | "mixes" | "playlists" | "artists";
 type QueueFilter = "all" | "events" | "releases" | "spots" | "articles";
 
@@ -1476,7 +1486,7 @@ export default function AdminClient() {
                   <div key={req.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
                     <div className="min-w-0">
                       <p className="font-medium text-sm">@{req.username}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{req.email} · {req.requested_type ?? "no type"} · {req.specialty}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{req.email} · {upgradeRequestedTypeLabel(req.requested_type)} · {req.specialty}</p>
                       <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.4)" }}>{req.bio}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
