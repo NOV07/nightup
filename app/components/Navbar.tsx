@@ -10,6 +10,7 @@ import SignOutButton from '../../components/auth/SignOutButton'
 import NavSearch from "./NavSearch"
 import SearchBar, { type SearchTab } from "../../components/SearchBar"
 import { useTonightModal } from "./TonightContext"
+import { useHideTonightFab } from "./TonightFabVisibilityContext"
 import NotificationBell from "../../components/ui/NotificationBell"
 
 function NightwavesIcon() {
@@ -53,6 +54,7 @@ export default function Navbar() {
   const { t } = useLanguage();
   const { open: openTonight } = useTonightModal();
   const [open, setOpen] = useState(false);
+  useHideTonightFab("navbar-menu", open);
   const [showAuth, setShowAuth] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [searchOpen, setSearchOpen] = useState(false);

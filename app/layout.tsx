@@ -6,6 +6,7 @@ import { TonightProvider } from "./components/TonightContext";
 import { LanguageProvider } from "./components/LanguageContext";
 import { PlayerProvider } from "./components/PlayerContext";
 import { ModalStateProvider } from "./components/ModalStateContext";
+import { TonightFabVisibilityProvider } from "./components/TonightFabVisibilityContext";
 import LayoutShell from "./components/LayoutShell";
 import { ResourceHints } from "./components/ResourceHints";
 import { Toaster } from "sonner";
@@ -63,9 +64,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <TonightProvider>
               <PlayerProvider>
                 <ModalStateProvider>
-                  <LayoutShell>
-                    {children}
-                  </LayoutShell>
+                  <TonightFabVisibilityProvider>
+                    <LayoutShell>
+                      {children}
+                    </LayoutShell>
+                  </TonightFabVisibilityProvider>
                 </ModalStateProvider>
               </PlayerProvider>
             </TonightProvider>

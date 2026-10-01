@@ -4,10 +4,13 @@ import { usePathname } from "next/navigation";
 import { useTonightModal } from "./TonightContext";
 import { usePlayerStore } from "./PlayerContext";
 import { useLanguage } from "./LanguageContext";
+import { useIsTonightFabHidden } from "./TonightFabVisibilityContext";
 
 export default function TonightFAB() {
   const { t } = useLanguage();
   const { open, isOpen } = useTonightModal();
+  // Navbar menu, auth modal, etc. (see TonightFabVisibilityContext)
+  const coveredByOverlay = useIsTonightFabHidden();
   const [hidden, setHidden] = useState(false);
   const [fabOpacity, setFabOpacity] = useState(1);
   const lastY = useRef(0);
@@ -61,8 +64,8 @@ export default function TonightFAB() {
           cursor: "pointer",
           boxShadow: "0 4px 24px rgba(232,160,32,0.35)",
           whiteSpace: "nowrap",
-          opacity: isOpen || hidden ? 0 : fabOpacity,
-          pointerEvents: isOpen || hidden ? "none" : "auto",
+          opacity: isOpen || coveredByOverlay || hidden ? 0 : fabOpacity,
+          pointerEvents: isOpen || coveredByOverlay || hidden ? "none" : "auto",
           transform: hidden
             ? "translateX(-50%) translateY(120%)"
             : "translateX(-50%) translateY(0)",

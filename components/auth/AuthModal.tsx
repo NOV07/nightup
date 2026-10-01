@@ -3,9 +3,12 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { useHideTonightFab } from '@/app/components/TonightFabVisibilityContext'
 
 export default function AuthModal({ onClose, redirectTo }: { onClose: () => void; redirectTo?: string }) {
   const { t } = useLanguage()
+  // Hidden for as long as the modal is mounted, wherever it's rendered from.
+  useHideTonightFab('auth-modal', true)
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
