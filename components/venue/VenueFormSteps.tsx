@@ -6,7 +6,6 @@ import CroppedImage from '@/components/ui/CroppedImage'
 import CreatorGallery from '@/components/ui/CreatorGallery'
 import type { CropBox } from '@/components/ui/CroppedImage'
 import { NETWORK } from '@/app/lib/searchData'
-import { PRICE_RANGES } from '@/app/lib/networkProfile'
 import VenueLivePreview from './VenueLivePreview'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
@@ -149,7 +148,7 @@ export function venueFormToPayload(form: VenueFormData) {
     website: form.website.trim() || null,
     instagram: form.instagram.trim() || null,
     booking_email: form.booking_email.trim() || null,
-    price_range: form.price_range || null,
+    price_range: form.price_range.trim() || null,
   }
 }
 
@@ -425,7 +424,7 @@ function Step4({ form, set, stepErrors }: {
     { label: t('wizard_step_location'), value: [form.address, form.neighborhood, form.city].filter(Boolean).join(', ') || '—' },
     { label: t('dashboard_photos'), value: `${form.cover_url ? `${coverLbl} ✓` : `${coverLbl} —`} · ${form.avatar_url ? `${logoLbl} ✓` : `${logoLbl} —`}` },
     { label: t('wizard_step_contact'), value: [form.phone, form.booking_email, form.website, form.instagram].filter(c => c.trim()).join(' · ') || '—' },
-    { label: t('wizard_price_range'), value: form.price_range || '—' },
+    { label: t('price_text_label'), value: form.price_range || '—' },
   ]
 
   return (
@@ -452,23 +451,12 @@ function Step4({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>{t('wizard_price_range')}</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {PRICE_RANGES.map(range => {
-            const on = form.price_range === range
-            return (
-              <button key={range} type="button" onClick={() => set('price_range', on ? '' : range)}
-                style={{
-                  flex: 1, padding: '10px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
-                  backgroundColor: on ? 'rgba(232,160,32,0.18)' : 'rgba(255,255,255,0.05)',
-                  color: on ? '#E8A020' : 'rgba(255,255,255,0.4)',
-                  border: `1px solid ${on ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                }}>
-                {range}
-              </button>
-            )
-          })}
-        </div>
+        <label style={lbl}>{t('price_text_label')}</label>
+        {/* 40 mirrors the maxLength trimmed on save in venueFormToPayload. */}
+        <input style={inp} maxLength={40}
+          value={form.price_range} onChange={e => set('price_range', e.target.value)}
+          placeholder={t('venue_price_text_ph')} />
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>{t('price_text_hint')}</p>
       </div>
 
       {/* Review */}

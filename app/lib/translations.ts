@@ -851,6 +851,11 @@ const translations = {
   spot_price_label:        { el: "Τιμή ανά άτομο", en: "Price per person" },
   spot_price_ph:           { el: "π.χ. 15–30€", en: "e.g. 15–30€" },
   spot_price_hint:         { el: "Γράψε ένα εύρος, όπως θα το έλεγες σε κάποιον.", en: "Write a range, the way you'd say it to someone." },
+  // Shared by the Professional and Venue wizards — only the placeholder differs.
+  price_text_label:        { el: "Τιμή", en: "Price" },
+  price_text_hint:         { el: "Γράψε τι χρεώνεις, όπως θα το έλεγες σε κάποιον.", en: "Write what you charge, the way you'd tell someone." },
+  pro_price_text_ph:       { el: "π.χ. από 150€ / event", en: "e.g. from €150 / event" },
+  venue_price_text_ph:     { el: "π.χ. από 1.500€ / βραδιά", en: "e.g. from €1,500 / night" },
   wizard_review_heading:   { el: "Έλεγχος πριν την υποβολή", en: "Review before submitting" },
   wizard_preview:          { el: "Προεπισκόπηση", en: "Preview" },
   wizard_card_tab:         { el: "Κάρτα", en: "Card" },
