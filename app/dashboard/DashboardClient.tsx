@@ -1186,24 +1186,24 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Profile Views</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_views')}</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt((artistBookings ?? []).length)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Upcoming Bookings</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_artist_stat_upcoming')}</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt(releases.length)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Releases</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_artist_stat_releases')}</p>
                     </div>
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt((receivedInterests ?? []).length)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>Listing Interests</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_interests')}</p>
                     </div>
                   </div>
                 </div>
 
-                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Upcoming Bookings ({(artistBookings ?? []).length})</h3>
+                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_artist_stat_upcoming')} ({(artistBookings ?? []).length})</h3>
                 {(artistBookings ?? []).length === 0 ? (
                   <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                     <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_no_events_yet')}</p>
