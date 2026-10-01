@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../../../components/ui/ImageUpload'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 // Stored verbatim: the release pages branch on the exact strings "Single",
 // "EP" and "Album", so these values are the casing the column carries.
@@ -17,6 +18,7 @@ const GENRES = [
 
 export default function SubmitReleaseForm() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState(1)
@@ -124,13 +126,13 @@ export default function SubmitReleaseForm() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">Submit Release</h1>
-          <p className="text-white/50">Your release will be reviewed before going live</p>
+          <h1 className="text-2xl font-bold text-white mb-2">{t('release_submit_heading')}</h1>
+          <p className="text-white/50">{t('release_submit_subtitle')}</p>
         </div>
 
         {/* Steps */}
         <div className="flex gap-2 mb-8">
-          {['Basic Info', 'Links', 'Credits'].map((s, i) => (
+          {[t('release_submit_step_basic'), t('release_submit_step_links'), t('release_submit_step_credits')].map((s, i) => (
             <div key={s} className="flex items-center gap-2 flex-1">
               <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold flex-shrink-0 ${step > i + 1 ? 'bg-green-500 text-white' : step === i + 1 ? 'bg-[#E8A020] text-black' : 'bg-white/10 text-white/40'}`}>
                 {step > i + 1 ? '✓' : i + 1}
@@ -148,7 +150,7 @@ export default function SubmitReleaseForm() {
             <div className="space-y-5">
 
               <div>
-                <label className={labelClass}>Cover Art</label>
+                <label className={labelClass}>{t('release_submit_cover_art')}</label>
                 <ImageUpload
                   folder="releases"
                   onUpload={(url) => setForm(prev => ({ ...prev, cover_image: url }))}
@@ -157,17 +159,17 @@ export default function SubmitReleaseForm() {
               </div>
 
               <div>
-                <label className={labelClass}>Release Title *</label>
-                <input name="title" placeholder="e.g. Midnight Drive" value={form.title} onChange={handleChange} className={inputClass} required />
+                <label className={labelClass}>{t('release_submit_title_label')}</label>
+                <input name="title" placeholder={t('release_submit_title_ph')} value={form.title} onChange={handleChange} className={inputClass} required />
               </div>
 
               <div>
-                <label className={labelClass}>Artist Name *</label>
-                <input name="artist" placeholder="e.g. DJ Void" value={form.artist} onChange={handleChange} className={inputClass} required />
+                <label className={labelClass}>{t('release_submit_artist_label')}</label>
+                <input name="artist" placeholder={t('release_submit_artist_ph')} value={form.artist} onChange={handleChange} className={inputClass} required />
               </div>
 
               <div>
-                <label className={labelClass}>Release Type *</label>
+                <label className={labelClass}>{t('release_submit_type_label')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {RELEASE_TYPES.map(rt => (
                     <button
@@ -188,7 +190,7 @@ export default function SubmitReleaseForm() {
               </div>
 
               <div>
-                <label className={labelClass}>Primary Genre</label>
+                <label className={labelClass}>{t('release_submit_primary_genre_label')}</label>
                 <div className="relative">
                   <select
                     name="primary_genre"
@@ -197,7 +199,7 @@ export default function SubmitReleaseForm() {
                     className={`${inputClass} cursor-pointer appearance-none`}
                     style={{ backgroundColor: '#0F0F1A', color: form.primary_genre ? 'white' : 'rgba(255,255,255,0.4)' }}
                   >
-                    <option value="" style={{ backgroundColor: '#0F0F1A', color: 'rgba(255,255,255,0.4)' }}>Select genre...</option>
+                    <option value="" style={{ backgroundColor: '#0F0F1A', color: 'rgba(255,255,255,0.4)' }}>{t('release_submit_select_genre')}</option>
                     {GENRES.map(g => (
                       <option key={g} value={g} style={{ backgroundColor: '#0F0F1A', color: 'white' }}>{g}</option>
                     ))}
@@ -207,7 +209,7 @@ export default function SubmitReleaseForm() {
               </div>
 
               <div>
-                <label className={labelClass}>Secondary Genres</label>
+                <label className={labelClass}>{t('release_submit_secondary_genres_label')}</label>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {GENRES.map(g => (
                     <button
@@ -227,7 +229,7 @@ export default function SubmitReleaseForm() {
                 </div>
                 <div className="flex gap-2">
                   <input
-                    placeholder="Add custom genre..."
+                    placeholder={t('release_submit_custom_genre_ph')}
                     value={form.custom_genre}
                     onChange={e => setForm(prev => ({ ...prev, custom_genre: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomGenre() } }}
@@ -239,7 +241,7 @@ export default function SubmitReleaseForm() {
                     className="px-4 py-3 rounded-lg text-sm font-medium flex-shrink-0"
                     style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.2)' }}
                   >
-                    Add
+                    {t('release_submit_add')}
                   </button>
                 </div>
                 {form.secondary_genres.length > 0 && (
@@ -256,18 +258,18 @@ export default function SubmitReleaseForm() {
               </div>
 
               <div>
-                <label className={labelClass}>Label (optional)</label>
-                <input name="label" placeholder="e.g. Perlon Records" value={form.label} onChange={handleChange} className={inputClass} />
+                <label className={labelClass}>{t('release_submit_label_field')}</label>
+                <input name="label" placeholder={t('release_submit_label_ph')} value={form.label} onChange={handleChange} className={inputClass} />
               </div>
 
               <div>
-                <label className={labelClass}>Release Date</label>
+                <label className={labelClass}>{t('release_submit_date_label')}</label>
                 <input name="release_date" type="date" value={form.release_date} onChange={handleChange} className={inputClass} />
               </div>
 
               <div>
-                <label className={labelClass}>Description (optional)</label>
-                <textarea name="description" placeholder="Tell us about this release..." value={form.description} onChange={handleChange} rows={3} className={`${inputClass} resize-none`} />
+                <label className={labelClass}>{t('release_submit_description_label')}</label>
+                <textarea name="description" placeholder={t('release_submit_description_ph')} value={form.description} onChange={handleChange} rows={3} className={`${inputClass} resize-none`} />
               </div>
 
               <button
@@ -276,7 +278,7 @@ export default function SubmitReleaseForm() {
                 disabled={!form.title || !form.artist}
                 className="w-full bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
               >
-                Next: Links →
+                {t('release_submit_next_links')}
               </button>
             </div>
           )}
@@ -315,10 +317,10 @@ export default function SubmitReleaseForm() {
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setStep(1)} className="flex-1 border border-white/20 text-white py-3 rounded-lg hover:bg-white/5 transition">
-                  Back
+                  {t('release_submit_back')}
                 </button>
                 <button type="button" onClick={() => setStep(3)} className="flex-1 bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition">
-                  Next: Credits →
+                  {t('release_submit_next_credits')}
                 </button>
               </div>
             </div>
@@ -327,41 +329,41 @@ export default function SubmitReleaseForm() {
           {/* STEP 3 — Credits */}
           {step === 3 && (
             <div className="space-y-4">
-              <p className="text-white/40 text-sm">All fields optional. Separate multiple names with commas.</p>
+              <p className="text-white/40 text-sm">{t('release_submit_credits_note')}</p>
 
               <div>
-                <label className={labelClass}>Featuring Artists</label>
-                <input name="featuring_artists" placeholder="e.g. Artist A, Artist B" value={form.featuring_artists} onChange={handleChange} className={inputClass} />
+                <label className={labelClass}>{t('release_submit_featuring_label')}</label>
+                <input name="featuring_artists" placeholder={t('release_submit_featuring_ph')} value={form.featuring_artists} onChange={handleChange} className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Producers</label>
-                <input name="producers" placeholder="e.g. Producer A, Producer B" value={form.producers} onChange={handleChange} className={inputClass} />
+                <label className={labelClass}>{t('release_submit_producers_label')}</label>
+                <input name="producers" placeholder={t('release_submit_producers_ph')} value={form.producers} onChange={handleChange} className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Composers</label>
-                <input name="composers" placeholder="e.g. Composer A, Composer B" value={form.composers} onChange={handleChange} className={inputClass} />
+                <label className={labelClass}>{t('release_submit_composers_label')}</label>
+                <input name="composers" placeholder={t('release_submit_composers_ph')} value={form.composers} onChange={handleChange} className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Mastering Engineer</label>
-                <input name="mastering_engineer" placeholder="e.g. John Smith" value={form.mastering_engineer} onChange={handleChange} className={inputClass} />
+                <label className={labelClass}>{t('release_submit_mastering_label')}</label>
+                <input name="mastering_engineer" placeholder={t('release_submit_mastering_ph')} value={form.mastering_engineer} onChange={handleChange} className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Artwork By</label>
-                <input name="artwork_by" placeholder="e.g. Jane Doe" value={form.artwork_by} onChange={handleChange} className={inputClass} />
+                <label className={labelClass}>{t('release_submit_artwork_label')}</label>
+                <input name="artwork_by" placeholder={t('release_submit_artwork_ph')} value={form.artwork_by} onChange={handleChange} className={inputClass} />
               </div>
 
               {error && <p className="text-red-400 text-sm">{error}</p>}
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setStep(2)} className="flex-1 border border-white/20 text-white py-3 rounded-lg hover:bg-white/5 transition">
-                  Back
+                  {t('release_submit_back')}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
                   className="flex-1 bg-[#E8A020] text-black font-bold py-3 rounded-lg hover:bg-[#E8A020]/90 transition disabled:opacity-50"
                 >
-                  {loading ? 'Submitting...' : 'Submit Release →'}
+                  {loading ? t('release_submit_submitting') : t('release_submit_cta')}
                 </button>
               </div>
             </div>
