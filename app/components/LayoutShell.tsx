@@ -15,7 +15,7 @@ import type { Spot } from "../spots/types";
 import { spotCropFromRow } from "../spots/types";
 
 const SPOT_COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, rating, instagram, is_sponsored, claimed_by_profile_id";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored, claimed_by_profile_id";
 
 function mapSpot(s: any): Spot {
   return {
@@ -33,6 +33,7 @@ function mapSpot(s: any): Spot {
     coverImage: s.cover_image,
     crop: spotCropFromRow(s),
     priceLevel: s.price_level,
+    priceText: s.price_text ?? null,
     rating: s.rating,
     instagram: s.instagram,
     isSponsored: s.is_sponsored === true,

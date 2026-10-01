@@ -6,15 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { toast } from "sonner";
-import type { Spot } from "../spots/types";
+import { spotPriceLabel, type Spot } from "../spots/types";
 import { useLanguage } from "../components/LanguageContext";
 import CroppedImage from "../../components/ui/CroppedImage";
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80";
 
-function priceStr(level: number | null) {
-  return level ? "€".repeat(level) : "";
-}
+// A free-text price can run to 40 characters; it must not push the row wider.
+const ellipsis: React.CSSProperties = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 };
 
 export default function SpotCard({
   spot,
@@ -31,6 +30,7 @@ export default function SpotCard({
   const pathname = usePathname();
   const router = useRouter();
   const { t: tToast } = useLanguage();
+  const price = spotPriceLabel(spot, tToast("spots_price_per_person"));
   const img = spot.coverImage || PLACE;
   // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
   const crop = spot.coverImage ? spot.crop : null;
@@ -115,8 +115,8 @@ export default function SpotCard({
               {[spot.subcategory, spot.neighborhood].filter(Boolean).join(" · ")}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, fontSize: 11.5, color: "#71717A" }}>
-              {spot.rating != null && <span style={{ color: "#E8A020" }}>★ {spot.rating}</span>}
-              <span>{priceStr(spot.priceLevel)}</span>
+              {spot.rating != null && <span style={{ color: "#E8A020", flexShrink: 0 }}>★ {spot.rating}</span>}
+              {price && <span style={ellipsis}>{price}</span>}
             </div>
           </div>
         </div>
@@ -185,9 +185,9 @@ export default function SpotCard({
             {[spot.subcategory, spot.neighborhood].filter(Boolean).join(" · ")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12, fontSize: 12.5, color: "#71717A" }}>
-            {spot.rating != null && <span style={{ color: "#E8A020", fontWeight: 600 }}>★ {spot.rating}</span>}
-            <span style={{ color: "#A1A1AA" }}>{priceStr(spot.priceLevel)}</span>
-            {spot.neighborhood && <span style={{ marginLeft: "auto" }}>📍 {spot.neighborhood}</span>}
+            {spot.rating != null && <span style={{ color: "#E8A020", fontWeight: 600, flexShrink: 0 }}>★ {spot.rating}</span>}
+            {price && <span style={{ ...ellipsis, color: "#A1A1AA" }}>{price}</span>}
+            {spot.neighborhood && <span style={{ marginLeft: "auto", flexShrink: 0 }}>📍 {spot.neighborhood}</span>}
           </div>
         </div>
       </div>

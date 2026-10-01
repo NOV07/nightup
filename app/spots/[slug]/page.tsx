@@ -11,7 +11,7 @@ import SpotProfileClient from "./SpotProfileClient";
 export const revalidate = 300;
 
 const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, gallery, price_level, rating, phone, website, instagram, opening_hours, is_sponsored, claimed_by_profile_id";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, gallery, price_level, price_text, rating, phone, website, instagram, opening_hours, is_sponsored, claimed_by_profile_id";
 
 async function getSpot(slug: string): Promise<Spot | null> {
   try {
@@ -28,6 +28,7 @@ async function getSpot(slug: string): Promise<Spot | null> {
       coverImage: data.cover_image,
       crop: spotCropFromRow(data),
       priceLevel: data.price_level,
+      priceText: data.price_text ?? null,
       rating: data.rating, phone: data.phone, website: data.website,
       instagram: data.instagram, isSponsored: data.is_sponsored === true,
       claimedByProfileId: data.claimed_by_profile_id ?? null,

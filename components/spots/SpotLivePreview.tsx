@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import SpotCard from '@/app/components/SpotCard'
 import CroppedImage from '@/components/ui/CroppedImage'
-import { SPOT_CATEGORIES, SPOT_CROP_ASPECT, loc, type Spot } from '@/app/spots/types'
+import { SPOT_CATEGORIES, SPOT_CROP_ASPECT, loc, spotPriceLabel, type Spot } from '@/app/spots/types'
 import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import { serializeOpeningHours, DAY_LABELS_EN, CLOSED, type SpotFormData, type Day } from './SpotFormSteps'
 import { GalleryPlayBadge } from '@/components/ui/GalleryLightbox'
@@ -17,7 +17,7 @@ const FIELD_STEP = {
   name: 1, category: 1, subcategory: 1,
   city: 2, address: 2,
   cover_image: 3, gallery: 3, opening_hours: 3,
-  phone: 4, website: 4, price_level: 4, description: 4,
+  phone: 4, website: 4, price_text: 4, description: 4,
 } as const
 
 const ghostStyle: React.CSSProperties = {
@@ -48,6 +48,7 @@ export function formToSpot(form: SpotFormData, nameFallback = 'Το spot σου'
     coverImage: form.cover_image || null,
     crop: form.crop,
     priceLevel: form.price_level || null,
+    priceText: form.price_text.trim() || null,
     rating: null,
     phone: form.phone || null,
     website: form.website || null,
@@ -86,6 +87,7 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
   const cat = SPOT_CATEGORIES.find(c => c.key === form.category)
   const hours = serializeOpeningHours(form.opening_hours)
   const contact = [form.phone, form.website, form.instagram].filter(Boolean)
+  const price = spotPriceLabel(formToSpot(form), t('spots_price_per_person'))
 
   return (
     <div style={{
@@ -135,8 +137,8 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
               ? `📍 ${[form.address, form.neighborhood, form.city].filter(Boolean).join(', ')}`
               : <Ghost labelKey="wizard_step_location" atStep={FIELD_STEP.address} />}
           </div>
-          {form.price_level > 0 && (
-            <div style={{ fontSize: 12, fontWeight: 700, color: GOLD }}>{'€'.repeat(form.price_level)}</div>
+          {price && (
+            <div style={{ fontSize: 12, fontWeight: 700, color: GOLD }}>{price}</div>
           )}
         </div>
 

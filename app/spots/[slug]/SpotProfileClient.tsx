@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { SUBCATEGORIES, loc, type Spot } from "../types";
+import { SUBCATEGORIES, loc, spotPriceLabel, type Spot } from "../types";
 import { useLanguage } from "../../components/LanguageContext";
 import TranslatedText from "../../components/TranslatedText";
 import CroppedImage from "../../../components/ui/CroppedImage";
@@ -57,7 +57,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
   const cover = spot.coverImage || PLACE;
   // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
   const coverCrop = spot.coverImage ? spot.crop : null;
-  const price = spot.priceLevel ? "€".repeat(spot.priceLevel) : null;
+  const price = spotPriceLabel(spot, t("spots_price_per_person"));
   const mapUrl = spot.lat && spot.lng
     ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
     : spot.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address + " " + spot.city)}` : null;
@@ -77,7 +77,7 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
             {CAT_LABEL[spot.category]}{subcatLabel ? ` · ${subcatLabel}` : ""}
           </div>
           <h1 style={{ fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 44, letterSpacing: "-1.2px", marginTop: 8, lineHeight: 1 }}>{spot.name}</h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14, fontSize: 14, color: "#A1A1AA" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 14, fontSize: 14, color: "#A1A1AA" }}>
             {spot.rating != null && <span style={{ color: "#E8A020", fontWeight: 600 }}>★ {spot.rating}</span>}
             {price && <span>{price}</span>}
             {spot.neighborhood && <span>📍 {spot.neighborhood}</span>}

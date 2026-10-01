@@ -28,6 +28,8 @@ export interface Spot {
   coverImage: string | null;
   crop?: CropBox | null;
   priceLevel: number | null;
+  /** Free text per person, e.g. "15–30€". Absent on spots_nearby() RPC rows. */
+  priceText: string | null;
   rating: number | null;
   phone?: string | null;
   website?: string | null;
@@ -37,6 +39,14 @@ export interface Spot {
   featured?: boolean;
   gallery?: GalleryItem[];
   openingHours?: Record<string, string> | null;
+}
+
+/** "{price_text} / άτομο" when the spot has a free-text price, otherwise the
+ *  legacy "€".repeat(price_level). `perPerson` is t('spots_price_per_person'). */
+export function spotPriceLabel(spot: Pick<Spot, 'priceText' | 'priceLevel'>, perPerson: string): string | null {
+  const text = spot.priceText?.trim();
+  if (text) return `${text} ${perPerson}`;
+  return spot.priceLevel ? '€'.repeat(spot.priceLevel) : null;
 }
 
 /** Pick the Greek or English variant of a hardcoded label pair. */
