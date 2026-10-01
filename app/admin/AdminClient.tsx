@@ -191,7 +191,7 @@ function toReleasePayload(form: Record<string, unknown>) {
 const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
-const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
+const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
 
 export default function AdminClient() {
   // Tab state lives in the shell so the sidebar can drive it from the magazine
@@ -719,6 +719,7 @@ export default function AdminClient() {
         data: {
           ...spotForm,
           price_level: spotForm.price_level ? parseInt(spotForm.price_level) : null,
+          price_text: spotForm.price_text.trim() || null,
           rating: spotForm.rating ? parseFloat(spotForm.rating) : null,
           subcategory: spotForm.subcategory || null,
           neighborhood: spotForm.neighborhood || null,
@@ -1827,6 +1828,7 @@ export default function AdminClient() {
                               />
                             )}
                             <div><label className={labelCls}>Price Level (1–4)</label><input type="number" min="1" max="4" className={inputCls} style={inputStyle} value={spotForm.price_level} onChange={e => setSpotForm(f => ({ ...f, price_level:e.target.value }))} /></div>
+                            <div><label className={labelCls}>Price per person (text)</label><input maxLength={40} className={inputCls} style={inputStyle} value={spotForm.price_text} onChange={e => setSpotForm(f => ({ ...f, price_text:e.target.value }))} placeholder="15–30€" /></div>
                             <div><label className={labelCls}>Rating (0–5)</label><input type="number" min="0" max="5" step="0.1" className={inputCls} style={inputStyle} value={spotForm.rating} onChange={e => setSpotForm(f => ({ ...f, rating:e.target.value }))} /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={spotForm.description} onChange={e => setSpotForm(f => ({ ...f, description:e.target.value }))} /></div>
                             <div className="flex items-center gap-4 flex-wrap">
@@ -2042,7 +2044,10 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
       // This quick-edit form posts the row as typed, so the price input has to be
       // coerced here too — events.price is numeric and an empty or symbol-bearing
       // string is rejected by the column.
-      const payload = tab === "events" ? { ...form, price: parsePriceInput(form.price as string) } : form;
+      // An emptied price_text goes back as null so the € level fallback shows.
+      const payload = tab === "events" ? { ...form, price: parsePriceInput(form.price as string) }
+        : tab === "spots" ? { ...form, price_text: String(form.price_text ?? "").trim() || null }
+        : form;
       onSave(getTable(), String(item.id), payload);
     }} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2199,6 +2204,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
             </div>
           )}
           {field("price_level","Price Level (1–4)","number")}
+          {field("price_text","Price per person (text)")}
           {field("rating","Rating (0–5)","number")}
           {field("instagram","Instagram")}
           {field("description","Description","textarea",undefined,true)}
