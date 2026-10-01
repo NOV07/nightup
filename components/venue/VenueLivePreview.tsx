@@ -194,10 +194,11 @@ function PageTab({ form, step, username, isVerified }: {
           ) : step < FIELD_STEP.address && <Ghost labelKey="wizard_step_location" atStep={FIELD_STEP.address} />}
           {form.price_range ? (
             <span style={{
-              fontSize: 10.5, padding: '4px 11px', borderRadius: 999,
+              fontSize: 10.5, padding: '4px 11px', borderRadius: 999, maxWidth: '100%',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               backgroundColor: 'rgba(232,160,32,0.06)', color: GOLD, border: '0.5px solid rgba(232,160,32,0.18)',
             }}>{form.price_range}</span>
-          ) : step < FIELD_STEP.price_range && <Ghost labelKey="wizard_price_range" atStep={FIELD_STEP.price_range} />}
+          ) : step < FIELD_STEP.price_range && <Ghost labelKey="price_text_label" atStep={FIELD_STEP.price_range} />}
         </div>
 
         {/* Upcoming events — the venue profile page leads with this section once

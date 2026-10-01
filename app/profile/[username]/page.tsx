@@ -303,6 +303,7 @@ export default async function ProfilePage({ params }: Props) {
                 backgroundColor: 'rgba(232,160,32,0.06)',
                 color: '#E8A020',
                 border: '0.5px solid rgba(232,160,32,0.18)',
+                maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {profile.price_range}
               </span>

@@ -205,7 +205,8 @@ function PageTab({ form, step, username, isVerified }: {
           ) : step < FIELD_STEP.location && <Ghost labelKey="wizard_city" atStep={FIELD_STEP.location} />}
           {form.price_range && (
             <span style={{
-              fontSize: 10.5, padding: '4px 11px', borderRadius: 999,
+              fontSize: 10.5, padding: '4px 11px', borderRadius: 999, maxWidth: '100%',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               backgroundColor: 'rgba(232,160,32,0.06)', color: GOLD, border: '0.5px solid rgba(232,160,32,0.18)',
             }}>{form.price_range}</span>
           )}

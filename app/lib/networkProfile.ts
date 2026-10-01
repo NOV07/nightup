@@ -9,8 +9,11 @@ export const TAB_META: Record<NetworkTab, { emoji: string; label: string; slug: 
   Professionals: { emoji: '🤝', label: 'Professionals', slug: 'professionals' },
 }
 
-/** The only values profiles.price_range holds. Shared by the professional and
- *  venue wizards so neither invents a second scale. */
+/** Legacy values profiles.price_range used to be restricted to when the
+ *  Professional and Venue wizards offered €/€€/€€€ buttons. Both wizards now
+ *  write free text instead (see price_text_label in translations.ts), so
+ *  this is unused — kept only because old profiles still hold these values
+ *  and nothing currently needs removing it. */
 export const PRICE_RANGES = ['€', '€€', '€€€'] as const
 
 export const PROFILE_COLUMNS =
