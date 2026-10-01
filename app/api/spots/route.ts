@@ -9,7 +9,7 @@ export const SPOT_FIELDS = [
   'name', 'category', 'subcategory', 'city', 'neighborhood', 'address',
   'lat', 'lng', 'description', 'cover_image',
   'crop_x', 'crop_y', 'crop_width', 'crop_height',
-  'gallery', 'price_level', 'phone', 'website', 'instagram', 'opening_hours',
+  'gallery', 'price_level', 'price_text', 'phone', 'website', 'instagram', 'opening_hours',
 ]
 
 export async function POST(req: NextRequest) {

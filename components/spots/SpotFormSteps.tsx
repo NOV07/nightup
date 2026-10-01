@@ -73,7 +73,10 @@ export interface SpotFormData {
   phone: string
   website: string
   instagram: string
+  /** No longer edited in the wizard; carried through so an edit keeps the
+   *  € level existing spots fall back to when price_text is empty. */
   price_level: number
+  price_text: string
   description: string
 }
 
@@ -88,7 +91,7 @@ const DEFAULTS: SpotFormData = {
   name: '', category: '', subcategory: '', city: '', neighborhood: '', address: '',
   maps_url: '', lat: null, lng: null, cover_image: '', crop: null, gallery: [],
   opening_hours: EMPTY_HOURS,
-  phone: '', website: '', instagram: '', price_level: 0, description: '',
+  phone: '', website: '', instagram: '', price_level: 0, price_text: '', description: '',
 }
 
 /**
@@ -156,6 +159,7 @@ export function spotFormToPayload(form: SpotFormData) {
     crop_height: form.crop?.crop_height ?? null,
     gallery: form.gallery,
     price_level: form.price_level || null,
+    price_text: form.price_text.trim() || null,
     phone: form.phone.trim() || null,
     website: form.website.trim() || null,
     instagram: form.instagram.trim() || null,
@@ -500,23 +504,17 @@ function Step4({ form, set, stepErrors }: {
       </div>
 
       <div>
-        <label style={lbl}>{t('wizard_price_range')}</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {[1, 2, 3, 4].map(level => {
-            const on = form.price_level === level
-            return (
-              <button key={level} type="button" onClick={() => set('price_level', on ? 0 : level)}
-                style={{
-                  flex: 1, padding: '10px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
-                  backgroundColor: on ? 'rgba(232,160,32,0.18)' : 'rgba(255,255,255,0.05)',
-                  color: on ? '#E8A020' : 'rgba(255,255,255,0.4)',
-                  border: `1px solid ${on ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                }}>
-                {'€'.repeat(level)}
-              </button>
-            )
-          })}
+        <label style={lbl}>{t('spot_price_label')}</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* 40 mirrors the spots_price_text_length_check constraint. */}
+          <input style={{ ...inp, flex: 1, minWidth: 0 }} maxLength={40}
+            value={form.price_text} onChange={e => set('price_text', e.target.value)}
+            placeholder={t('spot_price_ph')} />
+          <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            {t('spots_price_per_person')}
+          </span>
         </div>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>{t('spot_price_hint')}</p>
       </div>
 
       <div>

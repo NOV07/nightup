@@ -32,6 +32,7 @@ function spotToForm(spot: any): Partial<SpotFormData> {
     website: spot.website ?? '',
     instagram: spot.instagram ?? '',
     price_level: spot.price_level ?? 0,
+    price_text: spot.price_text ?? '',
     description: spot.description ?? '',
   }
 }
