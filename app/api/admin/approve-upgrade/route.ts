@@ -26,6 +26,16 @@ const APPROVAL_COPY: Record<string, { label: string; perks: string[]; start: str
     perks: ['Επαγγελματική καταχώρηση στο Network'],
     start: 'https://nightup.gr/dashboard/professional',
   },
+  venue: {
+    label: 'Venue',
+    perks: [
+      'Σελίδα του χώρου σου στο Network',
+      'Εμφάνιση στο «Φτιάξε το πάρτι σου» όταν κάποιος ψάχνει χώρο',
+      'Αγγελίες',
+      'Ανέβασμα events για τον χώρο σου',
+    ],
+    start: 'https://nightup.gr/dashboard/venue',
+  },
 }
 
 // Requests from before requested_type existed get the dashboard as a neutral start.
