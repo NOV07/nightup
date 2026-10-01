@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { sendEmail, escapeHtml } from '@/app/lib/email'
+import { NETWORK } from '@/app/lib/searchData'
+
+// The stable network_category values a 'professional' request's specialty can
+// end with — same source as ROLES_BY_GROUP in ProfessionalFormSteps.tsx.
+// Matched by suffix (the UpgradeModal builds specialty as "<type label> -
+// <role>"), the same technique app/api/upgrade-request/route.ts uses to gate
+// 'venue' requests.
+const PROFESSIONAL_ROLES = [
+  ...Object.keys(NETWORK.Professionals['For Events']),
+  ...Object.keys(NETWORK.Professionals['For Artists']),
+]
+
+/** The role a professional request's specialty ends with, or null when it
+ *  doesn't match any known role — e.g. a request submitted before this
+ *  matching existed. The Professional wizard then just opens with nothing
+ *  preselected, same as today. */
+function matchProfessionalRole(specialty: string): string | null {
+  return PROFESSIONAL_ROLES.find(role => specialty.endsWith(` - ${role}`)) ?? null
+}
 
 // What each creator type actually gets in the dashboard, and where to start.
 // Keys match REQUESTABLE_TYPES in app/api/upgrade-request/route.ts.
@@ -68,6 +87,13 @@ export async function POST(req: NextRequest) {
   // approve them as creator but leave profile_type alone and tell the admin.
   const needsManualType = action === 'approved' && !request.requested_type
 
+  // A 'professional' request's specialty carries the stable role it was
+  // submitted with (see UpgradeModal) — recover it so the Professional
+  // wizard can open with the right group/role preselected.
+  const matchedRole = request.requested_type === 'professional'
+    ? matchProfessionalRole(request.specialty ?? '')
+    : null
+
   if (action === 'approved') {
     // Update profile plan_tier (and profile_type, when we know it). Do this before
     // flipping the request status so a failure leaves the request pending and retryable.
@@ -76,7 +102,11 @@ export async function POST(req: NextRequest) {
       .update(
         needsManualType
           ? { plan_tier: 'creator' }
-          : { plan_tier: 'creator', profile_type: request.requested_type }
+          : {
+              plan_tier: 'creator',
+              profile_type: request.requested_type,
+              ...(matchedRole ? { network_category: matchedRole } : {}),
+            }
       )
       .eq('id', request.user_id)
 
