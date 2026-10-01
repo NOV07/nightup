@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LuPartyPopper, LuMic } from 'react-icons/lu'
+import type { IconType } from 'react-icons'
 import ImageUpload from '@/components/ui/ImageUpload'
 import ImageCropper from '@/components/ui/ImageCropper'
 import CroppedImage from '@/components/ui/CroppedImage'
@@ -16,9 +18,9 @@ import type { TranslationKey } from '@/app/lib/translations'
 export const PRO_GROUPS = ['For Events', 'For Artists'] as const
 export type ProGroup = (typeof PRO_GROUPS)[number]
 
-export const GROUP_META: Record<ProGroup, { emoji: string; label: string; subKey: TranslationKey; accent: string }> = {
-  'For Events':  { emoji: '🎉', label: 'For Events',  subKey: 'pro_group_events_sub', accent: '#E8A020' },
-  'For Artists': { emoji: '🎤', label: 'For Artists', subKey: 'pro_group_artists_sub', accent: '#60A5FA' },
+export const GROUP_META: Record<ProGroup, { icon: IconType; labelKey: TranslationKey; subKey: TranslationKey; accent: string }> = {
+  'For Events':  { icon: LuPartyPopper, labelKey: 'pro_group_events',  subKey: 'pro_group_events_sub', accent: '#E8A020' },
+  'For Artists': { icon: LuMic,         labelKey: 'pro_group_artists', subKey: 'pro_group_artists_sub', accent: '#60A5FA' },
 }
 
 export const ROLES_BY_GROUP: Record<ProGroup, string[]> = {
@@ -336,8 +338,8 @@ function Step1({ form, set, stepErrors }: {
                   backgroundColor: on ? `${meta.accent}22` : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${on ? `${meta.accent}73` : 'rgba(255,255,255,0.1)'}`,
                 }}>
-                <div style={{ fontSize: 24, lineHeight: 1 }}>{meta.emoji}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 9, color: on ? meta.accent : 'white' }}>{meta.label}</div>
+                <div style={{ lineHeight: 1, display: 'flex' }}><meta.icon size={24} color={meta.accent} style={{ strokeWidth: '1.5' }} /></div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 9, color: on ? meta.accent : 'white' }}>{t(meta.labelKey)}</div>
                 <div style={{ fontSize: 11, marginTop: 4, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>{t(meta.subKey)}</div>
               </button>
             )
@@ -590,10 +592,11 @@ function Step4({ form }: { form: ProfessionalFormData }) {
   const socials = SOCIAL_FIELDS.filter(f => form[f.key].trim()).map(f => f.label)
   const contact = [form.phone, form.booking_email, form.website].filter(c => c.trim())
   const coverLbl = t('wizard_cover').toLowerCase()
+  const groupLabel = form.group ? t(GROUP_META[form.group].labelKey) : ''
 
   const summary: { label: string; value: string }[] = [
     { label: t('wizard_name'), value: form.display_name.trim() || '—' },
-    { label: t('dashboard_pro_check_category'), value: [form.group, networkCategoryLabel(form.network_category, lang)].filter(Boolean).join(' · ') || '—' },
+    { label: t('dashboard_pro_check_category'), value: [groupLabel, networkCategoryLabel(form.network_category, lang)].filter(Boolean).join(' · ') || '—' },
     { label: t('wizard_description'), value: form.bio.trim() ? `${form.bio.trim().length} ${t('pro_chars')}` : '—' },
     { label: 'Tags', value: form.tags.length ? form.tags.join(' · ') : '—' },
     { label: t('wizard_step_contact'), value: contact.length ? contact.join(' · ') : '—' },
@@ -621,7 +624,7 @@ function Step4({ form }: { form: ProfessionalFormData }) {
       </div>
 
       <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.40)', lineHeight: 1.6 }}>
-        {t('pro_save_note')} «{form.group || 'Professionals'}».
+        {t('pro_save_note')} «{groupLabel || 'Professionals'}».
       </p>
     </div>
   )

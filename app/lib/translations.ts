@@ -894,6 +894,8 @@ const translations = {
   err_pick_group:          { el: "Διάλεξε μία από τις δύο κατηγορίες", en: "Pick one of the two categories" },
   err_pick_specialty:      { el: "Διάλεξε ειδικότητα", en: "Pick a specialty" },
   err_contact_required:    { el: "Χρειάζεται τουλάχιστον ένα τηλέφωνο ή ένα booking email", en: "At least a phone number or a booking email is required" },
+  pro_group_events:        { el: "Για events", en: "For events" },
+  pro_group_artists:       { el: "Για artists", en: "For artists" },
   pro_group_events_sub:    { el: "Δουλεύεις πάνω σε events", en: "You work on events" },
   pro_group_artists_sub:   { el: "Δουλεύεις με καλλιτέχνες", en: "You work with artists" },
   pro_audience_label:      { el: "Σε ποιους απευθύνεσαι", en: "Who do you serve" },
