@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { usePlayerStore } from "./PlayerContext";
 import { useRegisterModalOpen } from "./ModalStateContext";
+import { useHideTonightFab } from "./TonightFabVisibilityContext";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -25,6 +26,8 @@ export default function MusicPlayerBar() {
   // floats in, so it hides (display: none, see .rs-modal-open) exactly
   // like it does for any other modal, and reappears on collapse/close.
   useRegisterModalOpen("expanded-player", isExpanded);
+  // The FAB sits above the bar (z-200 vs z-50) and would land inside the card.
+  useHideTonightFab("music-player-expanded", isExpanded);
 
   // Auto-dismiss after 3s when there's an error
   useEffect(() => {
