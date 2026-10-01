@@ -52,8 +52,9 @@ const HIDE_TONIGHT_FAB_ROUTES = ["/events"];
 // has no relevance — the FAB/modal must not mount at all here, not just hide.
 // /dashboard and /upgrade are account screens; on /upgrade the FAB also sat on
 // top of the "become a creator" modal. /onboarding and /sign-in are account
-// flows too, where the FAB only gets in the way.
-const TONIGHT_FAB_EXCLUDED_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about", "/admin", "/dashboard", "/upgrade", "/onboarding", "/sign-in"];
+// flows too, where the FAB only gets in the way. /submit/release is the
+// artist's "new release" form, reached from the dashboard.
+const TONIGHT_FAB_EXCLUDED_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about", "/admin", "/dashboard", "/upgrade", "/onboarding", "/sign-in", "/submit/release"];
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
