@@ -343,6 +343,10 @@ const translations = {
   upgrade_close:      { el: "Κλείσιμο", en: "Close" },
   upgrade_back:       { el: "← Πίσω", en: "← Back" },
   upgrade_prof_cat:   { el: "Φωτογράφος / Videographer,Sound & Lighting,Catering,Decoration", en: "Photographer / Videographer,Sound & Lighting,Catering,Decoration" },
+  // Kept out of upgrade_prof_cat's comma list (parsed with .split(',')) since
+  // this one subcategory maps to its own profile_type — see UpgradeModal and
+  // the requested_type check in app/api/upgrade-request/route.ts.
+  upgrade_prof_cat_venue: { el: "Χώρος εκδηλώσεων", en: "Event venue" },
 
   // ── NetworkGuidedModal ────────────────────────────────────
   guided_intro_sub:   { el: "Πες μας και βρίσκουμε αυτό που σου λείπει.", en: "Tell us and we'll find what you're missing." },

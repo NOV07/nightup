@@ -11,7 +11,10 @@ const TYPES_BASE = [
 
 export default function UpgradeModal({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage()
-  const profSubs = t("upgrade_prof_cat").split(",")
+  // "Event venue" is kept out of upgrade_prof_cat's comma list — it is the
+  // one subcategory that maps to its own profile_type (see handleSubmit).
+  const venueSub = t("upgrade_prof_cat_venue")
+  const profSubs = [...t("upgrade_prof_cat").split(","), venueSub]
   const TYPES = TYPES_BASE.map(type =>
     type.id === 'professional' ? { ...type, sub: profSubs } : type
   )
@@ -46,10 +49,16 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
     const specialty = selectedSub
       ? `${currentType?.label} - ${selectedSub}`
       : currentType?.label || ''
+    // The "Event venue" professional subcategory is its own profile_type —
+    // specialty stays human text, requested_type is the stable value the
+    // approval flow and VenueFormSteps key off of.
+    const requestedType = selectedType === 'professional' && selectedSub === venueSub
+      ? 'venue'
+      : selectedType
     const res = await fetch('/api/upgrade-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ specialty, bio, requested_type: selectedType }),
+      body: JSON.stringify({ specialty, bio, requested_type: requestedType }),
     })
     const data = await res.json()
     setLoading(false)
