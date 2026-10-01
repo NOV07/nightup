@@ -3,6 +3,7 @@ import { useState } from 'react'
 import SpotCard from '@/app/components/SpotCard'
 import CroppedImage from '@/components/ui/CroppedImage'
 import { SPOT_CATEGORIES, SPOT_CROP_ASPECT, loc, type Spot } from '@/app/spots/types'
+import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import { serializeOpeningHours, DAY_LABELS_EN, CLOSED, type SpotFormData, type Day } from './SpotFormSteps'
 import { GalleryPlayBadge } from '@/components/ui/GalleryLightbox'
 import type { GalleryItem } from '@/app/lib/types'
@@ -107,12 +108,13 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
         {cat && (
           <div style={{ position: 'absolute', top: 12, left: 12 }}>
             <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
               padding: '4px 10px', borderRadius: 999, fontSize: 10, fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.06em',
               backgroundColor: 'rgba(232,160,32,0.18)', color: GOLD,
               border: '1px solid rgba(232,160,32,0.4)', backdropFilter: 'blur(6px)',
             }}>
-              {cat.emoji} {loc(lang, cat.label, cat.label_en)}
+              <SpotCategoryIcon category={cat.key} size={12} /> {loc(lang, cat.label, cat.label_en)}
             </span>
           </div>
         )}
