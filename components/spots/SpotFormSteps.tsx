@@ -9,6 +9,7 @@ import CroppedImage from '@/components/ui/CroppedImage'
 import {
   SPOT_CATEGORIES, SUBCATEGORIES, SPOT_CROP_ASPECT, loc, type SpotCategory,
 } from '@/app/spots/types'
+import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import SpotLivePreview from './SpotLivePreview'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
@@ -240,7 +241,7 @@ function Step1({ form, set, stepErrors }: {
                   backgroundColor: on ? 'rgba(232,160,32,0.14)' : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${on ? 'rgba(232,160,32,0.45)' : 'rgba(255,255,255,0.1)'}`,
                 }}>
-                <div style={{ fontSize: 22, lineHeight: 1 }}>{c.emoji}</div>
+                <div style={{ lineHeight: 1, display: 'flex' }}><SpotCategoryIcon category={c.key} size={22} /></div>
                 <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, color: on ? '#E8A020' : 'white' }}>{loc(lang, c.label, c.label_en)}</div>
                 <div style={{ fontSize: 10, marginTop: 3, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>{loc(lang, c.sub, c.sub_en)}</div>
               </button>
