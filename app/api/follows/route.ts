@@ -5,10 +5,13 @@ import { createClient } from '@/app/lib/supabase-server'
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ following: false })
+  if (!user) return NextResponse.json({ following: false, self: false })
 
   const profile_id = req.nextUrl.searchParams.get('profile_id')
   if (!profile_id) return NextResponse.json({ error: 'profile_id required' }, { status: 400 })
+
+  // Your own profile: the follow button is hidden there.
+  if (profile_id === user.id) return NextResponse.json({ following: false, self: true })
 
   const { data } = await supabase
     .from('follows')
@@ -33,6 +36,7 @@ export async function POST(req: NextRequest) {
 
   const { profile_id } = body
   if (!profile_id) return NextResponse.json({ error: 'profile_id required' }, { status: 400 })
+  if (profile_id === user.id) return NextResponse.json({ error: 'Cannot follow yourself' }, { status: 400 })
 
   const { error } = await supabase
     .from('follows')
