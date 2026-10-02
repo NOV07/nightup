@@ -16,16 +16,12 @@
 -- The same ImageUpload serves the Professional, Venue, Artist, release, event
 -- and dashboard avatar/banner uploads.
 --
--- Note: the INSERT policy only requires an authenticated caller; it does not
--- pin the object to the caller's own folder (unlike the other three). It is
--- recorded as it is live.
+-- The INSERT policy "Authenticated users can upload" is NOT defined here: it is
+-- defined once, in 20261002040000_uploads_insert_own_folder.sql (own folder
+-- only). Until that migration was applied the live policy was looser and only
+-- required an authenticated caller.
 -- The bucket row itself is not created here: it already exists (public) and no
 -- earlier migration creates it.
-
-drop policy if exists "Authenticated users can upload" on storage.objects;
-create policy "Authenticated users can upload"
-  on storage.objects for insert to public
-  with check (bucket_id = 'uploads' and auth.role() = 'authenticated');
 
 drop policy if exists "Users can delete own uploads" on storage.objects;
 create policy "Users can delete own uploads"
