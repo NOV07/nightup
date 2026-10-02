@@ -20,6 +20,9 @@ function storagePrefixes(uid: string) {
     { bucket: 'events', prefix: uid },                // app/api/events/upload
     { bucket: 'gallery-media', prefix: `profile/${uid}` }, // app/api/gallery/upload
     { bucket: 'gallery-media', prefix: `spot/${uid}` },
+    // Legacy bucket from 20260722000000_creator_gallery.sql ({uid}/...). Nothing
+    // writes to it any more, but older gallery files can still live there.
+    { bucket: 'creator-gallery', prefix: uid },
   ]
 }
 
