@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/app/components/LanguageContext'
 import TranslatedText from '@/app/components/TranslatedText'
+import { isSafeInternalPath } from '@/app/lib/safeLink'
 
 interface Actor {
   display_name: string
@@ -101,7 +102,8 @@ export default function NotificationBell() {
       }))
     }
     setOpen(false)
-    if (n.link) router.push(n.link)
+    // Old or forged rows may carry an external or script link: navigate only to in-app paths.
+    if (isSafeInternalPath(n.link)) router.push(n.link)
   }
 
   return (
@@ -196,7 +198,7 @@ export default function NotificationBell() {
                   padding: '14px 16px',
                   borderBottom: i < data.notifications.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                   backgroundColor: n.read ? 'transparent' : 'rgba(232,160,32,0.04)',
-                  cursor: n.link ? 'pointer' : 'default',
+                  cursor: isSafeInternalPath(n.link) ? 'pointer' : 'default',
                   transition: 'background-color 0.15s',
                 }}
               >
