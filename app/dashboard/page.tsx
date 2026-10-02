@@ -100,6 +100,29 @@ export default async function DashboardPage() {
         .in('id', eventIds)
     : { data: [] }
 
+  // "Θα πάω" reactions — unioned with saved_events below so a user sees both
+  // in "Έρχονται σύντομα" without duplicates. RLS on event_reactions only
+  // lets a user see their own rows, same as saved_events.
+  const { data: goingReactionRows } = profile.profile_type === 'user'
+    ? await supabase
+        .from('event_reactions')
+        .select('event_id')
+        .eq('user_id', user.id)
+        .eq('reaction_type', 'going')
+    : { data: [] }
+
+  const goingEventIds: string[] = (goingReactionRows ?? []).map((r: any) => r.event_id)
+  // Events going-only (not already in savedEvents) still need fetching —
+  // the ones also saved are already in savedEvents above.
+  const goingOnlyIds = goingEventIds.filter((id: string) => !eventIds.includes(id))
+
+  const { data: goingOnlyEvents } = goingOnlyIds.length > 0
+    ? await supabase
+        .from('events')
+        .select('id, title, image_url, date, venue, city, genre')
+        .in('id', goingOnlyIds)
+    : { data: [] }
+
   const { data: savedSpotRows } = profile.profile_type === 'user'
     ? await supabase.from('saved_spots').select('spot_id').eq('user_id', user.id)
     : { data: [] }
@@ -157,7 +180,11 @@ export default async function DashboardPage() {
     : { data: [] }
 
   const today = new Date().toISOString().split('T')[0]
-  const upcomingEvents = (savedEvents ?? [])
+  const goingIdSet = new Set(goingEventIds)
+  // savedEvents and goingOnlyEvents are disjoint by construction (goingOnlyIds
+  // excludes anything already in eventIds), so this union has no duplicates.
+  const upcomingEvents = [...(savedEvents ?? []), ...(goingOnlyEvents ?? [])]
+    .map((e: any) => ({ ...e, going: goingIdSet.has(e.id) }))
     .filter((e: any) => e?.date && e.date >= today)
     .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 5)

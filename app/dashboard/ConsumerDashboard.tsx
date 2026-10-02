@@ -96,19 +96,34 @@ function UpcomingRow({ event, isLast }: { event: any; isLast: boolean }) {
         </p>
       </div>
 
-      {/* Days pill */}
-      <div style={{
-        fontSize: 11,
-        fontWeight: 600,
-        color: GOLD,
-        flexShrink: 0,
-        padding: '3px 10px',
-        borderRadius: 99,
-        border: '1px solid rgba(232,160,32,0.25)',
-        backgroundColor: 'rgba(232,160,32,0.06)',
-        whiteSpace: 'nowrap',
-      }}>
-        {upcomingLabel(event.date, lang, t)}
+      {/* Days pill (+ going chip, stacked so neither forces the row wider) */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: GOLD,
+          padding: '3px 10px',
+          borderRadius: 99,
+          border: '1px solid rgba(232,160,32,0.25)',
+          backgroundColor: 'rgba(232,160,32,0.06)',
+          whiteSpace: 'nowrap',
+        }}>
+          {upcomingLabel(event.date, lang, t)}
+        </div>
+        {event.going && (
+          <div style={{
+            fontSize: 10,
+            fontWeight: 600,
+            color: GOLD,
+            padding: '2px 9px',
+            borderRadius: 99,
+            border: '1px solid rgba(232,160,32,0.25)',
+            backgroundColor: 'rgba(232,160,32,0.06)',
+            whiteSpace: 'nowrap',
+          }}>
+            {t('dashboard_going_chip')}
+          </div>
+        )}
       </div>
     </Link>
   )
