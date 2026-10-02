@@ -57,6 +57,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
+  // A host cannot react to their own event.
+  const { data: ev } = await supabase.from('events').select('profile_id').eq('id', eventId).maybeSingle()
+  if (ev?.profile_id === user.id) return NextResponse.json({ error: 'Cannot react to your own event' }, { status: 403 })
+
   const { error: clearError } = await supabase
     .from('event_reactions')
     .delete()
