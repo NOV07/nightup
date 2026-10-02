@@ -1,44 +1,22 @@
--- Privacy for follows + count-only functions for creator stats.
+-- Count-only functions for creator stats.
 --
 -- Product decision: users' profiles and actions are private; only aggregate
--- numbers may be shown. Until now `follows` had a "Follow counts are public"
--- policy with USING (true), so anyone holding the anon key could read every
--- user_id -> profile_id pair. Nothing in the app reads other people's follows
--- (grep: only app/dashboard/page.tsx, filtered by the caller's own user_id, and
--- app/api/follows, also filtered by user_id), so the policy can go.
+-- numbers may be shown.
 --
--- Meanwhile the "Saved" tile in the creator stats counted saved_events through
--- the caller's session, where RLS ("select own") returns only the caller's own
+-- The "Saved" tile in the creator stats counted saved_events through the
+-- caller's session, where RLS ("select own") returns only the caller's own
 -- rows, so it was ~always 0. The functions below replace that: SECURITY DEFINER
 -- so they can count across users, but they return numbers only and are scoped
 -- to what the caller owns, derived from auth.uid() (never from an argument).
+--
+-- The follows policy side of this change ("Follow counts are public" dropped,
+-- only "Users can manage their own follows" left) was applied by hand in the
+-- Supabase SQL Editor and is intentionally not repeated here.
 --
 -- Admin: the admin panel is not a Supabase session, it uses the service-role
 -- client. Service role is therefore allowed to see every row's count.
 --
 -- Idempotent. To be run by hand in the Supabase SQL Editor.
-
--- ── follows: only my own rows ───────────────────────────────────────────────
-do $$
-declare p record;
-begin
-  -- Drop every permissive SELECT policy that is unconditionally true, whatever
-  -- it is called in the live project.
-  for p in
-    select policyname from pg_policies
-    where schemaname = 'public' and tablename = 'follows'
-      and cmd = 'SELECT' and qual = 'true'
-  loop
-    execute format('drop policy %I on public.follows', p.policyname);
-  end loop;
-end $$;
-
-drop policy if exists "Follow counts are public" on public.follows;
-drop policy if exists "Users can manage their own follows" on public.follows;
-create policy "Users can manage their own follows"
-  on public.follows for all to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
 
 -- ── Saves per event, for the events I host ──────────────────────────────────
 -- One row per event I own (zero included). A host saving their own event is
