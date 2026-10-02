@@ -551,6 +551,7 @@ const translations = {
   dashboard_tab_content:        { el: "Περιεχόμενο", en: "Content" },
   dashboard_tab_visibility:     { el: "Ορατότητα", en: "Visibility" },
   dashboard_tab_settings:       { el: "Ρυθμίσεις", en: "Settings" },
+  dashboard_tab_library:        { el: "Η βιβλιοθήκη μου", en: "My library" },
   dashboard_new_event:          { el: "+ Νέο Event", en: "+ New Event" },
   dashboard_new_release:        { el: "+ Νέο Release", en: "+ New Release" },
   dashboard_saving:             { el: "Αποθήκευση...", en: "Saving..." },

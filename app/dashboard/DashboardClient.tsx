@@ -13,6 +13,7 @@ import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES, networkCategoryLabel } from '../lib/searchData'
 import ConsumerDashboard from './ConsumerDashboard'
+import MyLibrary from './MyLibrary'
 import ScrollTabBar from '@/components/ui/ScrollTabBar'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '../lib/translations'
@@ -66,7 +67,7 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
   booking_availability: 'dashboard_section_booking_availability',
 }
 
-type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings'
+type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings' | 'library'
 
 export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings, professionalContributions, ownedSpot }: {
   profile: any
@@ -356,6 +357,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     { key: 'listings', label: t('listings_title') },
     { key: 'visibility', label: t('dashboard_tab_visibility') },
     { key: 'settings', label: t('dashboard_tab_settings') },
+    { key: 'library', label: t('dashboard_tab_library') },
   ]
 
   const submitLink: Record<string, { href: string; label: string }> = {
@@ -1678,6 +1680,18 @@ export default function DashboardClient({ profile, events, releases, savedEvents
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_change_password')}</h3>
               <ChangePasswordForm />
             </div>
+          </div>
+        )}
+
+        {/* ══ TAB: LIBRARY (same view the plain-user dashboard shows) ══ */}
+        {activeTab === 'library' && (
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            <MyLibrary
+              savedEvents={savedEvents ?? []}
+              upcomingEvents={upcomingEvents ?? []}
+              savedSpots={savedSpots ?? []}
+              followedProfiles={followedProfiles ?? []}
+            />
           </div>
         )}
 
