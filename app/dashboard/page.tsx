@@ -217,6 +217,7 @@ export default async function DashboardPage() {
       artistBookings={artistBookings}
       professionalContributions={professionalContributions}
       ownedSpot={ownedSpot ?? null}
+      userEmail={user.email ?? null}
     />
   )
 }

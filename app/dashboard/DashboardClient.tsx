@@ -10,6 +10,7 @@ import ImageCropper, { type CropBox } from '../../components/ui/ImageCropper'
 import CroppedImage from '../../components/ui/CroppedImage'
 import { getAvatarCrop, getCoverCrop } from '../lib/profileCrop'
 import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
+import DeleteAccountSection from '@/components/account/DeleteAccountSection'
 import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES, networkCategoryLabel } from '../lib/searchData'
 import ConsumerDashboard from './ConsumerDashboard'
@@ -69,8 +70,9 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings' | 'library'
 
-export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, spotSavedCount, followerCount, featuredRequests, artistBookings, professionalContributions, ownedSpot }: {
+export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, spotSavedCount, followerCount, featuredRequests, artistBookings, professionalContributions, ownedSpot, userEmail }: {
   profile: any
+  userEmail?: string | null
   events: any[]
   releases: any[]
   savedEvents?: any[]
@@ -103,6 +105,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   const isVenue = profile.profile_type === 'venue'
 
   const [activeTab, setActiveTab] = useState<Tab>('profile')
+  const [userTab, setUserTab] = useState<'library' | 'settings'>('library')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -401,8 +404,13 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     </div>
   )
 
-  // Free users get the consumer view — no tabs
+  // Free users get the consumer view: their library, plus account settings
   if (profile.profile_type === 'user') {
+    const userTabs: { key: 'library' | 'settings'; label: string }[] = [
+      { key: 'library', label: t('settings_tab_library') },
+      { key: 'settings', label: t('settings_tab_settings') },
+    ]
+    const cardStyle = { backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#0F0F1A' }}>
         <div className="border-b" style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: 'rgba(15,15,26,0.95)' }}>
@@ -421,23 +429,135 @@ export default function DashboardClient({ profile, events, releases, savedEvents
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.50)' }}>@{profile.username} · {t('dashboard_type_user')}</p>
             </div>
           </div>
+          <ScrollTabBar activeKey={userTab} className="max-w-[680px] mx-auto px-4 gap-1 scroll-px-4">
+            {userTabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setUserTab(tab.key)}
+                data-active={userTab === tab.key}
+                className="px-4 py-2.5 text-sm font-medium transition-all shrink-0 whitespace-nowrap snap-start"
+                style={{
+                  color: userTab === tab.key ? '#E8A020' : 'rgba(255,255,255,0.35)',
+                  borderBottom: userTab === tab.key ? '2px solid #E8A020' : '2px solid transparent',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </ScrollTabBar>
         </div>
-        <ConsumerDashboard
-          name={profile.display_name || profile.username || t('dashboard_friend_fallback')}
-          savedEvents={savedEvents ?? []}
-          upcomingEvents={upcomingEvents ?? []}
-          savedSpots={savedSpots ?? []}
-          followedProfiles={followedProfiles ?? []}
-        />
-        <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px', marginTop: 40, borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>{t('dashboard_are_you_pro')}</span>
-          <button
-            onClick={() => setShowUpgrade(true)}
-            style={{ color: '#E8A020', fontSize: 13, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            {t('dashboard_create_pro_profile')}
-          </button>
-        </div>
+
+        {userTab === 'library' && (
+          <>
+            <ConsumerDashboard
+              name={profile.display_name || profile.username || t('dashboard_friend_fallback')}
+              savedEvents={savedEvents ?? []}
+              upcomingEvents={upcomingEvents ?? []}
+              savedSpots={savedSpots ?? []}
+              followedProfiles={followedProfiles ?? []}
+            />
+            <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px', marginTop: 40, borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>{t('dashboard_are_you_pro')}</span>
+              <button
+                onClick={() => setShowUpgrade(true)}
+                style={{ color: '#E8A020', fontSize: 13, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                {t('dashboard_create_pro_profile')}
+              </button>
+            </div>
+          </>
+        )}
+
+        {userTab === 'settings' && (
+          <div className="px-4 py-8 space-y-6" style={{ maxWidth: 680, margin: '0 auto' }}>
+
+            {/* Profile */}
+            <div className="p-6 rounded-lg space-y-4" style={cardStyle}>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('settings_profile_title')}</h2>
+              <div>
+                <label className={labelClass}>{t('settings_photo')}</label>
+                <ImageUpload
+                  key={form.avatar_url ? 'has-avatar' : 'no-avatar'}
+                  folder="avatars"
+                  onUpload={(url) => setForm(prev => ({ ...prev, avatar_url: url, avatar_crop_x: null, avatar_crop_y: null, avatar_crop_width: null, avatar_crop_height: null }))}
+                  existingUrl={form.avatar_url}
+                />
+                {form.avatar_url && (
+                  <div className="flex gap-4 mt-1.5">
+                    <button type="button" onClick={() => setShowAvatarCropper(true)} className="text-xs hover:opacity-80" style={{ color: '#E8A020' }}>
+                      {t('image_crop_edit')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, avatar_url: '', avatar_crop_x: null, avatar_crop_y: null, avatar_crop_width: null, avatar_crop_height: null }))}
+                      className="text-xs hover:opacity-80"
+                      style={{ color: 'rgba(255,255,255,0.5)' }}
+                    >
+                      {t('settings_photo_remove')}
+                    </button>
+                  </div>
+                )}
+                {showAvatarCropper && form.avatar_url && (
+                  <ImageCropper
+                    imageUrl={form.avatar_url}
+                    aspect={AVATAR_CROP_ASPECT}
+                    initialCrop={getAvatarCrop(form)}
+                    onConfirm={(box: CropBox) => {
+                      setForm(prev => ({ ...prev, avatar_crop_x: box.crop_x, avatar_crop_y: box.crop_y, avatar_crop_width: box.crop_width, avatar_crop_height: box.crop_height }))
+                      setShowAvatarCropper(false)
+                    }}
+                    onCancel={() => setShowAvatarCropper(false)}
+                  />
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>{t('dashboard_display_name')}</label>
+                <input name="display_name" value={form.display_name} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>{t('dashboard_bio')}</label>
+                <textarea name="bio" value={form.bio} onChange={handleChange} rows={3} placeholder={t('dashboard_bio_placeholder')} className={`${inputClass} resize-none`} />
+              </div>
+              {SOCIAL_FIELDS.filter(f => ['instagram', 'tiktok', 'facebook'].includes(f.key)).map(field => (
+                <div key={field.key}>
+                  <label className={labelClass}>{field.label}</label>
+                  <input
+                    name={field.key}
+                    value={(form as any)[field.key]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    className={inputClass}
+                  />
+                </div>
+              ))}
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('settings_private_hint')}</p>
+              {saveButton(handleSave)}
+            </div>
+
+            {/* Account */}
+            <div className="p-6 rounded-lg space-y-4" style={cardStyle}>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('settings_account_title')}</h2>
+              <div>
+                <label className={labelClass}>{t('dashboard_username')}</label>
+                <p className="text-sm text-white">@{profile.username}</p>
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_username_immutable')}</p>
+              </div>
+              <div>
+                <label className={labelClass}>{t('settings_email')}</label>
+                <p className="text-sm text-white break-all">{userEmail}</p>
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="p-6 rounded-lg space-y-4" style={cardStyle}>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_change_password')}</h2>
+              <ChangePasswordForm />
+            </div>
+
+            <DeleteAccountSection profileType={profile.profile_type} />
+          </div>
+        )}
+
         {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
       </div>
     )

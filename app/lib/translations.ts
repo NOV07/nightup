@@ -988,7 +988,6 @@ const translations = {
   settings_photo:               { el: "Φωτογραφία", en: "Photo" },
   settings_photo_remove:        { el: "Αφαίρεση φωτογραφίας", en: "Remove photo" },
   settings_private_hint:        { el: "🔒 Το βιογραφικό και τα social τα βλέπεις μόνο εσύ", en: "🔒 Only you can see your bio and socials" },
-  settings_save:                { el: "Αποθήκευση", en: "Save" },
   settings_account_title:       { el: "Λογαριασμός", en: "Account" },
   settings_email:               { el: "Email", en: "Email" },
   settings_pw_current:          { el: "Τρέχων κωδικός", en: "Current password" },
