@@ -1825,6 +1825,8 @@ export default function DashboardClient({ profile, events, releases, savedEvents
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">{t('dashboard_change_password')}</h3>
               <ChangePasswordForm />
             </div>
+
+            <DeleteAccountSection profileType={profile.profile_type} />
           </div>
         )}
 
