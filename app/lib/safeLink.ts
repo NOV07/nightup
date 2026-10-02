@@ -8,6 +8,6 @@
 export function isSafeInternalPath(link: unknown): link is string {
   if (typeof link !== 'string' || link.length === 0 || link.length > 300) return false
   if (link[0] !== '/') return false
-  if (link[1] === '/' || link[1] === '\') return false
-  return !/[\u0000-\u001f\u007f\]/.test(link)
+  if (link[1] === '/' || link[1] === '\\') return false
+  return !/[\u0000-\u001f\u007f\\]/.test(link)
 }
