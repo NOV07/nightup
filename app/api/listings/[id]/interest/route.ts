@@ -18,6 +18,10 @@ export async function POST(
 
   if (!profile) return NextResponse.json({ error: 'No profile found' }, { status: 400 })
 
+  // Nobody expresses interest in their own listing.
+  const { data: own } = await supabase.from('listings').select('profile_id').eq('id', id).maybeSingle()
+  if (own?.profile_id === profile.id) return NextResponse.json({ error: 'Cannot express interest in your own listing' }, { status: 403 })
+
   const { error } = await supabase
     .from('listing_interests')
     .insert({ listing_id: id, profile_id: profile.id })
