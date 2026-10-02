@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/app/components/LanguageContext";
 import { useSaveEvent } from "@/app/lib/useSaveEvent";
 import type { TranslationKey } from "@/app/lib/translations";
+import { useOwned } from "@/app/lib/useOwned";
 
 type Reaction = "going" | "interested";
 
@@ -31,6 +32,8 @@ export default function EventActions({ eventId, goingCount, interestedCount }: P
   const pathname = usePathname();
   const router = useRouter();
   const { saved, pending: savePending, toggle: toggleSave } = useSaveEvent(eventId);
+  // On your own event the buttons are hidden (the API rejects them too); the counts stay.
+  const isOwn = useOwned()?.events.has(eventId) ?? false;
 
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const [counts, setCounts] = useState({ going: goingCount, interested: interestedCount });
@@ -131,45 +134,47 @@ export default function EventActions({ eventId, goingCount, interestedCount }: P
 
   return (
     <div style={{ marginBottom: 32 }}>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          type="button"
-          onClick={toggleSave}
-          disabled={savePending}
-          aria-label={t(saved ? "event_unsave_aria" : "event_save_aria")}
-          aria-pressed={saved}
-          style={{
-            width: 46, height: 46, flexShrink: 0, borderRadius: 12,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            backgroundColor: "rgba(255,255,255,0.06)",
-            border: `1px solid ${saved ? "rgba(232,160,32,0.5)" : "rgba(255,255,255,0.12)"}`,
-            cursor: savePending ? "default" : "pointer",
-            opacity: savePending ? 0.7 : 1,
-          }}
-        >
-          {saved
-            ? <FaHeart size={20} style={{ color: GOLD }} />
-            : <FiHeart size={20} style={{ color: "rgba(255,255,255,0.9)" }} />}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleReact("going")}
-          disabled={reactPending}
-          aria-pressed={reaction === "going"}
-          style={pillStyle(reaction === "going")}
-        >
-          {t("events_going")}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleReact("interested")}
-          disabled={reactPending}
-          aria-pressed={reaction === "interested"}
-          style={pillStyle(reaction === "interested")}
-        >
-          {t("events_interested")}
-        </button>
-      </div>
+      {!isOwn && (
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            onClick={toggleSave}
+            disabled={savePending}
+            aria-label={t(saved ? "event_unsave_aria" : "event_save_aria")}
+            aria-pressed={saved}
+            style={{
+              width: 46, height: 46, flexShrink: 0, borderRadius: 12,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              backgroundColor: "rgba(255,255,255,0.06)",
+              border: `1px solid ${saved ? "rgba(232,160,32,0.5)" : "rgba(255,255,255,0.12)"}`,
+              cursor: savePending ? "default" : "pointer",
+              opacity: savePending ? 0.7 : 1,
+            }}
+          >
+            {saved
+              ? <FaHeart size={20} style={{ color: GOLD }} />
+              : <FiHeart size={20} style={{ color: "rgba(255,255,255,0.9)" }} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleReact("going")}
+            disabled={reactPending}
+            aria-pressed={reaction === "going"}
+            style={pillStyle(reaction === "going")}
+          >
+            {t("events_going")}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleReact("interested")}
+            disabled={reactPending}
+            aria-pressed={reaction === "interested"}
+            style={pillStyle(reaction === "interested")}
+          >
+            {t("events_interested")}
+          </button>
+        </div>
+      )}
       {countParts.length > 0 && (
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 10 }}>
           {countParts.join(" · ")}
