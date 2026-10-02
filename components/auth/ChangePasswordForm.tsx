@@ -1,8 +1,10 @@
 "use client"
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { useLanguage } from '@/app/components/LanguageContext'
 
 export default function ChangePasswordForm() {
+  const { t } = useLanguage()
   const [current, setCurrent] = useState('')
   const [newPass, setNewPass] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -17,8 +19,8 @@ export default function ChangePasswordForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (newPass !== confirm) { setError('Passwords do not match'); return }
-    if (newPass.length < 8) { setError('Password must be at least 8 characters'); return }
+    if (newPass !== confirm) { setError(t('settings_pw_mismatch')); return }
+    if (newPass.length < 8) { setError(t('settings_pw_too_short')); return }
 
     // Re-authenticate with current password first
     const { data: { user } } = await supabase.auth.getUser()
@@ -26,10 +28,10 @@ export default function ChangePasswordForm() {
       email: user?.email!,
       password: current
     })
-    if (signInError) { setError('Current password is incorrect'); return }
+    if (signInError) { setError(t('settings_pw_current_wrong')); return }
 
     const { error: updateError } = await supabase.auth.updateUser({ password: newPass })
-    if (updateError) { setError(updateError.message); return }
+    if (updateError) { setError(`${t('settings_pw_update_failed')}: ${updateError.message}`); return }
     setSuccess(true)
     setCurrent(''); setNewPass(''); setConfirm('')
   }
@@ -38,7 +40,7 @@ export default function ChangePasswordForm() {
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <input
         type="password"
-        placeholder="Current password"
+        placeholder={t('settings_pw_current')}
         value={current}
         onChange={e => setCurrent(e.target.value)}
         required
@@ -55,7 +57,7 @@ export default function ChangePasswordForm() {
       />
       <input
         type="password"
-        placeholder="New password"
+        placeholder={t('settings_pw_new')}
         value={newPass}
         onChange={e => setNewPass(e.target.value)}
         required
@@ -72,7 +74,7 @@ export default function ChangePasswordForm() {
       />
       <input
         type="password"
-        placeholder="Confirm new password"
+        placeholder={t('settings_pw_confirm')}
         value={confirm}
         onChange={e => setConfirm(e.target.value)}
         required
@@ -88,7 +90,7 @@ export default function ChangePasswordForm() {
         }}
       />
       {error && <p style={{ color: '#ef4444', fontSize: '14px', margin: 0 }}>{error}</p>}
-      {success && <p style={{ color: '#22c55e', fontSize: '14px', margin: 0 }}>Password changed successfully!</p>}
+      {success && <p style={{ color: '#22c55e', fontSize: '14px', margin: 0 }}>{t('settings_pw_success')}</p>}
       <button
         type="submit"
         style={{
@@ -104,7 +106,7 @@ export default function ChangePasswordForm() {
           marginTop: '4px',
         }}
       >
-        Change password
+        {t('settings_pw_submit')}
       </button>
     </form>
   )
