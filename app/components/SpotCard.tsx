@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { spotPriceLabel, type Spot } from "../spots/types";
 import { useLanguage } from "../components/LanguageContext";
 import CroppedImage from "../../components/ui/CroppedImage";
+import { useOwned } from "../lib/useOwned";
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80";
 
@@ -27,6 +28,7 @@ export default function SpotCard({
   initialSaved?: boolean;
 }) {
   const [saved, setSaved] = useState(initialSaved ?? false);
+  const isOwn = useOwned()?.spots.has(String(spot.id)) ?? false;
   const pathname = usePathname();
   const router = useRouter();
   const { t: tToast } = useLanguage();
@@ -161,21 +163,23 @@ export default function SpotCard({
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           {spot.isSponsored && <SponsoredBadge />}
-          <button
-            onClick={handleSave}
-            aria-label="Save spot"
-            style={{
-              position: "absolute", top: 8, right: 8, zIndex: 3,
-              width: 40, height: 40, borderRadius: "50%",
-              backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
-              border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            {saved
-              ? <FaHeart size={14} style={{ color: "#E8A020" }} />
-              : <FiHeart size={14} style={{ color: "rgba(255,255,255,0.9)" }} />}
-          </button>
+          {!isOwn && (
+            <button
+              onClick={handleSave}
+              aria-label="Save spot"
+              style={{
+                position: "absolute", top: 8, right: 8, zIndex: 3,
+                width: 40, height: 40, borderRadius: "50%",
+                backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              {saved
+                ? <FaHeart size={14} style={{ color: "#E8A020" }} />
+                : <FiHeart size={14} style={{ color: "rgba(255,255,255,0.9)" }} />}
+            </button>
+          )}
         </div>
         <div style={{ padding: "15px 16px 16px" }}>
           <div style={{ fontFamily: "var(--font-spectral), Georgia, serif", fontWeight: 600, fontSize: 18, color: "#F4F4F5", letterSpacing: "-0.2px" }}>

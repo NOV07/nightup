@@ -6,6 +6,7 @@ import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { RadarBadge } from "./RadarBadge";
 import { useSaveEvent } from "../lib/useSaveEvent";
+import { useOwned } from "../lib/useOwned";
 import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
 import EventImageFallback from "./EventImageFallback";
@@ -53,6 +54,7 @@ export default function EventCard({
   initialSaved,
 }: EventCardProps) {
   const { saved, toggle } = useSaveEvent(id, initialSaved);
+  const isOwn = useOwned()?.events.has(id) ?? false;
   const { t, lang } = useLanguage();
 
   const CATEGORY_LABEL_KEYS: Record<string, string> = {
@@ -132,16 +134,18 @@ export default function EventCard({
             </span>
           </div>
         )}
-        <button
-          className="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
-          onClick={handleSave}
-          aria-label={t(saved ? "event_unsave_aria" : "event_save_aria")}
-          aria-pressed={saved}
-        >
-          {saved
-            ? <FaHeart size={14} style={{ color: "#E8A020" }} />
-            : <FiHeart size={14} style={{ color: "rgba(255,255,255,0.9)" }} />}
-        </button>
+        {!isOwn && (
+          <button
+            className="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
+            onClick={handleSave}
+            aria-label={t(saved ? "event_unsave_aria" : "event_save_aria")}
+            aria-pressed={saved}
+          >
+            {saved
+              ? <FaHeart size={14} style={{ color: "#E8A020" }} />
+              : <FiHeart size={14} style={{ color: "rgba(255,255,255,0.9)" }} />}
+          </button>
+        )}
 
         {/* Bottom row — genre pill + price */}
         <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
