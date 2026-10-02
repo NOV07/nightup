@@ -7,6 +7,7 @@ import { useLanguage } from '@/app/components/LanguageContext'
 export default function FollowButton({ profileId }: { profileId: string }) {
   const [following, setFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [self, setSelf] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const { t } = useLanguage()
@@ -14,7 +15,7 @@ export default function FollowButton({ profileId }: { profileId: string }) {
   useEffect(() => {
     fetch(`/api/follows?profile_id=${profileId}`)
       .then(r => r.json())
-      .then(data => { setFollowing(!!data.following); setLoading(false) })
+      .then(data => { setFollowing(!!data.following); setSelf(!!data.self); setLoading(false) })
       .catch(() => setLoading(false))
   }, [profileId])
 
@@ -60,7 +61,8 @@ export default function FollowButton({ profileId }: { profileId: string }) {
     }
   }
 
-  if (loading) return null
+  // Your own profile: nothing to follow.
+  if (loading || self) return null
 
   return (
     <button
