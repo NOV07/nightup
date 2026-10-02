@@ -6,6 +6,7 @@ import EventTabs from "./components/EventsTabs";
 import { getSupabase } from "./lib/supabase";
 import { getEventCoverImage, getEventCrop } from "./lib/getEventCoverImage";
 import FadeInObserver from "./components/FadeInObserver";
+import AccountDeletedToast from "./components/AccountDeletedToast";
 import HeroSlider from "./components/HeroSlider";
 import NightwavesHomeCard from "./components/NightwavesHomeCard";
 import { formatPrice } from "./lib/formatPrice";
@@ -245,6 +246,7 @@ export default async function HomePage() {
     <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(websiteJsonLd) }} />
       <FadeInObserver />
+      <AccountDeletedToast />
 
       {/* ── HERO SLIDER ── */}
       <HeroSlider slides={heroSlides.filter((s, i, a) => a.findIndex(x => x.id === s.id) === i)} />
