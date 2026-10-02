@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
+import { sendNotification } from '@/app/lib/notify'
 
 export async function POST(
   _req: NextRequest,
@@ -18,9 +19,16 @@ export async function POST(
 
   if (!profile) return NextResponse.json({ error: 'No profile found' }, { status: 400 })
 
+  // The listing, and with it the recipient, is read from the database.
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('title, profile_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+
   // Nobody expresses interest in their own listing.
-  const { data: own } = await supabase.from('listings').select('profile_id').eq('id', id).maybeSingle()
-  if (own?.profile_id === profile.id) return NextResponse.json({ error: 'Cannot express interest in your own listing' }, { status: 403 })
+  if (listing.profile_id === profile.id) return NextResponse.json({ error: 'Cannot express interest in your own listing' }, { status: 403 })
 
   const { error } = await supabase
     .from('listing_interests')
@@ -31,23 +39,16 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Notify listing owner — best effort, don't fail the request
-  const { data: listing } = await supabase
-    .from('listings')
-    .select('title, profile_id')
-    .eq('id', id)
-    .single()
-
-  if (listing) {
-    await supabase.from('notifications').insert({
-      user_id:  listing.profile_id,
-      type:     'listing_interest',
-      title:    `${profile.display_name} ενδιαφέρθηκε για «${listing.title}»`,
-      body:     'Δες το προφίλ τους για να αποφασίσεις αν ταιριάζουν.',
-      link:     `/profile/${profile.username}`,
-      actor_id: profile.id,
-    })
-  }
+  // Notify the listing owner — best effort, don't fail the request. Written
+  // server-side with the verified session user as actor.
+  await sendNotification({
+    type:        'listing_interest',
+    recipientId: listing.profile_id,
+    actorId:     user.id,
+    title:       `${profile.display_name} ενδιαφέρθηκε για «${listing.title}»`,
+    body:        'Δες το προφίλ τους για να αποφασίσεις αν ταιριάζουν.',
+    link:        `/profile/${encodeURIComponent(profile.username)}`,
+  })
 
   return NextResponse.json({ ok: true })
 }
