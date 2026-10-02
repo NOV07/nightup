@@ -30,6 +30,10 @@ export async function POST(req: NextRequest) {
   const { event_id } = body
   if (!event_id) return NextResponse.json({ error: 'event_id required' }, { status: 400 })
 
+  // A host cannot save their own event.
+  const { data: ev } = await supabase.from('events').select('profile_id').eq('id', event_id).maybeSingle()
+  if (ev?.profile_id === user.id) return NextResponse.json({ error: 'Cannot save your own event' }, { status: 403 })
+
   const { error } = await supabase
     .from('saved_events')
     .insert({ user_id: user.id, event_id })

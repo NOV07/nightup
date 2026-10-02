@@ -30,6 +30,12 @@ export async function POST(req: NextRequest) {
   const { spot_id } = body
   if (!spot_id) return NextResponse.json({ error: 'spot_id required' }, { status: 400 })
 
+  // An owner cannot save their own spot (an unparseable id just finds nothing).
+  const { data: spot } = await supabase.from('spots').select('owner_id, claimed_by_profile_id').eq('id', spot_id).maybeSingle()
+  if (spot && (spot.owner_id === user.id || spot.claimed_by_profile_id === user.id)) {
+    return NextResponse.json({ error: 'Cannot save your own spot' }, { status: 403 })
+  }
+
   const { error } = await supabase
     .from('saved_spots')
     .insert({ user_id: user.id, spot_id })
