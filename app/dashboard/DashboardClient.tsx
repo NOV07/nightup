@@ -69,7 +69,7 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings' | 'library'
 
-export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, featuredRequests, artistBookings, professionalContributions, ownedSpot }: {
+export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, spotSavedCount, followerCount, featuredRequests, artistBookings, professionalContributions, ownedSpot }: {
   profile: any
   events: any[]
   releases: any[]
@@ -80,7 +80,9 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   listings?: any[]
   receivedInterests?: any[]
   sentInterests?: any[]
-  savedEventsCount?: number
+  savedEventsCount?: number | null
+  spotSavedCount?: number | null
+  followerCount?: number | null
   featuredRequests?: any[]
   artistBookings?: any[]
   professionalContributions?: any[]
@@ -90,6 +92,8 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   const { t, lang } = useLanguage()
   // Stat counters: 1.284 in Greek, 1,284 in English.
   const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString(lang === 'el' ? 'el-GR' : 'en-GB')
+  // null = the count could not be loaded: show a dash, not a false 0.
+  const fmtCount = (n: number | null | undefined) => (n == null ? '–' : fmt(n))
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -349,6 +353,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     artist: t('dashboard_type_artist'),
     venue: t('dashboard_type_venue'),
     professional: t('dashboard_type_professional'),
+    spot: t('dashboard_type_spot'),
   }
 
   const tabs: { key: Tab; label: string }[] = [
@@ -1105,9 +1110,21 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_interested')}</p>
                         </div>
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                          <p className="text-xl font-bold text-white">{fmt(savedEventsCount)}</p>
+                          <p className="text-xl font-bold text-white">{fmtCount(savedEventsCount)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_saved')}</p>
                         </div>
+                        {profile.profile_type === 'venue' && (
+                          <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                            <p className="text-xl font-bold text-white">{fmtCount(followerCount)}</p>
+                            <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_followers')}</p>
+                          </div>
+                        )}
+                        {profile.profile_type === 'spot' && (
+                          <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                            <p className="text-xl font-bold text-white">{fmtCount(spotSavedCount)}</p>
+                            <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_spot_saved')}</p>
+                          </div>
+                        )}
                       </div>
                       {topEvent && (
                         <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -1201,6 +1218,10 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt((receivedInterests ?? []).length)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_interests')}</p>
+                    </div>
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-xl font-bold text-white">{fmtCount(followerCount)}</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_followers')}</p>
                     </div>
                   </div>
                 </div>
@@ -1298,6 +1319,10 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                       <p className="text-xl font-bold text-white">{fmt(totalListingInterests)}</p>
                       <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_interests')}</p>
+                    </div>
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-xl font-bold text-white">{fmtCount(followerCount)}</p>
+                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_followers')}</p>
                     </div>
                   </div>
 

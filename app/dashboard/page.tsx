@@ -29,14 +29,29 @@ export default async function DashboardPage() {
     ? await supabase.from('events').select('*').eq('profile_id', profile.id).order('date', { ascending: false })
     : { data: [] }
 
-  const { data: savedCountRows } = hostsEvents && events && events.length > 0
-    ? await supabase
-        .from('saved_events')
-        .select('event_id')
-        .in('event_id', events.map((e: any) => e.id))
-    : { data: [] }
+  // Aggregate-only counts through security-definer functions (see
+  // 20261002000000_private_follows_and_owner_counts.sql): RLS hides other
+  // people's saves and follows, so reading the tables would return only the
+  // caller's own rows. null = the call failed; the tile then shows a dash
+  // rather than a misleading 0.
+  const { data: eventSaveRows, error: eventSaveErr } = hostsEvents
+    ? await supabase.rpc('my_event_saved_counts')
+    : { data: null, error: null }
+  const savedEventsCount: number | null = hostsEvents
+    ? (eventSaveErr ? null : (eventSaveRows ?? []).reduce((n: number, r: any) => n + Number(r.saved_count ?? 0), 0))
+    : null
 
-  const savedEventsCount = (savedCountRows ?? []).length
+  const { data: spotSaveRows, error: spotSaveErr } = ownedSpot
+    ? await supabase.rpc('my_spot_saved_counts')
+    : { data: null, error: null }
+  const spotSavedCount: number | null = ownedSpot && !spotSaveErr
+    ? Number((spotSaveRows ?? []).find((r: any) => r.spot_id === String(ownedSpot.id))?.saved_count ?? 0)
+    : null
+
+  const { data: followerRows, error: followerErr } = profile.profile_type !== 'user'
+    ? await supabase.rpc('my_follower_count')
+    : { data: null, error: null }
+  const followerCount: number | null = profile.profile_type !== 'user' && !followerErr ? Number(followerRows ?? 0) : null
 
   const { data: featuredRequests } = hostsEvents
     ? await supabase.from('featured_event_requests').select('event_id, status').eq('profile_id', profile.id)
@@ -196,6 +211,8 @@ export default async function DashboardPage() {
       receivedInterests={receivedInterests ?? []}
       sentInterests={sentInterests ?? []}
       savedEventsCount={savedEventsCount}
+      spotSavedCount={spotSavedCount}
+      followerCount={followerCount}
       featuredRequests={featuredRequests ?? []}
       artistBookings={artistBookings}
       professionalContributions={professionalContributions}
