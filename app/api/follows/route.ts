@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
+import { sendNotification } from '@/app/lib/notify'
 
 // GET ?profile_id=xxx — check if current user follows this profile
 export async function GET(req: NextRequest) {
@@ -38,16 +39,26 @@ export async function POST(req: NextRequest) {
   if (!profile_id) return NextResponse.json({ error: 'profile_id required' }, { status: 400 })
   if (profile_id === user.id) return NextResponse.json({ error: 'Cannot follow yourself' }, { status: 400 })
 
+  // The recipient is taken from the database, not trusted from the body.
+  const { data: target } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', profile_id)
+    .maybeSingle()
+  if (!target) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+
   const { error } = await supabase
     .from('follows')
-    .insert({ user_id: user.id, profile_id })
+    .insert({ user_id: user.id, profile_id: target.id })
 
   if (error) {
     if (error.code === '23505') return NextResponse.json({ ok: true })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Notify the followed user — best effort, don't fail the request
+  // Notify the followed profile — best effort, don't fail the request. Written
+  // server-side with the verified session user as actor (notifications has no
+  // client INSERT policy).
   const { data: actor } = await supabase
     .from('profiles')
     .select('id, display_name, username')
@@ -55,12 +66,12 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (actor) {
-    await supabase.from('notifications').insert({
-      user_id:  profile_id,
-      type:     'new_follow',
-      title:    `${actor.display_name} σε ακολούθησε`,
-      link:     `/profile/${actor.username}`,
-      actor_id: actor.id,
+    await sendNotification({
+      type:        'new_follow',
+      recipientId: target.id,
+      actorId:     user.id,
+      title:       `${actor.display_name} σε ακολούθησε`,
+      link:        `/profile/${encodeURIComponent(actor.username)}`,
     })
   }
 
