@@ -83,13 +83,13 @@ export default async function DashboardPage() {
   }
 
   // Two-step fetch (mirrors saved_spots pattern — avoids silent PostgREST join failure)
-  const { data: savedEventRows } = profile.profile_type === 'user'
-    ? await supabase
-        .from('saved_events')
-        .select('event_id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-    : { data: [] }
+  // The library queries below run for every account type: a creator keeps the
+  // plain user's rights (same auth user id), and sees them in the "library" tab.
+  const { data: savedEventRows } = await supabase
+    .from('saved_events')
+    .select('event_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
 
   const eventIds = (savedEventRows ?? []).map((r: any) => r.event_id)
 
@@ -103,13 +103,11 @@ export default async function DashboardPage() {
   // "Θα πάω" reactions — unioned with saved_events below so a user sees both
   // in "Έρχονται σύντομα" without duplicates. RLS on event_reactions only
   // lets a user see their own rows, same as saved_events.
-  const { data: goingReactionRows } = profile.profile_type === 'user'
-    ? await supabase
-        .from('event_reactions')
-        .select('event_id')
-        .eq('user_id', user.id)
-        .eq('reaction_type', 'going')
-    : { data: [] }
+  const { data: goingReactionRows } = await supabase
+    .from('event_reactions')
+    .select('event_id')
+    .eq('user_id', user.id)
+    .eq('reaction_type', 'going')
 
   const goingEventIds: string[] = (goingReactionRows ?? []).map((r: any) => r.event_id)
   // Events going-only (not already in savedEvents) still need fetching —
@@ -123,9 +121,7 @@ export default async function DashboardPage() {
         .in('id', goingOnlyIds)
     : { data: [] }
 
-  const { data: savedSpotRows } = profile.profile_type === 'user'
-    ? await supabase.from('saved_spots').select('spot_id').eq('user_id', user.id)
-    : { data: [] }
+  const { data: savedSpotRows } = await supabase.from('saved_spots').select('spot_id').eq('user_id', user.id)
 
   const spotIds = (savedSpotRows ?? []).map((r: any) => r.spot_id)
 
@@ -136,13 +132,11 @@ export default async function DashboardPage() {
         .in('id', spotIds)
     : { data: [] }
 
-  const { data: followsRaw } = profile.profile_type === 'user'
-    ? await supabase
-        .from('follows')
-        .select('profile_id, profiles(id, username, display_name, avatar_url, location, network_tab, network_category)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-    : { data: [] }
+  const { data: followsRaw } = await supabase
+    .from('follows')
+    .select('profile_id, profiles(id, username, display_name, avatar_url, location, network_tab, network_category)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
 
   const followedProfiles = (followsRaw ?? [])
     .map((r: any) => r.profiles)
