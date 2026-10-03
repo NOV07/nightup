@@ -5,6 +5,7 @@ import { useLanguage } from '@/app/components/LanguageContext'
 import TranslatedText from '@/app/components/TranslatedText'
 import { isSafeInternalPath } from '@/app/lib/safeLink'
 import { timeAgo } from '@/app/lib/timeAgo'
+import type { TranslationKey } from '@/app/lib/translations'
 
 interface Actor {
   display_name: string
@@ -25,6 +26,38 @@ interface Notification {
 interface ApiResponse {
   notifications: Notification[]
   unread_count: number
+}
+
+// The listing title is only kept inside the stored (Greek) title written by
+// /api/listings/[id]/interest, so it is read back from there. A title cut off by
+// notify.ts's length cap has no closing » and falls back to the generic wording.
+const LISTING_TITLE_RE = /ενδιαφέρθηκε για «([\s\S]+)»$/
+
+type Copy = { title: string; body: string | null }
+
+/**
+ * Notifications are stored with Greek title/body. For the types the server
+ * writes, the text is rebuilt in the viewer's language from type + actor;
+ * anything else keeps the stored text (machine-translated in EN).
+ */
+function notificationCopy(n: Notification, t: (key: TranslationKey) => string): Copy | null {
+  const name = n.actor?.display_name || t('notif_someone')
+  const fill = (key: TranslationKey, title = '') =>
+    t(key).replace('{name}', name).replace('{title}', title)
+
+  switch (n.type) {
+    case 'new_follow':
+      return { title: fill('notif_new_follow'), body: null }
+    case 'listing_interest': {
+      const listingTitle = n.title.match(LISTING_TITLE_RE)?.[1]
+      return {
+        title: listingTitle ? fill('notif_listing_interest', listingTitle) : fill('notif_listing_interest_any'),
+        body: t('notif_listing_interest_body'),
+      }
+    }
+    default:
+      return null
+  }
 }
 
 function initials(displayName: string | undefined): string {
@@ -165,7 +198,10 @@ export default function NotificationBell() {
               {t('notif_empty')}
             </div>
           ) : (
-            data.notifications.map((n, i) => (
+            data.notifications.map((n, i) => {
+              const copy = notificationCopy(n, t)
+              const hasBody = copy ? !!copy.body : !!n.body
+              return (
               <div
                 key={n.id}
                 onClick={() => handleClick(n)}
@@ -202,13 +238,13 @@ export default function NotificationBell() {
                     fontSize: 13,
                     color: n.read ? 'rgba(255,255,255,0.4)' : '#F4F4F5',
                     lineHeight: 1.4,
-                    marginBottom: n.body ? 4 : 2,
+                    marginBottom: hasBody ? 4 : 2,
                   }}>
-                    <TranslatedText text={n.title} />
+                    {copy ? copy.title : <TranslatedText text={n.title} />}
                   </p>
-                  {n.body && (
+                  {hasBody && (
                     <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', lineHeight: 1.4, marginBottom: 4 }}>
-                      <TranslatedText text={n.body} />
+                      {copy ? copy.body : <TranslatedText text={n.body!} />}
                     </p>
                   )}
                   <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
@@ -216,7 +252,8 @@ export default function NotificationBell() {
                   </p>
                 </div>
               </div>
-            ))
+              )
+            })
           )}
         </div>
       )}

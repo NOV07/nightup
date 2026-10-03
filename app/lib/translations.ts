@@ -485,6 +485,12 @@ const translations = {
   notif_title:        { el: "Ειδοποιήσεις", en: "Notifications" },
   notif_mark_all:     { el: "Σήμαν όλες ως διαβασμένες", en: "Mark all as read" },
   notif_empty:        { el: "Δεν έχεις ειδοποιήσεις ακόμα", en: "No notifications yet" },
+  // {name} / {title} are filled in by NotificationBell from the actor profile and the stored title.
+  notif_someone:               { el: "Κάποιος", en: "Someone" },
+  notif_new_follow:            { el: "{name} σε ακολούθησε", en: "{name} followed you" },
+  notif_listing_interest:      { el: "{name} ενδιαφέρθηκε για «{title}»", en: "{name} is interested in \"{title}\"" },
+  notif_listing_interest_any:  { el: "{name} ενδιαφέρθηκε για την αγγελία σου", en: "{name} is interested in your listing" },
+  notif_listing_interest_body: { el: "Δες το προφίλ τους για να αποφασίσεις αν ταιριάζουν.", en: "Check their profile to decide if they're a fit." },
   time_just_now:      { el: "μόλις τώρα", en: "just now" },
   time_yesterday:     { el: "χθες", en: "yesterday" },
 

@@ -41,6 +41,8 @@ export async function POST(
 
   // Notify the listing owner — best effort, don't fail the request. Written
   // server-side with the verified session user as actor.
+  // NotificationBell shows its own el/en wording for this type and reads the
+  // listing title back from «…» at the end of `title`: keep that format.
   await sendNotification({
     type:        'listing_interest',
     recipientId: listing.profile_id,
