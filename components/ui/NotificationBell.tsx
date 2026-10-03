@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/app/components/LanguageContext'
 import TranslatedText from '@/app/components/TranslatedText'
 import { isSafeInternalPath } from '@/app/lib/safeLink'
+import { timeAgo } from '@/app/lib/timeAgo'
 
 interface Actor {
   display_name: string
@@ -24,30 +25,6 @@ interface Notification {
 interface ApiResponse {
   notifications: Notification[]
   unread_count: number
-}
-
-function timeAgo(dateStr: string, lang: 'el' | 'en'): string {
-  const now = new Date()
-  const d = new Date(dateStr)
-  const diffMins  = Math.floor((now.getTime() - d.getTime()) / 60000)
-  const diffHours = Math.floor(diffMins / 60)
-  const diffDays  = Math.floor(diffHours / 24)
-
-  if (lang === 'en') {
-    if (diffMins < 1)   return 'just now'
-    if (diffMins < 60)  return `${diffMins} min ago`
-    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
-    if (diffDays === 1) return 'yesterday'
-    if (diffDays < 7)   return `${diffDays} days ago`
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-  }
-
-  if (diffMins < 1)   return 'μόλις τώρα'
-  if (diffMins < 60)  return `πριν ${diffMins} ${diffMins === 1 ? 'λεπτό' : 'λεπτά'}`
-  if (diffHours < 24) return `πριν ${diffHours} ${diffHours === 1 ? 'ώρα' : 'ώρες'}`
-  if (diffDays === 1) return 'χθες'
-  if (diffDays < 7)   return `πριν ${diffDays} μέρες`
-  return d.toLocaleDateString('el-GR', { day: 'numeric', month: 'short' })
 }
 
 function initials(displayName: string | undefined): string {

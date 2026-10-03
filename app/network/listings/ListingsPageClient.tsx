@@ -5,6 +5,7 @@ import InterestButton from '@/components/ui/InterestButton'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { getListingCategory } from '@/app/lib/searchData'
 import { getAvatarCrop } from '@/app/lib/profileCrop'
+import { timeAgo } from '@/app/lib/timeAgo'
 import CroppedImage from '@/components/ui/CroppedImage'
 
 interface Profile {
@@ -37,18 +38,6 @@ interface Listing {
 const GOLD = '#E8A020'
 const NAVY = '#0F0F1A'
 const CARD_BG = '#1A1A28'
-
-function timeAgo(dateStr: string, lang: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return lang === 'el' ? 'μόλις τώρα' : 'just now'
-  if (mins < 60) return lang === 'el' ? `${mins}λ πριν` : `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return lang === 'el' ? `${hours}ω πριν` : `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return lang === 'el' ? `${days}μ πριν` : `${days}d ago`
-  return new Date(dateStr).toLocaleDateString(lang === 'el' ? 'el-GR' : 'en-GB', { day: 'numeric', month: 'short' })
-}
 
 function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -427,7 +416,7 @@ function ListingCard({ listing, lang }: { listing: Listing; lang: string }) {
           </span>
         )}
         <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', marginLeft: 'auto' }}>
-          {timeAgo(listing.created_at, lang)}
+          {timeAgo(listing.created_at, lang === 'en' ? 'en' : 'el', 'short')}
         </span>
       </div>
 
