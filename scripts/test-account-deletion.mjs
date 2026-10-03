@@ -263,12 +263,13 @@ async function main() {
   ]), 'A reactions')
   await must(admin.from('saved_events').insert({ user_id: A.id, event_id: e1.id }), 'A save event')
   await must(admin.from('saved_spots').insert({ user_id: A.id, spot_id: String(spot1.id) }), 'A save spot')
-  await must(admin.from('listing_interests').insert({ listing_id: listing.id, profile_id: A.id }), 'A interest')
-  // Follow through the real route so the new_follow notification is written by
-  // the server helper with actor = A.
+  // Follow and listing interest through the real routes, so both notifications
+  // (new_follow, listing_interest) are written by the server helper with actor = A.
   const aSession = await cookieSession(A)
   const follow = await aSession.call('POST', '/api/follows', { profile_id: B.id })
   check('A follows B through /api/follows', follow.status < 300, `status ${follow.status}`)
+  const interest = await aSession.call('POST', `/api/listings/${listing.id}/interest`)
+  check('A interest through /api/listings/[id]/interest', interest.status < 300, `status ${interest.status}`)
 
   await must(admin.from('saved_events').insert({ user_id: C.id, event_id: e1.id }), 'C save event')
   await must(admin.from('saved_spots').insert({ user_id: C.id, spot_id: String(spot1.id) }), 'C save spot')
@@ -283,7 +284,7 @@ async function main() {
     notifActor: await count('notifications', q => q.eq('actor_id', A.id)),
   }
   console.log('baseline', JSON.stringify(baseline))
-  check('new_follow notification exists with actor = A', baseline.notifActor >= 1, `${baseline.notifActor}`)
+  check('exactly 2 notifications with actor = A (follow + interest, via routes)', baseline.notifActor === 2, `${baseline.notifActor}`)
 
   const aSnapshot = async () => ({
     profile: await count('profiles', q => q.eq('id', A.id)),
@@ -318,6 +319,8 @@ async function main() {
     const toast = await page.getByText('Ο λογαριασμός σου διαγράφηκε').waitFor({ timeout: 15000 }).then(() => true, () => false)
     check('redirected to / with the goodbye toast', toast)
     await page.screenshot({ path: resolve(SHOTS, '4-after-delete-toast.png') })
+    // router.replace('/') runs right after the toast fires; give it time to land.
+    await page.waitForURL(u => !String(u).includes('account_deleted'), { timeout: 10000 }).catch(() => {})
     check('query string cleared after toast', !page.url().includes('account_deleted'), page.url())
     await ctx.close()
   } else {
