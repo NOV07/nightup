@@ -149,12 +149,18 @@ export default function NotificationBell() {
         )}
       </button>
 
+      {/* Below 640px the 340px panel would overflow the left edge, so it spans the
+          screen with 16px gutters under the 56px mobile navbar. The header's
+          backdrop-filter makes it the containing block for `fixed`; it is sticky
+          at top 0 and full width, so the offsets still match the viewport. */}
+      <style>{`
+        .notif-panel { position: absolute; top: 100%; right: 0; width: 340px; }
+        @media (max-width: 639px) {
+          .notif-panel { position: fixed; top: 56px; left: 16px; right: 16px; width: auto; }
+        }
+      `}</style>
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          right: 0,
-          width: 340,
+        <div className="notif-panel" style={{
           backgroundColor: '#0F0F1A',
           border: '1px solid rgba(232,160,32,0.15)',
           borderRadius: 6,
