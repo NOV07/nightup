@@ -11,11 +11,11 @@ const GENRES = ['Techno', 'House', 'Deep House', 'Hip-Hop', 'R&B', 'Laika', 'Ent
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
 // events.type doubles as the category the public /events tabs filter on, so the
 // admin picks from those values instead of the wording shown to organizers.
-const ADMIN_EVENT_TYPES: { value: string; label: string }[] = [
-  { value: 'music', label: 'Μουσική' },
-  { value: 'culture', label: 'Κουλτούρα' },
-  { value: 'sports', label: 'Αθλητισμός' },
-  { value: 'other', label: 'Άλλα' },
+const ADMIN_EVENT_TYPES: { value: string; labelKey: TranslationKey }[] = [
+  { value: 'music', labelKey: 'event_cat_music' },
+  { value: 'culture', labelKey: 'event_cat_culture' },
+  { value: 'sports', labelKey: 'event_cat_sports' },
+  { value: 'other', labelKey: 'event_cat_other' },
 ]
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
 // Sentinel for the "other city" option — never stored; picking it reveals a free
@@ -171,7 +171,7 @@ function Step1({ form, set, toggleGenre, stepErrors, isAdmin }: {
             value={form.type} onChange={e => set('type', e.target.value)}>
             <option value="">{t('event_form_select_type')}</option>
             {isAdmin
-              ? ADMIN_EVENT_TYPES.map(et => <option key={et.value} value={et.value}>{et.label}</option>)
+              ? ADMIN_EVENT_TYPES.map(et => <option key={et.value} value={et.value}>{t(et.labelKey)}</option>)
               : EVENT_TYPES.map(et => <option key={et} value={et}>{et}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#E8A020', pointerEvents: 'none' }}>▾</span>
