@@ -18,7 +18,7 @@ interface Event {
 }
 
 export default function EventsAllClient({ initialEvents }: { initialEvents: Event[] }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -155,7 +155,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
                 border: `1px solid ${genre === g ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
               }}
             >
-              {g === "All" ? t("events_filter_all") : GENRE_LABELS[g] ?? g}
+              {g === "All" ? t("events_filter_all") : lang === "el" ? GENRE_LABELS[g] ?? g : g}
             </button>
           ))}
         </div>

@@ -43,12 +43,16 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
     const cursor = document.getElementById('hero-cursor')
     const eyebrow = document.getElementById('hero-eyebrow')
     if (!typed || !cursor || !eyebrow) return
+    // Re-runs when the language is restored from localStorage after mount,
+    // so the hero is retyped in the viewer's language.
+    cursor.style.display = ''
+    const timeouts: ReturnType<typeof setTimeout>[] = []
     let i = 0
     const interval = setInterval(() => {
       if (i >= fullText.length) {
         clearInterval(interval)
-        setTimeout(() => { eyebrow.style.animation = 'cn-eyebrow 0.8s ease-out forwards' }, 200)
-        setTimeout(() => { if (cursor) cursor.style.display = 'none' }, 1700)
+        timeouts.push(setTimeout(() => { eyebrow.style.animation = 'cn-eyebrow 0.8s ease-out forwards' }, 200))
+        timeouts.push(setTimeout(() => { if (cursor) cursor.style.display = 'none' }, 1700))
         return
       }
       typed.innerHTML = ''
@@ -66,8 +70,8 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
       }
       i++
     }, 38)
-    return () => clearInterval(interval)
-  }, [])
+    return () => { clearInterval(interval); timeouts.forEach(clearTimeout) }
+  }, [t])
 
   return (
     <div style={{ background: "#0F0F1A", minHeight: "100vh" }}>

@@ -413,7 +413,7 @@ export default function EventsClient({
             className="outline-none cursor-pointer focus-gold"
             style={{ borderRadius: 6, padding: "0.4rem 0.75rem", fontSize: "0.8rem", backgroundColor: "#1A1A28", color: city !== "All Cities" ? "white" : "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}
           >
-            {CITIES.map((c) => <option key={c} value={c}>{CITY_LABELS[c] ?? c}</option>)}
+            {CITIES.map((c) => <option key={c} value={c}>{lang === "el" ? CITY_LABELS[c] ?? c : c}</option>)}
           </select>
           <input
             type="date"
@@ -441,7 +441,7 @@ export default function EventsClient({
                 border: `1px solid ${genre === g ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.06)"}`,
               }}
             >
-              {g === "All" ? t("events_filter_all") : GENRE_LABELS[g] ?? g}
+              {g === "All" ? t("events_filter_all") : lang === "el" ? GENRE_LABELS[g] ?? g : g}
             </button>
           ))}
         </div>
@@ -627,7 +627,7 @@ export default function EventsClient({
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white" style={{ fontFamily: "var(--font-sans)" }}>
-                    {labels.near} · {CITY_LABELS[nearbyCity] ?? nearbyCity}
+                    {labels.near} · {lang === "el" ? CITY_LABELS[nearbyCity] ?? nearbyCity : nearbyCity}
                   </p>
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-sans)" }}>
                     {nearYouCount > 0

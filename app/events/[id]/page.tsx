@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSupabase } from '../../lib/supabase'
 import { logQueryError } from '../../lib/logQueryError'
-import { formatPrice, normalizeCurrency, parsePriceInput } from '../../lib/formatPrice'
+import { normalizeCurrency, parsePriceInput } from '../../lib/formatPrice'
 import { getEventCoverImage, getEventCrop } from '../../lib/getEventCoverImage'
 import { getAvatarCrop } from '../../lib/profileCrop'
 import { jsonLdScript } from '../../lib/jsonLd'
 import EventHeroImage from '../../components/EventHeroImage'
+import PriceLabel from '../../components/PriceLabel'
 import CroppedImage from '../../../components/ui/CroppedImage'
 import EventGallery from './EventGallery'
 import EventActions from '../../../components/events/EventActions'
@@ -81,8 +82,6 @@ export default async function EventPage({ params }: Props) {
   if (event.dress_code) {
     infoCards.push({ key: 'event_form_dress_code_label', value: event.dress_code })
   }
-
-  const priceLabel = formatPrice(event.price, 'el', event.currency)
 
   const formattedDate = event.date
     ? new Date(event.date).toLocaleDateString('en-GB', {
@@ -267,7 +266,7 @@ export default async function EventPage({ params }: Props) {
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
             <span style={{ color: '#E8A020' }}>🎟</span>
-            <span>{priceLabel || <T k="events_free_entry_fallback" />}</span>
+            <span><PriceLabel price={event.price} currency={event.currency} /></span>
           </div>
         </div>
 
