@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (existing) {
-    return NextResponse.json({ error: 'Αίτηση ήδη σε εκκρεμότητα' }, { status: 400 })
+    return NextResponse.json({ error: 'Αίτηση ήδη σε εκκρεμότητα', code: 'already_pending' }, { status: 400 })
   }
 
   // Insert request

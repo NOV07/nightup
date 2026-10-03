@@ -341,6 +341,7 @@ const translations = {
   upgrade_submitted:  { el: "Η αίτησή σου στάλθηκε!", en: "Your request was sent!" },
   upgrade_reply:      { el: "Θα σου απαντήσουμε σύντομα στο email σου.", en: "We'll reply to your email soon." },
   upgrade_close:      { el: "Κλείσιμο", en: "Close" },
+  upgrade_err_pending: { el: "Έχεις ήδη μια αίτηση σε εκκρεμότητα.", en: "You already have a pending request." },
   upgrade_back:       { el: "← Πίσω", en: "← Back" },
   upgrade_prof_cat:   { el: "Φωτογράφος / Videographer,Sound & Lighting,Catering,Decoration", en: "Photographer / Videographer,Sound & Lighting,Catering,Decoration" },
   // Kept out of upgrade_prof_cat's comma list (parsed with .split(',')) since
@@ -443,6 +444,7 @@ const translations = {
   spot_edit_pending:         { el: "Σε αναμονή έγκρισης — δεν εμφανίζεται ακόμα δημόσια.", en: "Pending approval — not publicly visible yet." },
   venue_client_title:        { el: "Ο χώρος σου", en: "Your venue" },
   venue_client_sub:          { el: "Συμπλήρωσέ τον για να εμφανίζεσαι στο Network και να σε βρίσκουν για events.", en: "Complete it to appear on the Network and get found for events." },
+  venue_err_missing_columns: { el: "Λείπουν στήλες από τη βάση. Τρέξε το migration 20260808040000_venue_address_fields.sql και δοκίμασε ξανά.", en: "The database is missing columns. Run the migration 20260808040000_venue_address_fields.sql and try again." },
   pro_client_title:          { el: "Το επαγγελματικό σου προφίλ", en: "Your professional profile" },
   pro_client_sub:            { el: "Συμπλήρωσέ το για να εμφανίζεσαι στο Network και να σε βρίσκουν για συνεργασίες.", en: "Complete it to appear on the Network and get found for collaborations." },
 
@@ -483,7 +485,7 @@ const translations = {
 
   // ── Notifications ───────────────────────────────────────
   notif_title:        { el: "Ειδοποιήσεις", en: "Notifications" },
-  notif_mark_all:     { el: "Σήμαν όλες ως διαβασμένες", en: "Mark all as read" },
+  notif_mark_all:     { el: "Σήμανε όλες ως διαβασμένες", en: "Mark all as read" },
   notif_empty:        { el: "Δεν έχεις ειδοποιήσεις ακόμα", en: "No notifications yet" },
   // {name} / {title} are filled in by NotificationBell from the actor profile and the stored title.
   notif_someone:               { el: "Κάποιος", en: "Someone" },

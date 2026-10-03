@@ -73,7 +73,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
     })
     const data = await res.json()
     setLoading(false)
-    if (!res.ok) { setError(data.error); return }
+    if (!res.ok) { setError(data.code === 'already_pending' ? t('upgrade_err_pending') : data.error); return }
     setDone(true)
   }
 

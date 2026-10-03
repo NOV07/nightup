@@ -35,7 +35,7 @@ export default function VenueProfileClient({ profile }: { profile: any }) {
       // name it rather than surfacing a bare PostgREST "column does not exist".
       setError(
         /venue_address|venue_neighborhood/.test(error.message)
-          ? 'Λείπουν στήλες από τη βάση. Τρέξε το migration 20260808040000_venue_address_fields.sql και δοκίμασε ξανά.'
+          ? t('venue_err_missing_columns')
           : error.message
       )
       return
