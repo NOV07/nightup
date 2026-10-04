@@ -78,8 +78,6 @@ export async function resolveMapsUrl(
         headers: {
           'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
           'accept-language': 'el,en;q=0.8',
-          // Pre-accepted consent cookie: avoids the EU consent redirect when it applies.
-          cookie: 'SOCS=CAI',
         },
       })
     } catch {
