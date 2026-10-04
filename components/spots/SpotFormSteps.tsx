@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ImageUpload from '@/components/ui/ImageUpload'
 import GalleryUpload from '@/components/ui/GalleryUpload'
 import { GalleryPlayBadge } from '@/components/ui/GalleryLightbox'
@@ -13,6 +13,7 @@ import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import SpotLivePreview from './SpotLivePreview'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
+import { isShortMapsLink, isInGreece, type Coords } from '@/app/lib/mapsCoords'
 
 // Same list the event wizard offers — spots had no city constant of its own.
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
@@ -98,7 +99,8 @@ const DEFAULTS: SpotFormData = {
  * Pulls coordinates out of a pasted Google Maps URL. Prefers the `@lat,lng`
  * the browser puts in the address bar; falls back to the `q=` / `ll=` params
  * some share links carry. Returns null when neither is present — the mobile
- * app's short share links have no coordinates in them at all.
+ * app's short share links have no coordinates in them at all; those are
+ * expanded server-side by /api/maps/resolve (see ensureMapsCoords).
  */
 export function parseLatLng(url: string): { lat: number; lng: number } | null {
   const at = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
@@ -287,8 +289,11 @@ function Step1({ form, set, stepErrors }: {
   )
 }
 
-function Step2({ form, set, stepErrors }: {
+function Step2({ form, set, stepErrors, mapsChecking, onMapsChange, onMapsBlur }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
+  mapsChecking: boolean
+  onMapsChange: (value: string) => void
+  onMapsBlur: () => void
 }) {
   const { t } = useLanguage()
   return (
@@ -325,28 +330,31 @@ function Step2({ form, set, stepErrors }: {
         }}>
           <p style={{ fontSize: 12, color: '#E8A020', fontWeight: 700, marginBottom: 6 }}>{t('spot_maps_help_title')}</p>
           <ol style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, paddingLeft: 16, margin: 0 }}>
-            <li>{t('spot_maps_help_1a')} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>browser</strong>{t('spot_maps_help_1b')}</li>
+            <li>{t('spot_maps_help_1')}</li>
             <li>{t('spot_maps_help_2')}</li>
-            <li>{t('spot_maps_help_3a')} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{t('spot_maps_help_3b')}</strong>.</li>
+            <li>{t('spot_maps_help_3')}</li>
           </ol>
           <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 8, lineHeight: 1.6 }}>
-            {t('spot_maps_note_1')} <code style={{ color: '#E8A020' }}>@37.97,23.72</code>.
-            {' '}{t('spot_maps_note_2a')} <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{t('spot_maps_note_2b')}</strong> {t('spot_maps_note_2c')}
+            {t('spot_maps_note_1')}
           </p>
         </div>
         <input style={inp} value={form.maps_url}
-          onChange={e => {
-            set('maps_url', e.target.value)
-            const parsed = parseLatLng(e.target.value)
-            set('lat', parsed?.lat ?? null)
-            set('lng', parsed?.lng ?? null)
-          }}
-          placeholder="https://www.google.com/maps/place/.../@37.9755,23.7348,17z/..." />
+          onChange={e => onMapsChange(e.target.value)}
+          onBlur={onMapsBlur}
+          placeholder="https://maps.app.goo.gl/... | https://www.google.com/maps/..." />
         <Err stepErrors={stepErrors} k="maps_url" />
-        {form.lat != null && form.lng != null && (
-          <p style={{ fontSize: 12, color: '#22c55e', marginTop: 6 }}>
-            ✓ {t('wizard_coords')}: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
-          </p>
+        {mapsChecking && (
+          <p role="status" style={{ fontSize: 12, color: '#E8A020', marginTop: 6 }}>{t('spot_maps_checking')}</p>
+        )}
+        {!mapsChecking && form.lat != null && form.lng != null && (
+          <>
+            <p style={{ fontSize: 12, color: '#22c55e', marginTop: 6 }}>
+              ✓ {t('wizard_coords')}: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+            </p>
+            {!isInGreece(form.lat, form.lng) && (
+              <p style={{ fontSize: 12, color: '#E8A020', marginTop: 4 }}>⚠ {t('spot_maps_outside_greece')}</p>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -568,6 +576,19 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
   const [isMobile, setIsMobile] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [showCropper, setShowCropper] = useState(false)
+  const [mapsChecking, setMapsChecking] = useState(false)
+
+  // Short-link resolution state. Refs, not state: next() awaits the in-flight
+  // call and must see the latest field value after the await.
+  const formRef = useRef(form)
+  useEffect(() => { formRef.current = form })
+  const mapsUrlRef = useRef(form.maps_url)
+  const mapsInflight = useRef<{ url: string; promise: Promise<Coords | null>; ctrl: AbortController } | null>(null)
+  const mapsResolved = useRef<{ url: string; coords: Coords } | null>(null)
+  const mapsFail = useRef<'failed' | 'unreachable' | null>(null)
+  const advancing = useRef(false)
+
+  useEffect(() => () => mapsInflight.current?.ctrl.abort(), [])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 980)
@@ -589,8 +610,72 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     setForm(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== index) }))
   }
 
-  function validate(n: number): Record<string, string> {
+  function onMapsChange(value: string) {
+    // Any edit invalidates whatever resolve is running for the old text.
+    mapsUrlRef.current = value
+    mapsInflight.current?.ctrl.abort()
+    mapsInflight.current = null
+    mapsResolved.current = null
+    mapsFail.current = null
+    setMapsChecking(false)
+    const parsed = parseLatLng(value)
+    setForm(prev => ({ ...prev, maps_url: value, lat: parsed?.lat ?? null, lng: parsed?.lng ?? null }))
+    setStepErrors(prev => ({ ...prev, maps_url: '' }))
+  }
+
+  /**
+   * Coordinates for the current maps_url. Full links parse locally and never
+   * touch the server; short app links go to /api/maps/resolve. One call per
+   * distinct URL: a second caller (blur, then "Next") shares the in-flight
+   * promise. The result is applied only if the field still holds the URL that
+   * was sent.
+   */
+  function ensureMapsCoords(): Promise<Coords | null> {
+    const url = mapsUrlRef.current
+    const parsed = parseLatLng(url)
+    if (parsed) return Promise.resolve(parsed)
+    if (!isShortMapsLink(url)) return Promise.resolve(null)
+    if (mapsResolved.current?.url === url) return Promise.resolve(mapsResolved.current.coords)
+    if (mapsInflight.current?.url === url) return mapsInflight.current.promise
+
+    const ctrl = new AbortController()
+    mapsFail.current = null
+    setMapsChecking(true)
+    const promise: Promise<Coords | null> = (async () => {
+      try {
+        const res = await fetch('/api/maps/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+          signal: ctrl.signal,
+        })
+        const data = await res.json().catch(() => null)
+        if (mapsUrlRef.current !== url) return null
+        if (res.ok && typeof data?.lat === 'number' && typeof data?.lng === 'number') {
+          const coords = { lat: data.lat as number, lng: data.lng as number }
+          mapsResolved.current = { url, coords }
+          setForm(prev => prev.maps_url === url ? { ...prev, lat: coords.lat, lng: coords.lng } : prev)
+          return coords
+        }
+        mapsFail.current = res.status === 400 || res.status === 422 ? 'failed' : 'unreachable'
+        return null
+      } catch {
+        if (mapsUrlRef.current === url) mapsFail.current = 'unreachable'
+        return null
+      } finally {
+        if (mapsInflight.current?.ctrl === ctrl) {
+          mapsInflight.current = null
+          setMapsChecking(false)
+        }
+      }
+    })()
+    mapsInflight.current = { url, promise, ctrl }
+    return promise
+  }
+
+  function validate(n: number, f: SpotFormData = form, resolved: Coords | null = null): Record<string, string> {
     const e: Record<string, string> = {}
+    const form = f
     if (n === 1) {
       if (!form.category) e.category = t('err_pick_category')
       if (!form.name.trim()) e.name = t('err_name_required')
@@ -600,9 +685,9 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
       if (!form.address.trim()) e.address = t('err_address_required')
       if (!form.maps_url.trim()) {
         e.maps_url = t('err_maps_required')
-      } else if (form.lat == null || form.lng == null) {
+      } else if ((form.lat == null || form.lng == null) && !resolved) {
         // Never let a required-coordinate spot through with nulls.
-        e.maps_url = t('err_maps_no_coords')
+        e.maps_url = mapsFail.current === 'unreachable' ? t('err_maps_unreachable') : t('err_maps_no_coords')
       }
     }
     if (n === 3) {
@@ -614,10 +699,26 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     return e
   }
 
-  function next() {
-    const errs = validate(step)
-    if (Object.keys(errs).length) { setStepErrors(errs); return }
-    setStep(s => s + 1)
+  async function next() {
+    if (advancing.current) return
+    if (step !== 2) {
+      const errs = validate(step)
+      if (Object.keys(errs).length) { setStepErrors(errs); return }
+      setStep(s => s + 1)
+      return
+    }
+    // Location step: wait for a running short-link lookup (or start one).
+    advancing.current = true
+    try {
+      const url = mapsUrlRef.current
+      const coords = await ensureMapsCoords()
+      if (mapsUrlRef.current !== url) return // field edited while waiting
+      const errs = validate(2, formRef.current, coords)
+      if (Object.keys(errs).length) { setStepErrors(errs); return }
+      setStep(s => s + 1)
+    } finally {
+      advancing.current = false
+    }
   }
 
   function back() { setStep(s => s - 1) }
@@ -659,7 +760,10 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
           </h2>
 
           {step === 1 && <Step1 form={form} set={set} stepErrors={stepErrors} />}
-          {step === 2 && <Step2 form={form} set={set} stepErrors={stepErrors} />}
+          {step === 2 && (
+            <Step2 form={form} set={set} stepErrors={stepErrors} mapsChecking={mapsChecking}
+              onMapsChange={onMapsChange} onMapsBlur={() => { void ensureMapsCoords() }} />
+          )}
           {step === 3 && (
             <Step3 form={form} set={set} stepErrors={stepErrors}
               onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage}
@@ -681,8 +785,8 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
               </button>
             )}
             {step < 4 ? (
-              <button type="button" onClick={next}
-                style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
+              <button type="button" onClick={next} disabled={mapsChecking}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: mapsChecking ? 'wait' : 'pointer', opacity: mapsChecking ? 0.6 : 1, backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
                 {t('event_form_continue')}
               </button>
             ) : (
