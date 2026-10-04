@@ -785,7 +785,7 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
               </button>
             )}
             {step < 4 ? (
-              <button type="button" onClick={next} disabled={mapsChecking}
+              <button type="button" onClick={next} aria-busy={mapsChecking}
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: mapsChecking ? 'wait' : 'pointer', opacity: mapsChecking ? 0.6 : 1, backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
                 {t('event_form_continue')}
               </button>
