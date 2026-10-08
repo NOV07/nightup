@@ -31,12 +31,13 @@ export async function sendEmail({ to, subject, html, text, route, recipientType 
   try {
     const { error } = await resend.emails.send({ from: FROM, to, replyTo: REPLY_TO, subject, html, text })
     if (error) {
-      console.error(`[email] ${route}: send to ${recipientType} failed`, error)
+      console.error(`[email] ${route}: send to ${recipientType} failed`, { name: error.name, message: error.message })
       return false
     }
     return true
   } catch (err) {
-    console.error(`[email] ${route}: send to ${recipientType} threw`, err)
+    const e = err as { name?: string; message?: string } | null
+    console.error(`[email] ${route}: send to ${recipientType} threw`, { name: e?.name, message: e?.message })
     return false
   }
 }

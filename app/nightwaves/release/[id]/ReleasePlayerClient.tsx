@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { EmbedPlaceholder } from "../../../components/ClickToLoadEmbed";
+import { useLanguage } from "../../../components/LanguageContext";
 
 interface SCSound {
   title: string;
@@ -97,6 +99,9 @@ function PlayerInner({ soundcloudUrl, type, description, releaseDate, genre, spo
   const [tracksChecked, setTracksChecked] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
+  // Nothing from SoundCloud (iframe or api.js) is requested until the user clicks.
+  const [embedLoaded, setEmbedLoaded] = useState(false);
+  const { t } = useLanguage();
 
   const isCollection = type === "EP" || type === "Album";
 
@@ -137,6 +142,7 @@ function PlayerInner({ soundcloudUrl, type, description, releaseDate, genre, spo
   }, [isCollection]);
 
   useEffect(() => {
+    if (!embedLoaded) return;
     if (!scEmbedUrl) { setScError(true); return; }
     // If SC widget never fires READY within 12s, the URL is bad/private
     readyTimerRef.current = setTimeout(() => {
@@ -159,7 +165,7 @@ function PlayerInner({ soundcloudUrl, type, description, releaseDate, genre, spo
       }
     }
     return () => { if (readyTimerRef.current) clearTimeout(readyTimerRef.current); };
-  }, [initWidget]);
+  }, [initWidget, embedLoaded, scEmbedUrl]);
 
   const skipTo = (idx: number) => {
     widgetRef.current?.skip(idx);
@@ -189,6 +195,14 @@ function PlayerInner({ soundcloudUrl, type, description, releaseDate, genre, spo
           >
             Open on SoundCloud ↗
           </a>
+        </div>
+      ) : !embedLoaded ? (
+        <div style={{ borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(232,160,32,0.15)" }}>
+          <EmbedPlaceholder
+            height={isCollection ? 300 : 166}
+            notice={t("embed_notice_soundcloud")}
+            onLoad={() => setEmbedLoaded(true)}
+          />
         </div>
       ) : (
         <div style={{ borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(232,160,32,0.15)" }}>

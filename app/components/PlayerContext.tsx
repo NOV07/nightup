@@ -66,24 +66,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return () => { playerPause.fn = () => {}; };
   }, []);
 
-  // Load SC Widget API script once
-  useEffect(() => {
-    if (document.getElementById("sc-api-script")) return;
-    const s = document.createElement("script");
-    s.id = "sc-api-script";
-    s.src = "https://w.soundcloud.com/player/api.js";
-    document.head.appendChild(s);
+  // Nothing from SoundCloud is requested at mount. The Widget API script and the
+  // hidden iframe are created the first time play is pressed (see ensureScEmbed).
+  // The iframe is never touched by React after creation.
+  const ensureScEmbed = useCallback((): HTMLIFrameElement => {
+    if (!document.getElementById("sc-api-script")) {
+      const s = document.createElement("script");
+      s.id = "sc-api-script";
+      s.src = "https://w.soundcloud.com/player/api.js";
+      document.head.appendChild(s);
+    }
+    if (!iframeRef.current) {
+      const iframe = document.createElement("iframe");
+      iframe.id = "sc-hidden-player";
+      iframe.allow = "autoplay";
+      iframe.style.cssText = "display:none;position:absolute;width:0;height:0;border:0;";
+      document.body.appendChild(iframe);
+      iframeRef.current = iframe;
+    }
+    return iframeRef.current;
   }, []);
 
-  // Create hidden iframe once — never touched by React after creation
   useEffect(() => {
-    const iframe = document.createElement("iframe");
-    iframe.id = "sc-hidden-player";
-    iframe.allow = "autoplay";
-    iframe.style.cssText = "display:none;position:absolute;width:0;height:0;border:0;";
-    document.body.appendChild(iframe);
-    iframeRef.current = iframe;
-    return () => { iframe.remove(); iframeRef.current = null; };
+    return () => { iframeRef.current?.remove(); iframeRef.current = null; };
   }, []);
 
   const handlePlaybackError = useCallback(() => {
@@ -124,8 +129,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // Initialize SC widget against a URL.
   // auto_play=false in src + explicit widget.play() inside READY so events bind first.
   const initWidget = useCallback((url: string) => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
+    const iframe = ensureScEmbed();
 
     isReadyRef.current = false;
     iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&visual=false&hide_related=true&show_comments=false&show_teaser=false`;
@@ -164,7 +168,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     };
     setTimeout(() => attempt(0), 200);
-  }, [bindPlayerEvents, handlePlaybackError]);
+  }, [ensureScEmbed, bindPlayerEvents, handlePlaybackError]);
 
   const loadSoundcloudUrl = useCallback((rawUrl: string) => {
     radioPause.fn();

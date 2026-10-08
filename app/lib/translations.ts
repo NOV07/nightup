@@ -1038,6 +1038,11 @@ const translations = {
   delete_account_item_gallery:      { el: "Φωτογραφίες και βίντεο gallery", en: "Gallery photos and videos" },
   delete_account_item_listings:     { el: "Αγγελίες", en: "Listings" },
   delete_account_item_releases:     { el: "Releases", en: "Releases" },
+
+  // ── Click-to-load embeds ────────────────────────────────────
+  embed_load_player:        { el: "Φόρτωση player", en: "Load player" },
+  embed_notice_soundcloud:  { el: "Θα φορτώσει περιεχόμενο από το SoundCloud", en: "This will load content from SoundCloud" },
+  embed_notice_spotify:     { el: "Θα φορτώσει περιεχόμενο από το Spotify", en: "This will load content from Spotify" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
