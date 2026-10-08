@@ -4,6 +4,9 @@ const MAX_TEXT_LENGTH = 3000
 const MAX_OUTPUT_TOKENS = 4096
 const MIN_OUTPUT_TOKENS = 256
 
+const RATE_LIMIT_MAX = 60
+const RATE_LIMIT_WINDOW_MS = 60 * 1000
+
 const PRODUCTION_HOSTS = ['nightup.gr', 'www.nightup.gr']
 
 const SYSTEM_PROMPT = `You are a translation engine for a nightlife/events platform. Translate Greek text to English.
@@ -40,6 +43,36 @@ function isAllowedOrigin(req: NextRequest): boolean {
   return allowed.has(source)
 }
 
+// Best-effort limiter: module-level Map, per serverless instance. The IP is only
+// used as a Map key; it is never stored elsewhere or logged.
+const hits = new Map<string, { count: number; resetAt: number }>()
+let nextSweepAt = 0
+
+function getClientIp(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+
+  // Drop expired entries at most once per window so the Map cannot grow forever.
+  if (now >= nextSweepAt) {
+    for (const [key, entry] of hits) {
+      if (now > entry.resetAt) hits.delete(key)
+    }
+    nextSweepAt = now + RATE_LIMIT_WINDOW_MS
+  }
+
+  const entry = hits.get(ip)
+  if (!entry || now > entry.resetAt) {
+    hits.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+
+  entry.count += 1
+  return entry.count > RATE_LIMIT_MAX
+}
+
 export async function POST(req: NextRequest) {
   if (!isAllowedOrigin(req)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -61,6 +94,10 @@ export async function POST(req: NextRequest) {
       { error: `text too long (max ${MAX_TEXT_LENGTH} characters)` },
       { status: 413 },
     )
+  }
+
+  if (isRateLimited(getClientIp(req))) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY
