@@ -22,62 +22,108 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p style={{ color: "rgba(255,255,255,0.50)", fontSize: "13px", marginBottom: "48px" }}>
-          Last updated: May 2026
+          Last updated: October 2026
         </p>
 
         {[
           {
-            title: "1. Acceptance of Terms",
-            body: `By accessing or using Nightup.gr, you agree to be bound by these Terms of Service. If you do not agree, please do not use the platform.`,
+            title: `1. Acceptance`,
+            blocks: [
+              `By using Nightup.gr you agree to these Terms. If you do not agree, do not use the platform. You must be 18 or over.`,
+            ],
           },
           {
-            title: "2. Description of Service",
-            body: `Nightup.gr is a nightlife and music discovery platform that allows users to find events, explore music releases and mixes, discover music professionals, and read editorial content about the Greek nightlife scene.`,
+            title: `2. The service`,
+            blocks: [
+              `Nightup.gr lets users discover events, spots, music releases and mixes, music professionals and editorial content about Greek nightlife.`,
+            ],
           },
           {
-            title: "3. User Accounts",
-            body: `To submit events or create a professional profile, you must register an account. You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. You must provide accurate information when registering.`,
+            title: `3. Accounts`,
+            blocks: [
+              `You need an account to submit content or create a profile. Provide accurate information and keep your login details secure. You are responsible for activity under your account.`,
+            ],
           },
           {
-            title: "4. User-Submitted Content",
-            body: `By submitting events, profiles, or any other content to Nightup.gr, you grant us a non-exclusive, royalty-free license to display and distribute that content on the platform. You are solely responsible for ensuring your content does not infringe third-party rights. We reserve the right to remove any content at our discretion.`,
+            title: `4. Your content and our licence`,
+            blocks: [
+              `You keep ownership of what you submit (events, profiles, photos, text, links). By submitting content you grant Nightup.gr a non-exclusive, worldwide, royalty-free licence to host, display, translate, format and distribute it on the platform, and to promote the platform and your content on our social media and newsletters. The licence ends when you delete the content or your account, except for copies already shared or cached for a short time. You confirm that you have the rights to everything you submit and that it does not infringe anyone's rights.`,
+            ],
           },
           {
-            title: "5. Prohibited Conduct",
-            body: `You may not use Nightup.gr to submit false or misleading information, spam users, violate applicable laws, infringe intellectual property rights, or attempt to gain unauthorized access to any part of the platform.`,
+            title: `5. Prohibited conduct`,
+            blocks: [
+              `You may not submit false or misleading information, spam, unlawful content, hate speech, harassment, content that sexualises minors, or material that infringes intellectual property or privacy rights. You may not try to access parts of the platform without authorisation or disrupt it.`,
+            ],
           },
           {
-            title: "6. Content Accuracy",
-            body: `Event information on Nightup.gr is submitted by third parties and we do not guarantee its accuracy. Always verify event details directly with the organizer before attending.`,
+            title: `6. Reporting and removal`,
+            blocks: [
+              `To report illegal content, content that infringes your rights, or a copyright claim, email nightupsocial@gmail.com with the page link, what is wrong and, for copyright, proof of ownership. We review reports promptly and may remove content, restrict features or suspend accounts. We may also remove content or suspend an account at our discretion, for example for breaking these Terms.`,
+            ],
           },
           {
-            title: "7. Intellectual Property",
-            body: `All original content on Nightup.gr (including editorial articles, design, and code) is the property of Nightup.gr. Embedded music content (SoundCloud, Spotify) remains the property of the respective rights holders.`,
+            title: `7. Event information`,
+            blocks: [
+              `Events and spots are submitted by third parties. We do not guarantee accuracy. Confirm details with the organiser. Many events involve alcohol and are for adults only.`,
+            ],
           },
           {
-            title: "8. Disclaimer of Warranties",
-            body: `Nightup.gr is provided "as is" without warranties of any kind. We do not guarantee uninterrupted or error-free service. We are not liable for any damages arising from your use of the platform.`,
+            title: `8. Third-party content`,
+            blocks: [
+              `Embedded music (SoundCloud, Spotify) belongs to its rights holders and is subject to their terms.`,
+            ],
           },
           {
-            title: "9. Limitation of Liability",
-            body: `To the maximum extent permitted by law, Nightup.gr shall not be liable for any indirect, incidental, or consequential damages arising out of your use of the platform.`,
+            title: `9. Intellectual property`,
+            blocks: [
+              `The design, code and original editorial content of Nightup.gr belong to Nightup.gr unless stated otherwise.`,
+            ],
           },
           {
-            title: "10. Governing Law",
-            body: `These Terms are governed by the laws of Greece and the European Union. Any disputes shall be subject to the exclusive jurisdiction of the courts of Athens, Greece.`,
+            title: `10. Paid features`,
+            blocks: [
+              `If we introduce paid features, price, billing, cancellation and refund terms will be shown before you pay and added to these Terms.`,
+            ],
           },
           {
-            title: "11. Changes to Terms",
-            body: `We reserve the right to update these Terms at any time. Continued use of the platform after changes constitutes acceptance of the revised Terms.`,
+            title: `11. Disclaimer and liability`,
+            blocks: [
+              `Nightup.gr is provided "as is". We do not guarantee uninterrupted or error-free service. To the extent permitted by law, we are not liable for indirect or consequential damages. Nothing in these Terms limits liability that cannot be limited by law, or your mandatory rights as a consumer.`,
+            ],
           },
           {
-            title: "12. Contact",
-            body: `For questions about these Terms, contact us at nightupsocial@gmail.com.`,
+            title: `12. Termination`,
+            blocks: [
+              `You can delete your account at any time. We may suspend or end access if you break these Terms.`,
+            ],
           },
-        ].map(({ title, body }) => (
+          {
+            title: `13. Governing law`,
+            blocks: [
+              `These Terms are governed by Greek law and applicable EU law. The courts of Athens have jurisdiction, without affecting any mandatory right of consumers to bring a claim in the courts of their country of residence.`,
+            ],
+          },
+          {
+            title: `14. Changes and contact`,
+            blocks: [
+              `We may update these Terms. If a change is significant we will tell registered users. Contact: nightupsocial@gmail.com.`,
+            ],
+          },
+        ].map(({ title, blocks }) => (
           <div key={title} style={{ marginBottom: "36px" }}>
             <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#F4F4F5", marginBottom: "10px" }}>{title}</h2>
-            <p style={{ fontSize: "14px", lineHeight: 1.75, color: "rgba(255,255,255,0.55)" }}>{body}</p>
+            {blocks.map((block, i) =>
+              Array.isArray(block) ? (
+                <ul key={i} style={{ fontSize: "14px", lineHeight: 1.75, color: "rgba(255,255,255,0.55)", listStyle: "disc", margin: i ? "10px 0 0" : 0, paddingLeft: "20px" }}>
+                  {block.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p key={i} style={{ fontSize: "14px", lineHeight: 1.75, color: "rgba(255,255,255,0.55)", marginTop: i ? "10px" : 0 }}>{block}</p>
+              )
+            )}
           </div>
         ))}
       </div>
