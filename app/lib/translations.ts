@@ -384,6 +384,7 @@ const translations = {
   about_profile_tab:    { el: "Submit Profile", en: "Submit Profile" },
   about_send:           { el: "Αποστολή Μηνύματος", en: "Send Message" },
   about_get_in_touch:   { el: "Επικοινωνήστε μαζί μας", en: "Get in Touch" },
+  about_stat_page_views:    { el: "Page views / month", en: "Page views / month" },
   about_sec_contribute:     { el: "Συνέβαλε", en: "Contribute" },
   about_sec_contribute_sub: { el: "Είσαι μέρος της σκηνής.", en: "You're part of the scene." },
   about_sec_tellus:         { el: "Πες μας", en: "Tell us" },
