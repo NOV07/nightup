@@ -144,7 +144,7 @@ export async function DELETE(req: NextRequest) {
   const { data: deleted, error: rpcError } = await admin.rpc('delete_account', { target: uid })
   if (rpcError) {
     // One transaction in the database: nothing was deleted.
-    console.error('[account] delete_account failed:', rpcError)
+    console.error('[account] delete_account failed:', { message: rpcError.message, code: rpcError.code })
     return NextResponse.json({ error: 'delete_failed' }, { status: 500 })
   }
   console.log('[account] delete_account completed')
