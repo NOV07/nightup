@@ -419,7 +419,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
             <StatItem target={liveStats.events} label="Events" />
             <StatItem target={liveStats.professionals} label="Professionals" />
             <StatItem target={liveStats.cities} label="Cities" />
-            <StatItem target={liveStats.visitors} label="Visitors / month" />
+            <StatItem target={liveStats.visitors} label={t("about_stat_page_views")} />
           </div>
         </div>
 
