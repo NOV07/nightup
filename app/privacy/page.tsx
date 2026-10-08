@@ -22,54 +22,81 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p style={{ color: "rgba(255,255,255,0.50)", fontSize: "13px", marginBottom: "48px" }}>
-          Last updated: May 2026
+          Last updated: October 2026
         </p>
 
         {[
           {
-            title: "1. Who We Are",
-            body: `Nightup.gr is a nightlife and music discovery platform operated as a personal project. For any privacy-related inquiries, contact us at nightupsocial@gmail.com.`,
+            title: `1. Who we are`,
+            blocks: [
+              `Nightup.gr is a nightlife and music discovery platform for Greece. The data controller is Dimitrios Kantanoleon, an individual operating Nightup.gr as a personal project. For any privacy matter contact: nightupsocial@gmail.com.`,
+            ],
           },
           {
-            title: "2. What Data We Collect",
-            body: `When you create an account, we collect your email address and display name. We may also store profile information you voluntarily provide, such as a biography, social media links, and profile photo. When you submit an event or profile, we collect the information you provide in those forms.`,
+            title: `2. What data we collect`,
+            blocks: [
+              [`Account data: email address, display name, and your password (stored hashed by our authentication provider, never in plain text).`, `Profile and content you submit: biography, social media links, profile and gallery photos, events, spots, releases, mixes, listings and any other information you enter in our forms, including upgrade requests and spot claims.`, `Activity tied to your account: follows, saved events and spots, and notifications.`, `Anonymous page-view counter: the About page increments a monthly counter. It stores only a number per month, with no IP address, cookie, device identifier or user ID.`, `Technical logs: our hosting and database providers may process technical data such as IP address and request metadata to deliver the service and keep it secure.`],
+              `We do not collect payment data. We do not use analytics or advertising trackers.`,
+            ],
           },
           {
-            title: "3. How We Use Your Data",
-            body: `We use your data solely to operate and improve the Nightup.gr platform. This includes displaying your profile, sending account-related emails, and reviewing submitted content. We do not sell your data to third parties. We do not use your data for advertising purposes.`,
+            title: `3. Why we use it and our legal basis`,
+            blocks: [
+              [`To create and run your account, display your profile and content, and send account emails (for example sign-up and password reset): performance of a contract.`, `To review submitted content, prevent abuse and keep the platform secure: legitimate interest.`, `To comply with legal obligations: legal obligation.`],
+              `We do not sell your data and we do not use it for advertising.`,
+            ],
           },
           {
-            title: "4. Data Storage & Security",
-            body: `Your data is stored securely using Supabase, a cloud database provider. We take reasonable technical measures to protect your data, but no system is completely secure. In the event of a data breach, we will notify affected users as required by applicable law.`,
+            title: `4. Who processes data for us`,
+            blocks: [
+              [`Vercel (hosting).`, `Supabase (database, authentication and file storage).`, `Resend (sending account emails).`, `Anthropic (automatic translation): when a visitor selects English, some Greek page content, which may include text written by users, is sent to the Anthropic API to be translated. We do not send IP address, cookies or account identifiers.`, `SoundCloud and Spotify (embedded players), only after you click to load them. See the Cookie Policy.`],
+              `Some of these providers are located in the United States or may process data there. Where this happens, transfers rely on safeguards such as the EU-US Data Privacy Framework or Standard Contractual Clauses, as provided by each provider.`,
+            ],
           },
           {
-            title: "5. Cookies",
-            body: `Nightup.gr uses only essential cookies required for authentication and session management. We do not use advertising cookies, tracking pixels, or third-party analytics cookies. You can disable cookies in your browser settings, but this may affect site functionality.`,
+            title: `5. Retention`,
+            blocks: [
+              `We keep your account data for as long as your account is active. When you delete your account in your settings, or ask us to, we delete your personal data within 30 days, except where the law requires us to keep it. Backups are overwritten on the provider's normal schedule.`,
+            ],
           },
           {
-            title: "6. Your Rights (GDPR)",
-            body: `If you are located in the European Union, you have the right to access, correct, or delete your personal data at any time. You may also object to processing or request data portability. To exercise these rights, contact us at nightupsocial@gmail.com. We will respond within 30 days.`,
+            title: `6. Your rights`,
+            blocks: [
+              `If you are in the EU/EEA you have the right to access, correct, delete and export your data, to restrict or object to processing, and to withdraw consent where we rely on it. You can delete your account yourself in your settings. For any other request write to nightupsocial@gmail.com. We reply within 30 days. You also have the right to lodge a complaint with the Hellenic Data Protection Authority (www.dpa.gr) or your local authority.`,
+            ],
           },
           {
-            title: "7. Data Retention",
-            body: `We retain your account data for as long as your account is active. If you request account deletion, we will remove your personal data within 30 days, except where retention is required by law.`,
+            title: `7. Age`,
+            blocks: [
+              `Nightup.gr is for people aged 18 or over. Do not create an account if you are younger.`,
+            ],
           },
           {
-            title: "8. Third-Party Services",
-            body: `Nightup.gr is hosted on Vercel and uses Supabase for database services. These providers have their own privacy policies. We use SoundCloud and Spotify embeds on some pages; these services may set their own cookies when you interact with embedded players.`,
+            title: `8. Security`,
+            blocks: [
+              `We use reasonable technical and organisational measures. No system is completely secure. If a breach affects your data we will notify you and the authority as the law requires.`,
+            ],
           },
           {
-            title: "9. Changes to This Policy",
-            body: `We may update this Privacy Policy from time to time. The date at the top of this page reflects the most recent revision. Continued use of the platform after changes constitutes acceptance of the updated policy.`,
+            title: `9. Changes`,
+            blocks: [
+              `We may update this policy. The date above shows the latest version. If a change is significant we will tell registered users.`,
+            ],
           },
-          {
-            title: "10. Contact",
-            body: `For any questions about this Privacy Policy, contact us at nightupsocial@gmail.com.`,
-          },
-        ].map(({ title, body }) => (
+        ].map(({ title, blocks }) => (
           <div key={title} style={{ marginBottom: "36px" }}>
             <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#F4F4F5", marginBottom: "10px" }}>{title}</h2>
-            <p style={{ fontSize: "14px", lineHeight: 1.75, color: "rgba(255,255,255,0.55)" }}>{body}</p>
+            {blocks.map((block, i) =>
+              Array.isArray(block) ? (
+                <ul key={i} style={{ fontSize: "14px", lineHeight: 1.75, color: "rgba(255,255,255,0.55)", listStyle: "disc", margin: i ? "10px 0 0" : 0, paddingLeft: "20px" }}>
+                  {block.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p key={i} style={{ fontSize: "14px", lineHeight: 1.75, color: "rgba(255,255,255,0.55)", marginTop: i ? "10px" : 0 }}>{block}</p>
+              )
+            )}
           </div>
         ))}
       </div>
