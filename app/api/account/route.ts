@@ -147,7 +147,7 @@ export async function DELETE(req: NextRequest) {
     console.error('[account] delete_account failed:', rpcError)
     return NextResponse.json({ error: 'delete_failed' }, { status: 500 })
   }
-  console.log('[account] delete_account', uid, deleted)
+  console.log('[account] delete_account completed')
 
   // Best effort from here on: the account data is already gone.
   const byBucket = new Map<string, string[]>()
@@ -158,13 +158,13 @@ export async function DELETE(req: NextRequest) {
       if (error) storageWarnings.push(`remove ${bucket}: ${error.message}`)
     }
   }
-  if (storageWarnings.length) console.error('[account] storage cleanup incomplete:', uid, storageWarnings)
+  if (storageWarnings.length) console.error('[account] storage cleanup incomplete')
 
   let authUser: 'deleted' | 'failed' = 'deleted'
   const { error: authError } = await admin.auth.admin.deleteUser(uid)
   if (authError) {
     authUser = 'failed'
-    console.error('[account] auth user delete failed:', uid, authError)
+    console.error('[account] auth user delete failed')
   }
 
   const counts = (deleted ?? {}) as Record<string, number>

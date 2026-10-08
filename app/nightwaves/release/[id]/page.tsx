@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../../lib/supabase";
 import ReleasePlayerClient from "./ReleasePlayerClient";
+import ClickToLoadEmbed from "../../../components/ClickToLoadEmbed";
 
 interface Props { params: Promise<{ id: string }>; }
 
@@ -239,14 +240,16 @@ export default async function ReleasePage({ params }: Props) {
         ) : spotifyEmbedUrl ? (
           <div className="mb-14 rounded-2xl overflow-hidden p-6" style={{ backgroundColor: "#0a0a14", border: "1px solid #1e1e30" }}>
             <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#444" }}>Listen</p>
-            <iframe
-              src={spotifyEmbedUrl}
-              width="100%"
-              height="152"
-              frameBorder={0}
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              style={{ borderRadius: "12px" }}
-            />
+            <ClickToLoadEmbed provider="spotify" height={152}>
+              <iframe
+                src={spotifyEmbedUrl}
+                width="100%"
+                height="152"
+                frameBorder={0}
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                style={{ borderRadius: "12px" }}
+              />
+            </ClickToLoadEmbed>
           </div>
         ) : null}
 

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 import ContactPill from '@/app/components/ContactPill'
 import T from '@/app/components/T'
+import ClickToLoadEmbed from '@/app/components/ClickToLoadEmbed'
 import NetworkCategoryText from '@/app/components/NetworkCategoryText'
 import { getEventCoverImage, getEventCrop } from '@/app/lib/getEventCoverImage'
 import { getAvatarCrop, getCoverCrop } from '@/app/lib/profileCrop'
@@ -394,13 +395,15 @@ export default async function ProfilePage({ params }: Props) {
                   Featured Track
                 </h2>
                 <div className="rounded-2xl overflow-hidden" style={{ border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                  <iframe
-                    width="100%"
-                    height="166"
-                    scrolling="no"
-                    frameBorder="no"
-                    src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(profile.featured_track_url)}&color=%23E8A020&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`}
-                  />
+                  <ClickToLoadEmbed provider="soundcloud" height={166}>
+                    <iframe
+                      width="100%"
+                      height="166"
+                      scrolling="no"
+                      frameBorder="no"
+                      src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(profile.featured_track_url)}&color=%23E8A020&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`}
+                    />
+                  </ClickToLoadEmbed>
                 </div>
               </section>
             )}
@@ -518,13 +521,15 @@ export default async function ProfilePage({ params }: Props) {
                   Music
                 </h2>
                 <div className="rounded-2xl overflow-hidden" style={{ border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                  <iframe
-                    width="100%"
-                    height="166"
-                    scrolling="no"
-                    frameBorder="no"
-                    src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(profile.featured_track_url)}&color=%23E8A020&auto_play=false&hide_related=true&show_comments=false`}
-                  />
+                  <ClickToLoadEmbed provider="soundcloud" height={166}>
+                    <iframe
+                      width="100%"
+                      height="166"
+                      scrolling="no"
+                      frameBorder="no"
+                      src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(profile.featured_track_url)}&color=%23E8A020&auto_play=false&hide_related=true&show_comments=false`}
+                    />
+                  </ClickToLoadEmbed>
                 </div>
               </section>
             )}
@@ -647,13 +652,15 @@ export default async function ProfilePage({ params }: Props) {
                   Featured Track
                 </h2>
                 <div className="rounded-2xl overflow-hidden" style={{ border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                  <iframe
-                    width="100%"
-                    height="166"
-                    scrolling="no"
-                    frameBorder="no"
-                    src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(profile.featured_track_url)}&color=%23E8A020&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`}
-                  />
+                  <ClickToLoadEmbed provider="soundcloud" height={166}>
+                    <iframe
+                      width="100%"
+                      height="166"
+                      scrolling="no"
+                      frameBorder="no"
+                      src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(profile.featured_track_url)}&color=%23E8A020&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`}
+                    />
+                  </ClickToLoadEmbed>
                 </div>
               </section>
             )}
