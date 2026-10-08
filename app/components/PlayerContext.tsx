@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useRef, useCallback, useEffect, ReactNode } from "react";
 import { radioPause, playerPause } from "./audioCoordinator";
-import PlayerDebugOverlay, { playerDebug } from "./PlayerDebugOverlay"; // TEMP debug, see ?debug=1
 
 export interface PlayerTrack {
   id?: string;
@@ -82,10 +81,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const s = document.createElement("script");
     s.id = "sc-api-script";
     s.src = "https://w.soundcloud.com/player/api.js";
-    s.onload = () => playerDebug("api.js loaded (window.SC.Widget " + ((window as any).SC?.Widget ? "present" : "MISSING") + ")");
-    s.onerror = () => playerDebug("api.js FAILED to load");
     document.head.appendChild(s);
-    playerDebug("api.js script appended");
   }, []);
 
   useEffect(() => {
@@ -108,10 +104,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 6s watchdog, armed on every track load: if READY never fires the URL is dead/private.
   const armErrorTimer = useCallback(() => {
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-    playerDebug("watchdog armed (6s)");
     errorTimerRef.current = setTimeout(() => {
       errorTimerRef.current = null;
-      playerDebug("watchdog fired, isReady=" + isReadyRef.current);
       if (!isReadyRef.current) handlePlaybackError();
     }, 6000);
   }, [handlePlaybackError]);
@@ -128,12 +122,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
 
     widget.bind(SC.Widget.Events.PLAY, () => {
-      playerDebug("PLAY");
       setIsPlaying(true);
       widget.getDuration((d: number) => { if (d > 0) setDuration(d); });
     });
-    widget.bind(SC.Widget.Events.PAUSE, () => { playerDebug("PAUSE"); setIsPlaying(false); });
-    widget.bind(SC.Widget.Events.FINISH, () => { playerDebug("FINISH"); setIsPlaying(false); setPosition(0); });
+    widget.bind(SC.Widget.Events.PAUSE, () => setIsPlaying(false));
+    widget.bind(SC.Widget.Events.FINISH, () => { setIsPlaying(false); setPosition(0); });
     widget.bind(SC.Widget.Events.PLAY_PROGRESS, (data: any) => {
       const now = Date.now();
       if (now - lastPosRef.current > 250) {
@@ -144,7 +137,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // ERROR event catches bad URLs on widget.load() calls
     try {
       if (SC.Widget.Events.ERROR) {
-        widget.bind(SC.Widget.Events.ERROR, () => { playerDebug("ERROR"); handlePlaybackError(); });
+        widget.bind(SC.Widget.Events.ERROR, () => handlePlaybackError());
       }
     } catch {}
   }, [handlePlaybackError]);
@@ -158,7 +151,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const loadTrack = useCallback((url: string) => {
     ensureScScript();
     const gen = ++loadGenRef.current;
-    playerDebug("loadTrack " + url.slice(0, 60));
 
     // Discard the previous player. Removing the iframe stops its audio; its widget
     // wrapper is simply dropped (its iframe is gone, so it can't call back).
@@ -181,11 +173,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     const onReady = () => {
       if (gen !== loadGenRef.current || !iframeLoaded || readyHandled) {
-        playerDebug("READY ignored (" + (gen !== loadGenRef.current ? "stale iframe" : !iframeLoaded ? "before iframe load" : "duplicate") + ")");
         return;
       }
       readyHandled = true;
-      playerDebug("READY");
       if (errorTimerRef.current) {
         clearTimeout(errorTimerRef.current);
         errorTimerRef.current = null;
@@ -196,12 +186,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // The user picked another track while this one was loading: switch to it.
       const pending = pendingUrlRef.current;
       pendingUrlRef.current = null;
-      if (pending) { playerDebug("READY with pending url, loading it"); loadTrackRef.current(pending); return; }
+      if (pending) { loadTrackRef.current(pending); return; }
 
       isReadyRef.current = true;
       bindPlayerEvents();
       if (volumeRef.current !== null) widget.setVolume(volumeRef.current);
-      playerDebug("widget.play() called");
       widget.play();
     };
 
@@ -209,16 +198,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (gen !== loadGenRef.current || n > 120) return;
       const SC = (window as any).SC;
       if (!SC?.Widget) {
-        if (n === 0) playerDebug("SC.Widget not available yet, polling");
         setTimeout(() => createWidget(n + 1), 50);
         return;
       }
       try {
         const widget = SC.Widget(iframe);
         widgetRef.current = widget;
-        playerDebug("SC widget created");
         widget.bind(SC.Widget.Events.READY, onReady);
-        playerDebug("READY handler bound");
       } catch {
         setTimeout(() => createWidget(n + 1), 50);
       }
@@ -227,14 +213,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     iframe.addEventListener("load", () => {
       if (gen !== loadGenRef.current) return;
       iframeLoaded = true;
-      playerDebug("iframe load event");
       createWidget(0);
     }, { once: true });
 
     document.body.appendChild(iframe);
     iframeRef.current = iframe;
-    playerDebug("fresh iframe created");
-    playerDebug("iframe.src set");
     armErrorTimer();
   }, [ensureScScript, bindPlayerEvents, armErrorTimer]);
 
@@ -248,7 +231,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // latest pick and switch to it on READY. Otherwise start a fresh load, which
     // also recovers from a previous failure.
     if (!isReadyRef.current && errorTimerRef.current) {
-      playerDebug("load in flight, url kept as pending");
       pendingUrlRef.current = url;
       return;
     }
@@ -262,7 +244,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const url = normalizeSCUrl(track.soundcloudUrl);
       const widget = widgetRef.current;
       if (url === currentUrlRef.current && isReadyRef.current && widget) {
-        playerDebug("same track → toggle (" + (isPlayingRef.current ? "pause" : "play") + ")");
         if (isPlayingRef.current) {
           widget.pause();
         } else {
@@ -327,7 +308,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   return (
     <PlayerContext.Provider value={{ currentTrack, isPlaying, volume, position, duration, playbackError, setTrack, togglePlay, setVolume, clearTrack, seekTo, nextTrack, prevTrack }}>
       {children}
-      <PlayerDebugOverlay />
     </PlayerContext.Provider>
   );
 }
