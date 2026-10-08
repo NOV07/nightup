@@ -54,6 +54,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const isPlayingRef = useRef(false);
   const lastPosRef = useRef(0);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set once the user moves the slider; re-applied after every track reload.
+  const volumeRef = useRef<number | null>(null);
+  const loadTrackRef = useRef<(url: string) => void>(() => {});
+  // Normalized URL of the track currently loaded in the hidden iframe (null if none).
+  const currentUrlRef = useRef<string | null>(null);
+  // Bumped on every load; callbacks from an older iframe compare it and bail out.
+  const loadGenRef = useRef(0);
 
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
 
@@ -66,25 +73,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return () => { playerPause.fn = () => {}; };
   }, []);
 
-  // Nothing from SoundCloud is requested at mount. The Widget API script and the
-  // hidden iframe are created the first time play is pressed (see ensureScEmbed).
-  // The iframe is never touched by React after creation.
-  const ensureScEmbed = useCallback((): HTMLIFrameElement => {
-    if (!document.getElementById("sc-api-script")) {
-      const s = document.createElement("script");
-      s.id = "sc-api-script";
-      s.src = "https://w.soundcloud.com/player/api.js";
-      document.head.appendChild(s);
-    }
-    if (!iframeRef.current) {
-      const iframe = document.createElement("iframe");
-      iframe.id = "sc-hidden-player";
-      iframe.allow = "autoplay";
-      iframe.style.cssText = "display:none;position:absolute;width:0;height:0;border:0;";
-      document.body.appendChild(iframe);
-      iframeRef.current = iframe;
-    }
-    return iframeRef.current;
+  // Nothing from SoundCloud is requested at mount. The Widget API script is added the
+  // first time play is pressed; every track then gets its own fresh hidden iframe
+  // (see loadTrack). React never touches the iframe after creation.
+  const ensureScScript = useCallback(() => {
+    if (document.getElementById("sc-api-script")) return;
+    const s = document.createElement("script");
+    s.id = "sc-api-script";
+    s.src = "https://w.soundcloud.com/player/api.js";
+    document.head.appendChild(s);
   }, []);
 
   useEffect(() => {
@@ -96,14 +93,33 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       clearTimeout(errorTimerRef.current);
       errorTimerRef.current = null;
     }
+    // Leave nothing behind that would make the next click wait for a READY that
+    // will never come.
+    isReadyRef.current = false;
+    pendingUrlRef.current = null;
     setPlaybackError("Track unavailable");
     setIsPlaying(false);
   }, []);
 
+  // 6s watchdog, armed on every track load: if READY never fires the URL is dead/private.
+  const armErrorTimer = useCallback(() => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => {
+      errorTimerRef.current = null;
+      if (!isReadyRef.current) handlePlaybackError();
+    }, 6000);
+  }, [handlePlaybackError]);
+
+  // Safe to call on every READY: each event is unbound first, so listeners never pile up.
   const bindPlayerEvents = useCallback(() => {
     const widget = widgetRef.current;
     const SC = (window as any).SC;
     if (!widget || !SC) return;
+
+    const E = SC.Widget.Events;
+    for (const ev of [E.PLAY, E.PAUSE, E.FINISH, E.PLAY_PROGRESS, E.ERROR]) {
+      if (ev) widget.unbind(ev);
+    }
 
     widget.bind(SC.Widget.Events.PLAY, () => {
       setIsPlaying(true);
@@ -126,76 +142,124 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [handlePlaybackError]);
 
-  // Initialize SC widget against a URL.
-  // auto_play=false in src + explicit widget.play() inside READY so events bind first.
-  const initWidget = useCallback((url: string) => {
-    const iframe = ensureScEmbed();
+  // Single load path for every different track: throw away the old iframe and widget,
+  // build a new iframe, wait for ITS load event, only then create a new SC.Widget and
+  // bind READY once. A READY can't be seen before the load, and a stale callback from a
+  // previous iframe is ignored via loadGenRef. widget.load() and widget reuse are not
+  // used: a reused wrapper reported READY right after the src change, before the new
+  // document existed.
+  const loadTrack = useCallback((url: string) => {
+    ensureScScript();
+    const gen = ++loadGenRef.current;
 
+    // Discard the previous player. Removing the iframe stops its audio; its widget
+    // wrapper is simply dropped (its iframe is gone, so it can't call back).
+    iframeRef.current?.remove();
+    iframeRef.current = null;
+    widgetRef.current = null;
     isReadyRef.current = false;
+    currentUrlRef.current = url;
+
+    // src and the load listener are set BEFORE the iframe is inserted, so the only
+    // load event it ever fires is the real one (not the initial about:blank).
+    const iframe = document.createElement("iframe");
+    iframe.id = "sc-hidden-player";
+    iframe.allow = "autoplay";
+    iframe.style.cssText = "display:none;position:absolute;width:0;height:0;border:0;";
     iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&visual=false&hide_related=true&show_comments=false&show_teaser=false`;
 
-    // 6s timeout: if READY never fires the URL is dead/private
-    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-    errorTimerRef.current = setTimeout(() => {
-      if (!isReadyRef.current) handlePlaybackError();
-    }, 6000);
+    let readyHandled = false;
+    let iframeLoaded = false;
 
-    const attempt = (n: number) => {
-      if (n > 50) return;
+    const onReady = () => {
+      if (gen !== loadGenRef.current || !iframeLoaded || readyHandled) {
+        return;
+      }
+      readyHandled = true;
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = null;
+      }
+      const widget = widgetRef.current;
+      if (!widget) return;
+
+      // The user picked another track while this one was loading: switch to it.
+      const pending = pendingUrlRef.current;
+      pendingUrlRef.current = null;
+      if (pending) { loadTrackRef.current(pending); return; }
+
+      isReadyRef.current = true;
+      bindPlayerEvents();
+      if (volumeRef.current !== null) widget.setVolume(volumeRef.current);
+      widget.play();
+    };
+
+    const createWidget = (n: number) => {
+      if (gen !== loadGenRef.current || n > 120) return;
       const SC = (window as any).SC;
-      if (!SC?.Widget) { setTimeout(() => attempt(n + 1), 200); return; }
+      if (!SC?.Widget) {
+        setTimeout(() => createWidget(n + 1), 50);
+        return;
+      }
       try {
         const widget = SC.Widget(iframe);
         widgetRef.current = widget;
-
-        widget.bind(SC.Widget.Events.READY, () => {
-          if (errorTimerRef.current) {
-            clearTimeout(errorTimerRef.current);
-            errorTimerRef.current = null;
-          }
-          isReadyRef.current = true;
-          bindPlayerEvents();
-          const toPlay = pendingUrlRef.current ?? url;
-          pendingUrlRef.current = null;
-          if (toPlay !== url) {
-            widget.load(toPlay, { auto_play: true, visual: false, hide_related: true, show_comments: false, show_teaser: false });
-          } else {
-            widget.play();
-          }
-        });
+        widget.bind(SC.Widget.Events.READY, onReady);
       } catch {
-        setTimeout(() => attempt(n + 1), 200);
+        setTimeout(() => createWidget(n + 1), 50);
       }
     };
-    setTimeout(() => attempt(0), 200);
-  }, [ensureScEmbed, bindPlayerEvents, handlePlaybackError]);
+
+    iframe.addEventListener("load", () => {
+      if (gen !== loadGenRef.current) return;
+      iframeLoaded = true;
+      createWidget(0);
+    }, { once: true });
+
+    document.body.appendChild(iframe);
+    iframeRef.current = iframe;
+    armErrorTimer();
+  }, [ensureScScript, bindPlayerEvents, armErrorTimer]);
+
+  useEffect(() => { loadTrackRef.current = loadTrack; }, [loadTrack]);
 
   const loadSoundcloudUrl = useCallback((rawUrl: string) => {
     radioPause.fn();
     const url = normalizeSCUrl(rawUrl);
 
-    if (!isReadyRef.current) {
-      if (!widgetRef.current) {
-        initWidget(url);
-      } else {
-        pendingUrlRef.current = url;
-      }
-    } else {
-      widgetRef.current.load(url, {
-        auto_play: true,
-        visual: false,
-        hide_related: true,
-        show_comments: false,
-        show_teaser: false,
-      });
+    // A load is in flight (watchdog armed, READY not yet received): remember the
+    // latest pick and switch to it on READY. Otherwise start a fresh load, which
+    // also recovers from a previous failure.
+    if (!isReadyRef.current && errorTimerRef.current) {
+      pendingUrlRef.current = url;
+      return;
     }
-  }, [initWidget]);
+    loadTrack(url);
+  }, [loadTrack]);
 
   const setTrack = useCallback((track: PlayerTrack) => {
+    // Same track as the one already loaded and the widget is ready: don't reload,
+    // just toggle. This covers every caller (bar, mix pages, cards, lists).
+    if (track.soundcloudUrl) {
+      const url = normalizeSCUrl(track.soundcloudUrl);
+      const widget = widgetRef.current;
+      if (url === currentUrlRef.current && isReadyRef.current && widget) {
+        if (isPlayingRef.current) {
+          widget.pause();
+        } else {
+          radioPause.fn();
+          widget.play();
+        }
+        return;
+      }
+    }
     setCurrentTrack(track);
     setPlaybackError(null);
     setPosition(0);
     setDuration(0);
+    // Don't keep showing "playing" for the previous track while the new one loads.
+    setIsPlaying(false);
+    isPlayingRef.current = false;
     if (track.soundcloudUrl) {
       loadSoundcloudUrl(track.soundcloudUrl);
     }
@@ -210,6 +274,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const setVolume = useCallback((v: number) => {
     setVolumeState(v);
+    volumeRef.current = v;
     if (widgetRef.current) widgetRef.current.setVolume(v);
   }, []);
 
@@ -219,6 +284,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       clearTimeout(errorTimerRef.current);
       errorTimerRef.current = null;
     }
+    currentUrlRef.current = null;
     setCurrentTrack(null);
     setIsPlaying(false);
     setPosition(0);
