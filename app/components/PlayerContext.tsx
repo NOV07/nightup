@@ -54,6 +54,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const isPlayingRef = useRef(false);
   const lastPosRef = useRef(0);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set once the user moves the slider; re-applied after every track reload.
+  const volumeRef = useRef<number | null>(null);
+  const loadTrackRef = useRef<(url: string) => void>(() => {});
 
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
 
@@ -96,14 +99,33 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       clearTimeout(errorTimerRef.current);
       errorTimerRef.current = null;
     }
+    // Leave nothing behind that would make the next click wait for a READY that
+    // will never come.
+    isReadyRef.current = false;
+    pendingUrlRef.current = null;
     setPlaybackError("Track unavailable");
     setIsPlaying(false);
   }, []);
 
+  // 6s watchdog, armed on every track load: if READY never fires the URL is dead/private.
+  const armErrorTimer = useCallback(() => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => {
+      errorTimerRef.current = null;
+      if (!isReadyRef.current) handlePlaybackError();
+    }, 6000);
+  }, [handlePlaybackError]);
+
+  // Safe to call on every READY: each event is unbound first, so listeners never pile up.
   const bindPlayerEvents = useCallback(() => {
     const widget = widgetRef.current;
     const SC = (window as any).SC;
     if (!widget || !SC) return;
+
+    const E = SC.Widget.Events;
+    for (const ev of [E.PLAY, E.PAUSE, E.FINISH, E.PLAY_PROGRESS, E.ERROR]) {
+      if (ev) widget.unbind(ev);
+    }
 
     widget.bind(SC.Widget.Events.PLAY, () => {
       setIsPlaying(true);
@@ -126,76 +148,84 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [handlePlaybackError]);
 
-  // Initialize SC widget against a URL.
-  // auto_play=false in src + explicit widget.play() inside READY so events bind first.
-  const initWidget = useCallback((url: string) => {
+  // Single load path for every track, first one or not: reload the hidden iframe,
+  // wait for READY, bind events, then play. widget.load() is not used because
+  // nothing re-binds events or re-arms the watchdog after it.
+  const loadTrack = useCallback((url: string) => {
     const iframe = ensureScEmbed();
 
-    isReadyRef.current = false;
-    iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&visual=false&hide_related=true&show_comments=false&show_teaser=false`;
+    const onReady = () => {
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = null;
+      }
+      const widget = widgetRef.current;
+      if (!widget) return;
 
-    // 6s timeout: if READY never fires the URL is dead/private
-    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-    errorTimerRef.current = setTimeout(() => {
-      if (!isReadyRef.current) handlePlaybackError();
-    }, 6000);
+      // The user picked another track while this one was loading: switch to it.
+      const pending = pendingUrlRef.current;
+      pendingUrlRef.current = null;
+      if (pending) { loadTrackRef.current(pending); return; }
+
+      isReadyRef.current = true;
+      bindPlayerEvents();
+      if (volumeRef.current !== null) widget.setVolume(volumeRef.current);
+      widget.play();
+    };
+
+    // Re-register READY (unbind first) so a reused widget never holds two handlers.
+    const bindReady = () => {
+      const SC = (window as any).SC;
+      const widget = widgetRef.current;
+      if (!SC?.Widget || !widget) return false;
+      widget.unbind(SC.Widget.Events.READY);
+      widget.bind(SC.Widget.Events.READY, onReady);
+      return true;
+    };
+
+    isReadyRef.current = false;
+    bindReady(); // widget already exists on later tracks: bind before the iframe reloads
+    iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&visual=false&hide_related=true&show_comments=false&show_teaser=false`;
+    armErrorTimer();
 
     const attempt = (n: number) => {
       if (n > 50) return;
       const SC = (window as any).SC;
       if (!SC?.Widget) { setTimeout(() => attempt(n + 1), 200); return; }
       try {
-        const widget = SC.Widget(iframe);
-        widgetRef.current = widget;
-
-        widget.bind(SC.Widget.Events.READY, () => {
-          if (errorTimerRef.current) {
-            clearTimeout(errorTimerRef.current);
-            errorTimerRef.current = null;
-          }
-          isReadyRef.current = true;
-          bindPlayerEvents();
-          const toPlay = pendingUrlRef.current ?? url;
-          pendingUrlRef.current = null;
-          if (toPlay !== url) {
-            widget.load(toPlay, { auto_play: true, visual: false, hide_related: true, show_comments: false, show_teaser: false });
-          } else {
-            widget.play();
-          }
-        });
+        if (!widgetRef.current) widgetRef.current = SC.Widget(iframe);
+        bindReady();
       } catch {
         setTimeout(() => attempt(n + 1), 200);
       }
     };
     setTimeout(() => attempt(0), 200);
-  }, [ensureScEmbed, bindPlayerEvents, handlePlaybackError]);
+  }, [ensureScEmbed, bindPlayerEvents, armErrorTimer]);
+
+  useEffect(() => { loadTrackRef.current = loadTrack; }, [loadTrack]);
 
   const loadSoundcloudUrl = useCallback((rawUrl: string) => {
     radioPause.fn();
     const url = normalizeSCUrl(rawUrl);
 
-    if (!isReadyRef.current) {
-      if (!widgetRef.current) {
-        initWidget(url);
-      } else {
-        pendingUrlRef.current = url;
-      }
-    } else {
-      widgetRef.current.load(url, {
-        auto_play: true,
-        visual: false,
-        hide_related: true,
-        show_comments: false,
-        show_teaser: false,
-      });
+    // A load is in flight (watchdog armed, READY not yet received): remember the
+    // latest pick and switch to it on READY. Otherwise start a fresh load, which
+    // also recovers from a previous failure.
+    if (!isReadyRef.current && errorTimerRef.current) {
+      pendingUrlRef.current = url;
+      return;
     }
-  }, [initWidget]);
+    loadTrack(url);
+  }, [loadTrack]);
 
   const setTrack = useCallback((track: PlayerTrack) => {
     setCurrentTrack(track);
     setPlaybackError(null);
     setPosition(0);
     setDuration(0);
+    // Don't keep showing "playing" for the previous track while the new one loads.
+    setIsPlaying(false);
+    isPlayingRef.current = false;
     if (track.soundcloudUrl) {
       loadSoundcloudUrl(track.soundcloudUrl);
     }
@@ -210,6 +240,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const setVolume = useCallback((v: number) => {
     setVolumeState(v);
+    volumeRef.current = v;
     if (widgetRef.current) widgetRef.current.setVolume(v);
   }, []);
 
