@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { slugify, uniqueSlug } from '@/app/lib/slug'
+import { spotCoordsError } from '@/app/lib/mapsCoords'
 
 // Kept in sync with the spot_category enum in Postgres.
 const CATEGORIES = ['food', 'drink', 'nightlife', 'show', 'chill', 'activity', 'art', 'wellness']
@@ -65,8 +66,9 @@ export async function POST(req: NextRequest) {
 
   // lat/lng back the generated `geo` column that powers proximity search, so a
   // spot without them would be invisible to TonightModal.
-  if (body.lat == null || body.lng == null) {
-    return NextResponse.json({ error: 'Missing coordinates. Paste a Google Maps URL that contains @lat,lng' }, { status: 400 })
+  const coordsError = spotCoordsError(body, { required: true })
+  if (coordsError) {
+    return NextResponse.json({ error: coordsError }, { status: 400 })
   }
 
   const payload: Record<string, unknown> = {}

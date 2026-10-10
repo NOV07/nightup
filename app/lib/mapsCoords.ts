@@ -38,6 +38,27 @@ export function validateCoords(lat: unknown, lng: unknown): CoordsCheck {
 }
 
 /**
+ * Coordinate check for a spot write. Returns an error message, or null when
+ * the payload may be saved.
+ *   required    lat and lng must both be valid numbers (create).
+ *   allowEmpty  lat and lng may both be null (admin edit of an old spot with
+ *               no pin); otherwise null is rejected, so an edit cannot wipe
+ *               the `geo` column by accident.
+ * A payload without lat/lng keys (and not `required`) leaves them untouched.
+ */
+export function spotCoordsError(
+  body: Record<string, unknown>,
+  { required = false, allowEmpty = false }: { required?: boolean; allowEmpty?: boolean } = {},
+): string | null {
+  const hasLat = 'lat' in body, hasLng = 'lng' in body
+  if (!required && !hasLat && !hasLng) return null
+  if (allowEmpty && !required && body.lat == null && body.lng == null) return null
+  if (body.lat == null || body.lng == null) return 'Missing coordinates: put a pin on the map'
+  if (!validateCoords(body.lat, body.lng).ok) return 'Invalid coordinates: lat must be in [-90, 90] and lng in [-180, 180]'
+  return null
+}
+
+/**
  * Pulls coordinates out of an expanded Google Maps URL, most precise first:
  *   1. `!3d<lat>!4d<lng>`  the place itself (path or `data=`)
  *   2. `@<lat>,<lng>`      the viewport centre
