@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { SPOT_FIELDS } from '../route'
+import { spotCoordsError } from '@/app/lib/mapsCoords'
 
 export async function PATCH(
   req: NextRequest,
@@ -33,6 +34,13 @@ export async function PATCH(
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  // A null lat/lng would empty the generated `geo` column and drop the spot
+  // from proximity search, so an edit either keeps the pin or moves it.
+  const coordsError = spotCoordsError(body)
+  if (coordsError) {
+    return NextResponse.json({ error: coordsError }, { status: 400 })
   }
 
   // Slug stays fixed after creation — it is the public URL. is_published and

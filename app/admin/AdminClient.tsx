@@ -9,6 +9,8 @@ import EventFormSteps, { type EventFormData } from "../../components/events/Even
 import { CURRENCIES, normalizeCurrency, parsePriceInput } from "../lib/formatPrice";
 import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
 import { SPOT_CROP_ASPECT } from "../spots/types";
+import LocationPicker from "../../components/maps/LocationPicker";
+import { useLanguage } from "../components/LanguageContext";
 
 const EVENT_CROP_ASPECT = 16 / 9;
 
@@ -201,9 +203,10 @@ function toReleasePayload(form: Record<string, unknown>) {
 const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
-const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null };
+const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
 
 export default function AdminClient() {
+  const { t } = useLanguage();
   // Tab state lives in the shell so the sidebar can drive it from the magazine
   // routes, which render inside the same layout.
   const { activeTab, publishCounts } = useAdminNav();
@@ -720,6 +723,8 @@ export default function AdminClient() {
 
   async function handleAddSpot(e: React.FormEvent) {
     e.preventDefault();
+    // Without a pin the spot has no `geo` and never shows up in "near me".
+    if (spotForm.lat == null || spotForm.lng == null) { setAddError(t("err_map_pin_required")); return; }
     setAddLoading(true); setAddError(""); setAddSuccess("");
     const res = await fetch("/api/admin/add", {
       method: "POST",
@@ -1813,6 +1818,17 @@ export default function AdminClient() {
                             <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={spotForm.city} onChange={e => setSpotForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
                             <div><label className={labelCls}>Neighborhood</label><input className={inputCls} style={inputStyle} value={spotForm.neighborhood} onChange={e => setSpotForm(f => ({ ...f, neighborhood:e.target.value }))} /></div>
                             <div><label className={labelCls}>Address</label><input className={inputCls} style={inputStyle} value={spotForm.address} onChange={e => setSpotForm(f => ({ ...f, address:e.target.value }))} /></div>
+                            <div className="sm:col-span-2" data-testid="admin-add-spot-map">
+                              <label className={labelCls}>{t("spot_map_label")} *</label>
+                              <LocationPicker
+                                value={spotForm.lat != null && spotForm.lng != null ? { lat: spotForm.lat, lng: spotForm.lng } : null}
+                                onChange={(lat, lng) => { setSpotForm(f => ({ ...f, lat, lng })); setAddError(""); }} />
+                              <p className="text-xs mt-1.5" style={{ color:"rgba(255,255,255,0.45)" }}>
+                                {spotForm.lat != null && spotForm.lng != null
+                                  ? `${t("spot_map_drag_hint")} ${spotForm.lat.toFixed(6)}, ${spotForm.lng.toFixed(6)}`
+                                  : t("spot_map_tap_to_place")}
+                              </p>
+                            </div>
                             <div><label className={labelCls}>Instagram</label><input className={inputCls} style={inputStyle} value={spotForm.instagram} onChange={e => setSpotForm(f => ({ ...f, instagram:e.target.value }))} /></div>
                             <div>
                               <label className={labelCls}>Cover Image URL</label>
@@ -2010,6 +2026,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
   genres: string[]; cities: string[]; artCategories: string[];
   releaseTypes: string[]; musicGenres: string[]; spotCategories: string[];
 }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState<Record<string, unknown>>({ ...item });
   const [showCropper, setShowCropper] = useState(false);
 
@@ -2189,6 +2206,20 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("city","City","select",cities)}
           {field("neighborhood","Neighborhood")}
           {field("address","Address")}
+          <div className="sm:col-span-2" data-testid="admin-edit-spot-map">
+            <label className={labelCls}>{t("spot_map_label")}</label>
+            {(form.lat == null || form.lng == null) && (
+              <p className="text-xs mb-2" style={{ color:"#E8A020" }}>⚠ {t("spot_map_missing_warning")}</p>
+            )}
+            <LocationPicker
+              value={typeof form.lat === "number" && typeof form.lng === "number" ? { lat: form.lat, lng: form.lng } : null}
+              onChange={(lat, lng) => setForm(f => ({ ...f, lat, lng }))} />
+            {typeof form.lat === "number" && typeof form.lng === "number" && (
+              <p className="text-xs mt-1.5" style={{ color:"rgba(255,255,255,0.45)" }}>
+                {t("spot_map_drag_hint")} {form.lat.toFixed(6)}, {form.lng.toFixed(6)}
+              </p>
+            )}
+          </div>
           {field("cover_image","Cover Image URL")}
           {form.cover_image ? (
             <div className="flex items-end pb-1">

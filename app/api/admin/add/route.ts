@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 import { withIngestedEventImage } from '@/app/lib/ingestImage'
+import { spotCoordsError } from '@/app/lib/mapsCoords'
 
 function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
@@ -26,6 +27,11 @@ export async function POST(req: NextRequest) {
   // over. Falls back to the URL as given if that does not work out.
   let row = data as Record<string, unknown>
   let imageWarning: string | undefined
+  // Same coordinate rule as POST /api/spots: a new spot needs a valid pin.
+  if (table === 'spots') {
+    const coordsError = spotCoordsError(row, { required: true })
+    if (coordsError) return NextResponse.json({ error: coordsError }, { status: 400 })
+  }
   if (table === 'events') {
     const ingested = await withIngestedEventImage(row, !!row.has_copyright_restriction)
     row = ingested.row

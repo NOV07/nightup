@@ -17,9 +17,9 @@ function spotToForm(spot: any): Partial<SpotFormData> {
     city: spot.city ?? '',
     neighborhood: spot.neighborhood ?? '',
     address: spot.address ?? '',
-    // The pasted URL is not stored, but lat/lng are — rebuild a link that
-    // satisfies the step-2 coordinate check so an edit does not have to redo it.
-    maps_url: spot.lat != null && spot.lng != null ? `https://www.google.com/maps/@${spot.lat},${spot.lng},17z` : '',
+    // The pasted URL is not stored. The pin loads from lat/lng, and the link
+    // field stays empty unless the owner pastes a new one.
+    maps_url: '',
     lat: spot.lat ?? null,
     lng: spot.lng ?? null,
     cover_image: spot.cover_image ?? '',
