@@ -6,7 +6,7 @@
  *   node scripts/test-maps-geocode.mjs
  */
 import assert from 'node:assert/strict'
-import { validateCoords } from '../app/lib/mapsCoords.ts'
+import { validateCoords, spotCoordsError } from '../app/lib/mapsCoords.ts'
 import {
   extractPlaceText, geocodeNominatim, precisionOf, resetNominatimState, NOMINATIM_MIN_INTERVAL_MS,
 } from '../app/lib/mapsGeocode.ts'
@@ -72,6 +72,26 @@ await test('non-numbers rejected (strings, null, NaN, Infinity)', () => {
   for (const [a, b] of [['37.9', 23.7], [37.9, null], [null, null], [undefined, 1], [NaN, 1], [1, Infinity]]) {
     assert.equal(validateCoords(a, b).ok, false, `${a},${b}`)
   }
+})
+
+console.log('spotCoordsError')
+await test('create: both valid numbers required', () => {
+  assert.equal(spotCoordsError({ lat: 37.9, lng: 23.7 }, { required: true }), null)
+  for (const b of [{}, { lat: 37.9 }, { lat: null, lng: null }, { lat: '37.9', lng: 23.7 }, { lat: 91, lng: 23.7 }]) {
+    assert.ok(spotCoordsError(b, { required: true }), JSON.stringify(b))
+  }
+})
+await test('owner edit: absent is fine, null or partial is refused', () => {
+  assert.equal(spotCoordsError({ name: 'x' }), null)
+  assert.equal(spotCoordsError({ lat: 37.9, lng: 23.7 }), null)
+  for (const b of [{ lat: null, lng: null }, { lat: 37.9 }, { lng: 23.7 }, { lat: 37.9, lng: -181 }]) {
+    assert.ok(spotCoordsError(b), JSON.stringify(b))
+  }
+})
+await test('admin edit: both null allowed, partial still refused', () => {
+  assert.equal(spotCoordsError({ lat: null, lng: null }, { allowEmpty: true }), null)
+  assert.equal(spotCoordsError({ lat: undefined, lng: undefined, name: 'x' }, { allowEmpty: true }), null)
+  assert.ok(spotCoordsError({ lat: 37.9, lng: null }, { allowEmpty: true }))
 })
 
 console.log('precisionOf')
