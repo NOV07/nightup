@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
   const url = /^https?:\/\//i.test(input) ? input : firstUrl(input) ?? input
 
   try {
-    const { lat, lng, finalUrl } = await resolveMapsUrl(url)
-    return NextResponse.json({ lat, lng, finalUrl, source: 'url' })
+    const { lat, lng, finalUrl, precision } = await resolveMapsUrl(url)
+    return NextResponse.json({ lat, lng, finalUrl, source: 'url', precision })
   } catch (e) {
     const code = e instanceof MapsResolveError ? e.code : 'fetch_failed'
     if (code === 'no_coords' && e instanceof MapsResolveError && e.finalUrl) {

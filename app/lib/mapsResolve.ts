@@ -3,7 +3,7 @@
 // against an exact-hostname allowlist and redirects are followed by hand.
 // Only erasable TS syntax, so scripts/test-maps-resolve.mjs can import it.
 
-import { extractCoords, type Coords } from './mapsCoords.ts'
+import { extractCoords, type PlaceCoords } from './mapsCoords.ts'
 
 export const MAX_REDIRECTS = 5
 export const REQUEST_TIMEOUT_MS = 5000
@@ -49,7 +49,7 @@ export function checkMapsUrl(raw: string): URL | null {
   return null
 }
 
-export interface ResolveResult extends Coords { finalUrl: string }
+export interface ResolveResult extends PlaceCoords { finalUrl: string }
 
 type FetchLike = (input: string, init: RequestInit) => Promise<Response>
 

@@ -20,22 +20,22 @@ async function test(name, fn) {
 
 console.log('extractCoords')
 await test('@lat,lng', () => assert.deepEqual(
-  extractCoords('https://www.google.com/maps/place/Foo/@37.9755,23.7348,17z/data=abc'), { lat: 37.9755, lng: 23.7348 }))
+  extractCoords('https://www.google.com/maps/place/Foo/@37.9755,23.7348,17z/data=abc'), { lat: 37.9755, lng: 23.7348, precision: 'viewport' }))
 await test('!3d!4d beats @ (place over viewport)', () => assert.deepEqual(
   extractCoords('https://www.google.com/maps/place/Foo/@37.9000,23.7000,17z/data=!4m6!3m5!1s0x0:0x1!8m2!3d37.9755!4d23.7348'),
-  { lat: 37.9755, lng: 23.7348 }))
+  { lat: 37.9755, lng: 23.7348, precision: 'exact' }))
 await test('!3d!4d in percent-encoded data=', () => assert.deepEqual(
-  extractCoords('https://www.google.com/maps/place/x/data=%213d37.97%214d23.72'), { lat: 37.97, lng: 23.72 }))
+  extractCoords('https://www.google.com/maps/place/x/data=%213d37.97%214d23.72'), { lat: 37.97, lng: 23.72, precision: 'exact' }))
 await test('negative values', () => assert.deepEqual(
-  extractCoords('https://www.google.com/maps/@-33.8688,151.2093,12z'), { lat: -33.8688, lng: 151.2093 }))
+  extractCoords('https://www.google.com/maps/@-33.8688,151.2093,12z'), { lat: -33.8688, lng: 151.2093, precision: 'viewport' }))
 await test('?q=lat,lng', () => assert.deepEqual(
-  extractCoords('https://www.google.com/maps?q=37.9838,23.7275'), { lat: 37.9838, lng: 23.7275 }))
+  extractCoords('https://www.google.com/maps?q=37.9838,23.7275'), { lat: 37.9838, lng: 23.7275, precision: 'exact' }))
 await test('?q=lat%2Clng (encoded comma)', () => assert.deepEqual(
-  extractCoords('https://maps.google.com/?q=37.9838%2C23.7275'), { lat: 37.9838, lng: 23.7275 }))
+  extractCoords('https://maps.google.com/?q=37.9838%2C23.7275'), { lat: 37.9838, lng: 23.7275, precision: 'exact' }))
 await test('?ll=', () => assert.deepEqual(
-  extractCoords('https://maps.google.com/?ll=37.9838,23.7275&z=15'), { lat: 37.9838, lng: 23.7275 }))
+  extractCoords('https://maps.google.com/?ll=37.9838,23.7275&z=15'), { lat: 37.9838, lng: 23.7275, precision: 'exact' }))
 await test('?query=', () => assert.deepEqual(
-  extractCoords('https://www.google.com/maps/search/?api=1&query=37.9838,23.7275'), { lat: 37.9838, lng: 23.7275 }))
+  extractCoords('https://www.google.com/maps/search/?api=1&query=37.9838,23.7275'), { lat: 37.9838, lng: 23.7275, precision: 'exact' }))
 await test('?q= with a place name is not coordinates', () => assert.equal(
   extractCoords('https://www.google.com/maps?q=Acropolis+Athens'), null))
 await test('lat out of range rejected', () => assert.equal(
@@ -43,11 +43,31 @@ await test('lat out of range rejected', () => assert.equal(
 await test('lng out of range rejected', () => assert.equal(
   extractCoords('https://www.google.com/maps/@37.9,181.2,17z'), null))
 await test('bad !3d falls through to valid @', () => assert.deepEqual(
-  extractCoords('https://www.google.com/maps/@37.9,23.7,17z/data=!3d99.0!4d23.7'), { lat: 37.9, lng: 23.7 }))
+  extractCoords('https://www.google.com/maps/@37.9,23.7,17z/data=!3d99.0!4d23.7'), { lat: 37.9, lng: 23.7, precision: 'viewport' }))
+// Real browser link (Ουλαλούμ): @ is the viewport centre ~225 m off, !8m2!3d!4d is the place.
+const OULALOUM = 'https://www.google.com/maps/place/%CE%9F%CF%85%CE%BB%CE%B1%CE%BB%CE%BF%CF%8D%CE%BC/@37.9232618,23.7523985,17z/data=!3m2!4b1!5s0x14a1bdf3d0d1957f:0xa114b011b6d0e23e!4m6!3m5!1s0x14a1bdcdce193e11:0x47a779e326a34809!8m2!3d37.9232576!4d23.7549734!16s%2Fg%2F11h5rrb_2j?entry=ttu'
+await test('(i) full browser link: place (!3d!4d), not the viewport (@)', () => assert.deepEqual(
+  extractCoords(OULALOUM), { lat: 37.9232576, lng: 23.7549734, precision: 'exact' }))
+await test('(ii) only @ -> viewport', () => assert.deepEqual(
+  extractCoords('https://www.google.com/maps/@37.9232618,23.7523985,17z?entry=ttu'), { lat: 37.9232618, lng: 23.7523985, precision: 'viewport' }))
+await test('(iii) control dropped pin -> exact', () => assert.deepEqual(
+  extractCoords('https://www.google.com/maps/place/37.983496,23.669933/data=!4m6!3m5!1s0!7e2!8m2!3d37.9834959!4d23.6699333!18m1!1e1'),
+  { lat: 37.9834959, lng: 23.6699333, precision: 'exact' }))
+await test('(iv) several !3d!4d: the one inside !8m2 wins', () => assert.deepEqual(
+  extractCoords('https://www.google.com/maps/place/X/@37.1,23.1,17z/data=!3m1!3d37.5!4d23.5!4m6!3m5!1s0x1:0x2!8m2!3d37.9232576!4d23.7549734'),
+  { lat: 37.9232576, lng: 23.7549734, precision: 'exact' }))
+await test('several !3d!4d without !8m2: the first valid one', () => assert.deepEqual(
+  extractCoords('https://www.google.com/maps/place/X/data=!3d99!4d1!3d37.5!4d23.5!3d38!4d24'), { lat: 37.5, lng: 23.5, precision: 'exact' }))
+await test('/place/lat,lng without !3d -> exact', () => assert.deepEqual(
+  extractCoords('https://www.google.com/maps/place/37.983496,23.669933/@37.98,23.66,17z'), { lat: 37.983496, lng: 23.669933, precision: 'exact' }))
+await test('?q= beats @', () => assert.deepEqual(
+  extractCoords('https://www.google.com/maps/@37.1,23.1,12z?q=37.9838,23.7275'), { lat: 37.9838, lng: 23.7275, precision: 'exact' }))
+await test('/place/<name> is not mistaken for coordinates', () => assert.deepEqual(
+  extractCoords('https://www.google.com/maps/place/Bar+42,+Athens/@37.9,23.7,17z'), { lat: 37.9, lng: 23.7, precision: 'viewport' }))
 await test('short link has no coordinates', () => assert.equal(extractCoords('https://maps.app.goo.gl/AbCd123'), null))
 await test('garbage / empty', () => { assert.equal(extractCoords(''), null); assert.equal(extractCoords('hello'), null) })
 await test('malformed % escape does not throw', () => assert.deepEqual(
-  extractCoords('https://www.google.com/maps/@37.9,23.7,17z/%E0%A4%A'), { lat: 37.9, lng: 23.7 }))
+  extractCoords('https://www.google.com/maps/@37.9,23.7,17z/%E0%A4%A'), { lat: 37.9, lng: 23.7, precision: 'viewport' }))
 
 console.log('isInGreece / isShortMapsLink / firstUrl')
 await test('Athens in Greece', () => assert.equal(isInGreece(37.98, 23.72), true))

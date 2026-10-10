@@ -59,26 +59,34 @@ export function spotCoordsError(
 }
 
 /**
- * Pulls coordinates out of an expanded Google Maps URL, most precise first:
- *   1. `!3d<lat>!4d<lng>`  the place itself (path or `data=`)
- *   2. `@<lat>,<lng>`      the viewport centre
- *   3. `q=` / `ll=` / `query=` holding a "lat,lng" pair
+ * 'exact'     the place itself, as Google stores it.
+ * 'viewport'  only the centre of the map the user was looking at (`@lat,lng`),
+ *             which can be hundreds of metres off; the UI asks for a check.
+ */
+export type CoordsPrecision = 'exact' | 'viewport'
+export interface PlaceCoords extends Coords { precision: CoordsPrecision }
+
+/**
+ * Coordinates from a Google Maps URL. The one parser for both the wizard
+ * (full links, parsed in the browser) and /api/maps/resolve (short links,
+ * after expansion). Most precise first:
+ *   1. `!3d<lat>!4d<lng>`   the place; the pair inside `!8m2` wins, else the first
+ *   2. `?q=` / `?ll=` / `?query=` holding "lat,lng"
+ *   3. `/place/<lat>,<lng>`  a dropped pin
+ *   4. `@<lat>,<lng>`        the viewport centre, only when nothing above exists
  * Out-of-range pairs are skipped, so a bad pattern falls through to the next.
  */
-export function extractCoords(url: string): Coords | null {
+export function extractCoords(url: string): PlaceCoords | null {
   let s = url
   try { s = decodeURIComponent(url) } catch { /* malformed escapes: use the raw string */ }
+  const exact = (c: Coords | null): PlaceCoords | null => (c ? { ...c, precision: 'exact' } : null)
 
-  const place = s.match(new RegExp(`!3d(${NUM})!4d(${NUM})`))
-  if (place) {
-    const c = pair(place[1], place[2])
-    if (c) return c
-  }
-
-  const at = s.match(new RegExp(`@(${NUM}),(${NUM})`))
-  if (at) {
-    const c = pair(at[1], at[2])
-    if (c) return c
+  const inPlace = s.match(new RegExp(`!8m2!3d(${NUM})!4d(${NUM})`))
+  const placeCoords = inPlace && pair(inPlace[1], inPlace[2])
+  if (placeCoords) return exact(placeCoords)
+  for (const m of s.matchAll(new RegExp(`!3d(${NUM})!4d(${NUM})`, 'g'))) {
+    const c = pair(m[1], m[2])
+    if (c) return exact(c)
   }
 
   let params: URLSearchParams | null = null
@@ -89,9 +97,21 @@ export function extractCoords(url: string): Coords | null {
       const m = v?.match(new RegExp(`^\\s*(${NUM})\\s*,\\s*(${NUM})\\s*$`))
       if (m) {
         const c = pair(m[1], m[2])
-        if (c) return c
+        if (c) return exact(c)
       }
     }
+  }
+
+  const pin = s.match(new RegExp(`/place/(${NUM})\\s*,\\s*(${NUM})(?=[/?#]|$)`))
+  if (pin) {
+    const c = pair(pin[1], pin[2])
+    if (c) return exact(c)
+  }
+
+  const at = s.match(new RegExp(`@(${NUM}),(${NUM})`))
+  if (at) {
+    const c = pair(at[1], at[2])
+    if (c) return { ...c, precision: 'viewport' }
   }
   return null
 }
