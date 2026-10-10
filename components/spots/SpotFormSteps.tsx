@@ -13,7 +13,8 @@ import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import SpotLivePreview from './SpotLivePreview'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
-import { isShortMapsLink, isInGreece, type Coords } from '@/app/lib/mapsCoords'
+import { isShortMapsLink, isInGreece, validateCoords, type Coords } from '@/app/lib/mapsCoords'
+import LocationPicker from '@/components/maps/LocationPicker'
 
 // Same list the event wizard offers — spots had no city constant of its own.
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
@@ -82,6 +83,32 @@ export interface SpotFormData {
 }
 
 type SetField = <K extends keyof SpotFormData>(k: K, v: SpotFormData[K]) => void
+
+/**
+ * Where the pin came from. UI only, never stored.
+ *   url        exact coordinates from the Google link
+ *   nominatim  street-level guess from the address in the link
+ *   saved      the spot's stored coordinates (edit)
+ *   manual     placed by the user on an empty map
+ */
+type PinSource = 'url' | 'nominatim' | 'saved' | 'manual'
+
+/** What /api/maps/resolve answered for one link. */
+interface ResolveOutcome {
+  coords: Coords
+  source: 'url' | 'nominatim'
+  placeText?: string
+  precision?: 'street' | 'building'
+  unverified?: boolean
+}
+
+interface PinState {
+  source: PinSource | null
+  /** The user dragged the pin or tapped the map at least once. */
+  touched: boolean
+  /** Shown in the card above the map for a Nominatim result. */
+  info: Omit<ResolveOutcome, 'coords' | 'source'> | null
+}
 
 const EMPTY_HOURS = DAYS.reduce((acc, d) => {
   acc[d] = { closed: false, hours: '' }
@@ -289,13 +316,29 @@ function Step1({ form, set, stepErrors }: {
   )
 }
 
-function Step2({ form, set, stepErrors, mapsChecking, onMapsChange, onMapsBlur }: {
+function Spinner() {
+  return (
+    <span aria-hidden style={{
+      display: 'inline-block', width: 12, height: 12, marginRight: 8, verticalAlign: '-1px',
+      border: '2px solid rgba(232,160,32,0.3)', borderTopColor: '#E8A020', borderRadius: '50%',
+      animation: 'nightup-spin 0.8s linear infinite',
+    }} />
+  )
+}
+
+function Step2({ form, set, stepErrors, mapsChecking, onMapsChange, onMapsBlur, pin, notFound, unreachable, onPinChange, isEdit }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
   mapsChecking: boolean
   onMapsChange: (value: string) => void
   onMapsBlur: () => void
+  pin: PinState
+  notFound: boolean
+  unreachable: boolean
+  onPinChange: (lat: number, lng: number) => void
+  isEdit: boolean
 }) {
   const { t } = useLanguage()
+  const hasPin = form.lat != null && form.lng != null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
@@ -323,7 +366,10 @@ function Step2({ form, set, stepErrors, mapsChecking, onMapsChange, onMapsBlur }
       </div>
 
       <div>
-        <label style={lbl}>Google Maps link *</label>
+        <label style={lbl}>Google Maps link{isEdit ? '' : ' *'}</label>
+        {isEdit && (
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>{t('spot_map_link_optional')}</p>
+        )}
         <div style={{
           padding: '12px 14px', borderRadius: 12, marginBottom: 10,
           backgroundColor: 'rgba(232,160,32,0.07)', border: '1px solid rgba(232,160,32,0.22)',
@@ -343,15 +389,58 @@ function Step2({ form, set, stepErrors, mapsChecking, onMapsChange, onMapsBlur }
           onBlur={onMapsBlur}
           placeholder="https://maps.app.goo.gl/... | https://www.google.com/maps/..." />
         <Err stepErrors={stepErrors} k="maps_url" />
-        {mapsChecking && (
-          <p role="status" style={{ fontSize: 12, color: '#E8A020', marginTop: 6 }}>{t('spot_maps_checking')}</p>
-        )}
-        {!mapsChecking && form.lat != null && form.lng != null && (
-          <>
-            <p style={{ fontSize: 12, color: '#22c55e', marginTop: 6 }}>
-              ✓ {t('wizard_coords')}: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+        {/* Fixed height whether or not a check runs, so nothing below jumps under a finger. */}
+        <p role="status" style={{ fontSize: 12, color: '#E8A020', marginTop: 6, minHeight: 18 }}>
+          {mapsChecking && <><Spinner />{t('spot_maps_checking')}</>}
+        </p>
+      </div>
+
+      <div>
+        <label style={lbl}>{t('spot_map_label')} *</label>
+
+        {pin.source === 'nominatim' && pin.info?.placeText && (
+          <div data-testid="map-nominatim-card" style={{
+            padding: '12px 14px', borderRadius: 12, marginBottom: 10,
+            backgroundColor: 'rgba(232,160,32,0.07)', border: '1px solid rgba(232,160,32,0.22)',
+          }}>
+            <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
+              <span style={{ color: '#E8A020', fontWeight: 700 }}>{t('spot_map_from_link')}</span> {pin.info.placeText}
             </p>
-            {!isInGreece(form.lat, form.lng) && (
+            {pin.info.precision !== 'building' && (
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 6, lineHeight: 1.5 }}>{t('spot_map_street_only')}</p>
+            )}
+            {pin.info.unverified && (
+              <p style={{ fontSize: 12, color: '#E8A020', marginTop: 6, lineHeight: 1.5 }}>⚠ {t('spot_map_unverified')}</p>
+            )}
+          </div>
+        )}
+
+        {notFound && !hasPin && (
+          <div role="alert" data-testid="map-not-found" style={{
+            padding: '12px 14px', borderRadius: 12, marginBottom: 10,
+            backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.35)',
+          }}>
+            <p style={{ fontSize: 13, color: '#ef4444', fontWeight: 700 }}>{t('spot_map_not_found')}</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>{t('spot_map_tap_to_place')}</p>
+            {unreachable && (
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{t('err_maps_unreachable')}</p>
+            )}
+          </div>
+        )}
+
+        <LocationPicker value={hasPin ? { lat: form.lat as number, lng: form.lng as number } : null}
+          onChange={onPinChange} disabled={mapsChecking} />
+
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>
+          {hasPin ? t('spot_map_drag_hint') : notFound ? null : t('spot_map_tap_to_place')}
+        </p>
+        <Err stepErrors={stepErrors} k="pin" />
+        {hasPin && (
+          <>
+            <p data-testid="map-coords" style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>
+              {t('wizard_coords')}: {(form.lat as number).toFixed(6)}, {(form.lng as number).toFixed(6)}
+            </p>
+            {!isInGreece(form.lat as number, form.lng as number) && (
               <p style={{ fontSize: 12, color: '#E8A020', marginTop: 4 }}>⚠ {t('spot_maps_outside_greece')}</p>
             )}
           </>
@@ -577,18 +666,32 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
   const [previewOpen, setPreviewOpen] = useState(false)
   const [showCropper, setShowCropper] = useState(false)
   const [mapsChecking, setMapsChecking] = useState(false)
+  const [pin, setPinState] = useState<PinState>(() => ({
+    source: initialData?.lat != null && initialData?.lng != null ? 'saved' : null, touched: false, info: null,
+  }))
+  const [notFound, setNotFound] = useState(false)
+  const [unreachable, setUnreachable] = useState(false)
 
   // Short-link resolution state. Refs, not state: next() awaits the in-flight
   // call and must see the latest field value after the await.
   const formRef = useRef(form)
   useEffect(() => { formRef.current = form })
+  const pinRef = useRef(pin)
+  const setPin = (p: PinState) => { pinRef.current = p; setPinState(p) }
   const mapsUrlRef = useRef(form.maps_url)
-  const mapsInflight = useRef<{ url: string; promise: Promise<Coords | null>; ctrl: AbortController } | null>(null)
-  const mapsResolved = useRef<{ url: string; coords: Coords } | null>(null)
+  const mapsInflight = useRef<{ url: string; promise: Promise<ResolveOutcome | null>; ctrl: AbortController } | null>(null)
+  const mapsResolved = useRef<{ url: string; outcome: ResolveOutcome } | null>(null)
+  // A link the server said has no place in it. Not asked again on blur or
+  // "Continue": a re-check would hide the notice and shift the button mid-tap.
+  const mapsNoCoordsUrl = useRef<string | null>(null)
   const mapsFail = useRef<'failed' | 'unreachable' | null>(null)
+  const mapsDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
   const advancing = useRef(false)
 
-  useEffect(() => () => mapsInflight.current?.ctrl.abort(), [])
+  useEffect(() => () => {
+    mapsInflight.current?.ctrl.abort()
+    if (mapsDebounce.current) clearTimeout(mapsDebounce.current)
+  }, [])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 980)
@@ -616,32 +719,60 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     mapsInflight.current?.ctrl.abort()
     mapsInflight.current = null
     mapsResolved.current = null
+    mapsNoCoordsUrl.current = null
     mapsFail.current = null
+    if (mapsDebounce.current) clearTimeout(mapsDebounce.current)
     setMapsChecking(false)
+    setNotFound(false)
+    setUnreachable(false)
+    setStepErrors(prev => ({ ...prev, maps_url: '', pin: '' }))
+
+    // Clearing the field keeps the pin: the pin, not the link, is what is saved.
+    if (!value.trim()) {
+      setForm(prev => ({ ...prev, maps_url: value }))
+      return
+    }
+    // A new link means a new place: drop the old pin until this one resolves.
     const parsed = parseLatLng(value)
     setForm(prev => ({ ...prev, maps_url: value, lat: parsed?.lat ?? null, lng: parsed?.lng ?? null }))
-    setStepErrors(prev => ({ ...prev, maps_url: '' }))
+    setPin({ source: parsed ? 'url' : null, touched: false, info: null })
+    // Pasting is one change; typing is many. Resolve once the text settles.
+    if (!parsed) mapsDebounce.current = setTimeout(() => { void ensureMapsCoords() }, 400)
+  }
+
+  /** The user tapped the map or dropped the pin. */
+  function onPinChange(lat: number, lng: number) {
+    setForm(prev => ({ ...prev, lat, lng }))
+    const cur = pinRef.current
+    setPin({ source: cur.source ?? 'manual', touched: true, info: cur.info })
+    setNotFound(false)
+    setStepErrors(prev => ({ ...prev, maps_url: '', pin: '' }))
   }
 
   /**
    * Coordinates for the current maps_url. Full links parse locally and never
    * touch the server; short app links go to /api/maps/resolve. One call per
-   * distinct URL: a second caller (blur, then "Next") shares the in-flight
-   * promise. The result is applied only if the field still holds the URL that
-   * was sent.
+   * distinct URL: a second caller (debounce, blur, then "Next") shares the
+   * in-flight promise. The result is applied only if the field still holds
+   * the URL that was sent.
    */
-  function ensureMapsCoords(): Promise<Coords | null> {
+  function ensureMapsCoords(): Promise<ResolveOutcome | null> {
     const url = mapsUrlRef.current
+    if (!url.trim()) return Promise.resolve(null)
     const parsed = parseLatLng(url)
-    if (parsed) return Promise.resolve(parsed)
-    if (!isShortMapsLink(url)) return Promise.resolve(null)
-    if (mapsResolved.current?.url === url) return Promise.resolve(mapsResolved.current.coords)
+    if (parsed) return Promise.resolve({ coords: parsed, source: 'url' })
+    if (!isShortMapsLink(url)) {
+      setNotFound(true)
+      return Promise.resolve(null)
+    }
+    if (mapsResolved.current?.url === url) return Promise.resolve(mapsResolved.current.outcome)
+    if (mapsNoCoordsUrl.current === url) return Promise.resolve(null)
     if (mapsInflight.current?.url === url) return mapsInflight.current.promise
 
     const ctrl = new AbortController()
     mapsFail.current = null
     setMapsChecking(true)
-    const promise: Promise<Coords | null> = (async () => {
+    const promise: Promise<ResolveOutcome | null> = (async () => {
       try {
         const res = await fetch('/api/maps/resolve', {
           method: 'POST',
@@ -651,16 +782,41 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
         })
         const data = await res.json().catch(() => null)
         if (mapsUrlRef.current !== url) return null
-        if (res.ok && typeof data?.lat === 'number' && typeof data?.lng === 'number') {
-          const coords = { lat: data.lat as number, lng: data.lng as number }
-          mapsResolved.current = { url, coords }
-          setForm(prev => prev.maps_url === url ? { ...prev, lat: coords.lat, lng: coords.lng } : prev)
-          return coords
+        const ok = res.ok ? validateCoords(data?.lat, data?.lng) : { ok: false as const }
+        if (ok.ok) {
+          const outcome: ResolveOutcome = data?.source === 'nominatim'
+            ? {
+                coords: { lat: ok.lat, lng: ok.lng }, source: 'nominatim',
+                placeText: typeof data.placeText === 'string' ? data.placeText : undefined,
+                precision: data.precision === 'building' ? 'building' : 'street',
+                unverified: data.unverified === true,
+              }
+            : { coords: { lat: ok.lat, lng: ok.lng }, source: 'url' }
+          mapsResolved.current = { url, outcome }
+          // Skip if the user already placed a pin by hand while this was running.
+          if (!pinRef.current.touched) {
+            setForm(prev => prev.maps_url === url ? { ...prev, lat: outcome.coords.lat, lng: outcome.coords.lng } : prev)
+            setPin({
+              source: outcome.source, touched: false,
+              info: outcome.source === 'nominatim'
+                ? { placeText: outcome.placeText, precision: outcome.precision, unverified: outcome.unverified }
+                : null,
+            })
+          }
+          return outcome
         }
         mapsFail.current = res.status === 400 || res.status === 422 ? 'failed' : 'unreachable'
+        // Only a definite "no place here" is remembered; network trouble may pass.
+        if (mapsFail.current === 'failed') mapsNoCoordsUrl.current = url
+        setUnreachable(mapsFail.current === 'unreachable')
+        setNotFound(true)
         return null
       } catch {
-        if (mapsUrlRef.current === url) mapsFail.current = 'unreachable'
+        if (mapsUrlRef.current === url && !ctrl.signal.aborted) {
+          mapsFail.current = 'unreachable'
+          setUnreachable(true)
+          setNotFound(true)
+        }
         return null
       } finally {
         if (mapsInflight.current?.ctrl === ctrl) {
@@ -673,7 +829,17 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     return promise
   }
 
-  function validate(n: number, f: SpotFormData = form, resolved: Coords | null = null): Record<string, string> {
+  /**
+   * The pin to validate. Right after a resolve, `form` may not have re-rendered
+   * yet, so a fresh outcome stands in for a still-empty pin.
+   */
+  function effectivePin(f: SpotFormData, resolved: ResolveOutcome | null) {
+    if (f.lat != null && f.lng != null) return { lat: f.lat, lng: f.lng, ...pinRef.current }
+    if (resolved && !pinRef.current.touched) return { ...resolved.coords, source: resolved.source, touched: false }
+    return null
+  }
+
+  function validate(n: number, f: SpotFormData = form, resolved: ResolveOutcome | null = null): Record<string, string> {
     const e: Record<string, string> = {}
     const form = f
     if (n === 1) {
@@ -683,11 +849,14 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     if (n === 2) {
       if (!form.city) e.city = t('err_pick_city')
       if (!form.address.trim()) e.address = t('err_address_required')
-      if (!form.maps_url.trim()) {
-        e.maps_url = t('err_maps_required')
-      } else if ((form.lat == null || form.lng == null) && !resolved) {
-        // Never let a required-coordinate spot through with nulls.
-        e.maps_url = mapsFail.current === 'unreachable' ? t('err_maps_unreachable') : t('err_maps_no_coords')
+      // The link is how a new spot finds its place; an edit already has a pin.
+      if (!isEdit && !form.maps_url.trim()) e.maps_url = t('err_maps_required')
+      const p = effectivePin(form, resolved)
+      if (!p || !validateCoords(p.lat, p.lng).ok) {
+        e.pin = t('err_map_pin_required')
+      } else if (p.source === 'nominatim' && !p.touched) {
+        // A street-level guess has to be confirmed on the map.
+        e.pin = t('err_map_confirm_pin')
       }
     }
     if (n === 3) {
@@ -733,12 +902,19 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     onSubmit(form)
   }
 
+  // Step 2 "Continue" looks enabled only with a pin that needs no confirmation.
+  const locationReady = step !== 2 || (
+    !mapsChecking && form.lat != null && form.lng != null && validateCoords(form.lat, form.lng).ok
+    && !(pin.source === 'nominatim' && !pin.touched)
+  )
+
   return (
     <div style={{
       maxWidth: isMobile ? 640 : 1060, margin: '0 auto',
       display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px',
       gap: 28, alignItems: 'start',
     }}>
+      <style>{'@keyframes nightup-spin { to { transform: rotate(360deg) } }'}</style>
       <div>
         {isMobile && (
           <button type="button" onClick={() => setPreviewOpen(true)}
@@ -762,7 +938,8 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
           {step === 1 && <Step1 form={form} set={set} stepErrors={stepErrors} />}
           {step === 2 && (
             <Step2 form={form} set={set} stepErrors={stepErrors} mapsChecking={mapsChecking}
-              onMapsChange={onMapsChange} onMapsBlur={() => { void ensureMapsCoords() }} />
+              onMapsChange={onMapsChange} onMapsBlur={() => { void ensureMapsCoords() }}
+              pin={pin} notFound={notFound} unreachable={unreachable} onPinChange={onPinChange} isEdit={isEdit} />
           )}
           {step === 3 && (
             <Step3 form={form} set={set} stepErrors={stepErrors}
@@ -785,12 +962,15 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
               </button>
             )}
             {step < 4 ? (
-              <button type="button" onClick={next} aria-busy={mapsChecking}
-                style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: mapsChecking ? 'wait' : 'pointer', opacity: mapsChecking ? 0.6 : 1, backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
+              // Stays clickable while a link resolves (next() waits for it) and
+              // when dimmed, so a click explains what is missing.
+              <button type="button" onClick={next} aria-busy={mapsChecking} aria-disabled={!locationReady}
+                data-testid="wizard-next"
+                style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: mapsChecking ? 'wait' : 'pointer', opacity: mapsChecking ? 0.6 : locationReady ? 1 : 0.4, backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
                 {t('event_form_continue')}
               </button>
             ) : (
-              <button type="button" onClick={handleFinalSubmit} disabled={loading}
+              <button type="button" onClick={handleFinalSubmit} disabled={loading} data-testid="wizard-submit"
                 style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1, backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
                 {loading ? t('dashboard_saving') : isEdit ? t('wizard_save_changes') : t('wizard_submit_spot')}
               </button>
