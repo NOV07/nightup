@@ -24,9 +24,12 @@ const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" 
 
 const pinIcon = L.divIcon({ className: 'nightup-map-pin', html: PIN_SVG, iconSize: [30, 40], iconAnchor: [15, 39] })
 
-// Scoped overrides for Leaflet's light default controls.
+// Scoped overrides for Leaflet's light default controls. The transparent
+// outline closes the hairline seams the tile-pane filter draws between tiles
+// at device pixel ratio 2.
 const CSS = `
 .nightup-map .leaflet-container { background: #16162a; font-family: inherit; }
+.nightup-map .leaflet-tile { outline: 1px solid transparent; }
 .nightup-map .nightup-map-pin { background: none; border: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.55)); }
 .nightup-map .leaflet-bar { border: 1px solid rgba(255,255,255,0.14); box-shadow: none; }
 .nightup-map .leaflet-bar a { background: #111120; color: #E8A020; border-bottom-color: rgba(255,255,255,0.12); }
