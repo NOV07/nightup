@@ -19,9 +19,12 @@ export type ResolveErrorCode =
 
 export class MapsResolveError extends Error {
   code: ResolveErrorCode
-  constructor(code: ResolveErrorCode) {
+  /** On no_coords: the last allowlisted URL reached, for the geocoding fallback. */
+  finalUrl?: string
+  constructor(code: ResolveErrorCode, finalUrl?: string) {
     super(code)
     this.code = code
+    this.finalUrl = finalUrl
   }
 }
 
@@ -66,7 +69,7 @@ export async function resolveMapsUrl(
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const coords = extractCoords(current.href)
     if (coords) return { ...coords, finalUrl: current.href }
-    if (seen.has(current.href)) throw new MapsResolveError('no_coords')
+    if (seen.has(current.href)) throw new MapsResolveError('no_coords', current.href)
     seen.add(current.href)
 
     let res: Response
@@ -86,10 +89,10 @@ export async function resolveMapsUrl(
     // Drop the body unread; it is never needed and never returned.
     try { await res.body?.cancel() } catch { /* ignore */ }
 
-    if (res.status < 300 || res.status >= 400) throw new MapsResolveError('no_coords')
+    if (res.status < 300 || res.status >= 400) throw new MapsResolveError('no_coords', current.href)
 
     const location = res.headers.get('location')
-    if (!location) throw new MapsResolveError('no_coords')
+    if (!location) throw new MapsResolveError('no_coords', current.href)
     if (hop === MAX_REDIRECTS) throw new MapsResolveError('too_many_redirects')
 
     let next: URL

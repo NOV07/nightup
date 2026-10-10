@@ -22,6 +22,21 @@ export function isInGreece(lat: number, lng: number): boolean {
   return lat >= 34 && lat <= 42 && lng >= 19 && lng <= 30
 }
 
+export type CoordsCheck =
+  | { ok: true; lat: number; lng: number; inGreece: boolean }
+  | { ok: false }
+
+/**
+ * Validates coordinates coming from a client or a geocoder: real numbers in
+ * [-90,90] / [-180,180]. Outside Greece is only flagged (`inGreece: false`),
+ * never rejected.
+ */
+export function validateCoords(lat: unknown, lng: unknown): CoordsCheck {
+  if (typeof lat !== 'number' || typeof lng !== 'number') return { ok: false }
+  if (!inRange(lat, lng)) return { ok: false }
+  return { ok: true, lat, lng, inGreece: isInGreece(lat, lng) }
+}
+
 /**
  * Pulls coordinates out of an expanded Google Maps URL, most precise first:
  *   1. `!3d<lat>!4d<lng>`  the place itself (path or `data=`)
