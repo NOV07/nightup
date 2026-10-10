@@ -254,11 +254,27 @@ test.describe('new spot wizard (mocked resolve)', () => {
     await expect(picker(page)).toHaveCount(0)
   })
 
-  test('(γ2) full browser link parses locally, no resolve call', async ({ page }) => {
+  test('(v) full browser link: pin on the place (!3d!4d), not the viewport (@); no resolve call', async ({ page }) => {
     const calls = await mockResolve(page)
     await toLocationStep(page)
-    await linkInput(page).fill('https://www.google.com/maps/place/Foo/@37.9755,23.7348,17z/data=abc')
-    expect(await coordsText(page)).toEqual({ lat: 37.9755, lng: 23.7348 })
+    await linkInput(page).fill('https://www.google.com/maps/place/%CE%9F%CF%85%CE%BB%CE%B1%CE%BB%CE%BF%CF%8D%CE%BC/@37.9232618,23.7523985,17z/data=!3m2!4b1!5s0x14a1bdf3d0d1957f:0xa114b011b6d0e23e!4m6!3m5!1s0x14a1bdcdce193e11:0x47a779e326a34809!8m2!3d37.9232576!4d23.7549734!16s%2Fg%2F11h5rrb_2j?entry=ttu')
+    await expect(page.getByTestId('map-coords')).toHaveText(/37\.923258, 23\.754973/)
+    await expect(page.getByTestId('map-viewport-card')).toHaveCount(0)
+    await expect(nextBtn(page)).toHaveAttribute('aria-disabled', 'false') // exact: open at once
+    expect(calls).toEqual([])
+  })
+
+  test('(v2) link with only @: viewport notice, Continue dimmed until the pin is touched', async ({ page }) => {
+    const calls = await mockResolve(page)
+    await toLocationStep(page)
+    await linkInput(page).fill('https://www.google.com/maps/@37.9232618,23.7523985,17z?entry=ttu')
+    await expect(page.getByTestId('map-coords')).toHaveText(/37\.923262, 23\.752399/)
+    await expect(page.getByTestId('map-viewport-card')).toHaveText(
+      'Το link δείχνει το κέντρο του χάρτη που είχες, όχι το ακριβές μέρος. Σύρε την καρφίτσα πάνω στο μαγαζί.')
+    await expect(nextBtn(page)).toHaveAttribute('aria-disabled', 'true')
+    await nextBtn(page).click({ force: true })
+    await expect(page.getByText('Σύρε την καρφίτσα ή πάτα στον χάρτη για να επιβεβαιώσεις το σημείο.')).toBeVisible()
+    await picker(page).click({ position: { x: 230, y: 150 } })
     await expect(nextBtn(page)).toHaveAttribute('aria-disabled', 'false')
     expect(calls).toEqual([])
   })

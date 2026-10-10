@@ -953,6 +953,7 @@ const translations = {
   spot_map_from_link:      { el: "Από το link σου:", en: "From your link:" },
   spot_map_street_only:    { el: "Βρήκαμε τον δρόμο, όχι τον ακριβή αριθμό. Σύρε την καρφίτσα πάνω στο μαγαζί.", en: "We found the street, not the exact number. Drag the pin onto the venue." },
   spot_map_unverified:     { el: "Δεν μπορέσαμε να επιβεβαιώσουμε την περιοχή. Έλεγξε ότι είναι σωστή.", en: "We could not confirm the area. Check that it is right." },
+  spot_map_viewport_only:  { el: "Το link δείχνει το κέντρο του χάρτη που είχες, όχι το ακριβές μέρος. Σύρε την καρφίτσα πάνω στο μαγαζί.", en: "The link points to the centre of the map you were viewing, not the exact place. Drag the pin onto the venue." },
   spot_map_drag_hint:      { el: "Δεν είναι ακριβώς εδώ; Σύρε την καρφίτσα.", en: "Not exactly here? Drag the pin." },
   spot_map_tap_to_place:   { el: "Πάτα στον χάρτη εκεί που είναι το μαγαζί.", en: "Tap the map where the venue is." },
   spot_map_not_found:      { el: "Δεν βρήκαμε το σημείο", en: "We could not find the place" },

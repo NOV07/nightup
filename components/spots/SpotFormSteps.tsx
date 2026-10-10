@@ -13,7 +13,7 @@ import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import SpotLivePreview from './SpotLivePreview'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
-import { isShortMapsLink, isInGreece, validateCoords, type Coords } from '@/app/lib/mapsCoords'
+import { isShortMapsLink, isInGreece, validateCoords, extractCoords, firstUrl, type Coords } from '@/app/lib/mapsCoords'
 import LocationPicker from '@/components/maps/LocationPicker'
 
 // Same list the event wizard offers — spots had no city constant of its own.
@@ -86,20 +86,32 @@ type SetField = <K extends keyof SpotFormData>(k: K, v: SpotFormData[K]) => void
 
 /**
  * Where the pin came from. UI only, never stored.
- *   url        exact coordinates from the Google link
+ *   url        coordinates from the Google link (exact place, or viewport centre)
  *   nominatim  street-level guess from the address in the link
  *   saved      the spot's stored coordinates (edit)
  *   manual     placed by the user on an empty map
  */
 type PinSource = 'url' | 'nominatim' | 'saved' | 'manual'
 
-/** What /api/maps/resolve answered for one link. */
+/** Coordinates for one link, parsed locally or answered by /api/maps/resolve. */
 interface ResolveOutcome {
   coords: Coords
   source: 'url' | 'nominatim'
   placeText?: string
-  precision?: 'street' | 'building'
+  /** exact/viewport for `url`, street/building for `nominatim`. UI only. */
+  precision?: 'exact' | 'viewport' | 'street' | 'building'
   unverified?: boolean
+}
+
+/** A guess the owner has to confirm on the map before continuing. */
+function needsConfirm(source: PinSource | null, precision: ResolveOutcome['precision']): boolean {
+  return source === 'nominatim' || (source === 'url' && precision === 'viewport')
+}
+
+/** Local parse of a pasted full link (one parser, shared with the server). */
+function parseLink(text: string): ResolveOutcome | null {
+  const c = extractCoords(firstUrl(text) ?? text)
+  return c ? { coords: { lat: c.lat, lng: c.lng }, source: 'url', precision: c.precision } : null
 }
 
 interface PinState {
@@ -120,21 +132,6 @@ const DEFAULTS: SpotFormData = {
   maps_url: '', lat: null, lng: null, cover_image: '', crop: null, gallery: [],
   opening_hours: EMPTY_HOURS,
   phone: '', website: '', instagram: '', price_level: 0, price_text: '', description: '',
-}
-
-/**
- * Pulls coordinates out of a pasted Google Maps URL. Prefers the `@lat,lng`
- * the browser puts in the address bar; falls back to the `q=` / `ll=` params
- * some share links carry. Returns null when neither is present — the mobile
- * app's short share links have no coordinates in them at all; those are
- * expanded server-side by /api/maps/resolve (see ensureMapsCoords).
- */
-export function parseLatLng(url: string): { lat: number; lng: number } | null {
-  const at = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-  if (at) return { lat: parseFloat(at[1]), lng: parseFloat(at[2]) }
-  const param = url.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/)
-  if (param) return { lat: parseFloat(param[1]), lng: parseFloat(param[2]) }
-  return null
 }
 
 /**
@@ -412,6 +409,15 @@ function Step2({ form, set, stepErrors, mapsChecking, onMapsChange, onMapsBlur, 
             {pin.info.unverified && (
               <p style={{ fontSize: 12, color: '#E8A020', marginTop: 6, lineHeight: 1.5 }}>⚠ {t('spot_map_unverified')}</p>
             )}
+          </div>
+        )}
+
+        {pin.source === 'url' && pin.info?.precision === 'viewport' && (
+          <div data-testid="map-viewport-card" style={{
+            padding: '12px 14px', borderRadius: 12, marginBottom: 10,
+            backgroundColor: 'rgba(232,160,32,0.07)', border: '1px solid rgba(232,160,32,0.22)',
+          }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{t('spot_map_viewport_only')}</p>
           </div>
         )}
 
@@ -733,9 +739,9 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
       return
     }
     // A new link means a new place: drop the old pin until this one resolves.
-    const parsed = parseLatLng(value)
-    setForm(prev => ({ ...prev, maps_url: value, lat: parsed?.lat ?? null, lng: parsed?.lng ?? null }))
-    setPin({ source: parsed ? 'url' : null, touched: false, info: null })
+    const parsed = parseLink(value)
+    setForm(prev => ({ ...prev, maps_url: value, lat: parsed?.coords.lat ?? null, lng: parsed?.coords.lng ?? null }))
+    setPin({ source: parsed ? 'url' : null, touched: false, info: parsed ? { precision: parsed.precision } : null })
     // Pasting is one change; typing is many. Resolve once the text settles.
     if (!parsed) mapsDebounce.current = setTimeout(() => { void ensureMapsCoords() }, 400)
   }
@@ -759,8 +765,8 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
   function ensureMapsCoords(): Promise<ResolveOutcome | null> {
     const url = mapsUrlRef.current
     if (!url.trim()) return Promise.resolve(null)
-    const parsed = parseLatLng(url)
-    if (parsed) return Promise.resolve({ coords: parsed, source: 'url' })
+    const parsed = parseLink(url)
+    if (parsed) return Promise.resolve(parsed)
     if (!isShortMapsLink(url)) {
       setNotFound(true)
       return Promise.resolve(null)
@@ -791,16 +797,17 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
                 precision: data.precision === 'building' ? 'building' : 'street',
                 unverified: data.unverified === true,
               }
-            : { coords: { lat: ok.lat, lng: ok.lng }, source: 'url' }
+            : {
+                coords: { lat: ok.lat, lng: ok.lng }, source: 'url',
+                precision: data?.precision === 'viewport' ? 'viewport' : 'exact',
+              }
           mapsResolved.current = { url, outcome }
           // Skip if the user already placed a pin by hand while this was running.
           if (!pinRef.current.touched) {
             setForm(prev => prev.maps_url === url ? { ...prev, lat: outcome.coords.lat, lng: outcome.coords.lng } : prev)
             setPin({
               source: outcome.source, touched: false,
-              info: outcome.source === 'nominatim'
-                ? { placeText: outcome.placeText, precision: outcome.precision, unverified: outcome.unverified }
-                : null,
+              info: { placeText: outcome.placeText, precision: outcome.precision, unverified: outcome.unverified },
             })
           }
           return outcome
@@ -834,8 +841,9 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
    * yet, so a fresh outcome stands in for a still-empty pin.
    */
   function effectivePin(f: SpotFormData, resolved: ResolveOutcome | null) {
-    if (f.lat != null && f.lng != null) return { lat: f.lat, lng: f.lng, ...pinRef.current }
-    if (resolved && !pinRef.current.touched) return { ...resolved.coords, source: resolved.source, touched: false }
+    const cur = pinRef.current
+    if (f.lat != null && f.lng != null) return { lat: f.lat, lng: f.lng, source: cur.source, touched: cur.touched, precision: cur.info?.precision }
+    if (resolved && !cur.touched) return { ...resolved.coords, source: resolved.source, touched: false, precision: resolved.precision }
     return null
   }
 
@@ -854,8 +862,8 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
       const p = effectivePin(form, resolved)
       if (!p || !validateCoords(p.lat, p.lng).ok) {
         e.pin = t('err_map_pin_required')
-      } else if (p.source === 'nominatim' && !p.touched) {
-        // A street-level guess has to be confirmed on the map.
+      } else if (needsConfirm(p.source, p.precision) && !p.touched) {
+        // A street-level guess or a viewport centre has to be confirmed on the map.
         e.pin = t('err_map_confirm_pin')
       }
     }
@@ -905,7 +913,7 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
   // Step 2 "Continue" looks enabled only with a pin that needs no confirmation.
   const locationReady = step !== 2 || (
     !mapsChecking && form.lat != null && form.lng != null && validateCoords(form.lat, form.lng).ok
-    && !(pin.source === 'nominatim' && !pin.touched)
+    && !(needsConfirm(pin.source, pin.info?.precision) && !pin.touched)
   )
 
   return (
