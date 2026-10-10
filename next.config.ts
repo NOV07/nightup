@@ -23,7 +23,9 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://w.soundcloud.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://picsum.photos",
+  // OpenStreetMap tiles for the spot LocationPicker. A different provider via
+  // NEXT_PUBLIC_MAP_TILE_URL needs its host added here too.
+  "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://picsum.photos https://tile.openstreetmap.org",
   "media-src 'self' data: blob: https://stream.nightup.gr https://*.supabase.co",
   "font-src 'self' data:",
   `connect-src 'self' ${supabaseOrigins.join(" ")} https://api.zeno.fm${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`,
