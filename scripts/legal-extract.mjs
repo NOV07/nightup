@@ -15,9 +15,12 @@ export function extractOld(page, ref = "origin/main") {
 }
 
 // Loads a legal-content module (`const content: LegalContent = {...};`) without a TS toolchain.
-export function loadContent(file) {
-  const src = fs.readFileSync(file, "utf8");
+export function parseContent(src, label) {
   const m = src.match(/const content: LegalContent = ([\s\S]*?);\s*export default content;/);
-  if (!m) throw new Error("Unexpected format: " + file);
+  if (!m) throw new Error("Unexpected format: " + label);
   return new Function("return " + m[1])();
+}
+
+export function loadContent(file) {
+  return parseContent(fs.readFileSync(file, "utf8"), file);
 }
