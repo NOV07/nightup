@@ -518,7 +518,7 @@ const translations = {
 
   // ── i18n cleanup — remaining Greek strings ───────────
   home_event_of_week:        { el: "ΕΚΔΗΛΩΣΗ ΤΗΣ ΕΒΔΟΜΑΔΑΣ", en: "EVENT OF THE WEEK" },
-  fab_tonight:               { el: "Απόψε", en: "Tonight" },
+  fab_tonight:               { el: "Plan Your Exit", en: "Plan Your Exit" },
   tonight_what_doing:        { el: "Τι κάνουμε", en: "What's on" },
   tonight_walk_2:            { el: "2 λεπτά με τα πόδια", en: "2 min walk" },
   tonight_walk_4:            { el: "4 λεπτά με τα πόδια", en: "4 min walk" },
