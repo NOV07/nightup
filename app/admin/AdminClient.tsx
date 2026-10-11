@@ -635,6 +635,7 @@ export default function AdminClient() {
         data: {
           ...articleFields,
           hero_image: image || null,
+          date: articleForm.date || null,
           read_time: articleForm.read_time ? parseInt(articleForm.read_time) : 5,
           content: articleContent,
           body: articleContent,
