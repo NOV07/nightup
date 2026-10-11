@@ -625,13 +625,17 @@ export default function AdminClient() {
   async function handleAddArticle(e: React.FormEvent) {
     e.preventDefault();
     setAddLoading(true); setAddError(""); setAddSuccess("");
+    // articles has no `image` column; the public magazine reads hero_image.
+    const { image, ...articleFields } = articleForm;
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         table: "articles",
         data: {
-          ...articleForm,
+          ...articleFields,
+          hero_image: image || null,
+          date: articleForm.date || null,
           read_time: articleForm.read_time ? parseInt(articleForm.read_time) : 5,
           content: articleContent,
           body: articleContent,
