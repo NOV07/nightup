@@ -2,16 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { slugify, uniqueSlug } from '@/app/lib/slug'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
+import { SPOT_CATEGORY_KEYS as CATEGORIES, SPOT_FIELDS } from '@/app/lib/spotInput'
 
-// Kept in sync with the spot_category enum in Postgres.
-const CATEGORIES = ['food', 'drink', 'nightlife', 'show', 'chill', 'activity', 'art', 'wellness']
-
-export const SPOT_FIELDS = [
-  'name', 'category', 'subcategory', 'city', 'neighborhood', 'address',
-  'lat', 'lng', 'description', 'cover_image',
-  'crop_x', 'crop_y', 'crop_width', 'crop_height',
-  'gallery', 'price_level', 'price_text', 'phone', 'website', 'instagram', 'opening_hours',
-]
+// Re-exported for /api/spots/[id]; the list itself lives in spotInput so the
+// admin route whitelists the same columns.
+export { SPOT_FIELDS }
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -60,7 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields: name, category' }, { status: 400 })
   }
 
-  if (!CATEGORIES.includes(String(body.category))) {
+  if (!(CATEGORIES as string[]).includes(String(body.category))) {
     return NextResponse.json({ error: `category must be one of: ${CATEGORIES.join(', ')}` }, { status: 400 })
   }
 

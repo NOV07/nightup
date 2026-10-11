@@ -8,7 +8,7 @@ import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
 import EventFormSteps, { type EventFormData } from "../../components/events/EventFormSteps";
 import { CURRENCIES, normalizeCurrency, parsePriceInput } from "../lib/formatPrice";
 import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
-import { SPOT_CROP_ASPECT } from "../spots/types";
+import { SPOT_CROP_ASPECT, SUBCATEGORIES, type SpotCategory } from "../spots/types";
 import LocationPicker from "../../components/maps/LocationPicker";
 import { useLanguage } from "../components/LanguageContext";
 
@@ -203,7 +203,7 @@ function toReleasePayload(form: Record<string, unknown>) {
 const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
-const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
+const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,is_published:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
 
 export default function AdminClient() {
   const { t } = useLanguage();
@@ -726,6 +726,8 @@ export default function AdminClient() {
     // Without a pin the spot has no `geo` and never shows up in "near me".
     if (spotForm.lat == null || spotForm.lng == null) { setAddError(t("err_map_pin_required")); return; }
     setAddLoading(true); setAddError(""); setAddSuccess("");
+    // The route whitelists these columns and rejects anything else. No owner:
+    // the venue takes the spot over through the claim flow.
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -733,20 +735,20 @@ export default function AdminClient() {
         table: "spots",
         data: {
           ...spotForm,
+          slug: spotForm.slug.trim() || null,
           price_level: spotForm.price_level ? parseInt(spotForm.price_level) : null,
           price_text: spotForm.price_text.trim() || null,
           rating: spotForm.rating ? parseFloat(spotForm.rating) : null,
           subcategory: spotForm.subcategory || null,
           neighborhood: spotForm.neighborhood || null,
           address: spotForm.address || null,
-          profile_id: isEditorial ? null : undefined,
         },
       }),
     });
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
     setAddLoading(false);
-    if (!res.ok) { setAddError(json.error ?? "Failed"); return; }
-    setAddSuccess("Spot added!");
+    if (!res.ok) { setAddError(json.error ?? `Could not save the spot (HTTP ${res.status}).`); return; }
+    setAddSuccess(spotForm.is_published ? "Spot added and published." : "Spot added to the pending queue.");
     setSpotForm({ ...defaultSpotForm });
     setShowAddForm(false);
     await fetchContent();
@@ -1813,8 +1815,8 @@ export default function AdminClient() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div><label className={labelCls}>Name *</label><input required className={inputCls} style={inputStyle} value={spotForm.name} onChange={e => setSpotForm(f => ({ ...f, name:e.target.value }))} /></div>
                             <div><label className={labelCls}>Slug</label><input className={inputCls} style={inputStyle} value={spotForm.slug} onChange={e => setSpotForm(f => ({ ...f, slug:e.target.value }))} placeholder="my-spot-name" /></div>
-                            <div><label className={labelCls}>Category</label><select className={inputCls} style={inputStyle} value={spotForm.category} onChange={e => setSpotForm(f => ({ ...f, category:e.target.value }))}>{SPOT_CATS.map(c => <option key={c}>{c}</option>)}</select></div>
-                            <div><label className={labelCls}>Subcategory</label><input className={inputCls} style={inputStyle} value={spotForm.subcategory} onChange={e => setSpotForm(f => ({ ...f, subcategory:e.target.value }))} placeholder="cocktail bar, rooftop…" /></div>
+                            <div><label className={labelCls}>Category</label><select data-testid="admin-spot-category" className={inputCls} style={inputStyle} value={spotForm.category} onChange={e => setSpotForm(f => ({ ...f, category:e.target.value, subcategory:"" }))}>{SPOT_CATS.map(c => <option key={c}>{c}</option>)}</select></div>
+                            <div><label className={labelCls}>Subcategory</label><select data-testid="admin-spot-subcategory" className={inputCls} style={inputStyle} value={spotForm.subcategory} onChange={e => setSpotForm(f => ({ ...f, subcategory:e.target.value }))}><option value="">None</option>{(SUBCATEGORIES[spotForm.category as SpotCategory] ?? []).map(s => <option key={s.value} value={s.value}>{s.label_en}</option>)}</select></div>
                             <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={spotForm.city} onChange={e => setSpotForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
                             <div><label className={labelCls}>Neighborhood</label><input className={inputCls} style={inputStyle} value={spotForm.neighborhood} onChange={e => setSpotForm(f => ({ ...f, neighborhood:e.target.value }))} /></div>
                             <div><label className={labelCls}>Address</label><input className={inputCls} style={inputStyle} value={spotForm.address} onChange={e => setSpotForm(f => ({ ...f, address:e.target.value }))} /></div>
@@ -1860,10 +1862,11 @@ export default function AdminClient() {
                             <div className="flex items-center gap-4 flex-wrap">
                               <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={spotForm.is_sponsored} onChange={e => setSpotForm(f => ({ ...f, is_sponsored:e.target.checked }))} /> Sponsored</label>
                               <label className="flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" checked={spotForm.featured} onChange={e => setSpotForm(f => ({ ...f, featured:e.target.checked }))} /> Featured</label>
-                              <label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} /> ★ Nightup Editorial</label>
+                              {/* Unticked by default: the spot waits in the pending queue. */}
+                              <label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input data-testid="admin-spot-publish-now" type="checkbox" checked={spotForm.is_published} onChange={e => setSpotForm(f => ({ ...f, is_published:e.target.checked }))} /> Δημοσίευση αμέσως</label>
                             </div>
                           </div>
-                          {addError && <p className="text-red-400 text-xs">{addError}</p>}
+                          {addError && <p data-testid="admin-add-error" className="text-red-400 text-xs">{addError}</p>}
                           <button type="submit" disabled={addLoading} className="px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>{addLoading ? "Saving…" : "Add Spot"}</button>
                         </form>
                       )}
