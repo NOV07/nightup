@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import LegalDocument from "../components/LegalDocument";
 import en from "../legal-content/terms.en";
+import el from "../legal-content/terms.el";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -14,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  return <LegalDocument en={en} />;
+  return <LegalDocument en={en} el={el} />;
 }
