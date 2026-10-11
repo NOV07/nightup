@@ -1,14 +1,19 @@
-// Offline checks for the legal pages. Run: node scripts/check-legal-parity.mjs [ref]
-//  1. English unchanged: app/legal-content/<page>.en.ts must equal, character for
-//     character, the strings of the old hardcoded app/<page>/page.tsx at git ref
-//     (default origin/main).
-//  2. Greek parity: <page>.el.ts must match <page>.en.ts in sections, paragraphs,
+// Offline checks for the legal pages. Run: node scripts/check-legal-parity.mjs [ref] [--expect=path1,path2,...]
+//  1. English diff: app/legal-content/<page>.en.ts is compared string by string with
+//     the same file at git ref (default origin/main). Every removed and added sentence
+//     is printed. With --expect, the set of changed paths (page:path) must match exactly.
+//  2. Block counts: the change in blocks per section (paragraphs + lists) vs the ref
+//     must be identical in English and Greek.
+//  3. Greek parity: <page>.el.ts must match <page>.en.ts in sections, paragraphs,
 //     list items, link/URL count and destinations, and per section must contain the
 //     same numbers, emails, URLs, identifiers and service names.
 import fs from "fs";
-import { extractOld, loadContent } from "./legal-extract.mjs";
+import { execSync } from "child_process";
+import { loadContent, parseContent } from "./legal-extract.mjs";
 
-const ref = process.argv[2] || "origin/main";
+const args = process.argv.slice(2);
+const expectArg = args.find((a) => a.startsWith("--expect="));
+const ref = args.find((a) => !a.startsWith("--")) || "origin/main";
 const pages = ["privacy", "terms", "cookies"];
 const NAMES = ["Vercel", "Supabase", "Resend", "Anthropic", "SoundCloud", "Spotify", "OpenStreetMap", "Nominatim", "Unsplash", "Contabo", "Google Maps", "Nightup Radio", "Nightup.gr", "Dimitrios Kantanoleon", "EU-US Data Privacy Framework"];
 let failures = 0;
@@ -26,16 +31,54 @@ function flat(c) {
   return out;
 }
 
-function exactCompare(page) {
-  const a = flat(extractOld(page, ref)), b = flat(loadContent(`app/legal-content/${page}.en.ts`));
-  if (a.length !== b.length) fail(`${page}: ${a.length} strings in ${ref} vs ${b.length} in .en.ts`);
-  for (let i = 0; i < Math.min(a.length, b.length); i++) {
-    const [path, x] = a[i], [, y] = b[i];
-    if (x !== y) {
-      let n = 0; while (x[n] === y[n]) n++;
-      fail(`${page} ${path}: differs at char ${n}\n    old: ...${JSON.stringify(x.slice(Math.max(0, n - 20), n + 30))}\n    new: ...${JSON.stringify(y.slice(Math.max(0, n - 20), n + 30))}`);
-    }
+function loadAtRef(page, lang) {
+  const src = execSync(`git show ${ref}:app/legal-content/${page}.${lang}.ts`, { encoding: "utf8", maxBuffer: 1 << 24 });
+  return parseContent(src, `${ref}:${page}.${lang}.ts`);
+}
+
+// Longest-common-subsequence diff over the flattened strings (paths are labels only).
+function diffStrings(a, b) {
+  const n = a.length, m = b.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    dp[i][j] = a[i][1] === b[j][1] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const out = []; let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i][1] === b[j][1]) { i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) out.push({ kind: "removed", path: a[i++][0], text: a[i - 1][1] });
+    else out.push({ kind: "added", path: b[j++][0], text: b[j - 1][1] });
   }
+  while (i < n) out.push({ kind: "removed", path: a[i][0], text: a[i++][1] });
+  while (j < m) out.push({ kind: "added", path: b[j][0], text: b[j++][1] });
+  return out;
+}
+
+const changedPaths = new Set();
+const sentences = (t) => t.split(/(?<=[.!?;])\s+/).map((x, i) => [String(i), x]);
+function englishDiff(page) {
+  const d = diffStrings(flat(loadAtRef(page, "en")), flat(loadContent(`app/legal-content/${page}.en.ts`)));
+  if (!d.length) console.log("  EN: unchanged vs " + ref);
+  // Paragraph-level result, then the exact sentences inside it that differ.
+  const removed = new Map(d.filter((x) => x.kind === "removed").map((x) => [x.path, x.text]));
+  for (const x of d) {
+    if (x.kind === "added") changedPaths.add(`${page}:${x.path}`);
+    console.log(`  EN ${x.kind.toUpperCase()} ${page}:${x.path}`);
+    const old = removed.get(x.path);
+    if (x.kind === "added" && old !== undefined) {
+      for (const y of diffStrings(sentences(old), sentences(x.text))) console.log(`      ${y.kind === "added" ? "+" : "-"} ${JSON.stringify(y.text)}`);
+    } else if (old === undefined || x.kind === "added") console.log(`      + ${JSON.stringify(x.text)}`);
+  }
+}
+
+const blockCounts = (c) => c.sections.map((s) => s.blocks.length);
+function blockDelta(page) {
+  const elFile = `app/legal-content/${page}.el.ts`;
+  if (!fs.existsSync(elFile)) return;
+  const d = (o, n) => (o.sections.length !== n.sections.length ? `sections ${o.sections.length}->${n.sections.length}` : blockCounts(n).map((v, i) => v - blockCounts(o)[i]).join(","));
+  const en = d(loadAtRef(page, "en"), loadContent(`app/legal-content/${page}.en.ts`));
+  const el = d(loadAtRef(page, "el"), loadContent(elFile));
+  console.log(`  block delta per section  EN [${en}]  EL [${el}]`);
+  if (en !== el) fail(`${page}: block delta differs between EN and EL`);
 }
 
 const tokens = (t) => {
@@ -72,8 +115,15 @@ function parity(page) {
 
 for (const p of pages) {
   console.log(p);
-  exactCompare(p);
+  englishDiff(p);
+  blockDelta(p);
   parity(p);
+}
+if (expectArg) {
+  const want = new Set(expectArg.slice(9).split(",").filter(Boolean));
+  const extra = [...changedPaths].filter((x) => !want.has(x)), missing = [...want].filter((x) => !changedPaths.has(x));
+  if (extra.length) fail("changed but not expected: " + extra.join(", "));
+  if (missing.length) fail("expected but not changed: " + missing.join(", "));
 }
 console.log(failures ? `\n${failures} problem(s)` : "\nAll legal checks passed");
 process.exit(failures ? 1 : 0);
