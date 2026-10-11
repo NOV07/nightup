@@ -674,7 +674,7 @@ export default function AdminClient() {
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "mixes", data: { ...mixForm, profile_id: isEditorial ? null : undefined } }),
+      body: JSON.stringify({ table: "mixes", data: mixForm }),
     });
     const json = await res.json();
     setAddLoading(false);
@@ -1766,7 +1766,6 @@ export default function AdminClient() {
                             <div><label className={labelCls}>SoundCloud URL</label><input className={inputCls} style={inputStyle} value={mixForm.soundcloud_url} onChange={e => setMixForm(f => ({ ...f, soundcloud_url:e.target.value }))} /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={mixForm.description} onChange={e => setMixForm(f => ({ ...f, description:e.target.value }))} /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Tracklist</label><textarea rows={6} className={inputCls} style={inputStyle} placeholder="Ένα track ανά γραμμή…" value={mixForm.tracklist} onChange={e => setMixForm(f => ({ ...f, tracklist:e.target.value }))} /></div>
-                            <div><label className="flex items-center gap-2 text-sm" style={{ color:"#E8A020" }}><input type="checkbox" checked={isEditorial} onChange={e => setIsEditorial(e.target.checked)} /> ★ Nightup Editorial</label></div>
                           </div>
                           {addError && <p className="text-red-400 text-xs">{addError}</p>}
                           <button type="submit" disabled={addLoading} className="px-6 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ backgroundColor:"#E8A020", color:"#0F0F1A" }}>{addLoading ? "Saving…" : "Add Mix"}</button>
