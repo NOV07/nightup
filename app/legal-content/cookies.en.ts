@@ -16,7 +16,8 @@ const content: LegalContent = {
           "nup_radio_station and nup_radio_vol: your last radio station and volume.",
           "nightup_tonight_seen: whether you have already seen the \"Tonight\" introduction."
         ],
-        "They contain no personal data, are not sent to us, and are used only to make the site work as you set it. You can delete them in your browser settings."
+        "They contain no personal data, are not sent to us, and are used only to make the site work as you set it. You can delete them in your browser settings.",
+        "Administrator sign-in (admin pages only): a session cookie (admin_auth) keeps the administrator signed in, and two items in the browser (admin_attempts and admin_lockout) count failed sign-in attempts to apply a temporary lockout."
       ]
     },
     {
@@ -28,7 +29,7 @@ const content: LegalContent = {
     {
       "title": "3. Consent",
       "blocks": [
-        "Because we only use strictly necessary cookies and storage, and third-party content loads only after your action, we do not show a cookie banner. If we add anything non-essential, such as analytics, we will update this policy and ask for your consent first."
+        "Because we only use strictly necessary cookies and storage, and the embedded players of SoundCloud and Spotify load only after your action, we do not show a cookie banner. Other third-party requests, such as placeholder images, are described in our Privacy Policy. If we add anything non-essential, such as analytics, we will update this policy and ask for your consent first."
       ]
     },
     {
