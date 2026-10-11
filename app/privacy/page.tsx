@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import LegalDocument from "../components/LegalDocument";
 import en from "../legal-content/privacy.en";
+import el from "../legal-content/privacy.el";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -14,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  return <LegalDocument en={en} />;
+  return <LegalDocument en={en} el={el} />;
 }
