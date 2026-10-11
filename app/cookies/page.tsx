@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import LegalDocument from "../components/LegalDocument";
 import en from "../legal-content/cookies.en";
+import el from "../legal-content/cookies.el";
 
 export const metadata: Metadata = {
   title: "Cookie Policy",
@@ -14,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function CookiesPage() {
-  return <LegalDocument en={en} />;
+  return <LegalDocument en={en} el={el} />;
 }
