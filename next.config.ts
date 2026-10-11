@@ -13,9 +13,8 @@ try {
 } catch {}
 
 // Everything the browser loads from outside our own origin (see the audit in
-// the PR description): Unsplash/picsum fallback and seed images, Supabase
-// Storage images/video, the radio mp3 stream, Zeno metadata (SSE), and the
-// SoundCloud/Spotify embeds. next/font self-hosts Google Fonts at build time,
+// the PR description): Unsplash images, Supabase Storage images/video,
+// the radio mp3 stream, and the SoundCloud/Spotify embeds. next/font self-hosts Google Fonts at build time,
 // so font-src stays 'self'. 'unsafe-inline' is needed for Next's inline
 // bootstrap scripts and the JSON-LD tags (no nonce setup); 'unsafe-eval' is
 // dev-only (React debugging), never in production.
@@ -25,10 +24,10 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   // OpenStreetMap tiles for the spot LocationPicker. A different provider via
   // NEXT_PUBLIC_MAP_TILE_URL needs its host added here too.
-  "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://picsum.photos https://tile.openstreetmap.org",
+  "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://tile.openstreetmap.org",
   "media-src 'self' data: blob: https://stream.nightup.gr https://*.supabase.co",
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigins.join(" ")} https://api.zeno.fm${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`,
+  `connect-src 'self' ${supabaseOrigins.join(" ")}${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`,
   "frame-src https://w.soundcloud.com https://open.spotify.com",
   "object-src 'none'",
   "base-uri 'self'",
