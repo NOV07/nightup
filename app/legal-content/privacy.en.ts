@@ -31,25 +31,31 @@ const content: LegalContent = {
       "blocks": [
         [
           "To create and run your account, display your profile and content, and send account emails (for example sign-up and password reset): performance of a contract.",
+          "To show spots near you when you use \"near me\": consent, given through your browser's location permission. You can withdraw it at any time in your browser's location settings.",
           "To review submitted content, prevent abuse and keep the platform secure: legitimate interest.",
+          "To provide and secure the service, namely showing map images (OpenStreetMap), streaming the live radio, keeping technical logs and showing placeholder images: legitimate interest.",
           "To comply with legal obligations: legal obligation."
         ],
         "We do not sell your data and we do not use it for advertising."
       ]
     },
     {
-      "title": "4. Who processes data for us",
+      "title": "4. Who receives your data",
       "blocks": [
+        "Providers that process data on our behalf:",
         [
           "Vercel (hosting).",
           "Supabase (database, authentication and file storage).",
           "Resend (sending account emails).",
+          "Nightup Radio stream: the live radio is streamed from a server we operate, hosted by Contabo. When you play the radio, your browser connects to that server, which therefore receives your IP address. Our streaming software may keep technical access logs that include IP addresses."
+        ],
+        "Third parties that may receive data when you use specific features:",
+        [
           "SoundCloud and Spotify (embedded players), only after you click to load them. See the Cookie Policy.",
           "OpenStreetMap (map images): when a signed-in user (a spot owner or an admin) opens the map to set a location, their browser requests map images from OpenStreetMap servers, which therefore receive that user's IP address and requests. See the OpenStreetMap Foundation privacy policy: osmfoundation.org/wiki/Privacy_Policy.",
           "OpenStreetMap Nominatim (address search): when a pasted Google Maps link does not contain coordinates, our server sends the address text from that link to Nominatim. We do not send the user's IP address or account identifiers.",
           "Google Maps links: our server opens the pasted Google Maps link, including short links, to find its coordinates. Google receives the link and the IP address of our server, not the user's IP address.",
-          "Unsplash (placeholder images): a default image shown when a spot, a music release or another item has no image of its own comes from Unsplash. Usually our server fetches it and your browser does not contact Unsplash; in some cases, such as when another image fails to load, your browser may request it directly, so Unsplash may receive your IP address.",
-          "Nightup Radio stream: the live radio is streamed from a server we operate, hosted by Contabo. When you play the radio, your browser connects to that server, which therefore receives your IP address. Our streaming software may keep technical access logs that include IP addresses."
+          "Unsplash (placeholder images): a default image shown when a spot, a music release or another item has no image of its own comes from Unsplash. Usually our server fetches it and your browser does not contact Unsplash; in some cases, such as when another image fails to load, your browser may request it directly, so Unsplash may receive your IP address."
         ],
         "Some of these providers are located in the United States or may process data there. Where this happens, transfers rely on safeguards such as the EU-US Data Privacy Framework or Standard Contractual Clauses, as provided by each provider."
       ]
