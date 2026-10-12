@@ -8,7 +8,6 @@ import { PlayerProvider } from "./components/PlayerContext";
 import { ModalStateProvider } from "./components/ModalStateContext";
 import { TonightFabVisibilityProvider } from "./components/TonightFabVisibilityContext";
 import LayoutShell from "./components/LayoutShell";
-import { ResourceHints } from "./components/ResourceHints";
 import { Toaster } from "sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
@@ -58,7 +57,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="el" className={`${geist.variable} ${spectral.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen flex flex-col" style={{ backgroundColor: "#0F0F1A", color: "#fff" }}>
-        <ResourceHints />
         <LanguageProvider>
           <RadioProvider>
             <TonightProvider>
