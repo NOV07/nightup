@@ -8,7 +8,7 @@ const content: LegalContent = {
     {
       "title": "1. Acceptance",
       "blocks": [
-        "By using Nightup.gr you agree to these Terms. If you do not agree, do not use the platform. You must be 18 or over."
+        "By using Nightup.gr you agree to these Terms. If you do not agree, do not use the platform. You must be 18 or over. How we handle personal data and cookies is described in our Privacy Policy and Cookie Policy."
       ]
     },
     {
@@ -26,7 +26,7 @@ const content: LegalContent = {
     {
       "title": "4. Your content and our licence",
       "blocks": [
-        "You keep ownership of what you submit (events, profiles, photos, text, links). By submitting content you grant Nightup.gr a non-exclusive, worldwide, royalty-free licence to host, display, translate, format and distribute it on the platform, and to promote the platform and your content on our social media and newsletters. The licence ends when you delete the content or your account, except for copies already shared or cached for a short time. You confirm that you have the rights to everything you submit and that it does not infringe anyone's rights."
+        "You keep ownership of what you submit (events, profiles, photos, text, links). By submitting content you grant the operator of Nightup.gr a non-exclusive, worldwide, royalty-free licence to host, display, translate, format and distribute it on the platform, and to promote the platform and your content on our social media. The licence ends when you delete the content or your account, except for copies already shared or cached for a short time. You confirm that you have the rights to everything you submit and that it does not infringe anyone's rights."
       ]
     },
     {
@@ -38,7 +38,7 @@ const content: LegalContent = {
     {
       "title": "6. Reporting and removal",
       "blocks": [
-        "To report illegal content, content that infringes your rights, or a copyright claim, email nightupsocial@gmail.com with the page link, what is wrong and, for copyright, proof of ownership. We review reports promptly and may remove content, restrict features or suspend accounts. We may also remove content or suspend an account at our discretion, for example for breaking these Terms."
+        "To report illegal content, content that infringes your rights, or a copyright claim, email nightupsocial@gmail.com with the page link, what is wrong and, for copyright, proof of ownership. We review reports without undue delay. We may remove content, restrict features or suspend accounts where content or conduct breaks these Terms, is unlawful, infringes someone's rights or puts the platform or its users at risk, or where the law requires it."
       ]
     },
     {
@@ -56,7 +56,7 @@ const content: LegalContent = {
     {
       "title": "9. Intellectual property",
       "blocks": [
-        "The design, code and original editorial content of Nightup.gr belong to Nightup.gr unless stated otherwise."
+        "The design, code and original editorial content of Nightup.gr belong to the operator of Nightup.gr unless stated otherwise."
       ]
     },
     {
@@ -74,7 +74,7 @@ const content: LegalContent = {
     {
       "title": "12. Termination",
       "blocks": [
-        "You can delete your account at any time. We may suspend or end access if you break these Terms."
+        "You can delete your account at any time. We may suspend or end your access on the grounds described in section 6, for example if you break these Terms."
       ]
     },
     {
@@ -86,7 +86,7 @@ const content: LegalContent = {
     {
       "title": "14. Changes and contact",
       "blocks": [
-        "We may update these Terms. If a change is significant we will tell registered users. Contact: nightupsocial@gmail.com."
+        "We may update these Terms. If a change is significant we will tell registered users. Nightup.gr is operated by Dimitrios Kantanoleon, an individual. Contact: nightupsocial@gmail.com."
       ]
     }
   ]
