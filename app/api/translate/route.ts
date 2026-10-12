@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { DYNAMIC_TRANSLATION_ENABLED } from '@/app/lib/featureFlags'
 
 const MAX_TEXT_LENGTH = 3000
 const MAX_OUTPUT_TOKENS = 4096
@@ -98,6 +99,11 @@ export async function POST(req: NextRequest) {
 
   if (isRateLimited(getClientIp(req))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
+  // Dynamic translation is switched off (see featureFlags.ts): never call Anthropic.
+  if (!DYNAMIC_TRANSLATION_ENABLED) {
+    return NextResponse.json({ translation: text })
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY

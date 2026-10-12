@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { tr, type Lang, type TranslationKey } from "../lib/translations";
+import { DYNAMIC_TRANSLATION_ENABLED } from "../lib/featureFlags";
 
 interface LanguageContextValue {
   lang: Lang;
@@ -61,7 +62,7 @@ export function useTranslate() {
 
   const translate = useCallback(
     async (text: string): Promise<string> => {
-      if (!text || lang === "el") return text;
+      if (!text || lang === "el" || !DYNAMIC_TRANSLATION_ENABLED) return text;
 
       // Check cache
       const cacheKey = `${text}`;
@@ -82,9 +83,11 @@ export function useTranslate() {
         });
         if (res.ok) {
           const { translation } = await res.json();
-          translationCache.set(cacheKey, translation);
-          setTranslations((prev) => ({ ...prev, [cacheKey]: translation }));
-          return translation;
+          if (typeof translation === "string" && translation) {
+            translationCache.set(cacheKey, translation);
+            setTranslations((prev) => ({ ...prev, [cacheKey]: translation }));
+            return translation;
+          }
         }
       } catch {
         // fall through — return original
@@ -113,7 +116,7 @@ export function useAutoTranslate(text: string) {
   }, [text]);
 
   useEffect(() => {
-    if (lang === "el") {
+    if (lang === "el" || !DYNAMIC_TRANSLATION_ENABLED) {
       setOutput(text);
       return;
     }
@@ -137,14 +140,17 @@ export function useAutoTranslate(text: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     })
-      .then((r) => r.json())
-      .then(({ translation }) => {
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
         if (cancelled) return;
+        // Non-OK response (403/413/429...) or no translation: keep the original text.
+        const translation = typeof data?.translation === "string" && data.translation ? data.translation : null;
+        if (!translation) { setOutput(text); return; }
         translationCache.set(cacheKey, translation);
         cacheRef.current = translation;
         setOutput(translation);
       })
-      .catch(() => {})
+      .catch(() => { if (!cancelled) setOutput(text); })
       .finally(() => { if (!cancelled) setBusy(false); });
 
     return () => { cancelled = true; };
