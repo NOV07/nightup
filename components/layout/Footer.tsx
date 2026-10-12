@@ -84,25 +84,7 @@ export function Footer() {
         </div>
 
         {/* Lower meta row */}
-        <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-7 py-5 border-t border-white/5 border-b border-white/5">
-          <div>
-            <div className="text-[11px] tracking-widest text-zinc-500 mb-2">NEWSLETTER</div>
-            {/* TODO: connect to newsletter API */}
-            <form className="flex border border-white/15 rounded-md overflow-hidden" onSubmit={(e) => e.preventDefault()}>
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 bg-transparent border-none px-3 py-2 text-xs text-white outline-none placeholder:text-zinc-500"
-              />
-              <button
-                type="submit"
-                className="bg-amber-500 hover:bg-amber-400 text-zinc-900 px-4 py-2 text-[11px] font-medium tracking-wider transition-colors"
-              >
-                JOIN
-              </button>
-            </form>
-          </div>
-
+        <div className="grid md:grid-cols-3 gap-7 py-5 border-t border-white/5 border-b border-white/5">
           <FooterColumn label="SUBMIT" links={[
             { label: <T k="footer_submit_event" />, href: "/submit/event" },
             { label: <T k="footer_submit_prof" />, href: "/submit/professional" },
