@@ -41,39 +41,40 @@ as $function$
 $function$;
 
 -- ── Saves of an event ───────────────────────────────────────────────────────
--- The ::text casts are what the live database has (the live schema has no FK
--- from saved_events to events). Equivalent to comparing the uuids directly.
+-- No casts in the where clause, so idx_saved_events_event_id is usable.
 create or replace function public.event_saved_count(p_event_id uuid)
 returns bigint
 language sql
 stable
 security definer
 set search_path = public
-as $function$
+as $$
   select count(*)::bigint
   from public.saved_events se
-  join public.events e on e.id::text = se.event_id::text
-  where se.event_id::text = p_event_id::text
+  join public.events e on e.id = se.event_id
+  where se.event_id = p_event_id
     and se.user_id is distinct from e.profile_id;
-$function$;
+$$;
 
 -- ── Saves of a spot ─────────────────────────────────────────────────────────
--- saved_spots.spot_id is text, spots.id is uuid. Both ownership columns are
--- excluded, like my_spot_saved_counts.
+-- saved_spots.spot_id is text, spots.id is uuid, hence the cast on the spots
+-- side of the join only. Both ownership columns are excluded, like
+-- my_spot_saved_counts. The where clause is uncast, so idx_saved_spots_spot_id
+-- is usable.
 create or replace function public.spot_saved_count(p_spot_id text)
 returns bigint
 language sql
 stable
 security definer
 set search_path = public
-as $function$
+as $$
   select count(*)::bigint
   from public.saved_spots ss
-  join public.spots s on s.id::text = ss.spot_id::text
-  where ss.spot_id::text = p_spot_id
+  join public.spots s on s.id::text = ss.spot_id
+  where ss.spot_id = p_spot_id
     and ss.user_id is distinct from s.owner_id
     and ss.user_id is distinct from s.claimed_by_profile_id;
-$function$;
+$$;
 
 revoke all on function public.profile_follower_count(uuid) from public;
 revoke all on function public.event_saved_count(uuid)      from public;
