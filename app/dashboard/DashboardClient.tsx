@@ -240,6 +240,32 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     setError('')
     setSaved(false)
 
+    // Featured track: only SoundCloud artist/track links embed, so a short link
+    // is expanded server-side and anything else is refused instead of saved.
+    let featuredTrackUrl: string | null = form.featured_track_url.trim() || null
+    if (featuredTrackUrl && featuredTrackUrl !== (profile.featured_track_url ?? '')) {
+      try {
+        const res = await fetch('/api/profiles/featured-track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: featuredTrackUrl }),
+        })
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok || typeof json.url !== 'string') {
+          const bad = json.error === 'invalid_url' || json.error === 'blocked_redirect' || json.error === 'not_embeddable'
+          setError(t(bad ? 'dashboard_featured_track_invalid' : 'dashboard_featured_track_unresolved'))
+          setSaving(false)
+          return
+        }
+        featuredTrackUrl = json.url
+        setForm(f => ({ ...f, featured_track_url: json.url }))
+      } catch {
+        setError(t('dashboard_featured_track_unresolved'))
+        setSaving(false)
+        return
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -268,7 +294,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
         mixcloud_url: form.mixcloud_url || null,
         website: form.website || null,
         booking_email: form.booking_email || null,
-        featured_track_url: form.featured_track_url || null,
+        featured_track_url: featuredTrackUrl,
         is_available: form.is_available,
         price_range: form.price_range || null,
         booking_info: form.booking_info || null,

@@ -657,7 +657,9 @@ const translations = {
   dashboard_role:               { el: "Ρόλος", en: "Role" },
   dashboard_select_role:        { el: "Επίλεξε ρόλο", en: "Select role" },
   dashboard_genres:             { el: "Είδη Μουσικής", en: "Genres" },
-  dashboard_featured_track_url: { el: "URL Featured Track (SoundCloud ή Spotify)", en: "Featured Track URL (SoundCloud or Spotify)" },
+  dashboard_featured_track_url: { el: "URL Featured Track (SoundCloud)", en: "Featured Track URL (SoundCloud)" },
+  dashboard_featured_track_invalid: { el: "Το Featured Track πρέπει να είναι σύνδεσμος SoundCloud (soundcloud.com/καλλιτέχνης/κομμάτι ή on.soundcloud.com).", en: "The Featured Track must be a SoundCloud link (soundcloud.com/artist/track or on.soundcloud.com)." },
+  dashboard_featured_track_unresolved: { el: "Δεν μπορέσαμε να ελέγξουμε τον σύνδεσμο SoundCloud. Δοκίμασε ξανά ή επικόλλησε τον πλήρη σύνδεσμο soundcloud.com/καλλιτέχνης/κομμάτι.", en: "We could not check the SoundCloud link. Try again or paste the full soundcloud.com/artist/track link." },
   dashboard_booking_info:       { el: "Πληροφορίες Κράτησης", en: "Booking Info" },
   dashboard_booking_info_placeholder: { el: "Πώς να κλείσουν το venue σου...", en: "How to book your venue..." },
   dashboard_announcements:      { el: "Ανακοινώσεις", en: "Announcements" },
@@ -1064,6 +1066,7 @@ const translations = {
 
   // ── Click-to-load embeds ────────────────────────────────────
   embed_load_player:        { el: "Φόρτωση player", en: "Load player" },
+  embed_open_soundcloud:  { el: "Άκουσε στο SoundCloud", en: "Listen on SoundCloud" },
   embed_notice_soundcloud:  { el: "Θα φορτώσει περιεχόμενο από το SoundCloud", en: "This will load content from SoundCloud" },
   embed_notice_spotify:     { el: "Θα φορτώσει περιεχόμενο από το Spotify", en: "This will load content from Spotify" },
 } as const;
