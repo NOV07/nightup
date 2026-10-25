@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 
-// GET — returns all saved spot IDs for the current user
-export async function GET() {
+// GET — returns all saved spot IDs for the current user.
+// GET ?spot_id=xxx — the public save count of one spot (a number, never who
+// saved it) and whether the current user, if any, has saved it.
+export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  const spotId = req.nextUrl.searchParams.get('spot_id')
+  if (spotId) {
+    const { data: countRow, error: countErr } = await supabase.rpc('spot_saved_count', { p_spot_id: spotId })
+    const count: number | null = countErr ? null : Number(countRow ?? 0)
+    if (!user) return NextResponse.json({ saved: false, count })
+    const { data: row } = await supabase
+      .from('saved_spots')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('spot_id', spotId)
+      .maybeSingle()
+    return NextResponse.json({ saved: !!row, count })
+  }
+
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data, error } = await supabase

@@ -37,6 +37,9 @@ export default async function DashboardPage() {
   const { data: eventSaveRows, error: eventSaveErr } = hostsEvents
     ? await supabase.rpc('my_event_saved_counts')
     : { data: null, error: null }
+  // Per-event save counts, from the same function as the total above.
+  const eventSavedCounts: Record<string, number> = {}
+  if (!eventSaveErr) for (const r of (eventSaveRows ?? []) as any[]) eventSavedCounts[String(r.event_id)] = Number(r.saved_count ?? 0)
   const savedEventsCount: number | null = hostsEvents
     ? (eventSaveErr ? null : (eventSaveRows ?? []).reduce((n: number, r: any) => n + Number(r.saved_count ?? 0), 0))
     : null
@@ -213,6 +216,7 @@ export default async function DashboardPage() {
       savedEventsCount={savedEventsCount}
       spotSavedCount={spotSavedCount}
       followerCount={followerCount}
+      eventSavedCounts={eventSavedCounts}
       featuredRequests={featuredRequests ?? []}
       artistBookings={artistBookings}
       professionalContributions={professionalContributions}
