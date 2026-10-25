@@ -70,7 +70,7 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings' | 'library'
 
-export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, spotSavedCount, followerCount, featuredRequests, artistBookings, professionalContributions, ownedSpot, userEmail }: {
+export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, spotSavedCount, followerCount, eventSavedCounts, featuredRequests, artistBookings, professionalContributions, ownedSpot, userEmail }: {
   profile: any
   userEmail?: string | null
   events: any[]
@@ -85,6 +85,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   savedEventsCount?: number | null
   spotSavedCount?: number | null
   followerCount?: number | null
+  eventSavedCounts?: Record<string, number>
   featuredRequests?: any[]
   artistBookings?: any[]
   professionalContributions?: any[]
@@ -1233,7 +1234,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xl font-bold text-white">{fmtCount(savedEventsCount)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_saved')}</p>
                         </div>
-                        {profile.profile_type === 'venue' && (
+                        {(profile.profile_type === 'venue' || profile.profile_type === 'organizer' || profile.profile_type === 'spot') && (
                           <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                             <p className="text-xl font-bold text-white">{fmtCount(followerCount)}</p>
                             <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_followers')}</p>
@@ -1278,7 +1279,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
                         </div>
                         <span className="text-xs flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          👁 {fmt(event.view_count)} · 👥 {fmt(event.going_count)} · ⭐ {fmt(event.interested_count)}
+                          👁 {fmt(event.view_count)} · 👥 {fmt(event.going_count)} · ⭐ {fmt(event.interested_count)} · ♥ {fmt(eventSavedCounts?.[String(event.id)] ?? 0)}
                         </span>
                         <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
                           backgroundColor: event.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',

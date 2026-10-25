@@ -38,6 +38,9 @@ export default function EventActions({ eventId, goingCount, interestedCount }: P
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const [counts, setCounts] = useState({ going: goingCount, interested: interestedCount });
   const [reactPending, setReactPending] = useState(false);
+  // Public save count (a number only). `base` is the count excluding this
+  // viewer's own save, so the shown number follows the heart without a refetch.
+  const [savedBase, setSavedBase] = useState<number | null>(null);
   // Once the user has clicked, a slow initial load must not overwrite what they chose.
   const touched = useRef(false);
 
@@ -49,6 +52,13 @@ export default function EventActions({ eventId, goingCount, interestedCount }: P
         if (cancelled || touched.current || !body?.reactions) return;
         const current = body.reactions.find((r): r is Reaction => r === "going" || r === "interested");
         setReaction(current ?? null);
+      })
+      .catch(() => {});
+    fetch(`/api/saved/events?event_id=${encodeURIComponent(eventId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { saved?: boolean; count?: number | null } | null) => {
+        if (cancelled || typeof body?.count !== "number") return;
+        setSavedBase(body.count - (body.saved ? 1 : 0));
       })
       .catch(() => {});
     // The heart's initial state is loaded by useSaveEvent itself.
@@ -131,6 +141,8 @@ export default function EventActions({ eventId, goingCount, interestedCount }: P
   const plural = (n: number, one: TranslationKey, other: TranslationKey) => `${n} ${t(n === 1 ? one : other)}`;
   if (counts.going > 0) countParts.push(plural(counts.going, "event_count_going_one", "event_count_going_other"));
   if (counts.interested > 0) countParts.push(plural(counts.interested, "event_count_interested_one", "event_count_interested_other"));
+  const savedCount = savedBase == null ? 0 : savedBase + (saved ? 1 : 0);
+  if (savedCount > 0) countParts.push(plural(savedCount, "event_count_saved_one", "event_count_saved_other"));
 
   return (
     <div style={{ marginBottom: 32 }}>

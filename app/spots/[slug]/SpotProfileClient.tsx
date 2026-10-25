@@ -6,6 +6,7 @@ import { SUBCATEGORIES, loc, spotPriceLabel, type Spot } from "../types";
 import { useLanguage } from "../../components/LanguageContext";
 import TranslatedText from "../../components/TranslatedText";
 import CroppedImage from "../../../components/ui/CroppedImage";
+import SpotSaveButton from "../../../components/spots/SpotSaveButton";
 import GalleryLightbox, { GalleryPlayBadge } from "../../../components/ui/GalleryLightbox";
 import type { GalleryItem } from "../../lib/types";
 
@@ -81,6 +82,9 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
             {spot.rating != null && <span style={{ color: "#E8A020", fontWeight: 600 }}>★ {spot.rating}</span>}
             {price && <span>{price}</span>}
             {spot.neighborhood && <span>📍 {spot.neighborhood}</span>}
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <SpotSaveButton spotId={String(spot.id)} />
           </div>
         </div>
       </div>

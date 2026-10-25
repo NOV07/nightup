@@ -10,6 +10,7 @@ import NetworkCategoryText from '@/app/components/NetworkCategoryText'
 import { getEventCoverImage, getEventCrop } from '@/app/lib/getEventCoverImage'
 import { getAvatarCrop, getCoverCrop } from '@/app/lib/profileCrop'
 import CroppedImage from '@/components/ui/CroppedImage'
+import FollowButton from '@/components/ui/FollowButton'
 import ProfileGallery, { type ProfileGalleryPhoto } from '@/components/ui/ProfileGallery'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
@@ -241,6 +242,9 @@ export default async function ProfilePage({ params }: Props) {
                       : <NetworkCategoryText value={profile.network_category} />}
                   </span>
                 )}
+              </div>
+              <div className="mt-2">
+                <FollowButton profileId={profile.id} showCount />
               </div>
             </div>
           </div>

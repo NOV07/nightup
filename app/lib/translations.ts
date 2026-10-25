@@ -472,6 +472,8 @@ const translations = {
   event_count_going_other:     { el: "θα πάνε", en: "going" },
   event_count_interested_one:  { el: "ενδιαφέρεται", en: "interested" },
   event_count_interested_other: { el: "ενδιαφέρονται", en: "interested" },
+  event_count_saved_one:       { el: "αποθήκευση", en: "save" },
+  event_count_saved_other:     { el: "αποθηκεύσεις", en: "saves" },
   home_tab_week:      { el: "Αυτή την εβδομάδα", en: "This week" },
   home_tab_popular:   { el: "Πιο δημοφιλή", en: "Most popular" },
 
@@ -502,6 +504,10 @@ const translations = {
   toast_sign_in_interest: { el: "Συνδέσου για να εκδηλώσεις ενδιαφέρον", en: "Sign in to express interest" },
   follow_following:       { el: "Ακολουθώ", en: "Following" },
   follow_follow:          { el: "Ακολούθησε", en: "Follow" },
+  follow_followers:       { el: "Followers", en: "Followers" },
+  spot_saves_label:       { el: "Αποθηκεύσεις", en: "Saves" },
+  spot_save_aria:         { el: "Αποθήκευση spot", en: "Save spot" },
+  spot_unsave_aria:       { el: "Αφαίρεση από τα αποθηκευμένα", en: "Remove from saved" },
   interest_sent:          { el: "✓ Έστειλες", en: "✓ Sent" },
 
   // ── Gallery upload ──────────────────────────────────────
