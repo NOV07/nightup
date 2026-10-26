@@ -91,20 +91,28 @@ export default async function EventPage({ params }: Props) {
 
   // Organizer profile
   let organizer: { id: string; username: string; display_name: string | null; avatar_url: string | null; avatar_crop_x: number | null; avatar_crop_y: number | null; avatar_crop_width: number | null; avatar_crop_height: number | null; bio: string | null } | null = null
+  let hostProfileType: string | null = null
   if (event.profile_id) {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, bio')
+      .select('id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, bio, profile_type')
       .eq('id', event.profile_id)
       .single()
     logQueryError(`events/${id}`, 'organizer profile', error)
     organizer = data ?? null
+    hostProfileType = data?.profile_type ?? null
   }
+
+  // Artists host under their own account, but the organiser is free text
+  // (editorial_owner_name): no card, no link to a profile, and no "more from
+  // this organiser" list, since the artist is not presented as an organiser.
+  const hostIsArtist = hostProfileType === 'artist'
+  if (hostIsArtist) organizer = null
 
   // When the host is a spot account, point the card at the spot page rather
   // than the bare profile — the spot is what the reader actually wants.
   let hostSpot: { slug: string; name: string } | null = null
-  if (event.profile_id) {
+  if (event.profile_id && !hostIsArtist) {
     const { data } = await supabase
       .from('spots')
       .select('slug, name')
@@ -116,7 +124,7 @@ export default async function EventPage({ params }: Props) {
 
   // More events from same organizer
   let moreEvents: { id: string; title: string; image_url: string | null; has_copyright_restriction: boolean; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null; date: string }[] = []
-  if (event.profile_id) {
+  if (event.profile_id && !hostIsArtist) {
     const { data, error } = await supabase
       .from('events')
       .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date')

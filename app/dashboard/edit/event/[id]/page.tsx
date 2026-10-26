@@ -23,5 +23,11 @@ export default async function EditEventPage({ params }: Props) {
 
   if (event.profile_id !== user.id) redirect('/dashboard')
 
-  return <EditEventClient event={event} />
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('profile_type')
+    .eq('id', user.id)
+    .single()
+
+  return <EditEventClient event={event} isArtist={profile?.profile_type === 'artist'} />
 }

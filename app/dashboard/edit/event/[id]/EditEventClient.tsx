@@ -5,7 +5,7 @@ import EventFormSteps, { EventFormData } from '../../../../../components/events/
 import { useLanguage } from '@/app/components/LanguageContext'
 import { normalizeCurrency, parsePriceInput } from '@/app/lib/formatPrice'
 
-export default function EditEventClient({ event }: { event: any }) {
+export default function EditEventClient({ event, isArtist = false }: { event: any; isArtist?: boolean }) {
   const router = useRouter()
   const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
@@ -37,6 +37,7 @@ export default function EditEventClient({ event }: { event: any }) {
     facebook:          event.facebook ?? '',
     tiktok:            event.tiktok ?? '',
     contact_email:     event.contact_email ?? '',
+    editorial_owner_name: event.editorial_owner_name ?? '',
     terms_accepted:    true,
   }
 
@@ -81,6 +82,7 @@ export default function EditEventClient({ event }: { event: any }) {
         facebook:          data.facebook || null,
         tiktok:            data.tiktok || null,
         contact_email:     data.contact_email,
+        ...(isArtist ? { editorial_owner_name: data.editorial_owner_name.trim() } : {}),
       }),
     })
 
@@ -101,7 +103,7 @@ export default function EditEventClient({ event }: { event: any }) {
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>{t('event_edit_heading')}</h1>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)' }}>{event.title}</p>
       </div>
-      <EventFormSteps initialData={initialData} onSubmit={handleSubmit} loading={loading} error={error} />
+      <EventFormSteps initialData={initialData} onSubmit={handleSubmit} loading={loading} error={error} askOrganizerName={isArtist} />
     </div>
   )
 }

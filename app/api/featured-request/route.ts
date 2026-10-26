@@ -9,6 +9,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Featured requests are not offered to artists.
+  const { data: requester } = await supabase
+    .from('profiles')
+    .select('profile_type')
+    .eq('id', user.id)
+    .single()
+  if (!requester || requester.profile_type === 'artist') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { event_id } = await req.json()
   if (!event_id) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })

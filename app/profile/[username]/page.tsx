@@ -97,6 +97,18 @@ export default async function ProfilePage({ params }: Props) {
       })
     }
 
+    // Events the artist uploaded themselves, merged with the lineup matches
+    // above. An event can be both, so de-duplicate by id.
+    const { data: hosted } = await supabase
+      .from('events')
+      .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, lineup, ticket_url')
+      .eq('profile_id', profile.id)
+      .eq('status', 'approved')
+      .gte('date', new Date().toISOString().split('T')[0])
+    const seen = new Set(upcomingEvents.map((e: any) => e.id))
+    upcomingEvents = [...upcomingEvents, ...(hosted ?? []).filter((e: any) => !seen.has(e.id))]
+      .sort((a: any, b: any) => String(a.date).localeCompare(String(b.date)))
+
     if (visibility.releases !== false) {
       const { data } = await supabase
         .from('music_releases')

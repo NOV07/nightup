@@ -1228,7 +1228,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
             )}
 
             {/* Events */}
-            {(profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot') && (
+            {(profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot' || profile.profile_type === 'artist') && (
               <div>
                 {(() => {
                   const totalViews = events.reduce((sum: number, e: any) => sum + (e.view_count ?? 0), 0)
@@ -1244,10 +1244,12 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xl font-bold text-white">{fmt(totalViews)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_views')}</p>
                         </div>
+                        {profile.profile_type !== 'artist' && (
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_profile_views')}</p>
                         </div>
+                        )}
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{fmt(totalGoing)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_going')}</p>
@@ -1321,7 +1323,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
                             ⏳ Featured request pending
                           </span>
-                        ) : (
+                        ) : profile.profile_type === 'artist' ? null : (
                           <button
                             onClick={() => handleRequestFeatured(event.id)}
                             disabled={requestingFeaturedId === event.id}

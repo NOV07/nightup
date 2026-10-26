@@ -10,14 +10,14 @@ export default async function NewEventPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('profile_type')
+    .select('profile_type, display_name')
     .eq('id', user.id)
     .single()
 
   // Kept in step with the same list in /api/events, which is what actually
   // enforces this. The two had drifted: the API already allowed professionals
   // while this page redirected them away.
-  if (!profile || !['organizer', 'professional', 'spot', 'venue'].includes(profile.profile_type)) redirect('/dashboard')
+  if (!profile || !['organizer', 'professional', 'spot', 'venue', 'artist'].includes(profile.profile_type)) redirect('/dashboard')
 
   // An account hosting its own night almost always runs it at its own address,
   // so seed the venue fields from it. Editable — either can host elsewhere.
@@ -42,5 +42,8 @@ export default async function NewEventPage() {
     }
   }
 
-  return <NewEventClient venueDefaults={venueDefaults} />
+  // Artists name their organiser as free text, prefilled with their own name.
+  const artistName = profile.profile_type === 'artist' ? (profile.display_name ?? '') : null
+
+  return <NewEventClient venueDefaults={venueDefaults} artistName={artistName} />
 }
