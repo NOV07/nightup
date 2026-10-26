@@ -276,7 +276,7 @@ const translations = {
   search_try_again:   { el: "Δοκίμασε διαφορετικές λέξεις ή έλεγξε την ορθογραφία.", en: "Try different words or check your spelling." },
 
   // ── TonightFAB ───────────────────────────────────────────
-  fab_find_night:     { el: "Απόψε", en: "Tonight" },
+  fab_find_night:     { el: "Βρες τη βραδιά σου", en: "Find your night" },
   fab_plan_event:     { el: "Τι ετοιμάζεις;", en: "What are you planning?" },
 
   // ── TonightModal ────────────────────────────────────────
