@@ -118,7 +118,10 @@ function Err({ stepErrors, k }: { stepErrors: Record<string, string>; k: string 
   return stepErrors[k] ? <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{stepErrors[k]}</p> : null
 }
 
-function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) => void }) {
+// `compact` (phones) drops the per-step captions: with nowrap they add up to more
+// than the screen and stretch the whole form. The card heading below already
+// names the current step.
+function StepIndicator({ step, setStep, compact = false }: { step: number; setStep: (n: number) => void; compact?: boolean }) {
   const { t } = useLanguage()
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 36 }}>
@@ -136,14 +139,16 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
             }}>
               {s.n < step ? '✓' : s.n}
             </div>
-            <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
-              color: step === s.n ? '#E8A020' : s.n < step ? 'rgba(232,160,32,0.6)' : 'rgba(255,255,255,0.25)',
-              whiteSpace: 'nowrap' }}>
-              {t(s.titleKey)}
-            </span>
+            {!compact && (
+              <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
+                color: step === s.n ? '#E8A020' : s.n < step ? 'rgba(232,160,32,0.6)' : 'rgba(255,255,255,0.25)',
+                whiteSpace: 'nowrap' }}>
+                {t(s.titleKey)}
+              </span>
+            )}
           </div>
           {i < STEPS.length - 1 && (
-            <div style={{ flex: 1, height: 1, margin: '0 8px', marginBottom: 20,
+            <div style={{ flex: 1, height: 1, margin: '0 8px', marginBottom: compact ? 0 : 20,
               backgroundColor: s.n < step ? 'rgba(232,160,32,0.3)' : 'rgba(255,255,255,0.08)' }} />
           )}
         </div>
@@ -590,6 +595,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [isMobile, setIsMobile] = useState(false)
+  const [isNarrow, setIsNarrow] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   // Sticky once the user picks "other city", so the text field stays open while
   // it is still empty. An existing event whose city is off the list opens it too.
@@ -602,7 +608,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   useEffect(() => { onChangeRef.current?.(form) }, [form])
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 980)
+    const check = () => { setIsMobile(window.innerWidth < 980); setIsNarrow(window.innerWidth < 560) }
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
@@ -696,10 +702,10 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   return (
     <div style={{
       maxWidth: isMobile ? 640 : 1060, margin: '0 auto',
-      display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 380px',
+      display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : '1fr 380px',
       gap: 28, alignItems: 'start',
     }}>
-      <div>
+      <div style={{ minWidth: 0 }}>
       {isMobile && (
         <button type="button" onClick={() => setPreviewOpen(true)}
           style={{ width: '100%', padding: '11px 0', marginBottom: 20, borderRadius: 12,
@@ -710,7 +716,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
         </button>
       )}
 
-      <StepIndicator step={step} setStep={setStep} />
+      <StepIndicator step={step} setStep={setStep} compact={isNarrow} />
 
       <div style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '32px 28px' }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 24 }}>
