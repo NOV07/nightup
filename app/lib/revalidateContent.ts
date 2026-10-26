@@ -4,7 +4,9 @@ type Target = { path: string; type?: 'page' | 'layout' }
 
 // Which cached public pages each table feeds. Pages served with
 // `force-dynamic` re-read on every request and are deliberately absent here:
-// / , /events, /events/all, /events/[id], /network, /search.
+// /events, /events/all, /events/[id], /network, /search. The home page is NOT
+// one of them: it is ISR (`revalidate = 60`), so a table the home page shows
+// has to list '/' to refresh it immediately (events does, see below).
 //
 // A dynamic segment needs the 'page' type and clears every page matching that
 // route, which is what we want — one row shows up on more than its own page
@@ -51,9 +53,10 @@ const PUBLIC_PATHS: Record<string, Target[]> = {
   listings: [
     { path: '/network/listings' },
   ],
-  // Every events listing is force-dynamic; /about is the one page that caches
-  // them, for its counters.
+  // The event listings under /events are force-dynamic. The ISR pages that show
+  // events are the home page (This Week, Hot and Popular) and /about (counters).
   events: [
+    { path: '/' },
     { path: '/about' },
   ],
 }
