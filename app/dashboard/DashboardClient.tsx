@@ -620,7 +620,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
             >
               {t('dashboard_view_profile')}
             </Link>
-            {!isPro && submitLink[profile.profile_type] && (
+            {!isPro && profile.profile_type !== 'artist' && submitLink[profile.profile_type] && (
               <Link
                 href={submitLink[profile.profile_type].href}
                 className="text-xs px-3 py-2 rounded-lg font-medium"
@@ -1155,7 +1155,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">{t('dashboard_your_content')}</h2>
-              {submitLink[profile.profile_type] && (
+              {profile.profile_type !== 'artist' && submitLink[profile.profile_type] && (
                 <Link
                   href={submitLink[profile.profile_type].href}
                   className="text-sm px-4 py-2 rounded-lg font-medium"
@@ -1228,7 +1228,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
             )}
 
             {/* Events */}
-            {(profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot' || profile.profile_type === 'artist') && (
+            {(profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot') && (
               <div>
                 {(() => {
                   const totalViews = events.reduce((sum: number, e: any) => sum + (e.view_count ?? 0), 0)
@@ -1244,12 +1244,10 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xl font-bold text-white">{fmt(totalViews)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_views')}</p>
                         </div>
-                        {profile.profile_type !== 'artist' && (
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_profile_views')}</p>
                         </div>
-                        )}
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{fmt(totalGoing)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_going')}</p>
@@ -1323,7 +1321,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
                             ⏳ Featured request pending
                           </span>
-                        ) : profile.profile_type === 'artist' ? null : (
+                        ) : (
                           <button
                             onClick={() => handleRequestFeatured(event.id)}
                             disabled={requestingFeaturedId === event.id}
@@ -1347,63 +1345,158 @@ export default function DashboardClient({ profile, events, releases, savedEvents
               </div>
             )}
 
-            {/* Artist Analytics */}
+            {/* Artist: overview → events → releases. Each section owns its own
+                "new" button, so the page header and the tab title carry none. */}
             {profile.profile_type === 'artist' && (
               <div>
-                <div className="mb-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_views')}</p>
-                    </div>
-                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{fmt((artistBookings ?? []).length)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_artist_stat_upcoming')}</p>
-                    </div>
-                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{fmt(releases.length)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_artist_stat_releases')}</p>
-                    </div>
-                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{fmt((receivedInterests ?? []).length)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_interests')}</p>
-                    </div>
-                    <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <p className="text-xl font-bold text-white">{fmtCount(followerCount)}</p>
-                      <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_followers')}</p>
-                    </div>
+                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_overview')}</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-xl font-bold text-white">{fmt(profile.view_count)}</p>
+                    <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_pro_stat_views')}</p>
+                  </div>
+                  <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-xl font-bold text-white">{fmtCount(followerCount)}</p>
+                    <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_followers')}</p>
                   </div>
                 </div>
-
-                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_artist_stat_upcoming')} ({(artistBookings ?? []).length})</h3>
-                {(artistBookings ?? []).length === 0 ? (
-                  <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_no_events_yet')}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {(artistBookings ?? []).map((event: any) => (
-                      <Link
-                        key={event.id}
-                        href={`/events/${event.id}`}
-                        className="flex items-center gap-4 p-4 rounded-xl transition-opacity hover:opacity-80"
-                        style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{event.title}</p>
-                          <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
+
+            {profile.profile_type === 'artist' && (() => {
+              const today = new Date().toISOString().split('T')[0]
+              const ownIds = new Set(events.map((e: any) => String(e.id)))
+              // Own events first-class; lineup bookings only when not already hosted by the artist.
+              const rows: { kind: 'own' | 'lineup'; event: any }[] = [
+                ...events.map((event: any) => ({ kind: 'own' as const, event })),
+                ...(artistBookings ?? [])
+                  .filter((event: any) => !ownIds.has(String(event.id)))
+                  .map((event: any) => ({ kind: 'lineup' as const, event })),
+              ]
+              const dateOf = (r: { event: any }) => String(r.event.date ?? '')
+              const upcoming = rows.filter(r => dateOf(r) >= today).sort((a, b) => dateOf(a).localeCompare(dateOf(b)))
+              const past = rows.filter(r => dateOf(r) < today).sort((a, b) => dateOf(b).localeCompare(dateOf(a)))
+
+              const totalViews = events.reduce((sum: number, e: any) => sum + (e.view_count ?? 0), 0)
+              const totalGoing = events.reduce((sum: number, e: any) => sum + (e.going_count ?? 0), 0)
+              const totalInterested = events.reduce((sum: number, e: any) => sum + (e.interested_count ?? 0), 0)
+              const topEvent = events.length > 0
+                ? events.reduce((top: any, e: any) => (e.going_count ?? 0) > (top.going_count ?? 0) ? e : top, events[0])
+                : null
+
+              const renderRow = ({ kind, event }: { kind: 'own' | 'lineup'; event: any }) => kind === 'own' ? (
+                <div key={event.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                  <div className="flex-1 min-w-0" style={{ flexBasis: '10rem' }}>
+                    <p className="text-sm font-medium text-white truncate">{event.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
+                  </div>
+                  <span className="text-xs flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    👁 {fmt(event.view_count)} · 👥 {fmt(event.going_count)} · ⭐ {fmt(event.interested_count)} · ♥ {fmt(eventSavedCounts?.[String(event.id)] ?? 0)}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
+                    backgroundColor: event.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
+                    color: event.status === 'approved' ? '#4ade80' : '#E8A020',
+                  }}>
+                    {event.status === 'approved' ? t('dashboard_status_live') : t('dashboard_status_pending')}
+                  </span>
+                  <Link
+                    href={`/dashboard/edit/event/${event.id}`}
+                    className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    {t('dashboard_edit')}
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  key={event.id}
+                  href={`/events/${event.id}`}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4 rounded-xl transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}
+                >
+                  <div className="flex-1 min-w-0" style={{ flexBasis: '10rem' }}>
+                    <p className="text-sm font-medium text-white truncate">{event.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
+                    {t('dashboard_event_lineup_badge')}
+                  </span>
+                </Link>
+              )
+
+              const group = (label: string, list: typeof rows) => list.length > 0 && (
+                <div>
+                  <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>{label} ({list.length})</p>
+                  <div className="space-y-2">{list.map(renderRow)}</div>
+                </div>
+              )
+
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('events_title')} ({rows.length})</h3>
+                    <Link
+                      href="/dashboard/events/new"
+                      className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                      style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+                    >
+                      {t('dashboard_add_event')}
+                    </Link>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                        <p className="text-xl font-bold text-white">{fmt(totalViews)}</p>
+                        <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_artist_event_views')}</p>
+                      </div>
+                      <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                        <p className="text-xl font-bold text-white">{fmt(totalGoing)}</p>
+                        <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_going')}</p>
+                      </div>
+                      <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                        <p className="text-xl font-bold text-white">{fmt(totalInterested)}</p>
+                        <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_interested')}</p>
+                      </div>
+                      <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                        <p className="text-xl font-bold text-white">{fmtCount(savedEventsCount)}</p>
+                        <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_saved')}</p>
+                      </div>
+                    </div>
+                    {topEvent && (
+                      <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        🏆 {t('dashboard_top_event')}: {topEvent.title} ({fmt(topEvent.going_count)} {t('dashboard_top_event_going')})
+                      </p>
+                    )}
+                  </div>
+
+                  {rows.length === 0 ? (
+                    <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_no_events_yet')}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {group(t('dashboard_events_group_upcoming'), upcoming)}
+                      {group(t('dashboard_events_group_past'), past)}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Releases */}
             {profile.profile_type === 'artist' && (
               <div>
-                <h3 className="text-xs uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_releases_label')} ({releases.length})</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_releases_label')} ({releases.length})</h3>
+                  <Link
+                    href="/submit/release"
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                    style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}
+                  >
+                    {t('dashboard_new_release')}
+                  </Link>
+                </div>
                 {releases.length === 0 ? (
                   <div className="p-8 rounded-2xl text-center" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                     <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('dashboard_no_releases_yet')}</p>
