@@ -276,7 +276,7 @@ const translations = {
   search_try_again:   { el: "Δοκίμασε διαφορετικές λέξεις ή έλεγξε την ορθογραφία.", en: "Try different words or check your spelling." },
 
   // ── TonightFAB ───────────────────────────────────────────
-  fab_find_night:     { el: "Βρες τη βραδιά σου", en: "Find your night" },
+  fab_find_night:     { el: "Απόψε", en: "Tonight" },
   fab_plan_event:     { el: "Τι ετοιμάζεις;", en: "What are you planning?" },
 
   // ── TonightModal ────────────────────────────────────────
@@ -408,7 +408,6 @@ const translations = {
   legal_terms:              { el: "Όροι Χρήσης", en: "Terms of Use" },
 
   // ── Footer ──────────────────────────────────────────────
-  footer_tagline:     { el: "Find your night.", en: "Find your night." },
   footer_discover_kbd:{ el: "DISCOVER", en: "DISCOVER" },
   footer_discover_t:  { el: "Βρες events", en: "Find events" },
   footer_discover_d:  { el: "Tonight, this week, by genre", en: "Tonight, this week, by genre" },

@@ -33,22 +33,22 @@ const jetbrainsMono = JetBrains_Mono({
 const OG_IMAGE = "https://nightup.gr/og-image.png";
 
 export const metadata: Metadata = {
-  title: { default: "Nightup.gr – Find Your Night", template: "%s | Nightup.gr" },
-  description: "Greece's #1 nightlife and events discovery platform. Find events, venues, DJs, and everything you need for an unforgettable night out.",
+  title: { default: "Nightup", template: "%s | Nightup.gr" },
+  description: "Nightlife and events discovery platform in Greece.",
   keywords: ["nightlife", "events", "Greece", "Athens", "parties", "clubs", "DJs", "Thessaloniki"],
   robots: { index: true, follow: true },
   openGraph: {
     siteName: "Nightup.gr",
     locale: "el_GR",
     type: "website",
-    title: "Nightup.gr – Find Your Night",
-    description: "Greece's #1 nightlife and events discovery platform. Find events, venues, DJs, and everything you need for an unforgettable night out.",
+    title: "Nightup",
+    description: "Nightlife and events discovery platform in Greece.",
     images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "Nightup.gr" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Nightup.gr – Find Your Night",
-    description: "Greece's #1 nightlife and events discovery platform.",
+    title: "Nightup",
+    description: "Nightlife and events discovery platform in Greece.",
     images: [OG_IMAGE],
   },
 };
