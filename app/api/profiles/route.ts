@@ -26,9 +26,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { username, display_name, profile_type, bio, instagram, website, avatar_url } = body
+  // profile_type is deliberately not read from the body: every account starts
+  // as a plain 'user' and is promoted by /api/admin/approve-upgrade.
+  const { username, display_name, bio, instagram, website, avatar_url } = body
 
-  if (!username || !display_name || !profile_type) {
+  if (!username || !display_name) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
       id: user.id,
       username,
       display_name,
-      profile_type,
+      profile_type: 'user',
       bio: bio || null,
       instagram: instagram || null,
       website: website || null,

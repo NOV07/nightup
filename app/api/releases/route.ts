@@ -34,10 +34,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields: title, artist' }, { status: 400 })
   }
 
+  // Same columns an owner may edit in PATCH /api/releases/[id]; status,
+  // is_promoted and profile_id are never taken from the client.
+  const allowed = [
+    'title', 'artist', 'type', 'primary_genre', 'secondary_genres',
+    'label', 'release_date', 'description', 'cover_image',
+    'soundcloud_url', 'spotify_url', 'apple_music_url',
+    'youtube_url', 'bandcamp_url', 'beatport_url', 'deezer_url',
+    'producers', 'composers', 'featuring_artists',
+    'mastering_engineer', 'artwork_by',
+  ]
+  const payload: Record<string, unknown> = {}
+  for (const key of allowed) {
+    if (key in body) payload[key] = body[key]
+  }
+
   const { data, error } = await supabase
     .from('music_releases')
     .insert({
-      ...body,
+      ...payload,
       profile_id: profile.id,
       status: 'pending',
     })
