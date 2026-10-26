@@ -45,8 +45,8 @@ export async function PATCH(
     .single()
 
   if (!profile) return NextResponse.json({ error: 'No profile found' }, { status: 400 })
-  if (!['organizer', 'professional', 'spot', 'venue'].includes(profile.profile_type)) {
-    return NextResponse.json({ error: 'Only organizers, professionals, spots and venues can edit events' }, { status: 403 })
+  if (!['organizer', 'professional', 'spot', 'venue', 'artist'].includes(profile.profile_type)) {
+    return NextResponse.json({ error: 'Only organizers, artists, professionals, spots and venues can edit events' }, { status: 403 })
   }
 
   const { data: existing } = await supabase
@@ -83,6 +83,15 @@ export async function PATCH(
   ]
   const payload: Record<string, unknown> = {}
   allowed.forEach(k => { if (k in body) payload[k] = body[k] })
+
+  // Free-text organiser is an artist-only field; it must stay non-empty.
+  if (profile.profile_type === 'artist' && 'editorial_owner_name' in body) {
+    const organizerName = typeof body.editorial_owner_name === 'string' ? body.editorial_owner_name.trim() : ''
+    if (!organizerName) {
+      return NextResponse.json({ error: 'editorial_owner_name cannot be empty' }, { status: 400 })
+    }
+    payload.editorial_owner_name = organizerName
+  }
 
   // Only when the caller actually sent a price: the unconditional assignment
   // this replaces wiped the stored price on any partial PATCH.

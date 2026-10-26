@@ -76,6 +76,8 @@ export interface EventFormData {
   facebook: string
   tiktok: string
   contact_email: string
+  // Free-text organiser, shown only to artist accounts (events.editorial_owner_name).
+  editorial_owner_name: string
   terms_accepted: boolean
   // Admin-only — ignored unless the form is rendered with isAdmin
   featured: boolean
@@ -91,7 +93,7 @@ const DEFAULTS: EventFormData = {
   maps_url: '', image_url: '', gallery: [], ticket_url: '', price: '', currency: 'EUR',
   age_restriction_level: 'none',
   dress_code: '', lineup: '', contributors: '', instagram: '', facebook: '', tiktok: '',
-  contact_email: '', terms_accepted: false,
+  contact_email: '', editorial_owner_name: '', terms_accepted: false,
   featured: false, is_radar_pick: false, status: 'pending',
 }
 
@@ -104,6 +106,8 @@ interface Props {
   isAdmin?: boolean
   /** Admin editing an existing event — unlocks the status select. */
   isEdit?: boolean
+  /** Artist accounts name their organiser as plain text — renders and requires that field. */
+  askOrganizerName?: boolean
   /** Fires on every change, so an admin host can mirror state (e.g. for the cropper). */
   onChange?: (data: EventFormData) => void
 }
@@ -148,12 +152,13 @@ function StepIndicator({ step, setStep }: { step: number; setStep: (n: number) =
   )
 }
 
-function Step1({ form, set, toggleGenre, stepErrors, isAdmin }: {
+function Step1({ form, set, toggleGenre, stepErrors, isAdmin, askOrganizerName }: {
   form: EventFormData
   set: SetField
   toggleGenre: (g: string) => void
   stepErrors: Record<string, string>
   isAdmin: boolean
+  askOrganizerName: boolean
 }) {
   const { t } = useLanguage()
   return (
@@ -163,6 +168,15 @@ function Step1({ form, set, toggleGenre, stepErrors, isAdmin }: {
         <input style={inp} value={form.title} onChange={e => set('title', e.target.value)} placeholder={t('event_form_title_placeholder')} />
         <Err stepErrors={stepErrors} k="title" />
       </div>
+
+      {askOrganizerName && (
+        <div>
+          <label style={lbl}>{t('event_form_organizer_label')} *</label>
+          <input style={inp} value={form.editorial_owner_name} onChange={e => set('editorial_owner_name', e.target.value)} placeholder={t('event_form_organizer_placeholder')} />
+          <p style={{ color: 'rgba(255,255,255,0.40)', fontSize: 12, marginTop: 4 }}>{t('event_form_organizer_hint')}</p>
+          <Err stepErrors={stepErrors} k="editorial_owner_name" />
+        </div>
+      )}
 
       <div>
         <label style={lbl}>{t('event_form_type_label')}</label>
@@ -568,7 +582,7 @@ function Step4({ form, set, stepErrors, isAdmin, isEdit }: {
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export default function EventFormSteps({ initialData, onSubmit, loading, error, isAdmin = false, isEdit = false, onChange }: Props) {
+export default function EventFormSteps({ initialData, onSubmit, loading, error, isAdmin = false, isEdit = false, askOrganizerName = false, onChange }: Props) {
   const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<EventFormData>({ ...DEFAULTS, ...initialData })
@@ -633,6 +647,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
       if (!form.title.trim()) e.title = t('event_form_err_title_required')
       if (!form.short_description.trim()) e.short_description = t('event_form_err_short_desc_required')
       else if (form.short_description.length > 160) e.short_description = t('event_form_err_max_160')
+      if (askOrganizerName && !form.editorial_owner_name.trim()) e.editorial_owner_name = t('event_form_err_organizer_required')
     }
     if (n === 2) {
       if (!form.date) e.date = t('event_form_err_date_required')
@@ -702,7 +717,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
           {t(STEPS[step - 1].titleKey)}
         </h2>
 
-        {step === 1 && <Step1 form={form} set={set} toggleGenre={toggleGenre} stepErrors={stepErrors} isAdmin={isAdmin} />}
+        {step === 1 && <Step1 form={form} set={set} toggleGenre={toggleGenre} stepErrors={stepErrors} isAdmin={isAdmin} askOrganizerName={askOrganizerName} />}
         {step === 2 && <Step2 form={form} set={set} stepErrors={stepErrors} uploading={uploading} uploadError={uploadError} fileInputRef={fileInputRef} handleImageChange={handleImageChange} onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage} isAdmin={isAdmin} showCityOther={showCityOther} onCitySelect={selectCity} />}
         {step === 3 && <Step3 form={form} set={set} stepErrors={stepErrors} />}
         {step === 4 && <Step4 form={form} set={set} stepErrors={stepErrors} isAdmin={isAdmin} isEdit={isEdit} />}

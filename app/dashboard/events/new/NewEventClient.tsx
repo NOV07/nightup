@@ -5,7 +5,7 @@ import EventFormSteps, { EventFormData } from '../../../../components/events/Eve
 import { useLanguage } from '@/app/components/LanguageContext'
 import { parsePriceInput } from '@/app/lib/formatPrice'
 
-export default function NewEventClient({ venueDefaults }: { venueDefaults?: { venue: string; city: string; address: string } | null }) {
+export default function NewEventClient({ venueDefaults, artistName }: { venueDefaults?: { venue: string; city: string; address: string } | null; artistName?: string | null }) {
   const router = useRouter()
   const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
@@ -52,6 +52,7 @@ export default function NewEventClient({ venueDefaults }: { venueDefaults?: { ve
         facebook:          data.facebook || null,
         tiktok:            data.tiktok || null,
         contact_email:     data.contact_email,
+        ...(artistName != null ? { editorial_owner_name: data.editorial_owner_name.trim() } : {}),
       }),
     })
 
@@ -72,7 +73,7 @@ export default function NewEventClient({ venueDefaults }: { venueDefaults?: { ve
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>{t('event_new_heading')}</h1>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.50)' }}>{t('event_new_subheading')}</p>
       </div>
-      <EventFormSteps initialData={venueDefaults ?? undefined} onSubmit={handleSubmit} loading={loading} error={error} />
+      <EventFormSteps initialData={artistName != null ? { editorial_owner_name: artistName } : (venueDefaults ?? undefined)} askOrganizerName={artistName != null} onSubmit={handleSubmit} loading={loading} error={error} />
     </div>
   )
 }

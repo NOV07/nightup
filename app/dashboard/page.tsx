@@ -17,9 +17,9 @@ export default async function DashboardPage() {
 
   if (!profile) redirect('/onboarding')
 
-  // Spot accounts host their own events, so they get the same event sections
-  // as organizers and venues.
-  const hostsEvents = ['organizer', 'venue', 'spot'].includes(profile.profile_type)
+  // Spot and artist accounts host their own events, so they get the same event
+  // sections as organizers and venues.
+  const hostsEvents = ['organizer', 'venue', 'spot', 'artist'].includes(profile.profile_type)
 
   const { data: ownedSpot } = profile.profile_type === 'spot'
     ? await supabase.from('spots').select('*').eq('owner_id', profile.id).maybeSingle()
@@ -56,7 +56,8 @@ export default async function DashboardPage() {
     : { data: null, error: null }
   const followerCount: number | null = profile.profile_type !== 'user' && !followerErr ? Number(followerRows ?? 0) : null
 
-  const { data: featuredRequests } = hostsEvents
+  // Featured requests are not offered to artists.
+  const { data: featuredRequests } = hostsEvents && profile.profile_type !== 'artist'
     ? await supabase.from('featured_event_requests').select('event_id, status').eq('profile_id', profile.id)
     : { data: [] }
 

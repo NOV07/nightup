@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No profile found. Complete onboarding first.' }, { status: 400 })
   }
 
-  if (!['organizer', 'professional', 'spot', 'venue'].includes(profile.profile_type)) {
-    return NextResponse.json({ error: 'Only organizers, professionals, spots and venues can submit events' }, { status: 403 })
+  if (!['organizer', 'professional', 'spot', 'venue', 'artist'].includes(profile.profile_type)) {
+    return NextResponse.json({ error: 'Only organizers, artists, professionals, spots and venues can submit events' }, { status: 403 })
   }
 
   let body: Record<string, unknown>
@@ -55,6 +55,16 @@ export async function POST(req: NextRequest) {
   ]
   const payload: Record<string, unknown> = {}
   allowed.forEach(k => { if (k in body) payload[k] = body[k] })
+
+  // Artists host under their own account but name the organiser as free text,
+  // stored in editorial_owner_name. Other types never send it, so ignore it.
+  if (profile.profile_type === 'artist') {
+    const organizerName = typeof body.editorial_owner_name === 'string' ? body.editorial_owner_name.trim() : ''
+    if (!organizerName) {
+      return NextResponse.json({ error: 'Missing required field: editorial_owner_name' }, { status: 400 })
+    }
+    payload.editorial_owner_name = organizerName
+  }
 
   // events.price is numeric — coerce whatever the client sent rather than
   // letting a "€22" style string reach the column.
