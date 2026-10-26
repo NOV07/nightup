@@ -2,17 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { sendNotification } from '@/app/lib/notify'
 
-// GET ?profile_id=xxx — check if current user follows this profile
+// GET ?profile_id=xxx — the follower count (a public number) and, for a
+// signed-in user, whether they follow this profile
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ following: false, self: false })
 
   const profile_id = req.nextUrl.searchParams.get('profile_id')
   if (!profile_id) return NextResponse.json({ error: 'profile_id required' }, { status: 400 })
 
+  // Count-only function: the list of followers stays private (RLS on follows).
+  const { data: countRow, error: countErr } = await supabase.rpc('profile_follower_count', { p_profile_id: profile_id })
+  const count: number | null = countErr ? null : Number(countRow ?? 0)
+
+  if (!user) return NextResponse.json({ following: false, self: false, count })
+
   // Your own profile: the follow button is hidden there.
-  if (profile_id === user.id) return NextResponse.json({ following: false, self: true })
+  if (profile_id === user.id) return NextResponse.json({ following: false, self: true, count })
 
   const { data } = await supabase
     .from('follows')
@@ -21,7 +27,7 @@ export async function GET(req: NextRequest) {
     .eq('profile_id', profile_id)
     .maybeSingle()
 
-  return NextResponse.json({ following: !!data })
+  return NextResponse.json({ following: !!data, self: false, count })
 }
 
 // POST { profile_id } — follow
@@ -42,10 +48,11 @@ export async function POST(req: NextRequest) {
   // The recipient is taken from the database, not trusted from the body.
   const { data: target } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, profile_type')
     .eq('id', profile_id)
     .maybeSingle()
-  if (!target) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  // Plain users have no public profile to follow.
+  if (!target || target.profile_type === 'user') return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   const { error } = await supabase
     .from('follows')

@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 
-// GET — returns all saved event IDs for the current user
-export async function GET() {
+// GET — returns all saved event IDs for the current user.
+// GET ?event_id=xxx — the public save count of one event (a number, never who
+// saved it) and whether the current user, if any, has saved it.
+export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  const eventId = req.nextUrl.searchParams.get('event_id')
+  if (eventId) {
+    const { data: countRow, error: countErr } = await supabase.rpc('event_saved_count', { p_event_id: eventId })
+    const count: number | null = countErr ? null : Number(countRow ?? 0)
+    if (!user) return NextResponse.json({ saved: false, count })
+    const { data: row } = await supabase
+      .from('saved_events')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('event_id', eventId)
+      .maybeSingle()
+    return NextResponse.json({ saved: !!row, count })
+  }
+
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data, error } = await supabase

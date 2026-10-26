@@ -70,7 +70,7 @@ const SECTION_LABEL_KEYS: Record<string, TranslationKey> = {
 
 type Tab = 'profile' | 'content' | 'listings' | 'visibility' | 'settings' | 'library'
 
-export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, spotSavedCount, followerCount, featuredRequests, artistBookings, professionalContributions, ownedSpot, userEmail }: {
+export default function DashboardClient({ profile, events, releases, savedEvents, savedSpots, upcomingEvents, followedProfiles, listings, receivedInterests, sentInterests, savedEventsCount, spotSavedCount, followerCount, eventSavedCounts, featuredRequests, artistBookings, professionalContributions, ownedSpot, userEmail }: {
   profile: any
   userEmail?: string | null
   events: any[]
@@ -85,6 +85,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
   savedEventsCount?: number | null
   spotSavedCount?: number | null
   followerCount?: number | null
+  eventSavedCounts?: Record<string, number>
   featuredRequests?: any[]
   artistBookings?: any[]
   professionalContributions?: any[]
@@ -239,6 +240,32 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     setError('')
     setSaved(false)
 
+    // Featured track: only SoundCloud artist/track links embed, so a short link
+    // is expanded server-side and anything else is refused instead of saved.
+    let featuredTrackUrl: string | null = form.featured_track_url.trim() || null
+    if (featuredTrackUrl && featuredTrackUrl !== (profile.featured_track_url ?? '')) {
+      try {
+        const res = await fetch('/api/profiles/featured-track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: featuredTrackUrl }),
+        })
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok || typeof json.url !== 'string') {
+          const bad = json.error === 'invalid_url' || json.error === 'blocked_redirect' || json.error === 'not_embeddable'
+          setError(t(bad ? 'dashboard_featured_track_invalid' : 'dashboard_featured_track_unresolved'))
+          setSaving(false)
+          return
+        }
+        featuredTrackUrl = json.url
+        setForm(f => ({ ...f, featured_track_url: json.url }))
+      } catch {
+        setError(t('dashboard_featured_track_unresolved'))
+        setSaving(false)
+        return
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -267,7 +294,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
         mixcloud_url: form.mixcloud_url || null,
         website: form.website || null,
         booking_email: form.booking_email || null,
-        featured_track_url: form.featured_track_url || null,
+        featured_track_url: featuredTrackUrl,
         is_available: form.is_available,
         price_range: form.price_range || null,
         booking_info: form.booking_info || null,
@@ -1233,7 +1260,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xl font-bold text-white">{fmtCount(savedEventsCount)}</p>
                           <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_saved')}</p>
                         </div>
-                        {profile.profile_type === 'venue' && (
+                        {(profile.profile_type === 'venue' || profile.profile_type === 'organizer' || profile.profile_type === 'spot') && (
                           <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                             <p className="text-xl font-bold text-white">{fmtCount(followerCount)}</p>
                             <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_followers')}</p>
@@ -1278,7 +1305,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{event.venue} · {event.date}</p>
                         </div>
                         <span className="text-xs flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          👁 {fmt(event.view_count)} · 👥 {fmt(event.going_count)} · ⭐ {fmt(event.interested_count)}
+                          👁 {fmt(event.view_count)} · 👥 {fmt(event.going_count)} · ⭐ {fmt(event.interested_count)} · ♥ {fmt(eventSavedCounts?.[String(event.id)] ?? 0)}
                         </span>
                         <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
                           backgroundColor: event.status === 'approved' ? 'rgba(74,222,128,0.1)' : 'rgba(232,160,32,0.1)',
