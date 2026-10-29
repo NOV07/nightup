@@ -33,6 +33,8 @@ const jetbrainsMono = JetBrains_Mono({
 const OG_IMAGE = "https://nightup.gr/og-image.png";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nightup.gr"),
+  alternates: { canonical: "/" },
   title: { default: "Nightup.gr – Find Your Night", template: "%s | Nightup.gr" },
   description: "Greece's #1 nightlife and events discovery platform. Find events, venues, DJs, and everything you need for an unforgettable night out.",
   keywords: ["nightlife", "events", "Greece", "Athens", "parties", "clubs", "DJs", "Thessaloniki"],

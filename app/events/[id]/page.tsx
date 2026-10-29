@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: data.title,
     description: data.description ?? `${data.title}: find tickets and info on Nightup.gr`,
+    alternates: { canonical: `/events/${id}` },
     openGraph: {
       title: data.title,
       description: data.description ?? '',

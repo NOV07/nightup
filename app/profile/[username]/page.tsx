@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: data.display_name,
     description: data.bio ? data.bio.slice(0, 155) : `${data.display_name} on Nightup.gr`,
+    alternates: { canonical: `/profile/${username}` },
     openGraph: {
       title: data.display_name,
       description: data.bio?.slice(0, 155),

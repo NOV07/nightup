@@ -54,6 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: name,
     description,
+    alternates: { canonical: `/nightwaves/artist/${id}` },
     openGraph: {
       title: name,
       description,
