@@ -218,14 +218,15 @@ export default function RadioStrip() {
                   sizes="400px"
                   style={{
                     objectFit: "cover",
-                    opacity: 0.35,
+                    opacity: 0.85,
+                    objectPosition: "50% 55%",
                   }}
                 />
               )}
               {/* Gradient overlay */}
               <div style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(to bottom, rgba(15,15,26,0.55) 0%, rgba(15,15,26,0.82) 100%)",
+                background: "linear-gradient(to bottom, rgba(15,15,26,0.10) 0%, rgba(15,15,26,0.55) 100%)",
               }} />
 
               {/* Content */}
