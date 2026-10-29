@@ -37,6 +37,9 @@ export const metadata: Metadata = {
   description: "Greece's #1 nightlife and events discovery platform. Find events, venues, DJs, and everything you need for an unforgettable night out.",
   keywords: ["nightlife", "events", "Greece", "Athens", "parties", "clubs", "DJs", "Thessaloniki"],
   robots: { index: true, follow: true },
+  verification: {
+    google: "2zijksEwZpn6JI1_BtK55kkUXou_rUcWj89qBbW2SAc",
+  },
   openGraph: {
     siteName: "Nightup.gr",
     locale: "el_GR",
