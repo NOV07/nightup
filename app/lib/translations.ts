@@ -408,7 +408,6 @@ const translations = {
   legal_terms:              { el: "Όροι Χρήσης", en: "Terms of Use" },
 
   // ── Footer ──────────────────────────────────────────────
-  footer_tagline:     { el: "Find your night.", en: "Find your night." },
   footer_discover_kbd:{ el: "DISCOVER", en: "DISCOVER" },
   footer_discover_t:  { el: "Βρες events", en: "Find events" },
   footer_discover_d:  { el: "Tonight, this week, by genre", en: "Tonight, this week, by genre" },

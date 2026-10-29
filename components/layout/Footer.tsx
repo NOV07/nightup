@@ -44,7 +44,6 @@ export function Footer() {
               <span className="font-thin tracking-[0.2em] text-xl uppercase text-white">Night</span>
               <span className="font-thin tracking-[0.2em] text-xl uppercase" style={{ color: "#E8A020" }}>up</span>
             </div>
-            <p className="text-xs text-zinc-400 mt-2"><T k="footer_tagline" /></p>
           </div>
 
           <div className="flex flex-wrap gap-2">

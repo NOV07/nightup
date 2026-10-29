@@ -64,10 +64,7 @@ export default function ComingSoonPage() {
           <span className="font-thin tracking-[0.35em] text-6xl uppercase" style={{ color: "#E8A020" }}>up</span>
         </div>
 
-        {/* Tagline */}
-        <p className="text-xs tracking-[0.6em] uppercase mb-14" style={{ color: "#E8A020" }}>
-          find your night
-        </p>
+        <div className="mb-14" />
 
         {/* Headline */}
         <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">{t("coming_soon_title")}</h1>
