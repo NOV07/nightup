@@ -11,6 +11,7 @@ import { getEventCoverImage, getEventCrop } from '@/app/lib/getEventCoverImage'
 import { getAvatarCrop, getCoverCrop } from '@/app/lib/profileCrop'
 import CroppedImage from '@/components/ui/CroppedImage'
 import FollowButton from '@/components/ui/FollowButton'
+import { decodeUsername, profileHref } from '@/app/lib/profileHref'
 import ProfileGallery, { type ProfileGalleryPhoto } from '@/components/ui/ProfileGallery'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
@@ -20,14 +21,14 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { username } = await params
+  const username = decodeUsername((await params).username)
   const supabase = await createClient()
   const { data } = await supabase.from('profiles').select('display_name, bio, avatar_url').eq('username', username).single()
   if (!data) return { title: 'Profile | Nightup.gr' }
   return {
     title: data.display_name,
     description: data.bio ? data.bio.slice(0, 155) : `${data.display_name} on Nightup.gr`,
-    alternates: { canonical: `/profile/${username}` },
+    alternates: { canonical: profileHref(username) },
     openGraph: {
       title: data.display_name,
       description: data.bio?.slice(0, 155),
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProfilePage({ params }: Props) {
-  const { username } = await params
+  const username = decodeUsername((await params).username)
   const supabase = await createClient()
 
   const { data: profile, error } = await supabase

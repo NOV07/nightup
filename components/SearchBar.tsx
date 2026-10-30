@@ -8,6 +8,7 @@ import { CITIES, GENRES, NETWORK } from "../app/lib/searchData";
 import { useLanguage } from "../app/components/LanguageContext";
 import { networkCategoryLabel } from "../app/lib/searchData";
 import { useHideTonightFab } from "../app/components/TonightFabVisibilityContext";
+import { profileHref } from '@/app/lib/profileHref'
 
 export type SearchTab = "search" | "events" | "network";
 
@@ -202,7 +203,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
       found.push({ id: `mix-${m.id}`, title: m.title, subtitle: m.artist, type: "nightwaves", href: `/nightwaves/mix/${m.id}` })
     );
     profRes.data?.forEach((p: any) =>
-      found.push({ id: `prof-${p.id}`, title: p.display_name, subtitle: [networkCategoryLabel(p.network_subcategory || p.network_category, lang), p.location].filter(Boolean).join(" · "), type: "profile", href: `/profile/${p.username}` })
+      found.push({ id: `prof-${p.id}`, title: p.display_name, subtitle: [networkCategoryLabel(p.network_subcategory || p.network_category, lang), p.location].filter(Boolean).join(" · "), type: "profile", href: profileHref(p.username) })
     );
     spotRes.data?.forEach((s: any) =>
       found.push({ id: `spot-${s.id}`, title: s.name, subtitle: [s.category, s.neighborhood].filter(Boolean).join(" · "), type: "spot", href: `/spots/${s.slug}` })

@@ -8,6 +8,7 @@ import {
 } from '@/components/network/icons'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
+import { profileHref } from '@/app/lib/profileHref'
 
 type Glyph = ComponentType<GlyphProps>
 
@@ -346,7 +347,7 @@ export default function PartyBuilderModal({ onClose, profiles }: Props) {
                         {shown.map(profile => (
                           <Link
                             key={profile.id}
-                            href={`/profile/${profile.username}`}
+                            href={profileHref(profile.username)}
                             onClick={onClose}
                             className="flex items-start gap-3 p-3 transition-all"
                             style={{

@@ -18,6 +18,7 @@ import MyLibrary from './MyLibrary'
 import ScrollTabBar from '@/components/ui/ScrollTabBar'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '../lib/translations'
+import { profileHref } from '@/app/lib/profileHref'
 
 const AVATAR_CROP_ASPECT = 1
 const COVER_CROP_ASPECT = 3
@@ -613,7 +614,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href={`/profile/${profile.username}`}
+              href={profileHref(profile.username)}
               target="_blank"
               className="text-xs px-3 py-2 rounded-lg transition-opacity hover:opacity-80"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
@@ -787,7 +788,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   </div>
                 </div>
                 <Link
-                  href={`/profile/${profile.username}`}
+                  href={profileHref(profile.username)}
                   target="_blank"
                   className="mt-3 block text-center text-xs py-2.5 rounded-xl transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
@@ -877,7 +878,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   </div>
                 </div>
                 <Link
-                  href={`/profile/${profile.username}`}
+                  href={profileHref(profile.username)}
                   target="_blank"
                   className="mt-3 block text-center text-xs py-2.5 rounded-xl transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
@@ -1138,7 +1139,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   </div>
                 </div>
                 <Link
-                  href={`/profile/${profile.username}`}
+                  href={profileHref(profile.username)}
                   target="_blank"
                   className="mt-3 block text-center text-xs py-2.5 rounded-xl transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
@@ -1830,7 +1831,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                           </p>
                         </div>
                         <a
-                          href={`/profile/${actor?.username}`}
+                          href={profileHref(actor?.username)}
                           target="_blank"
                           className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 transition-opacity hover:opacity-80"
                           style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}

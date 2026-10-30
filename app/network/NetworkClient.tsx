@@ -15,6 +15,7 @@ import { networkCategoryLabel } from '../lib/searchData'
 import { useLanguage } from '../components/LanguageContext'
 import { getAvatarCrop } from '../lib/profileCrop'
 import CroppedImage from '../../components/ui/CroppedImage'
+import { profileHref } from '@/app/lib/profileHref'
 
 type GateKey = NetworkTab | 'Listings'
 
@@ -89,7 +90,7 @@ function CompactProfileCard({ profile }: { profile: Profile }) {
   const initials = profile.display_name?.slice(0, 2).toUpperCase() || '?'
   return (
     <Link
-      href={`/profile/${profile.username}`}
+      href={profileHref(profile.username)}
       className="flex items-center gap-3 transition-all hover:opacity-90"
       style={{
         position: 'relative',

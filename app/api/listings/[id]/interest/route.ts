@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { sendNotification } from '@/app/lib/notify'
+import { profileHref } from '@/app/lib/profileHref'
 
 export async function POST(
   _req: NextRequest,
@@ -49,7 +50,7 @@ export async function POST(
     actorId:     user.id,
     title:       `${profile.display_name} ενδιαφέρθηκε για «${listing.title}»`,
     body:        'Δες το προφίλ τους για να αποφασίσεις αν ταιριάζουν.',
-    link:        `/profile/${encodeURIComponent(profile.username)}`,
+    link:        profileHref(profile.username),
   })
 
   return NextResponse.json({ ok: true })

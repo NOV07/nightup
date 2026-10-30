@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { Lang, TranslationKey } from '../lib/translations'
 import { networkCategoryLabel } from '../lib/searchData'
+import { profileHref } from '@/app/lib/profileHref'
 
 const GOLD = '#E8A020'
 const SURFACE = '#1A1A28'
@@ -277,7 +278,7 @@ export default function MyLibrary({ savedEvents, upcomingEvents, savedSpots, fol
                 {followedProfiles.map((p: any) => (
                   <GridCard
                     key={p.id}
-                    href={`/profile/${p.username}`}
+                    href={profileHref(p.username)}
                     title={p.display_name}
                     sub={[networkCategoryLabel(p.network_category, lang), p.location].filter(Boolean).join(' · ')}
                   />

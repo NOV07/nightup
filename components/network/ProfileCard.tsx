@@ -6,6 +6,7 @@ import { getAvatarCrop } from '@/app/lib/profileCrop'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { networkCategoryLabel } from '@/app/lib/searchData'
 import type { Profile } from '@/app/lib/networkProfile'
+import { profileHref } from '@/app/lib/profileHref'
 
 const GOLD = '#E8A020'
 const SURFACE = '#111120'
@@ -21,7 +22,7 @@ export default function ProfileCard({ profile, accent = GOLD }: { profile: Profi
   const accentBorder = accent === GOLD ? BORDER : 'rgba(96,165,250,0.12)'
   return (
     <Link
-      href={`/profile/${profile.username}`}
+      href={profileHref(profile.username)}
       className="flex flex-col gap-3 p-4 transition-all hover:opacity-90"
       style={{
         backgroundColor: SURFACE,

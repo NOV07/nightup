@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSupabase } from "../../../lib/supabase";
 import ReleasePlayerClient from "./ReleasePlayerClient";
 import ClickToLoadEmbed from "../../../components/ClickToLoadEmbed";
+import { profileHref } from '@/app/lib/profileHref'
 
 interface Props { params: Promise<{ id: string }>; }
 
@@ -174,7 +175,7 @@ export default async function ReleasePage({ params }: Props) {
             </div>
 
             <Link
-              href={artistProfile ? `/profile/${artistProfile.username}` : `/nightwaves/artist/${encodeURIComponent(release.artist)}`}
+              href={artistProfile ? profileHref(artistProfile.username) : `/nightwaves/artist/${encodeURIComponent(release.artist)}`}
               className="text-base font-semibold hover:underline mb-2 block transition-colors"
               style={{ color: "#E8A020" }}
             >

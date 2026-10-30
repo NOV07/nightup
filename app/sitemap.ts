@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { profileHref } from '@/app/lib/profileHref'
 import { getSupabase } from "./lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     const profileRoutes: MetadataRoute.Sitemap = (profRes.data ?? []).map((p) => ({
-      url: `${base}/profile/${p.username}`,
+      url: `${base}${profileHref(p.username)}`,
       lastModified: p.updated_at ? new Date(p.updated_at) : now,
       changeFrequency: "monthly",
       priority: 0.5,

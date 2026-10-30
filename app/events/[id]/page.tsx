@@ -16,6 +16,7 @@ import EventActions from '../../../components/events/EventActions'
 import T from '../../components/T'
 import type { TranslationKey } from '../../lib/translations'
 import { toGalleryItems } from '../../lib/types'
+import { profileHref } from '@/app/lib/profileHref'
 
 export const dynamic = 'force-dynamic'
 
@@ -361,7 +362,7 @@ export default async function EventPage({ params }: Props) {
                 const matchedProfile = findArtistProfile(artist)
                 if (matchedProfile) {
                   return (
-                    <Link key={i} href={`/profile/${matchedProfile.username}`} style={{
+                    <Link key={i} href={profileHref(matchedProfile.username)} style={{
                       fontSize: 13, padding: '6px 14px', borderRadius: 999,
                       backgroundColor: 'rgba(232,160,32,0.10)',
                       color: '#E8A020',
@@ -400,7 +401,7 @@ export default async function EventPage({ params }: Props) {
                 const matchedProfile = findProfessionalProfile(contributor)
                 if (matchedProfile) {
                   return (
-                    <Link key={i} href={`/profile/${matchedProfile.username}`} style={{
+                    <Link key={i} href={profileHref(matchedProfile.username)} style={{
                       fontSize: 13, padding: '6px 14px', borderRadius: 999,
                       backgroundColor: 'rgba(232,160,32,0.10)',
                       color: '#E8A020',
@@ -456,7 +457,7 @@ export default async function EventPage({ params }: Props) {
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 14 }}>
               {hostSpot ? 'Spot' : 'Organizer'}
             </p>
-            <Link href={hostSpot ? `/spots/${hostSpot.slug}` : `/profile/${organizer.username}`} style={{ textDecoration: 'none' }}>
+            <Link href={hostSpot ? `/spots/${hostSpot.slug}` : profileHref(organizer.username)} style={{ textDecoration: 'none' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '16px',
                 borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.04)',

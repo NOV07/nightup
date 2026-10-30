@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { sendNotification } from '@/app/lib/notify'
+import { profileHref } from '@/app/lib/profileHref'
 
 // GET ?profile_id=xxx — the follower count (a public number) and, for a
 // signed-in user, whether they follow this profile
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       recipientId: target.id,
       actorId:     user.id,
       title:       `${actor.display_name} σε ακολούθησε`,
-      link:        `/profile/${encodeURIComponent(actor.username)}`,
+      link:        profileHref(actor.username),
     })
   }
 

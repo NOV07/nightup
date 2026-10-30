@@ -7,6 +7,7 @@ import { getAvatarCrop } from "../lib/profileCrop";
 import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
 import T from "../components/T";
 import { SearchResultCount } from "./SearchResultCount";
+import { profileHref } from '@/app/lib/profileHref'
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +125,7 @@ export default async function SearchPage({ searchParams }: Props) {
       subtitle: [p.network_subcategory, p.location].filter(Boolean).join(" · "),
       image: p.avatar_url,
       crop: getAvatarCrop(p),
-      href: `/profile/${p.username}`,
+      href: profileHref(p.username),
     }));
 
     spotRes.data?.forEach((s: any) => groups.spot.push({

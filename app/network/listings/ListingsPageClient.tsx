@@ -7,6 +7,7 @@ import { getListingCategory } from '@/app/lib/searchData'
 import { getAvatarCrop } from '@/app/lib/profileCrop'
 import { timeAgo } from '@/app/lib/timeAgo'
 import CroppedImage from '@/components/ui/CroppedImage'
+import { profileHref } from '@/app/lib/profileHref'
 
 interface Profile {
   id: string
@@ -456,7 +457,7 @@ function ListingCard({ listing, lang }: { listing: Listing; lang: string }) {
       {/* Bottom: profile + interest button */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link
-          href={`/profile/${listing.profiles.username}`}
+          href={profileHref(listing.profiles.username)}
           style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
         >
           {listing.profiles.avatar_url ? (

@@ -11,6 +11,7 @@ import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
 import { SPOT_CROP_ASPECT, SUBCATEGORIES, type SpotCategory } from "../spots/types";
 import LocationPicker from "../../components/maps/LocationPicker";
 import { useLanguage } from "../components/LanguageContext";
+import { profileHref } from '@/app/lib/profileHref'
 
 const EVENT_CROP_ASPECT = 16 / 9;
 
@@ -1421,7 +1422,7 @@ export default function AdminClient() {
                                 links out to the public profile instead. */}
                             {profile.username && (
                               <a
-                                href={`/profile/${profile.username}`}
+                                href={profileHref(profile.username)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title="View profile"
@@ -1441,7 +1442,7 @@ export default function AdminClient() {
                               onClick: () => handleToggleFeaturedProfile(profile.id, !!profile.is_featured),
                               fg: profile.is_featured ? "#E8A020" : "rgba(255,255,255,0.55)" },
                             ...(profile.username
-                              ? [{ key:"view", icon:"👁", label:"View profile", href:`/profile/${profile.username}`, fg:"#E8A020" }]
+                              ? [{ key:"view", icon:"👁", label:"View profile", href:profileHref(profile.username), fg:"#E8A020" }]
                               : []),
                             { key:"delete", icon:"🗑️", label:"Delete",
                               onClick: () => { closeConfirmDelete(); setConfirmDelete({ id: String(profile.id), tab: id, profileUsername: profile.username ?? "" }); },

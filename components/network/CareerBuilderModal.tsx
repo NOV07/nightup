@@ -6,6 +6,7 @@ import type { IconType } from 'react-icons'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
 import { NETWORK } from '@/app/lib/searchData'
+import { profileHref } from '@/app/lib/profileHref'
 
 // Blue accent, matching the "Για Artists" section — the party flow is the gold one.
 const BLUE = '#60A5FA'
@@ -266,7 +267,7 @@ export default function CareerBuilderModal({ onClose, profiles }: Props) {
                         {shown.map(profile => (
                           <Link
                             key={profile.id}
-                            href={`/profile/${profile.username}`}
+                            href={profileHref(profile.username)}
                             onClick={onClose}
                             className="flex items-start gap-3 p-3 transition-all"
                             style={{

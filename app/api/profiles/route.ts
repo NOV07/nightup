@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
+import { validateUsername, escapeLike } from '@/app/lib/username'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -32,6 +33,20 @@ export async function POST(req: NextRequest) {
 
   if (!username || !display_name) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+
+  const usernameError = validateUsername(username)
+  if (usernameError) {
+    return NextResponse.json({ error: usernameError }, { status: 400 })
+  }
+
+  const { data: taken } = await supabase
+    .from('profiles')
+    .select('id')
+    .ilike('username', escapeLike(username as string))
+    .limit(1)
+  if (taken && taken.length > 0) {
+    return NextResponse.json({ error: 'Username already taken' }, { status: 400 })
   }
 
   const { data, error } = await supabase
