@@ -29,3 +29,18 @@ export function validateUsername(value: unknown): string | null {
 export function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, c => `\\${c}`)
 }
+
+// Shared by every route that writes profiles.username (create and change).
+// Case-insensitive; `excludeId` lets a user keep or re-case their own name.
+export async function usernameProblem(
+  supabase: { from: (t: string) => any },
+  value: unknown,
+  excludeId?: string,
+): Promise<string | null> {
+  const invalid = validateUsername(value)
+  if (invalid) return invalid
+  let query = supabase.from('profiles').select('id').ilike('username', escapeLike(value as string)).limit(1)
+  if (excludeId) query = query.neq('id', excludeId)
+  const { data } = await query
+  return data && data.length > 0 ? 'Username already taken' : null
+}

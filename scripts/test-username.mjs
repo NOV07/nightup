@@ -22,3 +22,20 @@ for (const bad of ['a', 'a'.repeat(31), ' ab', 'ab ', 'a/b', 'a\\b', 'a?b', 'a#b
 }
 assert.equal(escapeLike('a_b%c\\d'), 'a\\_b\\%c\\\\d')
 console.log('username tests passed')
+
+// usernameProblem against a fake client: case-insensitive clash, own-id exclusion.
+import { usernameProblem } from '../app/lib/username.ts'
+const fake = rows => ({ from: () => {
+  let ex = null
+  const q = { select: () => q, ilike: (_c, p) => (q.p = p.replace(/\\(.)/g, '$1').toLowerCase(), q), limit: () => q, neq: (_c, id) => (ex = id, q),
+    then: r => r({ data: rows.filter(x => x.u.toLowerCase() === q.p && x.id !== ex).map(x => ({ id: x.id })) }) }
+  return q
+} })
+const db = fake([{ id: 'a', u: 'Me:True' }])
+assert.equal(await usernameProblem(db, 'me:true'), 'Username already taken')
+assert.equal(await usernameProblem(db, 'ME:TRUE'), 'Username already taken')
+assert.equal(await usernameProblem(db, 'me:true', 'a'), null)
+assert.equal(await usernameProblem(db, 'someone'), null)
+assert.equal(await usernameProblem(db, 'Admin'), 'Username is reserved')
+assert.equal(validateUsername('me:true'), null)
+console.log('usernameProblem tests passed')

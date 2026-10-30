@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
-import { validateUsername, escapeLike } from '@/app/lib/username'
+import { usernameProblem } from '@/app/lib/username'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -35,18 +35,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  const usernameError = validateUsername(username)
+  const usernameError = await usernameProblem(supabase, username)
   if (usernameError) {
     return NextResponse.json({ error: usernameError }, { status: 400 })
-  }
-
-  const { data: taken } = await supabase
-    .from('profiles')
-    .select('id')
-    .ilike('username', escapeLike(username as string))
-    .limit(1)
-  if (taken && taken.length > 0) {
-    return NextResponse.json({ error: 'Username already taken' }, { status: 400 })
   }
 
   const { data, error } = await supabase
@@ -90,6 +81,45 @@ export async function GET() {
 
   if (error) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  }
+
+  return NextResponse.json(data)
+}
+
+// Change the signed-in user's own username. Same rules as creation.
+export async function PATCH(req: NextRequest) {
+  const supabase = await createClient()
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { username } = body
+  const usernameError = await usernameProblem(supabase, username, user.id)
+  if (usernameError) {
+    return NextResponse.json({ error: usernameError }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ username })
+    .eq('id', user.id)
+    .select('username')
+    .single()
+
+  if (error) {
+    if (error.code === '23505') {
+      return NextResponse.json({ error: 'Username already taken' }, { status: 400 })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json(data)
