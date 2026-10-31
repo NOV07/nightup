@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../../lib/supabase";
+import { profileHref } from "../../../lib/profileHref";
+import { getAvatarCrop } from "../../../lib/profileCrop";
+import CroppedImage from "../../../../components/ui/CroppedImage";
+import T from "../../../components/T";
 
 function formatDuration(d: string | number | null | undefined): string | null {
   if (!d) return null;
@@ -56,6 +60,22 @@ async function getArtistInfo(name: string) {
   } catch { return null; }
 }
 
+// Profile the mix is linked to (mixes.profile_id). Account-only rows
+// (profile_type 'user') have no public page, so they never get a link.
+async function getMixProfile(profileId: string | null | undefined) {
+  if (!profileId) return null;
+  try {
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from("profiles")
+      .select("username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, profile_type")
+      .eq("id", profileId)
+      .neq("profile_type", "user")
+      .single();
+    return data ?? null;
+  } catch { return null; }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const mix = await getMix(id);
@@ -85,9 +105,10 @@ export default async function MixPage({ params }: Props) {
   const mix = await getMix(id);
   if (!mix) notFound();
 
-  const [related, artist] = await Promise.all([
+  const [related, artist, mixProfile] = await Promise.all([
     getRelatedMixes(id, mix.genre ?? null),
     getArtistInfo(mix.artist),
+    getMixProfile(mix.profile_id),
   ]);
 
   const track = {
@@ -153,6 +174,21 @@ export default async function MixPage({ params }: Props) {
             >
               {mix.artist}
             </Link>
+            {mixProfile && (
+              <Link
+                href={profileHref(mixProfile.username)}
+                className="inline-flex items-center gap-2 mb-3 pr-3 rounded-full text-xs transition-opacity hover:opacity-80"
+                style={{ backgroundColor: "#111120", border: "1px solid #1a1a2e", color: "#888" }}
+              >
+                <span className="relative w-6 h-6 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold" style={{ backgroundColor: "#1A1A2E", color: "#E8A020" }}>
+                  {mixProfile.display_name[0]?.toUpperCase()}
+                  {mixProfile.avatar_url && (
+                    <CroppedImage src={mixProfile.avatar_url} alt={mixProfile.display_name} crop={getAvatarCrop(mixProfile)} sizes="24px" />
+                  )}
+                </span>
+                <span><T k="mix_from_profile" /> <span className="font-semibold text-white">{mixProfile.display_name}</span></span>
+              </Link>
+            )}
             <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight mb-4">{mix.title}</h1>
 
             {mix.description && (
