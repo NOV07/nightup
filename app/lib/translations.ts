@@ -233,6 +233,7 @@ const translations = {
   nightwaves_new_releases: { el: "New Releases", en: "New Releases" },
   nightwaves_top_mixes:    { el: "Top Mixes", en: "Top Mixes" },
   nightwaves_playlists:    { el: "Playlists", en: "Playlists" },
+  mix_from_profile:        { el: "Από το προφίλ", en: "From" },
   nightwaves_live_radio:   { el: "Live Radio", en: "Live Radio" },
   nightwaves_pick:         { el: "Pick", en: "Pick" },
   nightwaves_sponsored:    { el: "Sponsored", en: "Sponsored" },
