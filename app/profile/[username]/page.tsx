@@ -12,6 +12,7 @@ import { getAvatarCrop, getCoverCrop } from '@/app/lib/profileCrop'
 import CroppedImage from '@/components/ui/CroppedImage'
 import FollowButton from '@/components/ui/FollowButton'
 import { decodeUsername, profileHref } from '@/app/lib/profileHref'
+import MixCard from '@/app/nightwaves/mixes/MixCard'
 import ProfileGallery, { type ProfileGalleryPhoto } from '@/components/ui/ProfileGallery'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
@@ -155,6 +156,19 @@ export default async function ProfilePage({ params }: Props) {
     .eq('profile_id', profile.id)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
+
+  // Mixes linked to this profile through mixes.profile_id (any profile type).
+  // Shares the dashboard's existing `mixes` visibility key; absent means visible.
+  let profileMixes: any[] = []
+  if (visibility.mixes !== false) {
+    const { data } = await supabase
+      .from('mixes')
+      .select('id, title, artist, genre, cover_image, soundcloud_url, duration')
+      .eq('profile_id', profile.id)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+    profileMixes = data ?? []
+  }
 
   const profileTypeLabel: Record<string, string> = {
     organizer: 'Organizer',
@@ -710,6 +724,18 @@ export default async function ProfilePage({ params }: Props) {
             )}
 
           </div>
+        )}
+
+        {/* Sets (mixes linked to this profile) */}
+        {profileMixes.length > 0 && (
+          <section className="pb-16" style={{ marginTop: '-16px' }}>
+            <h2 className="text-sm font-bold uppercase tracking-widest mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <T k="profile_sets" />
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {profileMixes.map((mix: any) => <MixCard key={mix.id} mix={mix} />)}
+            </div>
+          </section>
         )}
 
         {/* Listings */}
