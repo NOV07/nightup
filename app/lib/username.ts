@@ -32,15 +32,20 @@ export function escapeLike(value: string): string {
 
 // Shared by every route that writes profiles.username (create and change).
 // Case-insensitive; `excludeId` lets a user keep or re-case their own name.
+// Goes through username_taken(): other users' rows are invisible to a session
+// client, so a plain select could not see a clash with them.
 export async function usernameProblem(
-  supabase: { from: (t: string) => any },
+  supabase: { rpc: (fn: string, args: Record<string, unknown>) => any },
   value: unknown,
   excludeId?: string,
 ): Promise<string | null> {
   const invalid = validateUsername(value)
   if (invalid) return invalid
-  let query = supabase.from('profiles').select('id').ilike('username', escapeLike(value as string)).limit(1)
-  if (excludeId) query = query.neq('id', excludeId)
-  const { data } = await query
-  return data && data.length > 0 ? 'Username already taken' : null
+  const { data, error } = await supabase.rpc('username_taken', {
+    p_username: value as string,
+    p_exclude: excludeId ?? null,
+  })
+  // Fail closed: an unverifiable name is not accepted.
+  if (error) return 'Could not check the username, try again'
+  return data === true ? 'Username already taken' : null
 }

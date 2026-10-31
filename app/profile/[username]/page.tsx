@@ -24,7 +24,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const username = decodeUsername((await params).username)
   const supabase = await createClient()
-  const { data } = await supabase.from('profiles').select('display_name, bio, avatar_url').eq('username', username).single()
+  const { data } = await supabase.from('profiles').select('display_name, bio, avatar_url').eq('username', username).neq('profile_type', 'user').single()
   if (!data) return { title: 'Profile | Nightup.gr' }
   return {
     title: data.display_name,
