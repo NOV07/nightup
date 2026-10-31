@@ -56,6 +56,8 @@ export default async function ProfilePage({ params }: Props) {
 
   // Fetch content based on profile type
   let upcomingEvents: any[] = []
+  let pastEvents: any[] = []
+  const today = new Date().toISOString().split('T')[0]
   let releases: any[] = []
   let galleryPhotos: ProfileGalleryPhoto[] = []
 
@@ -83,21 +85,19 @@ export default async function ProfilePage({ params }: Props) {
 
   // Artist: find events where display_name appears in lineup
   if (profile.profile_type === 'artist') {
-    const { data: allEvents } = await supabase
-      .from('events')
-      .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, lineup')
-      .eq('status', 'approved')
-      .gte('date', new Date().toISOString().split('T')[0])
-      .order('date', { ascending: true })
-
-    if (allEvents) {
-      upcomingEvents = allEvents.filter((event: any) => {
-        const lineup = event.lineup ?? []
-        return lineup.some((name: string) =>
-          name.toLowerCase().trim() === profile.display_name.toLowerCase().trim()
-        )
-      })
-    }
+    const ARTIST_COLS = 'id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, lineup'
+    const inLineup = (event: any) =>
+      (event.lineup ?? []).some((name: string) =>
+        name.toLowerCase().trim() === profile.display_name.toLowerCase().trim()
+      )
+    const [{ data: allEvents }, { data: allPast }] = await Promise.all([
+      supabase.from('events').select(ARTIST_COLS)
+        .eq('status', 'approved').gte('date', today).order('date', { ascending: true }),
+      supabase.from('events').select(ARTIST_COLS)
+        .eq('status', 'approved').lt('date', today).order('date', { ascending: false }),
+    ])
+    upcomingEvents = (allEvents ?? []).filter(inLineup)
+    pastEvents = (allPast ?? []).filter(inLineup)
 
     // Events the artist uploaded themselves, merged with the lineup matches
     // above. An event can be both, so de-duplicate by id.
@@ -126,14 +126,15 @@ export default async function ProfilePage({ params }: Props) {
   // are in this list because they can submit events too, so their own events
   // had nowhere to show on their profile.
   if (profile.profile_type === 'organizer' || profile.profile_type === 'venue' || profile.profile_type === 'spot' || profile.profile_type === 'professional') {
-    const { data } = await supabase
-      .from('events')
-      .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, ticket_url')
-      .eq('profile_id', profile.id)
-      .eq('status', 'approved')
-      .gte('date', new Date().toISOString().split('T')[0])
-      .order('date', { ascending: true })
+    const EVENT_COLS = 'id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, date, time, venue, city, ticket_url'
+    const [{ data }, { data: past }] = await Promise.all([
+      supabase.from('events').select(EVENT_COLS).eq('profile_id', profile.id)
+        .eq('status', 'approved').gte('date', today).order('date', { ascending: true }),
+      supabase.from('events').select(EVENT_COLS).eq('profile_id', profile.id)
+        .eq('status', 'approved').lt('date', today).order('date', { ascending: false }),
+    ])
     upcomingEvents = data ?? []
+    pastEvents = past ?? []
   }
 
   // Fetch active listings for this profile
@@ -182,6 +183,63 @@ export default async function ProfilePage({ params }: Props) {
       : null;
   const avatarCrop = avatarSrc ? getAvatarCrop(profile) : null;
   const coverCrop = coverSrc ? getCoverCrop(profile) : null;
+
+  const artistEventCard = (event: any) => (
+    <Link key={event.id} href={`/events/${event.id}`}
+      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
+      style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+      <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '56px', height: '56px' }}>
+        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-white text-sm truncate">{event.title}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          {new Date(event.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} · {event.venue} · {event.city}
+        </p>
+      </div>
+      <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
+        backgroundColor: 'rgba(232,160,32,0.1)',
+        color: '#E8A020',
+        border: '0.5px solid rgba(232,160,32,0.2)'
+      }}><T k="profile_participates" /></span>
+    </Link>
+  )
+
+  const hostedEventCard = (event: any) => (
+    <Link key={event.id} href={`/events/${event.id}`}
+      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
+      style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
+      <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '64px', height: '64px' }}>
+        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-white truncate">{event.title}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          {new Date(event.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}{event.time ? ` · ${event.time}` : ""} · {event.venue}
+        </p>
+        <span className="text-xs mt-1 inline-block" style={{ color: '#E8A020' }}>{event.city}</span>
+      </div>
+      {event.ticket_url && (
+        <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
+          className="text-xs px-3 py-1.5 rounded-full flex-shrink-0 font-medium"
+          style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}>
+          Tickets
+        </a>
+      )}
+    </Link>
+  )
+
+  const pastEventsSection = (card: (e: any) => React.ReactNode) =>
+    visibility.upcoming_events !== false && pastEvents.length > 0 && (
+      <section>
+        <h2 className="text-sm font-bold uppercase tracking-widest mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <T k="profile_past_events" />
+        </h2>
+        <div className="space-y-3">
+          {pastEvents.map(card)}
+        </div>
+      </section>
+    )
 
   return (
     <div style={{ backgroundColor: '#0F0F1A', minHeight: '100vh' }}>
@@ -382,29 +440,12 @@ export default async function ProfilePage({ params }: Props) {
                   Upcoming Events
                 </h2>
                 <div className="space-y-3">
-                  {upcomingEvents.map((event: any) => (
-                    <Link key={event.id} href={`/events/${event.id}`}
-                      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '56px', height: '56px' }}>
-                        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white text-sm truncate">{event.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          {new Date(event.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} · {event.venue} · {event.city}
-                        </p>
-                      </div>
-                      <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
-                        backgroundColor: 'rgba(232,160,32,0.1)',
-                        color: '#E8A020',
-                        border: '0.5px solid rgba(232,160,32,0.2)'
-                      }}><T k="profile_participates" /></span>
-                    </Link>
-                  ))}
+                  {upcomingEvents.map(artistEventCard)}
                 </div>
               </section>
             )}
+
+            {pastEventsSection(artistEventCard)}
 
             {/* Featured Track */}
             {visibility.featured_track !== false && profile.featured_track_url && (
@@ -497,32 +538,12 @@ export default async function ProfilePage({ params }: Props) {
                   Upcoming Events
                 </h2>
                 <div className="space-y-3">
-                  {upcomingEvents.map((event: any) => (
-                    <Link key={event.id} href={`/events/${event.id}`}
-                      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '64px', height: '64px' }}>
-                        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate">{event.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          {new Date(event.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}{event.time ? ` · ${event.time}` : ""} · {event.venue}
-                        </p>
-                        <span className="text-xs mt-1 inline-block" style={{ color: '#E8A020' }}>{event.city}</span>
-                      </div>
-                      {event.ticket_url && (
-                        <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
-                          className="text-xs px-3 py-1.5 rounded-full flex-shrink-0 font-medium"
-                          style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}>
-                          Tickets
-                        </a>
-                      )}
-                    </Link>
-                  ))}
+                  {upcomingEvents.map(hostedEventCard)}
                 </div>
               </section>
             )}
+
+            {pastEventsSection(hostedEventCard)}
 
             {/* Music Embed */}
             {visibility.music_embed !== false && profile.featured_track_url && (
@@ -573,32 +594,12 @@ export default async function ProfilePage({ params }: Props) {
                   Upcoming Events
                 </h2>
                 <div className="space-y-3">
-                  {upcomingEvents.map((event: any) => (
-                    <Link key={event.id} href={`/events/${event.id}`}
-                      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                      <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '64px', height: '64px' }}>
-                        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate">{event.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          {new Date(event.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}{event.time ? ` · ${event.time}` : ""} · {event.venue}
-                        </p>
-                        <span className="text-xs mt-1 inline-block" style={{ color: '#E8A020' }}>{event.city}</span>
-                      </div>
-                      {event.ticket_url && (
-                        <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
-                          className="text-xs px-3 py-1.5 rounded-full flex-shrink-0 font-medium"
-                          style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}>
-                          Tickets
-                        </a>
-                      )}
-                    </Link>
-                  ))}
+                  {upcomingEvents.map(hostedEventCard)}
                 </div>
               </section>
             )}
+
+            {pastEventsSection(hostedEventCard)}
 
             {/* About — bio already renders in the header above, so this section
                 carries the taxonomy (tags + services) only. */}
