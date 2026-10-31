@@ -111,6 +111,17 @@ export default async function ProfilePage({ params }: Props) {
     upcomingEvents = [...upcomingEvents, ...(hosted ?? []).filter((e: any) => !seen.has(e.id))]
       .sort((a: any, b: any) => String(a.date).localeCompare(String(b.date)))
 
+    // Same merge for past events: lineup matches plus the artist's own uploads.
+    const { data: hostedPast } = await supabase
+      .from('events')
+      .select(ARTIST_COLS + ', ticket_url')
+      .eq('profile_id', profile.id)
+      .eq('status', 'approved')
+      .lt('date', today)
+    const seenPast = new Set(pastEvents.map((e: any) => e.id))
+    pastEvents = [...pastEvents, ...(hostedPast ?? []).filter((e: any) => !seenPast.has(e.id))]
+      .sort((a: any, b: any) => String(b.date).localeCompare(String(a.date)))
+
     if (visibility.releases !== false) {
       const { data } = await supabase
         .from('music_releases')
