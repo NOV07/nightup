@@ -2,6 +2,7 @@ import { createClient } from '@/app/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import DashboardClient from './DashboardClient'
+import { readActors } from '@/app/lib/readActors'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -175,13 +176,20 @@ export default async function DashboardPage() {
   }))
 
   // Who expressed interest in my listings
-  const { data: receivedInterests } = profile.profile_type !== 'user'
+  // The sender can be a plain user, whose profile row this session cannot read,
+  // so the sender is attached from readActors (ids taken from these rows).
+  const { data: receivedInterestRows } = profile.profile_type !== 'user'
     ? await supabase
         .from('listing_interests')
-        .select('id, created_at, listing_id, listings(title, role), profiles!profile_id(id, username, display_name, avatar_url, network_tab, network_category)')
+        .select('id, created_at, listing_id, profile_id, listings(title, role)')
         .in('listing_id', (listings ?? []).map((l: any) => l.id))
         .order('created_at', { ascending: false })
     : { data: [] }
+  const interestActors = await readActors((receivedInterestRows ?? []).map((r: any) => r.profile_id))
+  const receivedInterests = (receivedInterestRows ?? []).map((r: any) => ({
+    ...r,
+    profiles: interestActors.get(r.profile_id) ?? null,
+  }))
 
   // Interests I have expressed on others' listings
   const { data: sentInterests } = profile.profile_type !== 'user'

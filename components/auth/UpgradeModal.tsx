@@ -227,6 +227,7 @@ export default function UpgradeModal({ onClose }: { onClose: () => void }) {
                   onFocus={e => (e.target.style.borderColor = gold)}
                   onBlur={e => (e.target.style.borderColor = border)}
                 />
+                <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{t("upgrade_public_notice")}</p>
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <button
                   onClick={handleSubmit}

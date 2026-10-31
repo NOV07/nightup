@@ -544,6 +544,7 @@ const translations = {
   upgrade_choose_specialty:  { el: "Επίλεξε ειδικότητα", en: "Choose specialty" },
   upgrade_bio_placeholder:   { el: "Πες μας λίγα λόγια για σένα...", en: "Tell us a bit about yourself..." },
   upgrade_send_request:      { el: "Αποστολή αίτησης →", en: "Send request →" },
+  upgrade_public_notice:     { el: "Όταν εγκριθεί η αίτηση, το προφίλ σου γίνεται δημόσιο. Το βιογραφικό, τα social, το τηλέφωνο και το booking email που έχεις ήδη συμπληρώσει θα φαίνονται σε όλους. Μπορείς να τα αλλάξεις ή να τα σβήσεις από το dashboard.", en: "Once your request is approved, your profile becomes public. The bio, socials, phone and booking email you have already filled in will be visible to everyone. You can change or remove them from your dashboard." },
 
   // ── Profile ──────────────────────────────────────────────
   profile_past_events:       { el: "Προηγούμενα events", en: "Past events" },
