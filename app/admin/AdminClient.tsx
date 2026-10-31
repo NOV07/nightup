@@ -201,7 +201,7 @@ function toReleasePayload(form: Record<string, unknown>) {
   }
   return out;
 }
-const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"" };
+const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"",profile_id:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
 const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,is_published:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
@@ -498,6 +498,8 @@ export default function AdminClient() {
     // first or the update fails on the unknown key.
     const columnsOnly = { ...data };
     [...EMBED_KEYS, ...(DERIVED_KEYS[table] ?? [])].forEach(k => delete columnsOnly[k]);
+    // A cleared uuid field posts "", which the column rejects.
+    if (table === "mixes" && "profile_id" in columnsOnly) columnsOnly.profile_id = String(columnsOnly.profile_id ?? "").trim() || null;
     const res = await fetch("/api/admin/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -679,7 +681,7 @@ export default function AdminClient() {
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: "mixes", data: mixForm }),
+      body: JSON.stringify({ table: "mixes", data: { ...mixForm, profile_id: mixForm.profile_id.trim() || undefined } }),
     });
     const json = await res.json();
     setAddLoading(false);
@@ -1769,6 +1771,7 @@ export default function AdminClient() {
                             <div><label className={labelCls}>Duration (e.g. 1:23:00)</label><input className={inputCls} style={inputStyle} value={mixForm.duration} onChange={e => setMixForm(f => ({ ...f, duration:e.target.value }))} /></div>
                             <div><label className={labelCls}>Cover Image URL</label><input className={inputCls} style={inputStyle} value={mixForm.cover_image} onChange={e => setMixForm(f => ({ ...f, cover_image:e.target.value }))} /></div>
                             <div><label className={labelCls}>SoundCloud URL</label><input className={inputCls} style={inputStyle} value={mixForm.soundcloud_url} onChange={e => setMixForm(f => ({ ...f, soundcloud_url:e.target.value }))} /></div>
+                            <div className="sm:col-span-2"><label className={labelCls}>Profile ID (optional, shows the mix on that profile)</label><input className={inputCls} style={inputStyle} placeholder="uuid" value={mixForm.profile_id} onChange={e => setMixForm(f => ({ ...f, profile_id:e.target.value }))} /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={3} className={inputCls} style={inputStyle} value={mixForm.description} onChange={e => setMixForm(f => ({ ...f, description:e.target.value }))} /></div>
                             <div className="sm:col-span-2"><label className={labelCls}>Tracklist</label><textarea rows={6} className={inputCls} style={inputStyle} placeholder="Ένα track ανά γραμμή…" value={mixForm.tracklist} onChange={e => setMixForm(f => ({ ...f, tracklist:e.target.value }))} /></div>
                           </div>
@@ -2187,6 +2190,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           {field("soundcloud_url","SoundCloud URL")}
           {field("description","Description","textarea",undefined,true)}
           {field("tracklist","Tracklist","textarea",undefined,true)}
+          {field("profile_id","Profile ID (optional, shows the mix on that profile)","text",undefined,true)}
         </>)}
         {tab === "music" && subtab === "playlists" && (<>
           {field("title","Title")}

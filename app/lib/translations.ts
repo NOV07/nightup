@@ -546,6 +546,7 @@ const translations = {
 
   // ── Profile ──────────────────────────────────────────────
   profile_past_events:       { el: "Προηγούμενα events", en: "Past events" },
+  profile_sets:              { el: "Sets", en: "Sets" },
   profile_participates:      { el: "Συμμετέχει", en: "Participating" },
   profile_listings_heading:  { el: "Αγγελίες", en: "Listings" },
   profile_express_interest:  { el: "Ενδιαφέρομαι →", en: "I'm interested →" },
