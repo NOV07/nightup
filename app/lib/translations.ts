@@ -545,6 +545,7 @@ const translations = {
   upgrade_send_request:      { el: "Αποστολή αίτησης →", en: "Send request →" },
 
   // ── Profile ──────────────────────────────────────────────
+  profile_past_events:       { el: "Προηγούμενα events", en: "Past events" },
   profile_participates:      { el: "Συμμετέχει", en: "Participating" },
   profile_listings_heading:  { el: "Αγγελίες", en: "Listings" },
   profile_express_interest:  { el: "Ενδιαφέρομαι →", en: "I'm interested →" },
