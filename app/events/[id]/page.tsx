@@ -435,7 +435,7 @@ export default async function EventPage({ params }: Props) {
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 12 }}>
               About
             </p>
-            <p style={{ fontSize: 14, lineHeight: 1.75, color: 'rgba(255,255,255,0.68)' }}>
+            <p style={{ fontSize: 14, lineHeight: 1.75, color: 'rgba(255,255,255,0.68)', whiteSpace: 'pre-line' }}>
               {event.description}
             </p>
           </div>
