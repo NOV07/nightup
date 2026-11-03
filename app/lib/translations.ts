@@ -318,6 +318,10 @@ const translations = {
   tonight_see_results:{ el: "Δες τι λείπει", en: "See what's missing" },
   tonight_have_all:   { el: "Τα έχεις όλα! 🎉", en: "You have it all! 🎉" },
   tonight_try_event:  { el: "Ή δοκίμασε ένα event απόψε", en: "Or try an event tonight" },
+  tonight_try_event_today:    { el: "Ή δοκίμασε ένα event απόψε", en: "Or try an event tonight" },
+  tonight_try_event_tomorrow: { el: "Ή δοκίμασε ένα event αύριο", en: "Or try an event tomorrow" },
+  // {day} is replaced with the weekday name by TonightModal.
+  tonight_try_event_day:      { el: "Ή δοκίμασε ένα event την {day}", en: "Or try an event on {day}" },
 
   // ── AuthModal ────────────────────────────────────────────
   auth_check_email:   { el: "Έλεγξε το email σου. Σου στείλαμε ένα reset link.", en: "Check your email. We sent a reset link." },
