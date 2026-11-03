@@ -6,7 +6,7 @@ import { PRO_GROUPS, ROLES_BY_GROUP, GROUP_META } from '@/components/professiona
 
 const TYPES_BASE = [
   { id: 'organizer', emoji: '🎪', label: 'Event Organiser', sub: null as string[] | null },
-  { id: 'artist',    emoji: '🎵', label: 'Artist',          sub: ['DJ', 'Live Act', 'Singer', 'MC'] },
+  { id: 'artist',    emoji: '🎵', label: 'Artist',          sub: ['DJ', 'Live Act', 'Singer', 'MC', 'Producer'] },
   { id: 'spot',      emoji: '📍', label: 'Spot',            sub: null as string[] | null },
   { id: 'professional', emoji: '🤝', label: 'Professional', sub: null as string[] | null },
 ]

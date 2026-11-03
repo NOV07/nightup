@@ -6,7 +6,7 @@ import ArtistsPageClient from './ArtistsPageClient'
 
 export const metadata: Metadata = {
   title: 'Artists | Nightup Network',
-  description: 'DJs, τραγουδιστές, μπάντες και οργανοπαίχτες σε όλη την Ελλάδα.',
+  description: 'DJs, τραγουδιστές, μπάντες, οργανοπαίχτες και παραγωγοί σε όλη την Ελλάδα.',
 }
 
 export const revalidate = 60;

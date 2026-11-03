@@ -6,6 +6,7 @@ export const NETWORK = {
     "Τραγουδιστής": [],
     "Μπάντα": [],
     "Οργανοπαίχτης": [],
+    "Παραγωγός": [],
   },
   // Venue types for the Greek nightlife / events market. Kept deliberately
   // short — these are the buckets someone actually filters by, not an
@@ -43,6 +44,7 @@ export const NETWORK_CATEGORY_EN: Record<string, string> = {
   "Τραγουδιστής": "Singer",
   "Μπάντα": "Band",
   "Οργανοπαίχτης": "Instrumentalist",
+  "Παραγωγός": "Producer",
   "Φωτογράφος / Videographer": "Photographer / Videographer",
 }
 
