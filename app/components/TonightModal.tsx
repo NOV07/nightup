@@ -6,6 +6,7 @@ import SpotCard from "./SpotCard";
 import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, loc, type Spot, type SpotCategory } from "../spots/types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { getEventMood } from "../lib/eventMood";
+import { pickNearestEvent, eventTitleKey, formatWeekdayLong, formatEventLine } from "../lib/tonightEvent";
 import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
 import CroppedImage from "../../components/ui/CroppedImage";
 import { useLanguage } from "./LanguageContext";
@@ -117,7 +118,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       clearInterval(iv);
       setNight(nightSpots);
       const matchingEvents = events.filter((e) => getEventMood(e) === mood);
-      setMatchedEvent(matchingEvents.length > 0 ? matchingEvents[Math.floor(Math.random() * matchingEvents.length)] : null);
+      setMatchedEvent(pickNearestEvent(matchingEvents));
       setLoading(false);
       setView("night");
     });
@@ -298,14 +299,14 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                 </div>
                 {matchedEvent && (
                   <Link href={`/events/${matchedEvent.id}`} onClick={handleClose} style={S.eventCard}>
-                    <div style={S.eventKicker}>🎉 {t("tonight_try_event")}</div>
+                    <div style={S.eventKicker}>🎉 {t(eventTitleKey(matchedEvent.date)).replace("{day}", formatWeekdayLong(matchedEvent.date, lang))}</div>
                     <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
                       <div style={{ position: "relative", ...S.eventImg }}>
                         <CroppedImage src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} crop={getEventCrop(matchedEvent)} sizes="52px" style={{ borderRadius: S.eventImg.borderRadius }} />
                       </div>
                       <div style={{ minWidth: 0 }}>
                         <div style={S.eventTitle}>{matchedEvent.title}</div>
-                        <div style={S.eventMeta}>{matchedEvent.date}{matchedEvent.time ? ` · ${matchedEvent.time}` : ""}</div>
+                        <div style={S.eventMeta}>{formatEventLine(matchedEvent.date, matchedEvent.time, lang)}</div>
                         <div style={S.eventMeta}>{matchedEvent.venue}</div>
                       </div>
                     </div>
