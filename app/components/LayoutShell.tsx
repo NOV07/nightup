@@ -95,6 +95,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     hasFetchedEvents.current = true;
 
     const today = new Date().toISOString().split("T")[0];
+    const maxDate = new Date(Date.now() + 8 * 86_400_000).toISOString().split("T")[0];
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -104,6 +105,9 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, type, genres, price")
       .eq("status", "approved")
       .gte("date", today)
+      // +8 days (not 7) so the UTC/Athens offset never drops an event; the exact
+      // 7-day cut is done client-side in TonightModal with Europe/Athens time.
+      .lte("date", maxDate)
       .order("date", { ascending: true })
       .limit(50)
       .then(({ data }) => { if (data) setEvents(data as EventLite[]); });
