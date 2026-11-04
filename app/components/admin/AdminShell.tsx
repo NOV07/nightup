@@ -151,7 +151,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 { tab: "users"    as Tab, label: "Users",    badge: 0 },
                 { tab: "upgrades" as Tab, label: "Upgrades", badge: counts.byTab.upgrades },
                 { tab: "featured" as Tab, label: "Featured", badge: counts.byTab.featured },
-                { tab: "spot-claims" as Tab, label: "Spot Claims", badge: counts.byTab["spot-claims"] },
                 ...PROFILE_TAB_IDS.map(id => ({ tab: id as Tab, label: PROFILE_TABS[id].label, badge: 0 })),
               ]).map(({ tab, label, badge }) => (
                 <button

@@ -40,13 +40,12 @@ test('is_published false when the key is missing (never the DB default)', () => 
   const b = base(); delete b.is_published
   assert.equal(ok(b).row.is_published, false)
 })
-test('no owner: owner_id and claimed_by_profile_id are null', () => {
+test('no owner: owner_id is null', () => {
   const { row } = ok(base())
   assert.equal(row.owner_id, null)
-  assert.equal(row.claimed_by_profile_id, null)
 })
 test('row only holds whitelisted columns', () => {
-  const allowed = new Set([...SPOT_FIELDS, 'rating', 'is_sponsored', 'featured', 'is_published', 'owner_id', 'claimed_by_profile_id'])
+  const allowed = new Set([...SPOT_FIELDS, 'rating', 'is_sponsored', 'featured', 'is_published', 'owner_id'])
   for (const k of Object.keys(ok(base()).row)) assert.ok(allowed.has(k), `unexpected column ${k}`)
 })
 test('empty subcategory is allowed', () => assert.equal(ok({ ...base(), subcategory: '' }).row.subcategory, null))
@@ -56,7 +55,7 @@ test('a slug of only symbols falls back to the name', () => assert.equal(ok({ ..
 console.log('checkAdminSpotInput: rejections')
 test('unknown field', () => assert.match(err({ ...base(), status: 'approved' }), /Unknown field.*status/))
 test('profile_id is unknown', () => assert.match(err({ ...base(), profile_id: null }), /profile_id/))
-for (const k of ['owner_id', 'claimed_by_profile_id', 'geo', 'id', 'created_at']) {
+for (const k of ['owner_id', 'geo', 'id', 'created_at']) {
   test(`${k} from the client is rejected`, () => assert.match(err({ ...base(), [k]: 'x' }), new RegExp(k)))
 }
 test('missing name', () => assert.match(err({ ...base(), name: '   ' }), /Name is required/))

@@ -35,8 +35,7 @@ export interface Spot {
   website?: string | null;
   instagram: string | null;
   isSponsored: boolean;
-  claimedByProfileId: string | null;
-  /** Account that owns the spot (spots.owner_id). Null for admin-added or claim-only spots. */
+  /** Account that owns the spot (spots.owner_id). Null for admin-added spots. */
   ownerId?: string | null;
   featured?: boolean;
   gallery?: GalleryItem[];

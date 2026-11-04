@@ -61,8 +61,8 @@ const UNIQUE_VIOLATION = '23505'
 /**
  * spots has neither `status` nor `profile_id`, so it cannot take the generic
  * insert above. Only whitelisted columns are written, the slug follows the
- * same rule as POST /api/spots, the spot has no owner (a venue takes it over
- * through the claim flow) and is_published is always set explicitly.
+ * same rule as POST /api/spots, the spot has no owner (the venue creates its
+ * own spot after upgrading) and is_published is always set explicitly.
  */
 async function addSpot(data: unknown) {
   const check = checkAdminSpotInput(data)

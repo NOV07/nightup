@@ -11,7 +11,7 @@ export async function GET() {
 
   const [events, spots] = await Promise.all([
     supabase.from('events').select('id').eq('profile_id', user.id),
-    supabase.from('spots').select('id').or(`owner_id.eq.${user.id},claimed_by_profile_id.eq.${user.id}`),
+    supabase.from('spots').select('id').eq('owner_id', user.id),
   ])
 
   return NextResponse.json({

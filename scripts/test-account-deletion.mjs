@@ -228,11 +228,6 @@ async function main() {
     name: `Deltest Spot ${TS}`, slug: `deltest-spot-${TS}`, category: 'nightlife', city: 'Αθήνα',
     lat: 37.98, lng: 23.72, owner_id: B.id, is_published: true,
   }).select('id, slug').single(), 'spot owned')
-  const spot2 = await must(admin.from('spots').insert({
-    name: `Deltest Claimed ${TS}`, slug: `deltest-claimed-${TS}`, category: 'drink', city: 'Αθήνα',
-    lat: 37.97, lng: 23.73, claimed_by_profile_id: B.id, is_published: true,
-  }).select('id, slug').single(), 'spot claimed')
-  await must(admin.from('spot_claims').insert({ spot_id: spot2.id, profile_id: B.id, status: 'approved' }), 'spot_claim')
 
   const future = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10)
   const eventRow = (n) => ({
@@ -252,7 +247,7 @@ async function main() {
   await upload('events', `${B.id}/deltest.png`)
   const avatarA = await upload('uploads', `${A.id}/avatars/deltest.png`)
   await must(admin.from('profiles').update({ avatar_url: avatarA }).eq('id', A.id), 'A avatar')
-  console.log(`B=${B.id} spots=${spot1.id},${spot2.id} events=${e1.id},${e2.id}`)
+  console.log(`B=${B.id} spot=${spot1.id} events=${e1.id},${e2.id}`)
   console.log(`A=${A.id}  C=${C.id}`)
 
   // ── 2. activity ──
@@ -359,7 +354,7 @@ async function main() {
 
   // ── 5. delete B ──
   step(`5. Delete B through the real route [${mode}]`)
-  const pages = { spot: `/spots/${spot1.slug}`, claimed: `/spots/${spot2.slug}`, event: `/events/${e1.id}`, profile: `/profile/${B.username}` }
+  const pages = { spot: `/spots/${spot1.slug}`, event: `/events/${e1.id}`, profile: `/profile/${B.username}` }
   for (const [k, p] of Object.entries(pages)) console.log(`before: ${k} ${p} -> ${await httpStatus(p)}`)
   const beforeStatus = { spot: await httpStatus(pages.spot), event: await httpStatus(pages.event), profile: await httpStatus(pages.profile) }
 
@@ -392,15 +387,13 @@ async function main() {
   check('B auth user gone', !bAuth?.user)
   check('B profile gone', (await count('profiles', q => q.eq('id', B.id))) === 0)
   check('owned spot deleted', (await count('spots', q => q.eq('id', spot1.id))) === 0)
-  check('claimed spot deleted', (await count('spots', q => q.eq('id', spot2.id))) === 0)
-  check('no spot left with owner_id/claimed_by = B', (await count('spots', q => q.or(`owner_id.eq.${B.id},claimed_by_profile_id.eq.${B.id}`))) === 0)
+  check('no spot left with owner_id = B', (await count('spots', q => q.eq('owner_id', B.id))) === 0)
   check('events deleted', (await count('events', q => q.in('id', [e1.id, e2.id]))) === 0)
   check('gallery item deleted', (await count('creator_gallery', q => q.eq('id', gallery.id))) === 0)
   check('listing deleted', (await count('listings', q => q.eq('id', listing.id))) === 0)
-  check('saved_spots for B spots = 0 (incl. bystander C)', (await count('saved_spots', q => q.in('spot_id', [String(spot1.id), String(spot2.id)]))) === 0)
+  check('saved_spots for B spots = 0 (incl. bystander C)', (await count('saved_spots', q => q.in('spot_id', [String(spot1.id)]))) === 0)
   check('saved_events for B events = 0 (incl. bystander C)', (await count('saved_events', q => q.in('event_id', [e1.id, e2.id]))) === 0)
   check('event_reactions for B events = 0', (await count('event_reactions', q => q.in('event_id', [e1.id, e2.id]))) === 0)
-  check('spot_claims for B spots = 0', (await count('spot_claims', q => q.in('spot_id', [spot1.id, spot2.id]))) === 0)
   check('featured_event_requests for B events = 0', (await count('featured_event_requests', q => q.in('event_id', [e1.id, e2.id]))) === 0)
   check('no files in uploads/<B>/', (await listAll('uploads', B.id)).length === 0)
   check('no files in events/<B>/', (await listAll('events', B.id)).length === 0)

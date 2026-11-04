@@ -15,7 +15,7 @@ import SpotViewTracker from "./SpotViewTracker";
 export const revalidate = 300;
 
 const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, gallery, price_level, price_text, rating, phone, website, instagram, opening_hours, is_sponsored, claimed_by_profile_id, owner_id";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, gallery, price_level, price_text, rating, phone, website, instagram, opening_hours, is_sponsored, owner_id";
 
 async function getSpot(slug: string): Promise<Spot | null> {
   try {
@@ -35,7 +35,6 @@ async function getSpot(slug: string): Promise<Spot | null> {
       priceText: data.price_text ?? null,
       rating: data.rating, phone: data.phone, website: data.website,
       instagram: data.instagram, isSponsored: data.is_sponsored === true,
-      claimedByProfileId: data.claimed_by_profile_id ?? null,
       ownerId: data.owner_id ?? null,
       gallery: toGalleryItems(data.gallery),
       openingHours: data.opening_hours ?? null,
@@ -73,16 +72,6 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
   if (!spot) notFound();
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  let currentProfileId: string | null = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .single();
-    currentProfileId = profile?.id ?? null;
-  }
 
   // What the owner publishes shows on this one page. Nothing to fetch for spots
   // without an owner account.
@@ -133,8 +122,6 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
       <SpotViewTracker spotId={String(spot.id)} />
       <SpotProfileClient
         spot={spot as any}
-        currentProfileId={currentProfileId}
-        claimedByProfileId={spot.claimedByProfileId}
         owner={owner}
         events={events}
         listings={listings}
