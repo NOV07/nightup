@@ -13,6 +13,8 @@ import CroppedImage from '@/components/ui/CroppedImage'
 import FollowButton from '@/components/ui/FollowButton'
 import { decodeUsername, profileHref } from '@/app/lib/profileHref'
 import MixCard from '@/app/nightwaves/mixes/MixCard'
+import HostedEventCard from '@/components/profile/HostedEventCard'
+import ProfileListings from '@/components/profile/ProfileListings'
 import ProfileGallery, { type ProfileGalleryPhoto } from '@/components/ui/ProfileGallery'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
@@ -230,29 +232,7 @@ export default async function ProfilePage({ params }: Props) {
     </Link>
   )
 
-  const hostedEventCard = (event: any) => (
-    <Link key={event.id} href={`/events/${event.id}`}
-      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
-      style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-      <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '64px', height: '64px' }}>
-        <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-white truncate">{event.title}</p>
-        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          {new Date(event.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}{event.time ? ` · ${event.time}` : ""} · {event.venue}
-        </p>
-        <span className="text-xs mt-1 inline-block" style={{ color: '#E8A020' }}>{event.city}</span>
-      </div>
-      {event.ticket_url && (
-        <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
-          className="text-xs px-3 py-1.5 rounded-full flex-shrink-0 font-medium"
-          style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}>
-          Tickets
-        </a>
-      )}
-    </Link>
-  )
+  const hostedEventCard = (event: any) => <HostedEventCard key={event.id} event={event} />
 
   const pastEventsSection = (card: (e: any) => React.ReactNode) =>
     visibility.upcoming_events !== false && pastEvents.length > 0 && (
@@ -738,59 +718,7 @@ export default async function ProfilePage({ params }: Props) {
           </section>
         )}
 
-        {/* Listings */}
-        {(profileListings ?? []).length > 0 && (
-          <div style={{ marginTop: 40 }}>
-            <h2 style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 20, fontWeight: 500, color: '#F4F4F5', marginBottom: 16 }}>
-              <T k="profile_listings_heading" />
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {(profileListings ?? []).map((listing: any) => (
-                <div key={listing.id} style={{
-                  backgroundColor: '#1A1A28',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 6,
-                  padding: '16px 20px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      {listing.role && (
-                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#E8A020' }}>
-                          {listing.role}
-                        </span>
-                      )}
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-                        color: listing.type === 'seeking' ? '#60A5FA' : '#34D399',
-                        backgroundColor: listing.type === 'seeking' ? 'rgba(96,165,250,0.08)' : 'rgba(52,211,153,0.08)',
-                        border: `1px solid ${listing.type === 'seeking' ? 'rgba(96,165,250,0.2)' : 'rgba(52,211,153,0.2)'}`,
-                        borderRadius: 4, padding: '2px 6px',
-                      }}>
-                        <T k={listing.type === 'seeking' ? 'listings_seeking' : 'listings_offering'} />
-                      </span>
-                    </div>
-                    <p style={{ fontFamily: 'var(--font-spectral),Georgia,serif', fontSize: 16, fontWeight: 500, color: '#F4F4F5', marginBottom: 4 }}>
-                      {listing.title}
-                    </p>
-                    {listing.description && (
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>{listing.description}</p>
-                    )}
-                    {listing.city && (
-                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>{listing.city}</p>
-                    )}
-                  </div>
-                  <a href="/network/listings" style={{ fontSize: 12, color: '#E8A020', textDecoration: 'none', flexShrink: 0, paddingTop: 2 }}>
-                    <T k="profile_express_interest" />
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <ProfileListings listings={profileListings ?? []} />
 
       </div>
     </div>
