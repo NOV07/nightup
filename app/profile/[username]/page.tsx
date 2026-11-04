@@ -1,5 +1,5 @@
 import { createClient } from '@/app/lib/supabase-server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Metadata } from 'next'
@@ -23,11 +23,32 @@ interface Props {
   params: Promise<{ username: string }>
 }
 
+// A spot account has no profile page of its own: its single public page is
+// /spots/<slug>. Oldest published spot wins if an owner ever has several.
+// No published row (not created yet, or awaiting approval) means 404.
+async function publishedSpotSlug(supabase: Awaited<ReturnType<typeof createClient>>, ownerId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('spots')
+    .select('slug')
+    .eq('owner_id', ownerId)
+    .eq('is_published', true)
+    .order('created_at', { ascending: true })
+    .limit(1)
+  return data?.[0]?.slug ?? null
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const username = decodeUsername((await params).username)
   const supabase = await createClient()
-  const { data } = await supabase.from('profiles').select('display_name, bio, avatar_url').eq('username', username).neq('profile_type', 'user').single()
+  const { data } = await supabase.from('profiles').select('id, profile_type, display_name, bio, avatar_url').eq('username', username).neq('profile_type', 'user').single()
   if (!data) return { title: 'Profile | Nightup.gr' }
+  // redirect()/notFound() are allowed here; same outcome as the page, so no
+  // profile metadata is ever emitted for a spot account.
+  if (data.profile_type === 'spot') {
+    const slug = await publishedSpotSlug(supabase, data.id)
+    if (!slug) notFound()
+    redirect('/spots/' + slug)
+  }
   return {
     title: data.display_name,
     description: data.bio ? data.bio.slice(0, 155) : `${data.display_name} on Nightup.gr`,
@@ -53,6 +74,14 @@ export default async function ProfilePage({ params }: Props) {
   if (error || !profile) notFound()
   if (profile.profile_type === 'user') notFound()
 
+  if (profile.profile_type === 'spot') {
+    const slug = await publishedSpotSlug(supabase, profile.id)
+    if (!slug) notFound()
+    redirect('/spots/' + slug)
+  }
+
+  // After the spot redirect above, so a visit that ends up on /spots/<slug>
+  // is counted there (increment_spot_views) and not here as well.
   supabase.rpc('increment_profile_views', { target_profile_id: profile.id }).then(() => {}, () => {})
 
   const visibility = profile.section_visibility ?? {}

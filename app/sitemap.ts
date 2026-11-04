@@ -61,9 +61,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .eq("status", "approved").order("created_at", { ascending: false }).order("id").range(from, to)),
       fetchAll("music_releases", (from, to) => supabase.from("music_releases").select("id, created_at")
         .eq("status", "approved").order("created_at", { ascending: false }).order("id").range(from, to)),
-      // Plain users have no public page; RLS already hides them, the filter makes it explicit.
+      // Spot accounts redirect to /spots/<slug>, which is listed below. Plain users have no public page; RLS already hides them, the filter makes it explicit.
       fetchAll("profiles", (from, to) => supabase.from("profiles").select("username, created_at")
-        .neq("profile_type", "user").not("username", "is", null)
+        .neq("profile_type", "user").neq("profile_type", "spot").not("username", "is", null)
         .order("created_at", { ascending: false }).order("username").range(from, to)),
       fetchAll("spots", (from, to) => supabase.from("spots").select("slug, created_at")
         .eq("is_published", true).order("created_at", { ascending: false }).order("slug").range(from, to)),
