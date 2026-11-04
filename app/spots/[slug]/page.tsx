@@ -6,9 +6,10 @@ import type { Spot } from "../types";
 import { spotCropFromRow } from "../types";
 import type { GalleryItem } from "../../lib/types";
 import { toGalleryItems } from "../../lib/types";
-import SpotProfileClient from "./SpotProfileClient";
+import SpotProfileClient, { type SpotOwner } from "./SpotProfileClient";
 import type { HostedEvent } from "../../../components/profile/HostedEventCard";
 import type { ProfileListing } from "../../../components/profile/ProfileListings";
+import { getAvatarCrop } from "../../lib/profileCrop";
 import SpotViewTracker from "./SpotViewTracker";
 
 export const revalidate = 300;
@@ -85,11 +86,17 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
 
   // What the owner publishes shows on this one page. Nothing to fetch for spots
   // without an owner account.
+  let owner: SpotOwner | null = null;
   let events: HostedEvent[] = [];
   let listings: ProfileListing[] = [];
   if (spot.ownerId) {
     const today = new Date().toISOString().split("T")[0];
-    const [{ data: ev }, { data: li }] = await Promise.all([
+    const [{ data: ownerRow }, { data: ev }, { data: li }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height")
+        .eq("id", spot.ownerId)
+        .maybeSingle(),
       supabase
         .from("events")
         .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, ticket_url")
@@ -106,6 +113,17 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
     ]);
+    if (ownerRow?.username) {
+      // Same placeholder filter as the profile page.
+      const avatar = ownerRow.avatar_url && !ownerRow.avatar_url.includes("pravatar") && !ownerRow.avatar_url.includes("picsum")
+        ? ownerRow.avatar_url : null;
+      owner = {
+        id: spot.ownerId,
+        username: ownerRow.username,
+        avatarUrl: avatar,
+        avatarCrop: avatar ? getAvatarCrop(ownerRow) : null,
+      };
+    }
     events = (ev ?? []) as HostedEvent[];
     listings = (li ?? []) as ProfileListing[];
   }
@@ -117,6 +135,7 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
         spot={spot as any}
         currentProfileId={currentProfileId}
         claimedByProfileId={spot.claimedByProfileId}
+        owner={owner}
         events={events}
         listings={listings}
       />

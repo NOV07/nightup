@@ -23,7 +23,7 @@ export interface HostedEvent {
 export default function HostedEventCard({ event }: { event: HostedEvent }) {
   return (
     <Link key={event.id} href={`/events/${event.id}`}
-      className="flex items-center gap-4 p-4 rounded-2xl transition-opacity hover:opacity-80"
+      className="flex items-center gap-4 p-4 rounded-2xl min-w-0 transition-opacity hover:opacity-80"
       style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
       <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: '64px', height: '64px' }}>
         <CroppedImage src={getEventCoverImage(event)} alt={event.title} crop={getEventCrop(event)} />
