@@ -1243,7 +1243,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                           <p className="text-xl font-bold text-white">{fmt(totalViews)}</p>
-                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('dashboard_stat_views')}</p>
+                          <p className="text-xs uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>{t(profile.profile_type === 'spot' ? 'dashboard_stat_event_views' : 'dashboard_stat_views')}</p>
                         </div>
                         {profile.profile_type !== 'spot' && (
                           <div className="p-3 rounded-xl" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)' }}>
