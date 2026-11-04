@@ -7,6 +7,7 @@ import { spotCropFromRow } from "../types";
 import type { GalleryItem } from "../../lib/types";
 import { toGalleryItems } from "../../lib/types";
 import SpotProfileClient from "./SpotProfileClient";
+import SpotViewTracker from "./SpotViewTracker";
 
 export const revalidate = 300;
 
@@ -80,10 +81,13 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
   }
 
   return (
-    <SpotProfileClient
-      spot={spot as any}
-      currentProfileId={currentProfileId}
-      claimedByProfileId={spot.claimedByProfileId}
-    />
+    <>
+      <SpotViewTracker spotId={String(spot.id)} />
+      <SpotProfileClient
+        spot={spot as any}
+        currentProfileId={currentProfileId}
+        claimedByProfileId={spot.claimedByProfileId}
+      />
+    </>
   );
 }
