@@ -4,6 +4,7 @@ import SpotCard from '@/app/components/SpotCard'
 import CroppedImage from '@/components/ui/CroppedImage'
 import { SPOT_CATEGORIES, SPOT_CROP_ASPECT, loc, spotPriceLabel, type Spot } from '@/app/spots/types'
 import { SpotCategoryIcon } from '@/app/lib/spotIcons'
+import { normalizeInstagram } from '@/app/lib/instagram'
 import { serializeOpeningHours, DAY_LABELS_EN, CLOSED, type SpotFormData, type Day } from './SpotFormSteps'
 import { GalleryPlayBadge } from '@/components/ui/GalleryLightbox'
 import type { GalleryItem } from '@/app/lib/types'
@@ -86,7 +87,8 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
   const { t, lang } = useLanguage()
   const cat = SPOT_CATEGORIES.find(c => c.key === form.category)
   const hours = serializeOpeningHours(form.opening_hours)
-  const contact = [form.phone, form.website, form.instagram].filter(Boolean)
+  const ig = normalizeInstagram(form.instagram)
+  const contact = [form.phone, form.website, ig ? `@${ig}` : null].filter(Boolean)
   const price = spotPriceLabel(formToSpot(form), t('spots_price_per_person'))
 
   return (

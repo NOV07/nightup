@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { SPOT_FIELDS } from '../route'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
+import { normalizeInstagram } from '@/app/lib/instagram'
 
 export async function PATCH(
   req: NextRequest,
@@ -47,6 +48,7 @@ export async function PATCH(
   // owner_id are deliberately absent so an owner cannot self-publish.
   const updates: Record<string, unknown> = {}
   SPOT_FIELDS.forEach(k => { if (k in body) updates[k] = body[k] })
+  if ('instagram' in updates) updates.instagram = normalizeInstagram(updates.instagram as string | null)
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
