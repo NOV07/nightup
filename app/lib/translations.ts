@@ -588,6 +588,8 @@ const translations = {
   dashboard_stat_interested:    { el: "Ενδιαφέρονται", en: "Interested" },
   dashboard_stat_saved:         { el: "Αποθηκεύσεις", en: "Saved" },
   dashboard_stat_followers:      { el: "Ακόλουθοι", en: "Followers" },
+  dashboard_stat_spot_views:      { el: "Προβολές μαγαζιού", en: "Shop views" },
+  dashboard_stat_event_views:     { el: "Προβολές events", en: "Event views" },
   dashboard_stat_spot_saved:      { el: "Αποθηκεύσεις spot", en: "Spot saves" },
   dashboard_top_event:          { el: "Κορυφαίο event", en: "Top event" },
   dashboard_top_event_going:    { el: "θα πάνε", en: "going" },
