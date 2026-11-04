@@ -5,6 +5,7 @@
 import { SUBCATEGORIES, type SpotCategory } from '../spots/types.ts'
 import { spotCoordsError } from './mapsCoords.ts'
 import { slugify } from './slug.ts'
+import { normalizeInstagram } from './instagram.ts'
 
 // Kept in sync with the spot_category enum in Postgres.
 export const SPOT_CATEGORY_KEYS: SpotCategory[] = ['food', 'drink', 'nightlife', 'show', 'chill', 'activity', 'art', 'wellness']
@@ -68,6 +69,9 @@ export function checkAdminSpotInput(input: unknown): AdminSpotCheck {
     if (s.length > TEXT_LIMITS[k]) return { ok: false, error: `${k} is too long (max ${TEXT_LIMITS[k]} characters)` }
     row[k] = s || null
   }
+
+  // Only the bare username is stored; the page adds the single "@".
+  if ('instagram' in row) row.instagram = normalizeInstagram(row.instagram as string | null)
 
   if (!row.name) return { ok: false, error: 'Name is required' }
   if (!row.city) return { ok: false, error: 'City is required' }

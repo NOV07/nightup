@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { slugify, uniqueSlug } from '@/app/lib/slug'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
+import { normalizeInstagram } from '@/app/lib/instagram'
 import { SPOT_CATEGORY_KEYS as CATEGORIES, SPOT_FIELDS } from '@/app/lib/spotInput'
 
 // Re-exported for /api/spots/[id]; the list itself lives in spotInput so the
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
 
   const payload: Record<string, unknown> = {}
   SPOT_FIELDS.forEach(k => { if (k in body) payload[k] = body[k] })
+  if ('instagram' in payload) payload.instagram = normalizeInstagram(payload.instagram as string | null)
 
   // Only slugs that share the candidate's root can possibly collide with it
   // (root, root-2, root-3, …) — no need to pull the whole table.

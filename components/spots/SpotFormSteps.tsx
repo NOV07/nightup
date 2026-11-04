@@ -15,6 +15,7 @@ import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
 import { isShortMapsLink, isInGreece, validateCoords, extractCoords, firstUrl, type Coords } from '@/app/lib/mapsCoords'
 import LocationPicker from '@/components/maps/LocationPicker'
+import { normalizeInstagram } from '@/app/lib/instagram'
 
 // Same list the event wizard offers — spots had no city constant of its own.
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
@@ -188,7 +189,7 @@ export function spotFormToPayload(form: SpotFormData) {
     price_text: form.price_text.trim() || null,
     phone: form.phone.trim() || null,
     website: form.website.trim() || null,
-    instagram: form.instagram.trim() || null,
+    instagram: normalizeInstagram(form.instagram),
     opening_hours: serializeOpeningHours(form.opening_hours),
   }
 }
@@ -603,7 +604,7 @@ function Step4({ form, set, stepErrors }: {
 
       <div>
         <label style={lbl}>Instagram</label>
-        <input style={inp} value={form.instagram} onChange={e => set('instagram', e.target.value)} placeholder="https://instagram.com/..." />
+        <input style={inp} value={form.instagram} onChange={e => set('instagram', e.target.value)} placeholder="@username" />
       </div>
 
       <div>

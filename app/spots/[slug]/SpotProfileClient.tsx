@@ -9,6 +9,7 @@ import CroppedImage from "../../../components/ui/CroppedImage";
 import SpotSaveButton from "../../../components/spots/SpotSaveButton";
 import GalleryLightbox, { GalleryPlayBadge } from "../../../components/ui/GalleryLightbox";
 import type { GalleryItem } from "../../lib/types";
+import { normalizeInstagram } from "../../lib/instagram";
 
 type FullSpot = Spot & { gallery: GalleryItem[]; openingHours: Record<string, string> | null };
 
@@ -18,6 +19,13 @@ const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=12
 const DAY_EN: Record<string, string> = {
   "Δευτέρα": "Monday", "Τρίτη": "Tuesday", "Τετάρτη": "Wednesday", "Πέμπτη": "Thursday",
   "Παρασκευή": "Friday", "Σάββατο": "Saturday", "Κυριακή": "Sunday",
+};
+
+// Display order for the hours table. Unknown keys sort after Sunday, keeping their stored order.
+const DAY_ORDER = Object.keys(DAY_EN);
+const dayRank = (day: string) => {
+  const i = DAY_ORDER.indexOf(day);
+  return i === -1 ? DAY_ORDER.length : i;
 };
 
 export default function SpotProfileClient({ spot, currentProfileId, claimedByProfileId }: { spot: FullSpot; currentProfileId: string | null; claimedByProfileId: string | null }) {
@@ -59,6 +67,10 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
   // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
   const coverCrop = spot.coverImage ? spot.crop : null;
   const price = spotPriceLabel(spot, t("spots_price_per_person"));
+  const instagram = normalizeInstagram(spot.instagram);
+  const hours = spot.openingHours
+    ? Object.entries(spot.openingHours).sort(([a], [b]) => dayRank(a) - dayRank(b))
+    : [];
   const mapUrl = spot.lat && spot.lng
     ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
     : spot.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address + " " + spot.city)}` : null;
@@ -92,13 +104,13 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
       <div style={{ maxWidth: "56rem", margin: "0 auto", padding: "32px 24px 80px", display: "grid", gridTemplateColumns: "1fr", gap: 28 }}>
         {/* Description */}
         {spot.description && (
-          <p style={{ fontSize: 16, lineHeight: 1.65, color: "#D4D4D8", maxWidth: 640 }}><TranslatedText text={spot.description} /></p>
+          <p style={{ fontSize: 16, lineHeight: 1.65, color: "#D4D4D8", maxWidth: 640, whiteSpace: "pre-line" }}><TranslatedText text={spot.description} /></p>
         )}
 
         {/* Gallery */}
         {spot.gallery && spot.gallery.length > 0 && (
           <div>
-            <h2 style={sectionTitle}>Gallery</h2>
+            <h2 style={sectionTitle}>{t("spots_gallery")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 12, marginTop: 14 }}>
               {spot.gallery.map((g, i) => {
                 const thumb = g.type === "video" ? g.poster : g.url;
@@ -127,15 +139,15 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
           {spot.address && <InfoCard label={t("spots_address")} value={spot.address} />}
           {spot.phone && <InfoCard label={t("spots_phone")} value={spot.phone} href={`tel:${spot.phone}`} />}
           {spot.website && <InfoCard label="Website" value={spot.website.replace(/^https?:\/\//, "")} href={spot.website} />}
-          {spot.instagram && <InfoCard label="Instagram" value={`@${spot.instagram}`} href={`https://instagram.com/${spot.instagram}`} />}
+          {instagram && <InfoCard label="Instagram" value={`@${instagram}`} href={`https://instagram.com/${instagram}`} />}
         </div>
 
         {/* Opening hours */}
-        {spot.openingHours && Object.keys(spot.openingHours).length > 0 && (
+        {hours.length > 0 && (
           <div>
             <h2 style={sectionTitle}>{t("spots_hours")}</h2>
             <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6, maxWidth: 320 }}>
-              {Object.entries(spot.openingHours).map(([day, hrs]) => (
+              {hours.map(([day, hrs]) => (
                 <div key={day} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#A1A1AA", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                   <span>{lang === "en" ? DAY_EN[day] ?? day : day}</span><span style={{ color: "#F4F4F5" }}>{lang === "en" && String(hrs) === "Κλειστά" ? "Closed" : String(hrs)}</span>
                 </div>
