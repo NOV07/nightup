@@ -15,9 +15,8 @@ export async function GET(req: NextRequest) {
 
   // Who submitted a row, so the moderation queue can show an account and not
   // just content. Only these tables carry an owning profile: articles, mixes
-  // and playlists have no such column, and spots reference profiles twice
-  // (owner_id + the legacy claimed_by_profile_id column) so the embed needs the
-  // column hint or PostgREST refuses it as ambiguous.
+  // and playlists have no such column, and spots are embedded separately
+  // below with an explicit owner_id hint.
   const SUBMITTER = 'profiles(username, display_name)'
 
   const [events, articles, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, listings] = await Promise.all([
