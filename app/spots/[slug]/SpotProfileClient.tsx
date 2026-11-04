@@ -9,6 +9,8 @@ import CroppedImage from "../../../components/ui/CroppedImage";
 import SpotSaveButton from "../../../components/spots/SpotSaveButton";
 import GalleryLightbox, { GalleryPlayBadge } from "../../../components/ui/GalleryLightbox";
 import type { GalleryItem } from "../../lib/types";
+import HostedEventCard, { type HostedEvent } from "../../../components/profile/HostedEventCard";
+import ProfileListings, { type ProfileListing } from "../../../components/profile/ProfileListings";
 import { normalizeInstagram } from "../../lib/instagram";
 
 type FullSpot = Spot & { gallery: GalleryItem[]; openingHours: Record<string, string> | null };
@@ -28,7 +30,7 @@ const dayRank = (day: string) => {
   return i === -1 ? DAY_ORDER.length : i;
 };
 
-export default function SpotProfileClient({ spot, currentProfileId, claimedByProfileId }: { spot: FullSpot; currentProfileId: string | null; claimedByProfileId: string | null }) {
+export default function SpotProfileClient({ spot, currentProfileId, claimedByProfileId, events = [], listings = [] }: { spot: FullSpot; currentProfileId: string | null; claimedByProfileId: string | null; events?: HostedEvent[]; listings?: ProfileListing[] }) {
   const { t, lang } = useLanguage();
   const [claimOpen, setClaimOpen] = useState(false);
   const [claimNote, setClaimNote] = useState("");
@@ -155,6 +157,17 @@ export default function SpotProfileClient({ spot, currentProfileId, claimedByPro
             </div>
           </div>
         )}
+
+        {/* Upcoming events + listings published by the spot's owner */}
+        {events.length > 0 && (
+          <div>
+            <h2 style={sectionTitle}>{t("spots_upcoming_events")}</h2>
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+              {events.map((e) => <HostedEventCard key={e.id} event={e} />)}
+            </div>
+          </div>
+        )}
+        <ProfileListings listings={listings} />
 
         {/* Claim */}
         {claimedByProfileId === currentProfileId && currentProfileId != null && (

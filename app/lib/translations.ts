@@ -216,6 +216,7 @@ const translations = {
   spots_address:      { el: "Διεύθυνση", en: "Address" },
   spots_phone:        { el: "Τηλέφωνο", en: "Phone" },
   spots_hours:        { el: "Ωράριο", en: "Hours" },
+  spots_upcoming_events: { el: "Επερχόμενα events", en: "Upcoming events" },
   spots_gallery:      { el: "Φωτογραφίες", en: "Photos" },
   spots_map:          { el: "📍 Άνοιξε στον χάρτη", en: "📍 Open in Maps" },
   spots_sponsored:    { el: "Χορηγία", en: "Sponsored" },
