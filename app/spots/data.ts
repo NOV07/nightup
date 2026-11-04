@@ -22,14 +22,13 @@ export function mapSpot(s: any): Spot {
     rating: s.rating,
     instagram: s.instagram,
     isSponsored: s.is_sponsored === true,
-    claimedByProfileId: s.claimed_by_profile_id ?? null,
     featured: s.featured === true,
   };
 }
 
 
 const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored, claimed_by_profile_id, featured";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored, featured";
 
 export async function getAllSpots(): Promise<Spot[]> {
   try {

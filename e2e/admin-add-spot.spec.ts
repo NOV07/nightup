@@ -40,7 +40,7 @@ function decodeGeo(hex: string | null) {
 
 async function rowsNamed(name: string) {
   const { data, error } = await sb.from('spots')
-    .select('id, name, slug, lat, lng, geo, is_published, owner_id, claimed_by_profile_id, category, subcategory')
+    .select('id, name, slug, lat, lng, geo, is_published, owner_id, category, subcategory')
     .eq('name', name)
   if (error) throw new Error(error.message)
   return data ?? []
@@ -112,7 +112,6 @@ function suite(label: string) {
     expect(r1.slug).toBe(base)
     expect(r1.is_published).toBe(false)
     expect(r1.owner_id).toBeNull()
-    expect(r1.claimed_by_profile_id).toBeNull()
     expect(r1.category).toBe('drink')
     expect(r1.subcategory).toBe('cocktail bar')
     expect(Math.abs(r1.lat - coords.lat)).toBeLessThan(1e-5)

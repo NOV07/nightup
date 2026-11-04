@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   const [
     pendingEvents, pendingArticles, pendingReleases, pendingMixes,
     pendingPlaylists, pendingArtists, pendingSpots,
-    pendingUpgrades, pendingFeatured, pendingSpotClaims,
+    pendingUpgrades, pendingFeatured,
     todayEvents, todayArticles, todayReleases, todayMixes,
     todayPlaylists, todayArtists, todaySpots,
   ] = await Promise.all([
@@ -56,7 +56,6 @@ export async function GET(req: NextRequest) {
     count('spots', q => q.eq('is_published', false)),
     pending('upgrade_requests'),
     pending('featured_event_requests'),
-    pending('spot_claims'),
     approvedToday('events'),
     approvedToday('articles'),
     approvedToday('music_releases'),
@@ -86,7 +85,6 @@ export async function GET(req: NextRequest) {
       articles: pendingArticles,
       upgrades: pendingUpgrades,
       featured: pendingFeatured,
-      'spot-claims': pendingSpotClaims,
       // Neither tab has a pending state to surface.
       users: 0,
       listings: 0,

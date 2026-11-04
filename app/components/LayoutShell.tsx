@@ -15,7 +15,7 @@ import type { Spot } from "../spots/types";
 import { spotCropFromRow } from "../spots/types";
 
 const SPOT_COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored, claimed_by_profile_id";
+  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored";
 
 function mapSpot(s: any): Spot {
   return {
@@ -37,7 +37,6 @@ function mapSpot(s: any): Spot {
     rating: s.rating,
     instagram: s.instagram,
     isSponsored: s.is_sponsored === true,
-    claimedByProfileId: s.claimed_by_profile_id ?? null,
   };
 }
 

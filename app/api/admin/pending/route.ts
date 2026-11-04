@@ -16,11 +16,11 @@ export async function GET(req: NextRequest) {
   // Who submitted a row, so the moderation queue can show an account and not
   // just content. Only these tables carry an owning profile: articles, mixes
   // and playlists have no such column, and spots reference profiles twice
-  // (owner_id + claimed_by_profile_id) so the embed needs the column hint or
-  // PostgREST refuses it as ambiguous.
+  // (owner_id + the legacy claimed_by_profile_id column) so the embed needs the
+  // column hint or PostgREST refuses it as ambiguous.
   const SUBMITTER = 'profiles(username, display_name)'
 
-  const [events, articles, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, spotClaims, listings] = await Promise.all([
+  const [events, articles, releases, mixes, playlists, artists, profiles, upgradeRequests, spots, featuredRequests, listings] = await Promise.all([
     // select('*') so the unified admin event form edits a complete row —
     // anything it does not receive would be written back empty on save.
     admin.from('events').select(`*, ${SUBMITTER}`).order('created_at', { ascending: false }),
@@ -35,7 +35,6 @@ export async function GET(req: NextRequest) {
     admin.from('upgrade_requests').select('id, user_id, username, email, specialty, requested_type, bio, status, created_at').order('created_at', { ascending: false }),
     admin.from('spots').select('*, owner:profiles!owner_id(username, display_name)').order('created_at', { ascending: false }),
     admin.from('featured_event_requests').select('id, event_id, profile_id, status, created_at, events(title, date, venue)').order('created_at', { ascending: false }),
-    admin.from('spot_claims').select('id, spot_id, profile_id, note, status, created_at, spots(name, slug, city)').order('created_at', { ascending: false }),
     // No is_active filter: the public board only serves active rows, so the
     // panel is the only place an operator can see or revive a disabled one.
     admin.from('listings').select('*, profiles(display_name, username, avatar_url)').order('created_at', { ascending: false }),
@@ -48,7 +47,7 @@ export async function GET(req: NextRequest) {
   const errors = Object.entries({
     events, articles, releases, mixes, playlists, artists,
     profiles, upgrade_requests: upgradeRequests, spots,
-    featured_requests: featuredRequests, spot_claims: spotClaims, listings,
+    featured_requests: featuredRequests, listings,
   }).reduce<Record<string, string>>((acc, [key, res]) => {
     if (res.error) acc[key] = res.error.message
     return acc
@@ -72,7 +71,6 @@ export async function GET(req: NextRequest) {
     // without it no unpublished spot ever appears in the pending queue.
     spots: (spots.data ?? []).map(s => ({ ...s, status: s.is_published ? 'approved' : 'pending' })),
     featured_requests: featuredRequests.data ?? [],
-    spot_claims: spotClaims.data ?? [],
     listings: listings.data ?? [],
     errors,
   })

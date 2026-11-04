@@ -80,7 +80,6 @@ export default function AdminSidebar() {
         <NavItem label="Queue"    tab="queue"    badge={counts.byTab.queue} />
         <NavItem label="Upgrades" tab="upgrades" badge={counts.byTab.upgrades} />
         <NavItem label="Featured" tab="featured" badge={counts.byTab.featured} />
-        <NavItem label="Spot Claims" tab="spot-claims" badge={counts.byTab["spot-claims"]} />
         <NavItem label="Users"    tab="users" />
 
         <p className="text-xs font-bold uppercase tracking-widest mt-5 mb-2 pl-1" style={SECTION_LABEL_STYLE}>Content</p>

@@ -12,7 +12,7 @@ const VALID_TABLES = ['events', 'articles', 'music_releases', 'mixes', 'playlist
 // Content a profile owns. A normal delete is refused while any of these still
 // point at it — the operator reassigns or removes the content first. The
 // remaining profiles FKs are join/activity rows (follows, listing_interests,
-// featured_event_requests, spot_claims) that cascade by design, or
+// featured_event_requests) that cascade by design, or
 // notifications.actor_id which nulls.
 //
 // `mode` is what a force delete does with each one:
@@ -20,7 +20,7 @@ const VALID_TABLES = ['events', 'articles', 'music_releases', 'mixes', 'playlist
 //              downstream of these (saved_events, featured_event_requests,
 //              listing_interests) is ON DELETE CASCADE, so they clear too.
 //   'detach' — the row is independent editorial content that merely records
-//              this profile as owner/claimant. Force delete gives up the
+//              this profile as owner. Force delete gives up the
 //              ownership link, it does not destroy the spot.
 const PROFILE_CONTENT: Array<{
   table: string; column: string; label: string; mode: 'delete' | 'detach'
@@ -31,7 +31,6 @@ const PROFILE_CONTENT: Array<{
   { table: 'artists',         column: 'profile_id',            label: 'artist entry', mode: 'delete' },
   { table: 'events',          column: 'profile_id',            label: 'event',        mode: 'delete' },
   { table: 'spots',           column: 'owner_id',              label: 'owned spot',   mode: 'detach' },
-  { table: 'spots',           column: 'claimed_by_profile_id', label: 'claimed spot', mode: 'detach' },
 ]
 
 const plural = (n: number, label: string) => `${n} ${label}${n === 1 ? '' : 's'}`

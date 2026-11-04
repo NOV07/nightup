@@ -95,7 +95,6 @@ interface AllContent {
   upgrade_requests: any[];
   spots: ContentItem[];
   featured_requests: any[];
-  spot_claims: any[];
   // No `status` column — is_active / is_sponsored booleans are all listings has,
   // so they never enter the pending queue or the status-driven sections.
   listings: any[];
@@ -215,7 +214,7 @@ export default function AdminClient() {
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [allContent, setAllContent] = useState<AllContent>({
     events:[], articles:[],
-    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], spot_claims:[], listings:[],
+    releases:[], mixes:[], playlists:[], artists:[], profiles:[], upgrade_requests:[], spots:[], featured_requests:[], listings:[],
   });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -290,7 +289,6 @@ export default function AdminClient() {
   const totalPending = allItems.filter(i => i.status === "pending").length;
   const pendingUpgrades = allContent.upgrade_requests.filter((r: any) => r.status === "pending").length;
   const pendingFeatured = allContent.featured_requests.filter((r: any) => r.status === "pending").length;
-  const pendingSpotClaims = allContent.spot_claims.filter((r: any) => r.status === "pending").length;
   const today = new Date().toISOString().slice(0, 10);
   const publishedToday = allItems.filter(i => i.status === "approved" && String(i.created_at || "").slice(0, 10) === today).length;
 
@@ -305,7 +303,6 @@ export default function AdminClient() {
     articles: allContent.articles.filter(i => i.status === "pending").length,
     upgrades: pendingUpgrades,
     featured: pendingFeatured,
-    "spot-claims": pendingSpotClaims,
     users: 0,
   };
 
@@ -734,7 +731,7 @@ export default function AdminClient() {
     if (spotForm.lat == null || spotForm.lng == null) { setAddError(t("err_map_pin_required")); return; }
     setAddLoading(true); setAddError(""); setAddSuccess("");
     // The route whitelists these columns and rejects anything else. No owner:
-    // the venue takes the spot over through the claim flow.
+    // the venue creates its own spot after upgrading.
     const res = await fetch("/api/admin/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1558,48 +1555,11 @@ export default function AdminClient() {
               </div>
             )}
 
-            {/* ── SPOT CLAIMS tab ──────────────────────────────────────── */}
-            {activeTab === "spot-claims" && (
-              <div className="space-y-4">
-                <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color:"#666" }}>Spot Claim Requests</h2>
-                {allContent.spot_claims?.length === 0 && (
-                  <p className="text-xs pl-1" style={{ color:"#3a3a4e" }}>No pending requests.</p>
-                )}
-                {allContent.spot_claims?.map((claim: any) => (
-                  <div key={claim.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-xl" style={{ backgroundColor:"#111120", border:"1px solid rgba(232,160,32,0.12)" }}>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm">
-                        {claim.spots?.slug ? (
-                          <a href={`/spots/${claim.spots.slug}`} target="_blank" rel="noopener noreferrer" style={{ color:"#E8A020" }}>{claim.spots?.name ?? "Unknown spot"}</a>
-                        ) : (claim.spots?.name ?? "Unknown spot")}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{claim.spots?.city}</p>
-                      {claim.note && (
-                        <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.4)" }}>{claim.note}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {claim.status === "pending" ? (
-                        <>
-                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"approved" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#14532d", color:"#86efac" }}>✅<span className="ml-1.5 sm:hidden">Approve</span></button>
-                          <button onClick={async () => { await fetch("/api/admin/approve-claim", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ claimId:claim.id, action:"rejected" }) }); await fetchContent(); }} className="flex-1 sm:flex-initial px-2 py-1.5 rounded-lg text-sm leading-none hover:opacity-80" style={{ backgroundColor:"#78350f", color:"#fbbf24" }}>❌<span className="ml-1.5 sm:hidden">Reject</span></button>
-                        </>
-                      ) : (
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor:claim.status==="approved" ? "rgba(22,163,74,0.15)" : "rgba(120,53,15,0.15)", color:claim.status==="approved" ? "#86efac" : "#fbbf24" }}>
-                          {claim.status === "approved" ? "✓ Approved" : "✗ Rejected"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* ── CONTENT tabs (events, articles, music, spots) ── */}
             {/* Listings sit out of this block: it renders Pending/Published/Hidden
                 off a `status` column they do not have, plus an Add form for
                 content the admin authors — listings are posted by creators. */}
-            {!["queue","users","upgrades","featured","spot-claims","listings", ...PROFILE_TAB_IDS].includes(activeTab) && (
+            {!["queue","users","upgrades","featured","listings", ...PROFILE_TAB_IDS].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
                 {activeTab === "music" && (
@@ -1917,7 +1877,7 @@ export default function AdminClient() {
               <div className="pt-3 mt-1 border-t space-y-2" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
                 <p className="text-xs font-semibold" style={{ color:"#f59e0b" }}>⚠ Force Delete</p>
                 <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>
-                  Also deletes everything this profile owns (events, releases, listings, gallery) and gives up its claim on any spot. Type <span style={{ color:"#fca5a5", fontFamily:"monospace" }}>{confirmDelete.profileUsername}</span> to enable.
+                  Also deletes everything this profile owns (events, releases, listings, gallery) and gives up its ownership of any spot. Type <span style={{ color:"#fca5a5", fontFamily:"monospace" }}>{confirmDelete.profileUsername}</span> to enable.
                 </p>
                 <input
                   value={forceConfirmText}

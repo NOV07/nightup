@@ -161,7 +161,6 @@ async function main() {
   const organizer = await createAccount('organizer', 'organizer')
   const spotP = await createAccount('spot', 'spot')
   const pro = await createAccount('pro', 'professional')
-  const claimer = await createAccount('claimer', 'spot')
 
   const future = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10)
   const event = await must(admin.from('events').insert({
@@ -174,14 +173,6 @@ async function main() {
     lat: 37.98, lng: 23.72, owner_id: spotP.id, is_published: true,
   }).select('id, slug').single(), 'spot')
   createdIds.spots.push(spot.id)
-  // A spot owned through the older claim flow (claimed_by_profile_id only).
-  const claimedSpot = await must(admin.from('spots').insert({
-    name: `Followtest Claimed ${TS}`, slug: `followtest-claimed-${TS}`, category: 'drink', city: 'Αθήνα',
-    lat: 37.97, lng: 23.73, claimed_by_profile_id: claimer.id, is_published: true,
-  }).select('id, slug').single(), 'claimed spot')
-  createdIds.spots.push(claimedSpot.id)
-  console.log(`event=${event.id} spot=${spot.id} claimedSpot=${claimedSpot.id}`)
-
   const sA = await cookieSession(A)
   const sB = await cookieSession(Bu)
 
@@ -228,15 +219,6 @@ async function main() {
   check('self-follow is rejected', (await sA.call('POST', '/api/follows', { profile_id: A.id })).status === 400)
   check('cannot follow a plain user', (await sA.call('POST', '/api/follows', { profile_id: Bu.id })).status === 404)
   check('host cannot save own event', (await (await cookieSession(organizer)).call('POST', '/api/saved/events', { event_id: event.id })).status === 403)
-
-  // ── 5b. claimer does not count ──
-  step('5b. The claimer of a spot is not counted in its public save count')
-  check('claimer cannot save the claimed spot through the API', (await (await cookieSession(claimer)).call('POST', '/api/saved/spots', { spot_id: String(claimedSpot.id) })).status === 403)
-  // Even if a row exists (older data, direct write), the public count skips it.
-  await must(admin.from('saved_spots').insert({ user_id: claimer.id, spot_id: String(claimedSpot.id) }), 'claimer row')
-  await sA.call('POST', '/api/saved/spots', { spot_id: String(claimedSpot.id) })
-  check('claimed spot: 2 rows, public count = 1 (claimer excluded)',
-    (await truth('saved_spots', 'spot_id', String(claimedSpot.id))) === 2 && (await countOf(sB, `/api/saved/spots?spot_id=${claimedSpot.id}`)) === 1)
 
   // ── 6. IDOR ──
   step('6. B cannot remove A\'s follow')

@@ -21,7 +21,7 @@ export const SPOT_FIELDS = [
 /**
  * What the admin Add form may send. `slug` is an input only: it goes through
  * slugify + uniqueSlug in the route and is never written as given. owner_id,
- * claimed_by_profile_id, geo, id and created_at are deliberately absent.
+ * geo, id and created_at are deliberately absent.
  */
 export const ADMIN_SPOT_INPUT_FIELDS = [...SPOT_FIELDS, 'rating', 'is_sponsored', 'featured', 'is_published', 'slug']
 
@@ -150,7 +150,6 @@ export function checkAdminSpotInput(input: unknown): AdminSpotCheck {
   delete row.slug
 
   row.owner_id = null
-  row.claimed_by_profile_id = null
 
   return { ok: true, row, slugRoot }
 }

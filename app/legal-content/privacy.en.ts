@@ -16,7 +16,7 @@ const content: LegalContent = {
       "blocks": [
         [
           "Account data: email address, display name, and your password (stored hashed by our authentication provider, never in plain text).",
-          "Profile and content you submit: biography, social media links, profile and gallery photos, events, spots, releases, mixes, listings and any other information you enter in our forms, including upgrade requests and spot claims.",
+          "Profile and content you submit: biography, social media links, profile and gallery photos, events, spots, releases, mixes, listings and any other information you enter in our forms, including upgrade requests.",
           "Activity tied to your account: follows, saved events and spots, and notifications.",
           "Your location, only if you use \"near me\": your browser asks for your permission before sharing it. It is sent to our server only to find nearby spots and is not stored by us.",
           "Spot location: the coordinates of a spot are published together with the spot.",

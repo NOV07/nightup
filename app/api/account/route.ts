@@ -75,7 +75,7 @@ export async function GET() {
       countRows(admin, 'creator_gallery', 'profile_id', uid),
       countRows(admin, 'listings', 'profile_id', uid),
       countRows(admin, 'music_releases', 'profile_id', uid),
-      admin.from('spots').select('id, name').or(`owner_id.eq.${uid},claimed_by_profile_id.eq.${uid}`),
+      admin.from('spots').select('id, name').eq('owner_id', uid),
     ])
     if (spotsRes.error) throw new Error(`spots: ${spotsRes.error.message}`)
 

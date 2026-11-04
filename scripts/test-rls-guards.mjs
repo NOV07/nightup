@@ -77,7 +77,7 @@ const code = (res) => res.error ? `${res.error.code}: ${res.error.message}` : 'n
 
 // ── accounts ─────────────────────────────────────────────────────────────────
 const created = [] // { id, email }
-const ids = { events: [], releases: [], listings: [], spots: [], requests: [], claims: [] }
+const ids = { events: [], releases: [], listings: [], spots: [], requests: [] }
 
 async function createAuthUser(role) {
   const email = `dkantanoleon${THROWAWAY}${TS}-${role}@gmail.com`
@@ -299,18 +299,17 @@ async function main() {
   const spIns = await sSpot.rest.from('spots').insert({
     name: `Rlsguardtest Spot ${TS}`, slug, category: 'nightlife', city: 'Αθήνα', lat: 37.98, lng: 23.72,
     owner_id: spotOwner.id, is_published: false, is_sponsored: true, featured: true, rating: 5,
-    claimed_by_profile_id: plain.id,
   }).select('id').single()
   if (spIns.error) throw new Error(`spot insert failed: ${code(spIns)}`)
   const spId = spIns.data.id
   ids.spots.push(spId)
-  const sp = await row('spots', spId, 'is_published, is_sponsored, featured, rating, claimed_by_profile_id, owner_id')
+  const sp = await row('spots', spId, 'is_published, is_sponsored, featured, rating, owner_id')
   check('REST insert of a spot is forced to defaults (published stays true)',
     sp.is_published === true && sp.is_sponsored === false && sp.featured === false && sp.rating === null &&
-    sp.claimed_by_profile_id === null && sp.owner_id === spotOwner.id, JSON.stringify(sp))
+    sp.owner_id === spotOwner.id, JSON.stringify(sp))
   await expectAllBlocked('spot update', sSpot.rest, 'spots', spId, {
     is_published: false, is_sponsored: true, featured: true, rating: 5, slug: `${slug}-x`,
-    owner_id: plain.id, claimed_by_profile_id: plain.id,
+    owner_id: plain.id,
   })
   const spLegit = await sSpot.rest.from('spots').update({ description: 'edited', phone: '123' }).eq('id', spId).select()
   check('legit: owner edits spot content over REST', !spLegit.error && spLegit.data?.length === 1, code(spLegit))
@@ -319,21 +318,14 @@ async function main() {
     check('legit: PATCH /api/spots/[id]', r.status === 200, `status ${r.status} ${r.body?.error ?? ''}`)
   } else skip('PATCH /api/spots/[id]', 'no dev server')
 
-  // ── featured_event_requests / spot_claims ──
-  step('7. featured_event_requests and spot_claims')
+  // ── featured_event_requests ──
+  step('7. featured_event_requests')
   const fr = await sArtist.rest.from('featured_event_requests').insert({ event_id: evId, profile_id: artist.id, status: 'approved' }).select('id').single()
   if (fr.error) throw new Error(`featured request insert failed: ${code(fr)}`)
   ids.requests.push(fr.data.id)
   check('featured request insert is forced to pending', (await row('featured_event_requests', fr.data.id, 'status')).status === 'pending')
   await sArtist.rest.from('featured_event_requests').update({ status: 'approved' }).eq('id', fr.data.id)
   check('featured request status cannot be flipped by its owner', (await row('featured_event_requests', fr.data.id, 'status')).status === 'pending')
-
-  const sc = await sPlain.rest.from('spot_claims').insert({ spot_id: spId, profile_id: plain.id, status: 'approved' }).select('id').single()
-  if (sc.error) throw new Error(`spot claim insert failed: ${code(sc)}`)
-  ids.claims.push(sc.data.id)
-  check('spot claim insert is forced to pending', (await row('spot_claims', sc.data.id, 'status')).status === 'pending')
-  await sPlain.rest.from('spot_claims').update({ status: 'approved' }).eq('id', sc.data.id)
-  check('spot claim status cannot be flipped by its owner', (await row('spot_claims', sc.data.id, 'status')).status === 'pending')
 
   // ── service role stays exempt ──
   step('8. service role (admin routes) is not guarded')
@@ -362,7 +354,6 @@ try {
   }
   try {
     await del('featured_event_requests', ids.requests)
-    await del('spot_claims', ids.claims)
     await del('listings', ids.listings)
     await del('music_releases', ids.releases)
     if (ids.events.length) await admin.from('event_reactions').delete().in('event_id', ids.events)

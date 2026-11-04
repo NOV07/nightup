@@ -55,7 +55,6 @@ export function formToSpot(form: SpotFormData, nameFallback = 'Το spot σου'
     website: form.website || null,
     instagram: form.instagram || null,
     isSponsored: false,
-    claimedByProfileId: null,
     gallery: form.gallery,
     openingHours: serializeOpeningHours(form.opening_hours),
   }
