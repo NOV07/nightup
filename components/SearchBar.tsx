@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
-import { CITIES, GENRES, NETWORK } from "../app/lib/searchData";
+import { CITIES, GENRE_FILTERS, NETWORK } from "../app/lib/searchData";
+import { genreLabel } from "../app/lib/genres";
 import { useLanguage } from "../app/components/LanguageContext";
 import { networkCategoryLabel } from "../app/lib/searchData";
 import { useHideTonightFab } from "../app/components/TonightFabVisibilityContext";
@@ -67,10 +68,12 @@ function SelectField({
   value,
   onChange,
   options,
+  labelFor,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: string[];
+  labelFor?: (o: string) => string;
 }) {
   return (
     <select
@@ -92,7 +95,7 @@ function SelectField({
     >
       {options.map((o) => (
         <option key={o} value={o} style={{ background: "#111" }}>
-          {o}
+          {labelFor ? labelFor(o) : o}
         </option>
       ))}
     </select>
@@ -128,7 +131,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
 
   // Events filters
   const [evCity, setEvCity] = useState(CITIES[0]);
-  const [evGenre, setEvGenre] = useState(GENRES[0]);
+  const [evGenre, setEvGenre] = useState(GENRE_FILTERS[0]);
   const [evDate, setEvDate] = useState("");
 
   // Network filters
@@ -226,7 +229,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
   const handleEventsSearch = () => {
     const params = new URLSearchParams();
     if (evCity !== CITIES[0]) params.set("city", evCity);
-    if (evGenre !== GENRES[0]) params.set("genre", evGenre);
+    if (evGenre !== GENRE_FILTERS[0]) params.set("genre", evGenre);
     if (evDate) params.set("date", evDate);
     router.push(`/events${params.size ? `?${params}` : ""}`);
     onClose();
@@ -499,7 +502,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
             <div>
               <div className="flex flex-wrap gap-2 items-end">
                 <SelectField value={evCity} onChange={setEvCity} options={CITIES} />
-                <SelectField value={evGenre} onChange={setEvGenre} options={GENRES} />
+                <SelectField value={evGenre} onChange={setEvGenre} options={GENRE_FILTERS} labelFor={(g) => (g === "All" ? g : genreLabel(g))} />
                 <input
                   type="date"
                   value={evDate}
@@ -520,16 +523,16 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                   }}
                 />
               </div>
-              {(evCity !== CITIES[0] || evGenre !== GENRES[0] || evDate) && (
+              {(evCity !== CITIES[0] || evGenre !== GENRE_FILTERS[0] || evDate) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10, marginBottom: 4, alignItems: "center" }}>
                   {evCity !== CITIES[0] && (
                     <span style={activeChipStyle} onClick={() => setEvCity(CITIES[0])}>
                       📍 {evCity} ✕
                     </span>
                   )}
-                  {evGenre !== GENRES[0] && (
-                    <span style={activeChipStyle} onClick={() => setEvGenre(GENRES[0])}>
-                      🎵 {evGenre} ✕
+                  {evGenre !== GENRE_FILTERS[0] && (
+                    <span style={activeChipStyle} onClick={() => setEvGenre(GENRE_FILTERS[0])}>
+                      🎵 {genreLabel(evGenre)} ✕
                     </span>
                   )}
                   {evDate && (
@@ -538,7 +541,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
                     </span>
                   )}
                   <span
-                    onClick={() => { setEvCity(CITIES[0]); setEvGenre(GENRES[0]); setEvDate(""); }}
+                    onClick={() => { setEvCity(CITIES[0]); setEvGenre(GENRE_FILTERS[0]); setEvDate(""); }}
                     style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", cursor: "pointer", marginLeft: 4, fontFamily: "var(--font-sans)" }}
                   >
                     Clear all

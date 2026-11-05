@@ -19,11 +19,11 @@ import ScrollTabBar from '@/components/ui/ScrollTabBar'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '../lib/translations'
 import { profileHref } from '@/app/lib/profileHref'
+import { GENRES, genreLabel, normalizeGenre } from '@/app/lib/genres'
 
 const AVATAR_CROP_ASPECT = 1
 const COVER_CROP_ASPECT = 3
 
-const GENRES = ['Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance', 'Hip-Hop', 'R&B', 'Afrobeats', 'Reggaeton', 'Laika', 'Entechno', 'Rebetiko', 'Dimotika', 'Rock', 'Jazz', 'Classical', 'Blues', 'Electronic', 'Ambient', 'Experimental', 'Other']
 
 
 const SOCIAL_FIELDS = [
@@ -178,7 +178,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
     price_range: profile.price_range ?? '',
     booking_info: profile.booking_info ?? '',
     announcements: profile.announcements ?? '',
-    genres: profile.genres ?? [],
+    genres: (profile.genres ?? []).map((g: string) => normalizeGenre(g) ?? g),
     services: profile.services ?? [],
     section_visibility: profile.section_visibility ?? {},
     network_tab: profile.network_tab ?? '',
@@ -1024,7 +1024,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                   <div>
                     <label className={labelClass}>{t('dashboard_genres')}</label>
                     <div className="flex flex-wrap gap-2">
-                      {GENRES.map(g => (
+                      {GENRES.map(({ key: g, label_el }) => (
                         <button
                           key={g}
                           type="button"
@@ -1036,7 +1036,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                             border: `0.5px solid ${form.genres.includes(g) ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
                           }}
                         >
-                          {g}
+                          {label_el}
                         </button>
                       ))}
                     </div>
@@ -1132,7 +1132,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     {form.genres.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-3">
                         {form.genres.slice(0, 3).map((g: string) => (
-                          <span key={g} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020' }}>{g}</span>
+                          <span key={g} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(232,160,32,0.1)', color: '#E8A020' }}>{genreLabel(g)}</span>
                         ))}
                       </div>
                     )}

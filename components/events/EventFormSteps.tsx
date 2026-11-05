@@ -6,8 +6,8 @@ import ImageUpload from '@/components/ui/ImageUpload'
 import EventLivePreview from './EventLivePreview'
 import { compressImage } from '@/app/lib/compressImage'
 import { CURRENCIES, type CurrencyCode, currencySymbol, formatMoney } from '@/app/lib/formatPrice'
+import { GENRES, genreLabel } from '@/app/lib/genres'
 
-const GENRES = ['Techno', 'House', 'Deep House', 'Hip-Hop', 'R&B', 'Laika', 'Entechno', 'Rock', 'Open Air', 'Other']
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
 // events.type doubles as the category the public /events tabs filter on, so the
 // admin picks from those values instead of the wording shown to organizers.
@@ -200,7 +200,7 @@ function Step1({ form, set, toggleGenre, stepErrors, isAdmin, askOrganizerName }
       <div>
         <label style={lbl}>{t('dashboard_genres')}</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {GENRES.map(g => (
+          {GENRES.map(({ key: g, label_el }) => (
             <button key={g} type="button" onClick={() => toggleGenre(g)}
               style={{
                 padding: '6px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
@@ -208,7 +208,7 @@ function Step1({ form, set, toggleGenre, stepErrors, isAdmin, askOrganizerName }
                 color: form.genres.includes(g) ? '#E8A020' : 'rgba(255,255,255,0.4)',
                 border: `1px solid ${form.genres.includes(g) ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
               }}>
-              {g}
+              {label_el}
             </button>
           ))}
         </div>
@@ -558,7 +558,7 @@ function Step4({ form, set, stepErrors, isAdmin, isEdit }: {
             [t('event_form_review_title_label'), form.title],
             [t('event_form_date_label'), form.date ? `${form.date} ${form.start_time}` : '—'],
             [t('event_form_venue_label'), form.venue ? `${form.venue}, ${form.city}` : '—'],
-            [t('dashboard_genres'), form.genres.join(', ') || '—'],
+            [t('dashboard_genres'), form.genres.map(genreLabel).join(', ') || '—'],
             [t('event_form_review_price_label'), form.price ? formatMoney(form.price, form.currency) : t('event_form_free')],
             [t('event_age_restriction_heading'), form.age_restriction_level === 'none' ? t('event_form_age_none') : form.age_restriction_level],
             [t('event_gallery_heading'), form.gallery.length ? String(form.gallery.length) : '—'],

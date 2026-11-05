@@ -23,6 +23,7 @@ function formatDuration(d: string | number | null | undefined): string | null {
 import MixPlayButton from "./MixPlayButton";
 import SocialShare from "./SocialShare";
 import SoundCloudPlayer from "../../../components/SoundCloudPlayer";
+import { genreLabel } from "@/app/lib/genres";
 
 interface Props { params: Promise<{ id: string }>; }
 
@@ -81,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const mix = await getMix(id);
   if (!mix) return { title: "Mix not found" };
   const image = mix.cover_image ?? "https://nightup.gr/og-image.png";
-  const description = mix.description ?? `${mix.genre ?? ""} mix by ${mix.artist}`;
+  const description = mix.description ?? `${genreLabel(mix.genre)} mix by ${mix.artist}`;
   return {
     title: `${mix.artist} - ${mix.title}`,
     description,
@@ -160,7 +161,7 @@ export default async function MixPage({ params }: Props) {
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <span className="text-xs font-black px-3 py-1 rounded-full tracking-widest uppercase" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>Mix</span>
               {mix.genre && (
-                <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "#1A1A2E", color: "#E8A020", border: "1px solid #E8A02040" }}>{mix.genre}</span>
+                <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "#1A1A2E", color: "#E8A020", border: "1px solid #E8A02040" }}>{genreLabel(mix.genre)}</span>
               )}
               {mix.duration && (
                 <span className="text-xs px-3 py-1 rounded-full font-mono" style={{ backgroundColor: "#1A1A2E", color: "#888", border: "1px solid #222" }}>{formatDuration(mix.duration)}</span>
@@ -239,7 +240,7 @@ export default async function MixPage({ params }: Props) {
               {artist.genres?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {artist.genres.slice(0, 3).map((g: string) => (
-                    <span key={g} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#0F0F1A", color: "#E8A020", border: "1px solid #E8A02030" }}>{g}</span>
+                    <span key={g} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#0F0F1A", color: "#E8A020", border: "1px solid #E8A02030" }}>{genreLabel(g)}</span>
                   ))}
                 </div>
               )}
@@ -293,7 +294,7 @@ export default async function MixPage({ params }: Props) {
                   <div className="min-w-0 flex-1">
                     <p className="text-xs mb-0.5 truncate" style={{ color: "#E8A020" }}>{m.artist}</p>
                     <h3 className="font-semibold text-sm line-clamp-1">{m.title}</h3>
-                    {m.genre && <p className="text-xs mt-0.5 truncate" style={{ color: "#555" }}>{m.genre}</p>}
+                    {m.genre && <p className="text-xs mt-0.5 truncate" style={{ color: "#555" }}>{genreLabel(m.genre)}</p>}
                   </div>
                   {m.duration && (
                     <span className="text-xs font-mono flex-shrink-0" style={{ color: "#444" }}>{formatDuration(m.duration)}</span>

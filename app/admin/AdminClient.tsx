@@ -12,6 +12,7 @@ import { SPOT_CROP_ASPECT, SUBCATEGORIES, type SpotCategory } from "../spots/typ
 import LocationPicker from "../../components/maps/LocationPicker";
 import { useLanguage } from "../components/LanguageContext";
 import { profileHref } from '@/app/lib/profileHref'
+import { GENRES, genreLabel, normalizeGenre } from "@/app/lib/genres";
 
 const EVENT_CROP_ASPECT = 16 / 9;
 
@@ -24,17 +25,17 @@ function readFileAsBase64(file: File): Promise<string> {
   });
 }
 
-const GENRES = ["Techno","House","Deep House","Minimal","Drum & Bass","Trance","Hip-Hop","R&B","Afrobeats","Reggaeton","Laika","Entechno","Rebetiko","Dimotika","Rock","Jazz","Classical","Blues","Open Air","Beach Party","Rooftop"];
+// Genre options come from the shared genres file (value = stable key, label = Greek).
+const GENRE_OPTIONS = GENRES.map(g => ({ value: g.key, label: g.label_el }));
+type SelectOption = string | { value: string; label: string };
 const CITIES = ["Athens","Thessaloniki","Mykonos","Santorini","Heraklion","Patras","Rhodes","Ios","Corfu","Zakynthos"];
 const ART_CATEGORIES = ["Venues","Festivals","Artists","Guide","Music","Culture"];
 const RELEASE_TYPES = ["Single","EP","Album"];
-const MUSIC_GENRES = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Afrobeats","Pop","Rock","Laika","Entechno","Other"];
 const SPOT_CATS = ["food","drink","nightlife","show","chill","activity","art","wellness"];
 const EVENT_TYPE_LABELS: Record<string, string> = {
   music: "Μουσική", culture: "Κουλτούρα", sports: "Αθλητισμός", other: "Άλλα",
 };
 const EVENT_TYPE_VALUES = Object.keys(EVENT_TYPE_LABELS);
-const MUSIC_GENRES_CREATE = ["Techno","House","Deep House","Hip-Hop","R&B","Latin","Open Air","Rock","Λαϊκά","Έντεχνο","Jazz","Pop"];
 
 // upgrade_requests.requested_type is a plain string (organizer/artist/spot/
 // professional/venue) — 'venue' is the odd one out (a Professional
@@ -115,7 +116,7 @@ const defaultEventExtras = {
 function eventItemToFormData(item: Record<string, any>): Partial<EventFormData> {
   return {
     title:             item.title ?? "",
-    genres:            Array.isArray(item.genres) ? item.genres : (item.genre ? [item.genre] : []),
+    genres:            (Array.isArray(item.genres) ? item.genres : (item.genre ? [item.genre] : [])).map((g: string) => normalizeGenre(g) ?? g),
     type:              item.type ?? "music",
     short_description: item.short_description ?? "",
     full_description:  item.full_description ?? item.description ?? "",
@@ -183,7 +184,7 @@ function eventFormDataToRow(data: EventFormData) {
 }
 const defaultArticleForm = { title:"",category:"Venues",date:"",read_time:"5",image:"",excerpt:"",body:"",featured:false,series:"",series_order:"" };
 const defaultReleaseForm = {
-  title:"",artist:"",type:"Single",primary_genre:"House",cover_image:"",description:"",release_date:"",label:"",
+  title:"",artist:"",type:"Single",primary_genre:"house",cover_image:"",description:"",release_date:"",label:"",
   spotify_url:"",soundcloud_url:"",apple_music_url:"",youtube_url:"",bandcamp_url:"",beatport_url:"",deezer_url:"",
   producers:"",composers:"",featuring_artists:"",mastering_engineer:"",artwork_by:"",
   is_promoted:false,
@@ -200,7 +201,7 @@ function toReleasePayload(form: Record<string, unknown>) {
   }
   return out;
 }
-const defaultMixForm = { title:"",artist:"",genre:"House",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"",profile_id:"" };
+const defaultMixForm = { title:"",artist:"",genre:"house",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"",profile_id:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
 const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,is_published:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
@@ -930,9 +931,9 @@ export default function AdminClient() {
           : (item.title as string);
 
     const secondary =
-      tab === "events"       ? [item.venue, item.city, item.date, item.genre].filter(Boolean).join(" · ")
-      : isRelease            ? [item.type, item.primary_genre].filter(Boolean).join(" · ")
-      : isMix                ? (item.genre as string) || ""
+      tab === "events"       ? [item.venue, item.city, item.date, genreLabel(item.genre as string)].filter(Boolean).join(" · ")
+      : isRelease            ? [item.type, genreLabel(item.primary_genre as string)].filter(Boolean).join(" · ")
+      : isMix                ? genreLabel(item.genre as string)
       : isArtist             ? (item.origin as string) || ""
       : isSpot               ? [item.category, item.subcategory, item.city].filter(Boolean).join(" · ")
       : (item.category as string) || "";
@@ -1673,7 +1674,7 @@ export default function AdminClient() {
                             <div><label className={labelCls}>Title *</label><input required className={inputCls} style={inputStyle} value={releaseForm.title} onChange={e => setReleaseForm(f => ({ ...f, title:e.target.value }))} /></div>
                             <div><label className={labelCls}>Artist *</label><input required className={inputCls} style={inputStyle} value={releaseForm.artist} onChange={e => setReleaseForm(f => ({ ...f, artist:e.target.value }))} /></div>
                             <div><label className={labelCls}>Type</label><select className={inputCls} style={inputStyle} value={releaseForm.type} onChange={e => setReleaseForm(f => ({ ...f, type:e.target.value }))}>{RELEASE_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
-                            <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={releaseForm.primary_genre} onChange={e => setReleaseForm(f => ({ ...f, primary_genre:e.target.value }))}>{MUSIC_GENRES.map(g => <option key={g}>{g}</option>)}</select></div>
+                            <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={releaseForm.primary_genre} onChange={e => setReleaseForm(f => ({ ...f, primary_genre:e.target.value }))}>{GENRE_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}</select></div>
                             <div><label className={labelCls}>Cover Image URL</label><input className={inputCls} style={inputStyle} value={releaseForm.cover_image} onChange={e => setReleaseForm(f => ({ ...f, cover_image:e.target.value }))} /></div>
                             <div><label className={labelCls}>Release Date</label><input type="date" className={inputCls} style={inputStyle} value={releaseForm.release_date} onChange={e => setReleaseForm(f => ({ ...f, release_date:e.target.value }))} /></div>
                             <div><label className={labelCls}>Label</label><input className={inputCls} style={inputStyle} value={releaseForm.label} onChange={e => setReleaseForm(f => ({ ...f, label:e.target.value }))} /></div>
@@ -1727,7 +1728,7 @@ export default function AdminClient() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div><label className={labelCls}>Title *</label><input required className={inputCls} style={inputStyle} value={mixForm.title} onChange={e => setMixForm(f => ({ ...f, title:e.target.value }))} /></div>
                             <div><label className={labelCls}>Artist *</label><input required className={inputCls} style={inputStyle} value={mixForm.artist} onChange={e => setMixForm(f => ({ ...f, artist:e.target.value }))} /></div>
-                            <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={mixForm.genre} onChange={e => setMixForm(f => ({ ...f, genre:e.target.value }))}>{MUSIC_GENRES.map(g => <option key={g}>{g}</option>)}</select></div>
+                            <div><label className={labelCls}>Genre</label><select className={inputCls} style={inputStyle} value={mixForm.genre} onChange={e => setMixForm(f => ({ ...f, genre:e.target.value }))}>{GENRE_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}</select></div>
                             <div><label className={labelCls}>Duration (e.g. 1:23:00)</label><input className={inputCls} style={inputStyle} value={mixForm.duration} onChange={e => setMixForm(f => ({ ...f, duration:e.target.value }))} /></div>
                             <div><label className={labelCls}>Cover Image URL</label><input className={inputCls} style={inputStyle} value={mixForm.cover_image} onChange={e => setMixForm(f => ({ ...f, cover_image:e.target.value }))} /></div>
                             <div><label className={labelCls}>SoundCloud URL</label><input className={inputCls} style={inputStyle} value={mixForm.soundcloud_url} onChange={e => setMixForm(f => ({ ...f, soundcloud_url:e.target.value }))} /></div>
@@ -1933,11 +1934,11 @@ export default function AdminClient() {
               inputCls={inputCls}
               inputStyle={inputStyle}
               labelCls={labelCls}
-              genres={GENRES}
+              genres={GENRE_OPTIONS}
               cities={CITIES}
               artCategories={ART_CATEGORIES}
               releaseTypes={RELEASE_TYPES}
-              musicGenres={MUSIC_GENRES}
+              musicGenres={GENRE_OPTIONS}
               spotCategories={SPOT_CATS}
             />
             )}
@@ -1988,19 +1989,28 @@ export default function AdminClient() {
 // ─────────────────────────────────────────────────────────────────────────────
 // EditForm
 // ─────────────────────────────────────────────────────────────────────────────
+/** Quick-edit changes the primary genre only: keep genres[] in step with the singular column. */
+function eventGenrePatch(form: Record<string, unknown>) {
+  const raw = typeof form.genre === "string" ? form.genre : "";
+  const g = normalizeGenre(raw) ?? (raw || null);
+  const existing = Array.isArray(form.genres) ? (form.genres as string[]).map(x => normalizeGenre(x) ?? x) : [];
+  const rest = existing.slice(1).filter(x => x !== g);
+  return { genre: g, genres: g ? [g, ...rest] : rest };
+}
+
 function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputStyle, labelCls, genres, cities, artCategories, releaseTypes, musicGenres, spotCategories }: {
   item: ContentItem; tab: string; subtab?: string;
   onSave: (table: string, id: string, data: Record<string, unknown>) => void;
   loading: boolean; error: string;
   inputCls: string; inputStyle: React.CSSProperties; labelCls: string;
-  genres: string[]; cities: string[]; artCategories: string[];
-  releaseTypes: string[]; musicGenres: string[]; spotCategories: string[];
+  genres: SelectOption[]; cities: string[]; artCategories: string[];
+  releaseTypes: string[]; musicGenres: SelectOption[]; spotCategories: string[];
 }) {
   const { t } = useLanguage();
   const [form, setForm] = useState<Record<string, unknown>>({ ...item });
   const [showCropper, setShowCropper] = useState(false);
 
-  function field(key: string, label: string, type: "text" | "textarea" | "select" | "date" | "number" | "checkbox" = "text", options?: string[], colSpan = false) {
+  function field(key: string, label: string, type: "text" | "textarea" | "select" | "date" | "number" | "checkbox" = "text", options?: SelectOption[], colSpan = false) {
     const val = form[key] ?? "";
     return (
       <div key={key} className={colSpan ? "sm:col-span-2" : ""}>
@@ -2010,9 +2020,18 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
         ) : type === "select" && options ? (
           // Keep the stored value selectable even when it predates the option
           // list, otherwise opening the modal silently rewrites it on save.
-          <select className={inputCls} style={inputStyle} value={String(val)} onChange={e => setForm(f => ({ ...f, [key]:e.target.value }))}>
-            {(val && !options.includes(String(val)) ? [String(val), ...options] : options).map(o => <option key={o}>{o}</option>)}
-          </select>
+          (() => {
+            const opts = options.map(o => typeof o === "string" ? { value: o, label: o } : o);
+            const cur = String(val);
+            // A legacy genre spelling ("Laika") selects its key; anything else unknown stays selectable as-is.
+            const mapped = opts.some(o => o.value === cur) ? cur : (normalizeGenre(cur) ?? cur);
+            const list = cur && !opts.some(o => o.value === mapped) ? [{ value: cur, label: cur }, ...opts] : opts;
+            return (
+              <select className={inputCls} style={inputStyle} value={opts.some(o => o.value === mapped) ? mapped : cur} onChange={e => setForm(f => ({ ...f, [key]:e.target.value }))}>
+                {list.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            );
+          })()
         ) : type === "checkbox" ? (
           <div className="flex items-center gap-2 mt-1">
             <input type="checkbox" checked={!!val} onChange={e => setForm(f => ({ ...f, [key]:e.target.checked }))} />
@@ -2042,7 +2061,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
       // coerced here too — events.price is numeric and an empty or symbol-bearing
       // string is rejected by the column.
       // An emptied price_text goes back as null so the € level fallback shows.
-      const payload = tab === "events" ? { ...form, price: parsePriceInput(form.price as string) }
+      const payload = tab === "events" ? { ...form, price: parsePriceInput(form.price as string), ...eventGenrePatch(form) }
         : tab === "spots" ? { ...form, price_text: String(form.price_text ?? "").trim() || null }
         : form;
       onSave(getTable(), String(item.id), payload);

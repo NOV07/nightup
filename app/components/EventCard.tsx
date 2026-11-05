@@ -11,6 +11,7 @@ import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
 import EventImageFallback from "./EventImageFallback";
 import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
+import { genreLabel, normalizeGenre } from "../lib/genres";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -37,15 +38,14 @@ interface EventCardProps {
 }
 
 const genreColors: Record<string, string> = {
-  Techno:       "#E8A020",
-  House:        "#A855F7",
-  "Deep House": "#3B82F6",
-  "Hip-Hop":    "#EC4899",
-  "R&B":        "#F97316",
-  Latin:        "#22C55E",
-  "Open Air":   "#84CC16",
-  Afrobeats:    "#F59E0B",
-  "Live Music": "#06B6D4",
+  techno:       "#E8A020",
+  house:        "#A855F7",
+  deep_house:   "#3B82F6",
+  hip_hop:      "#EC4899",
+  rnb:          "#F97316",
+  latin:        "#22C55E",
+  open_air:     "#84CC16",
+  afrobeats:    "#F59E0B",
 };
 
 export default function EventCard({
@@ -74,7 +74,7 @@ export default function EventCard({
     e.stopPropagation();
     toggle();
   }
-  const color  = genreColors[genre] ?? "#E8A020";
+  const color  = genreColors[normalizeGenre(genre) ?? ""] ?? "#E8A020";
   const hasRealImage = Boolean(image_url || image);
   const imgSrc = image_url || image || FALLBACK_IMAGE;
 
@@ -93,7 +93,7 @@ export default function EventCard({
       {/* ── Image ─────────────────────────────────── */}
       <div className="relative overflow-hidden" style={{ height: "210px" }}>
         {!hasRealImage ? (
-          <EventImageFallback genre={genre} compact />
+          <EventImageFallback genre={genreLabel(genre)} compact />
         ) : (
           <CroppedImage
             src={imgSrc}
@@ -157,7 +157,7 @@ export default function EventCard({
               backdropFilter: "blur(8px)",
               fontFamily: "var(--font-mono)",
             }}>
-            {genre}
+            {genreLabel(genre)}
           </span>
           {displayPrice && (
             <span className="text-xs font-bold px-2.5 py-1 leading-none tabular-nums flex-shrink-0"

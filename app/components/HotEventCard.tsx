@@ -10,6 +10,7 @@ import { formatPrice } from "../lib/formatPrice";
 import { useLanguage } from "./LanguageContext";
 import EventImageFallback from "./EventImageFallback";
 import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
+import { genreLabel } from "../lib/genres";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -45,7 +46,7 @@ export default function HotEventCard({
     sports:  "event_cat_sports",
     other:   "event_cat_other",
   };
-  const categoryLabel = type && CATEGORY_LABEL_KEYS[type] ? t(CATEGORY_LABEL_KEYS[type] as any) : genre;
+  const categoryLabel = type && CATEGORY_LABEL_KEYS[type] ? t(CATEGORY_LABEL_KEYS[type] as any) : genreLabel(genre);
   const CATEGORY_COLORS: Record<string, string> = {
     culture: "rgba(220,38,38,0.85)",
     sports:  "rgba(37,99,235,0.85)",
@@ -79,7 +80,7 @@ export default function HotEventCard({
     >
       {/* Image */}
       {!hasRealImage ? (
-        <EventImageFallback genre={genre} compact />
+        <EventImageFallback genre={genreLabel(genre)} compact />
       ) : (
         <CroppedImage
           src={imgSrc}

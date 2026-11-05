@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getSupabase } from "../../../lib/supabase";
+import { genreLabel } from "@/app/lib/genres";
 
 interface Props { params: Promise<{ id: string }>; }
 
@@ -117,7 +118,7 @@ export default async function ArtistPage({ params }: Props) {
         <div className="absolute bottom-0 left-0 right-0 max-w-5xl mx-auto px-4 pb-10">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             {artist?.genres?.map((g: string) => (
-              <span key={g} className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>{g}</span>
+              <span key={g} className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#E8A020", color: "#0F0F1A" }}>{genreLabel(g)}</span>
             ))}
             {artist?.origin && (
               <span className="text-xs px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(15,15,26,0.7)", color: "#aaa", border: "1px solid #333" }}>📍 {artist.origin}</span>
@@ -213,7 +214,7 @@ export default async function ArtistPage({ params }: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm line-clamp-1">{m.title}</h3>
-                        {m.genre && <p className="text-xs mt-0.5" style={{ color: "#666" }}>{m.genre}</p>}
+                        {m.genre && <p className="text-xs mt-0.5" style={{ color: "#666" }}>{genreLabel(m.genre)}</p>}
                       </div>
                       {m.duration && (
                         <span className="text-xs font-mono flex-shrink-0" style={{ color: "#555" }}>{m.duration}</span>

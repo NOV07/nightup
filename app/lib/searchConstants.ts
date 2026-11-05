@@ -1,3 +1,5 @@
+import { GENRE_KEYS } from "./genres";
+
 // Single source of truth for filter values used across search, events, and network.
 // Keep in sync with actual DB values for genre and city columns.
 
@@ -35,31 +37,6 @@ export const CITY_LABELS: Record<string, string> = {
   "Rest of Greece": "Υπόλοιπη Ελλάδα",
 };
 
-// Greek display labels for select GENRES values. Values stay in English
-// for DB matching/filtering — only the displayed text is translated.
-export const GENRE_LABELS: Record<string, string> = {
-  "Laïká": "Λαϊκά",
-  "Entechno": "Έντεχνο",
-  "Rebetika": "Ρεμπέτικα",
-  "Other": "Άλλο",
-};
-
-export const GENRES: string[] = [
-  "All",
-  "Techno",
-  "House",
-  "Deep House",
-  "Hip-Hop",
-  "R&B",
-  "Latin",
-  "Open Air",
-  "Rock",
-  "Laïká",
-  "Entechno",
-  "Jazz",
-  "Pop",
-  "Reggae",
-  "Classical",
-  "Rebetika",
-  "Other",
-];
+// Genre filter options: "All" + the stable keys from the shared genres file.
+// Display text comes from genreLabel() (Greek), never from this list.
+export const GENRE_FILTERS: string[] = ["All", ...GENRE_KEYS];

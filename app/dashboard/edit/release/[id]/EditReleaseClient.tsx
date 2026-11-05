@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../../../../../components/ui/ImageUpload'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { GENRES, genreLabel, normalizeGenre } from '@/app/lib/genres'
 
 // Stored verbatim: the release pages branch on the exact strings "Single",
 // "EP" and "Album", so these values are the casing the column carries.
@@ -17,14 +18,6 @@ function normalizeType(stored: string | null | undefined) {
   return RELEASE_TYPES.find(t => t.toLowerCase() === key) ?? stored
 }
 
-const GENRES = [
-  'Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance',
-  'Hip-Hop', 'R&B', 'Afrobeats', 'Reggaeton',
-  'Laika', 'Entechno', 'Rebetiko', 'Dimotika',
-  'Rock', 'Jazz', 'Classical', 'Blues',
-  'Electronic', 'Ambient', 'Experimental', 'Other',
-]
-
 export default function EditReleaseClient({ release }: { release: any }) {
   const router = useRouter()
   const { t } = useLanguage()
@@ -36,8 +29,8 @@ export default function EditReleaseClient({ release }: { release: any }) {
     title: release.title ?? '',
     artist: release.artist ?? '',
     type: normalizeType(release.type),
-    primary_genre: release.primary_genre ?? '',
-    secondary_genres: release.secondary_genres ?? [],
+    primary_genre: normalizeGenre(release.primary_genre) ?? release.primary_genre ?? '',
+    secondary_genres: (release.secondary_genres ?? []).map((g: string) => normalizeGenre(g) ?? g),
     custom_genre: '',
     label: release.label ?? '',
     release_date: release.release_date ?? '',
@@ -192,8 +185,8 @@ export default function EditReleaseClient({ release }: { release: any }) {
                 style={{ backgroundColor: '#0F0F1A', color: form.primary_genre ? 'white' : 'rgba(255,255,255,0.4)' }}
               >
                 <option value="" style={{ backgroundColor: '#0F0F1A', color: 'rgba(255,255,255,0.4)' }}>{t('release_select_genre')}</option>
-                {GENRES.map(g => (
-                  <option key={g} value={g} style={{ backgroundColor: '#0F0F1A', color: 'white' }}>{g}</option>
+                {GENRES.map(({ key: g, label_el }) => (
+                  <option key={g} value={g} style={{ backgroundColor: '#0F0F1A', color: 'white' }}>{label_el}</option>
                 ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#E8A020' }}>▾</div>
@@ -204,7 +197,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
           <div>
             <label className={labelClass}>{t('release_secondary_genres_label')}</label>
             <div className="flex flex-wrap gap-2 mb-3">
-              {GENRES.map(g => (
+              {GENRES.map(({ key: g, label_el }) => (
                 <button
                   key={g}
                   type="button"
@@ -216,7 +209,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
                     border: `1px solid ${form.secondary_genres.includes(g) ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
                   }}
                 >
-                  {g}
+                  {label_el}
                 </button>
               ))}
             </div>
@@ -242,7 +235,7 @@ export default function EditReleaseClient({ release }: { release: any }) {
                 {form.secondary_genres.map((g: string) => (
                   <span key={g} className="text-xs px-3 py-1 rounded-full flex items-center gap-1.5"
                     style={{ backgroundColor: 'rgba(232,160,32,0.15)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.3)' }}>
-                    {g}
+                    {genreLabel(g)}
                     <button type="button" onClick={() => toggleSecondaryGenre(g)} className="hover:opacity-70">✕</button>
                   </span>
                 ))}

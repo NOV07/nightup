@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePlayerStore } from "../../components/PlayerContext";
+import { genreLabel } from "@/app/lib/genres";
 
 const FALLBACK = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80";
 
@@ -61,7 +62,7 @@ export default function MixCard({ mix }: { mix: Mix }) {
           <span className="absolute bottom-2 right-2 text-xs px-1.5 py-0.5 rounded font-mono" style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#ccc" }}>{formatDuration(mix.duration)}</span>
         )}
         {mix.genre && (
-          <span className="absolute bottom-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A02020", color: "#E8A020", border: "1px solid #E8A02040" }}>{mix.genre}</span>
+          <span className="absolute bottom-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A02020", color: "#E8A020", border: "1px solid #E8A02040" }}>{genreLabel(mix.genre)}</span>
         )}
       </button>
 

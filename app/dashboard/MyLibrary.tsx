@@ -5,6 +5,7 @@ import { useLanguage } from '@/app/components/LanguageContext'
 import type { Lang, TranslationKey } from '../lib/translations'
 import { networkCategoryLabel } from '../lib/searchData'
 import { profileHref } from '@/app/lib/profileHref'
+import { genreLabel } from "../lib/genres";
 
 const GOLD = '#E8A020'
 const SURFACE = '#1A1A28'
@@ -245,7 +246,7 @@ export default function MyLibrary({ savedEvents, upcomingEvents, savedSpots, fol
                       event.date ? new Date(event.date).toLocaleDateString(lang === 'el' ? 'el-GR' : 'en-US', { day: 'numeric', month: 'short' }) : '',
                       event.venue,
                     ].filter(Boolean).join(' · ')}
-                    accent={event.genre}
+                    accent={event.genre ? genreLabel(event.genre) : undefined}
                   />
                 ))}
               </div>

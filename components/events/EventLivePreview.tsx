@@ -4,6 +4,7 @@ import { Spectral } from 'next/font/google'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { EventFormData } from './EventFormSteps'
 import { formatMoney } from '@/app/lib/formatPrice'
+import { genreLabel } from "@/app/lib/genres";
 
 const spectral = Spectral({
   subsets: ['latin', 'latin-ext'],
@@ -92,7 +93,7 @@ export default function EventLivePreview({ form, step }: { form: EventFormData; 
                 backgroundColor: 'rgba(232,160,32,0.18)', color: GOLD,
                 border: '1px solid rgba(232,160,32,0.4)', backdropFilter: 'blur(6px)',
               }}>
-                {g}
+                {genreLabel(g)}
               </span>
             ))}
           </div>

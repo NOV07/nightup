@@ -5,12 +5,13 @@ import { useSearchParams, useRouter } from "next/navigation";
 import EventCard from "../../components/EventCard";
 import type { CropBox } from "../../../components/ui/CroppedImage";
 
-import { CITIES, GENRES, GENRE_LABELS } from "../../lib/searchConstants";
+import { CITIES, GENRE_FILTERS } from "../../lib/searchConstants";
+import { genreLabel, eventHasGenre, normalizeGenre } from "../../lib/genres";
 import { useLanguage } from "../../components/LanguageContext";
 const PAGE_SIZE = 12;
 
 interface Event {
-  id: string; title: string; image: string; crop?: CropBox | null; genre: string;
+  id: string; title: string; image: string; crop?: CropBox | null; genre: string; genres?: string[] | null;
   price: string | number | null; currency?: string | null;
   date: string; time: string; venue: string; city: string;
   interestedCount: number; goingCount: number; featured?: boolean;
@@ -24,7 +25,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
 
   const [query, setQuery]     = useState(searchParams.get("q")     || "");
   const [city, setCity]       = useState(searchParams.get("city")  || "All Cities");
-  const [genre, setGenre]     = useState(searchParams.get("genre") || "All");
+  const [genre, setGenre]     = useState(normalizeGenre(searchParams.get("genre")) ?? "All");
   const [dateFrom, setDateFrom] = useState(searchParams.get("from") || "");
   const [activeType, setActiveType] = useState<string>("All");
   const [page, setPage]       = useState(1);
@@ -41,7 +42,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
   const activeFilters: { key: string; label: string }[] = [];
   if (query)                activeFilters.push({ key: "q",    label: `"${query}"` });
   if (city !== "All Cities") activeFilters.push({ key: "city", label: city });
-  if (genre !== "All")       activeFilters.push({ key: "genre", label: genre });
+  if (genre !== "All")       activeFilters.push({ key: "genre", label: genreLabel(genre) });
   if (dateFrom)              activeFilters.push({ key: "from", label: `From ${dateFrom}` });
 
   function removeFilter(key: string) {
@@ -63,7 +64,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
 
   const filtered = initialEvents.filter((e) => {
     if (activeType !== "All" && (e.type ?? "music") !== activeType) return false;
-    if (genre !== "All" && e.genre?.toLowerCase() !== genre.toLowerCase()) return false;
+    if (genre !== "All" && !eventHasGenre(e, genre)) return false;
     if (city !== "All Cities" && e.city?.toLowerCase() !== city.toLowerCase()) return false;
     if (dateFrom && e.date < dateFrom) return false;
     if (query) {
@@ -144,7 +145,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
 
         {/* Row 3: genre pills */}
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {GENRES.map((g) => (
+          {GENRE_FILTERS.map((g) => (
             <button
               key={g}
               onClick={() => { setGenre(g); setPage(1); }}
@@ -155,7 +156,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
                 border: `1px solid ${genre === g ? "#E8A020" : "rgba(232,160,32,0.12)"}`,
               }}
             >
-              {g === "All" ? t("events_filter_all") : lang === "el" ? GENRE_LABELS[g] ?? g : g}
+              {g === "All" ? t("events_filter_all") : genreLabel(g)}
             </button>
           ))}
         </div>

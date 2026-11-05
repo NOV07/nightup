@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import MixCard, { type Mix } from "./MixCard";
+import { genreLabel } from "@/app/lib/genres";
 
 export default function MixesClient({ mixes }: { mixes: Mix[] }) {
   const genres = ["All", ...Array.from(new Set(mixes.map((m) => m.genre).filter(Boolean) as string[]))];
@@ -51,7 +52,7 @@ export default function MixesClient({ mixes }: { mixes: Mix[] }) {
                   border: `1px solid ${activeGenre === g ? "#E8A020" : "#1e1e30"}`,
                 }}
               >
-                {g}
+                {g === "All" ? g : genreLabel(g)}
               </button>
             ))}
           </div>

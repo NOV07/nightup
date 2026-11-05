@@ -8,6 +8,7 @@ import CroppedImage, { type CropBox } from "../../components/ui/CroppedImage";
 import T from "../components/T";
 import { SearchResultCount } from "./SearchResultCount";
 import { profileHref } from '@/app/lib/profileHref'
+import { genreLabel } from "@/app/lib/genres";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +115,7 @@ export default async function SearchPage({ searchParams }: Props) {
     mixRes.data?.forEach((m: any) => groups.mix.push({
       id: `mix-${m.id}`, type: "mix",
       title: m.title,
-      subtitle: [m.artist, m.genre].filter(Boolean).join(" · "),
+      subtitle: [m.artist, genreLabel(m.genre)].filter(Boolean).join(" · "),
       image: m.cover_image,
       href: `/nightwaves/mix/${m.id}`,
     }));

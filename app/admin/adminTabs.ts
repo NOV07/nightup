@@ -1,3 +1,4 @@
+import { genreLabel } from '@/app/lib/genres'
 // Tab identifiers shared by the admin panel and the admin shell chrome
 // (sidebar / mobile nav). They live here rather than in AdminClient so the
 // sidebar can render every nav entry without importing the whole panel.
@@ -18,7 +19,7 @@ export const PROFILE_TABS: Record<ProfileTab, {
 }> = {
   "profiles-artists": {
     profileType: "artist", label: "Artists", empty: "No artists yet.",
-    secondary: p => [Array.isArray(p.genres) ? p.genres.join(", ") : p.genres, p.location].filter(Boolean).join(" · "),
+    secondary: p => [Array.isArray(p.genres) ? p.genres.map(genreLabel).join(", ") : p.genres, p.location].filter(Boolean).join(" · "),
   },
   "profiles-professionals": {
     profileType: "professional", label: "Professionals", empty: "No professionals yet.",

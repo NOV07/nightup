@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
+import { parseEventGenres } from '@/app/lib/genres'
 
 // Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
 // Duplicated rather than imported: that module is a client component.
@@ -83,6 +84,14 @@ export async function PATCH(
   ]
   const payload: Record<string, unknown> = {}
   allowed.forEach(k => { if (k in body) payload[k] = body[k] })
+
+  // Keys only; the legacy singular `genre` always mirrors genres[0].
+  if ('genres' in body || 'genre' in body) {
+    const parsedGenres = parseEventGenres('genres' in body ? body.genres : (body.genre ? [body.genre] : []))
+    if (!parsedGenres.ok) return NextResponse.json({ error: parsedGenres.error }, { status: 400 })
+    payload.genres = parsedGenres.genres
+    payload.genre = parsedGenres.genre
+  }
 
   // Free-text organiser is an artist-only field; it must stay non-empty.
   if (profile.profile_type === 'artist' && 'editorial_owner_name' in body) {

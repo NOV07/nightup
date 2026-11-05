@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabase } from '../../lib/supabase'
 import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
+import { parseEventGenres } from '@/app/lib/genres'
 
 // 'professionals' was here for the About page's profile form, which is gone —
 // profiles are created through /upgrade, and the table itself is being dropped.
@@ -39,6 +40,12 @@ export async function POST(req: NextRequest) {
 
   const payload: Record<string, unknown> = {}
   EVENT_FIELDS.forEach((k) => { if (k in data) payload[k] = data[k] })
+
+  // Stable genre keys; legacy singular `genre` mirrors the first one.
+  const parsedGenres = parseEventGenres(data.genres)
+  if (!parsedGenres.ok) return NextResponse.json({ error: parsedGenres.error }, { status: 400 })
+  payload.genres = parsedGenres.genres
+  payload.genre = parsedGenres.genre
 
   // Unauthenticated endpoint — the numeric column and the currency CHECK both
   // get their input normalised here rather than trusting the caller.

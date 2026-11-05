@@ -131,12 +131,11 @@ function SectionHeader({ num, title, sub }: { num: string; title: string; sub: s
   );
 }
 
-const MUSIC_GENRES_LIST = ["House", "Techno", "Deep House", "R&B", "Hip-Hop", "Other"];
 
 // ── Kept for backward compatibility — not rendered ──────────────
 function SubmitMusicSection() {
   const [form, setForm] = useState({
-    artist_name: "", email: "", title: "", type: "Single", genre: "House",
+    artist_name: "", email: "", title: "", type: "Single", genre: "house",
     description: "", spotify_url: "", soundcloud_url: "", bandcamp_url: "",
   });
   const [coverImage, setCoverImage] = useState<string>("");
@@ -188,7 +187,7 @@ function SubmitMusicSection() {
         return;
       }
       setSubmitted(true);
-      setForm({ artist_name: "", email: "", title: "", type: "Single", genre: "House", description: "", spotify_url: "", soundcloud_url: "", bandcamp_url: "" });
+      setForm({ artist_name: "", email: "", title: "", type: "Single", genre: "house", description: "", spotify_url: "", soundcloud_url: "", bandcamp_url: "" });
       setCoverImage("");
       if (coverRef.current) coverRef.current.value = "";
     } catch {
@@ -276,7 +275,7 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
             table: "events",
             data: {
               title: rest.title, venue: rest.venue, date: rest.date,
-              time: rest.time || null, city: rest.city, genre: rest.genre,
+              time: rest.time || null, city: rest.city, genres: rest.genre ? [rest.genre] : [],
               contact_email: contact,
               instagram: rest.instagram || null, facebook: rest.facebook || null,
               tiktok: rest.tiktok || null, website: rest.website || null,

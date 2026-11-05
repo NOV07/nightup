@@ -17,6 +17,7 @@ import T from '../../components/T'
 import type { TranslationKey } from '../../lib/translations'
 import { toGalleryItems } from '../../lib/types'
 import { profileHref } from '@/app/lib/profileHref'
+import { genreLabel } from "../../lib/genres";
 
 export const dynamic = 'force-dynamic'
 
@@ -251,7 +252,7 @@ export default async function EventPage({ params }: Props) {
             backgroundColor: 'rgba(232,160,32,0.15)', color: '#E8A020',
             border: '1px solid rgba(232,160,32,0.3)',
           }}>
-            {event.genre}
+            {genreLabel(event.genre)}
           </span>
         )}
 

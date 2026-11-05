@@ -16,6 +16,7 @@ import MixCard from '@/app/nightwaves/mixes/MixCard'
 import HostedEventCard from '@/components/profile/HostedEventCard'
 import ProfileListings from '@/components/profile/ProfileListings'
 import ProfileGallery, { type ProfileGalleryPhoto } from '@/components/ui/ProfileGallery'
+import { genreLabel } from "@/app/lib/genres";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
 
@@ -445,7 +446,7 @@ export default async function ProfilePage({ params }: Props) {
                 color: '#E8A020',
                 border: '0.5px solid rgba(232,160,32,0.2)',
               }}>
-                {genre}
+                {genreLabel(genre)}
               </span>
             ))}
           </div>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import EventFormSteps, { EventFormData } from '../../../../../components/events/EventFormSteps'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { normalizeCurrency, parsePriceInput } from '@/app/lib/formatPrice'
+import { normalizeGenre } from '@/app/lib/genres'
 
 export default function EditEventClient({ event, isArtist = false }: { event: any; isArtist?: boolean }) {
   const router = useRouter()
@@ -13,7 +14,7 @@ export default function EditEventClient({ event, isArtist = false }: { event: an
 
   const initialData: Partial<EventFormData> = {
     title:             event.title ?? '',
-    genres:            Array.isArray(event.genres) ? event.genres : [],
+    genres:            Array.isArray(event.genres) ? event.genres.map((g: string) => normalizeGenre(g) ?? g) : [],
     type:              event.type ?? '',
     short_description: event.short_description ?? '',
     full_description:  event.full_description ?? '',

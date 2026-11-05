@@ -3,18 +3,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '../../../components/ui/ImageUpload'
 import { useLanguage } from '@/app/components/LanguageContext'
+import { GENRES, genreLabel } from '@/app/lib/genres'
 
 // Stored verbatim: the release pages branch on the exact strings "Single",
 // "EP" and "Album", so these values are the casing the column carries.
 const RELEASE_TYPES = ['Single', 'EP', 'Album', 'Mix', 'Compilation', 'Live Set']
-
-const GENRES = [
-  'Techno', 'House', 'Deep House', 'Minimal', 'Drum & Bass', 'Trance',
-  'Hip-Hop', 'R&B', 'Afrobeats', 'Reggaeton',
-  'Laika', 'Entechno', 'Rebetiko', 'Dimotika',
-  'Rock', 'Jazz', 'Classical', 'Blues',
-  'Electronic', 'Ambient', 'Experimental', 'Other',
-]
 
 export default function SubmitReleaseForm() {
   const router = useRouter()
@@ -200,8 +193,8 @@ export default function SubmitReleaseForm() {
                     style={{ backgroundColor: '#0F0F1A', color: form.primary_genre ? 'white' : 'rgba(255,255,255,0.4)' }}
                   >
                     <option value="" style={{ backgroundColor: '#0F0F1A', color: 'rgba(255,255,255,0.4)' }}>{t('release_submit_select_genre')}</option>
-                    {GENRES.map(g => (
-                      <option key={g} value={g} style={{ backgroundColor: '#0F0F1A', color: 'white' }}>{g}</option>
+                    {GENRES.map(({ key: g, label_el }) => (
+                      <option key={g} value={g} style={{ backgroundColor: '#0F0F1A', color: 'white' }}>{label_el}</option>
                     ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#E8A020' }}>▾</div>
@@ -211,7 +204,7 @@ export default function SubmitReleaseForm() {
               <div>
                 <label className={labelClass}>{t('release_submit_secondary_genres_label')}</label>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {GENRES.map(g => (
+                  {GENRES.map(({ key: g, label_el }) => (
                     <button
                       key={g}
                       type="button"
@@ -223,7 +216,7 @@ export default function SubmitReleaseForm() {
                         border: `1px solid ${form.secondary_genres.includes(g) ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
                       }}
                     >
-                      {g}
+                      {label_el}
                     </button>
                   ))}
                 </div>
@@ -249,7 +242,7 @@ export default function SubmitReleaseForm() {
                     {form.secondary_genres.map(g => (
                       <span key={g} className="text-xs px-3 py-1 rounded-full flex items-center gap-1.5"
                         style={{ backgroundColor: 'rgba(232,160,32,0.15)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.3)' }}>
-                        {g}
+                        {genreLabel(g)}
                         <button type="button" onClick={() => toggleSecondaryGenre(g)} className="hover:opacity-70">✕</button>
                       </span>
                     ))}

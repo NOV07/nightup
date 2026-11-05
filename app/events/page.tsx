@@ -52,7 +52,7 @@ export default async function EventsPage() {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, price, currency, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, genre, genres, price, currency, date, time, venue, city, interested_count, going_count, featured_until, is_radar_pick, type")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true });
@@ -63,7 +63,8 @@ export default async function EventsPage() {
         title: e.title,
         image: getEventCoverImage(e),
         crop: getEventCrop(e),
-        genre: e.genre,
+        genre: e.genre ?? e.genres?.[0] ?? "",
+        genres: e.genres ?? null,
         // Raw amount + code: formatPrice puts the right symbol on it, per language.
         price: e.price ?? "",
         currency: e.currency ?? "EUR",

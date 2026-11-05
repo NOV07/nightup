@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CITIES, GENRES } from "../lib/searchConstants";
+import { CITIES, GENRE_FILTERS } from "../lib/searchConstants";
+import { genreLabel } from "../lib/genres";
 const PRO_CATEGORIES = ["All Categories", "Venues", "Music & Artists", "Sound & Lighting", "Food & Drinks", "Decoration", "Transport & VIP", "Photography"];
 
 type Mode = "events" | "network";
@@ -21,7 +22,7 @@ const selectStyle: React.CSSProperties = {
 export default function HeroSearch() {
   const [mode, setMode] = useState<Mode>("events");
   const [city, setCity] = useState("All Cities");
-  const [genre, setGenre] = useState(GENRES[0]);
+  const [genre, setGenre] = useState(GENRE_FILTERS[0]);
   const [category, setCategory] = useState("All Categories");
   const [date, setDate] = useState("");
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function HeroSearch() {
     const params = new URLSearchParams();
     if (city !== "All Cities") params.set("city", city);
     if (mode === "events") {
-      if (genre !== GENRES[0]) params.set("genre", genre);
+      if (genre !== GENRE_FILTERS[0]) params.set("genre", genre);
       if (date) params.set("date", date);
       router.push(`/events?${params.toString()}`);
     } else {
@@ -102,7 +103,7 @@ export default function HeroSearch() {
                 </svg>
               </span>
               <select value={genre} onChange={(e) => setGenre(e.target.value)} style={selectStyle}>
-                {GENRES.map((g) => <option key={g} value={g} style={{ backgroundColor: "var(--bg-surface)" }}>{g}</option>)}
+                {GENRE_FILTERS.map((g) => <option key={g} value={g} style={{ backgroundColor: "var(--bg-surface)" }}>{g === "All" ? g : genreLabel(g)}</option>)}
               </select>
             </div>
             <div className="flex items-center sm:border-r" style={{ borderColor: "var(--gold)" }}>

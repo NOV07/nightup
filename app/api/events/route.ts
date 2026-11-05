@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
+import { parseEventGenres } from '@/app/lib/genres'
 
 // Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
 // Duplicated rather than imported: that module is a client component.
@@ -56,6 +57,10 @@ export async function POST(req: NextRequest) {
   const payload: Record<string, unknown> = {}
   allowed.forEach(k => { if (k in body) payload[k] = body[k] })
 
+  // Stable genre keys; the legacy singular column mirrors the first one.
+  const parsedGenres = parseEventGenres((body as any).genres)
+  if (!parsedGenres.ok) return NextResponse.json({ error: parsedGenres.error }, { status: 400 })
+
   // Artists host under their own account but name the organiser as free text,
   // stored in editorial_owner_name. Other types never send it, so ignore it.
   if (profile.profile_type === 'artist') {
@@ -74,7 +79,8 @@ export async function POST(req: NextRequest) {
     .from('events')
     .insert({
       ...payload,
-      genres: (body as any).genres ?? [],
+      genres: parsedGenres.genres,
+      genre: parsedGenres.genre,
       profile_id: profile.id,
       status: 'pending',
     })

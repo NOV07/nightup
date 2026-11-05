@@ -12,13 +12,15 @@ import EventsFilterModal, { EventsFilterResult } from "@/components/EventsFilter
 import { useRegisterModalOpen } from "../components/ModalStateContext";
 import { usePlayerStore } from "../components/PlayerContext";
 
-import { CITIES, GENRES, CITY_LABELS, GENRE_LABELS } from "../lib/searchConstants";
+import { CITIES, GENRE_FILTERS, CITY_LABELS } from "../lib/searchConstants";
+import { genreLabel, eventHasGenre, normalizeGenre } from "../lib/genres";
 
 interface Event {
   id: string;
   title: string;
   image: string;
   genre: string;
+  genres?: string[] | null;
   price: string | number | null;
   currency?: string | null;
   date: string;
@@ -133,7 +135,8 @@ export default function EventsClient({
     const d = searchParams.get("date");
     if (q) setQuery(q);
     if (c && CITIES.includes(c)) setCity(c);
-    if (g && GENRES.includes(g)) setGenre(g);
+    const gKey = g ? (normalizeGenre(g) ?? g) : null;
+    if (gKey && GENRE_FILTERS.includes(gKey)) setGenre(gKey);
     if (d) setDateFilter(d);
   }, [searchParams]);
 
@@ -165,7 +168,7 @@ export default function EventsClient({
 
   // ── Filter ───────────────────────────────────────────────────
   const filtered = events.filter((e) => {
-    if (genre !== "All" && e.genre !== genre) return false;
+    if (genre !== "All" && !eventHasGenre(e, genre)) return false;
     if (city !== "All Cities" && e.city !== city) return false;
     if (dateFilter && e.date?.slice(0, 10) !== dateFilter) return false;
     if (query) {
@@ -424,7 +427,7 @@ export default function EventsClient({
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {GENRES.map((g) => (
+          {GENRE_FILTERS.map((g) => (
             <button
               key={g}
               onClick={() => setGenre(g)}
@@ -441,7 +444,7 @@ export default function EventsClient({
                 border: `1px solid ${genre === g ? "rgba(232,160,32,0.15)" : "rgba(255,255,255,0.06)"}`,
               }}
             >
-              {g === "All" ? t("events_filter_all") : lang === "el" ? GENRE_LABELS[g] ?? g : g}
+              {g === "All" ? t("events_filter_all") : genreLabel(g)}
             </button>
           ))}
         </div>
