@@ -4,6 +4,7 @@ import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 import { withIngestedEventImage } from '@/app/lib/ingestImage'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
+import { withSpotTaxonomy } from '@/app/lib/spotInput'
 
 function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
@@ -33,6 +34,17 @@ export async function POST(req: NextRequest) {
   if (table === 'spots') {
     const coordsError = spotCoordsError(row, { allowEmpty: true })
     if (coordsError) return NextResponse.json({ error: coordsError }, { status: 400 })
+
+    // Category/subcategory go through the same validator as every other spot
+    // write; a payload without them (e.g. the featured star) is left alone.
+    let existingCategories: string[] = []
+    if (row.subcategories !== undefined || row.subcategory !== undefined) {
+      const { data: stored } = await admin.from('spots').select('categories').eq('id', id).maybeSingle()
+      existingCategories = stored?.categories ?? []
+    }
+    const taxonomy = withSpotTaxonomy(row, { required: false, existingCategories })
+    if (!taxonomy.ok) return NextResponse.json({ error: taxonomy.error }, { status: 400 })
+    row = taxonomy.row
   }
   if (table === 'events' && typeof row.image_url === 'string' && row.image_url.trim()) {
     // The edit forms normally send the flag along, but a partial payload has to
