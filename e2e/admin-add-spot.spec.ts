@@ -40,7 +40,7 @@ function decodeGeo(hex: string | null) {
 
 async function rowsNamed(name: string) {
   const { data, error } = await sb.from('spots')
-    .select('id, name, slug, lat, lng, geo, is_published, owner_id, category, subcategory')
+    .select('id, name, slug, lat, lng, geo, is_published, owner_id, category, subcategory, categories, subcategories')
     .eq('name', name)
   if (error) throw new Error(error.message)
   return data ?? []
@@ -59,8 +59,10 @@ async function openAddForm(page: Page) {
 
 async function fillSpot(page: Page, name: string, { pin = true, publish = false } = {}) {
   await page.locator('form input[required]').first().fill(name)
-  await page.getByTestId('admin-spot-category').selectOption('drink')
-  await page.getByTestId('admin-spot-subcategory').selectOption('cocktail bar')
+  // The form starts with 'drink' picked (primary). Add nightlife as a second category.
+  await page.getByTestId('admin-spot-cat-nightlife').click()
+  await page.getByTestId('admin-spot-sub-cocktail_bar').click()
+  await page.getByTestId('admin-spot-sub-club').click()
   if (pin) {
     const map = page.getByTestId('admin-add-spot-map').getByTestId('location-picker')
     await map.scrollIntoViewIfNeeded()
@@ -113,7 +115,9 @@ function suite(label: string) {
     expect(r1.is_published).toBe(false)
     expect(r1.owner_id).toBeNull()
     expect(r1.category).toBe('drink')
-    expect(r1.subcategory).toBe('cocktail bar')
+    expect(r1.categories).toEqual(['drink', 'nightlife'])
+    expect(r1.subcategory).toBe('cocktail_bar')
+    expect(r1.subcategories).toEqual(['cocktail_bar', 'club'])
     expect(Math.abs(r1.lat - coords.lat)).toBeLessThan(1e-5)
     expect(Math.abs(r1.lng - coords.lng)).toBeLessThan(1e-5)
     const geo = decodeGeo(r1.geo as string | null)
@@ -161,6 +165,9 @@ function suite(label: string) {
       ['no pin', { ...valid, lat: null, lng: null }, /Missing coordinates/],
       ['bad category', { ...valid, category: 'casino' }, /Category must be one of/],
       ['bad subcategory', { ...valid, subcategory: 'karaoke' }, /not in the list/],
+      ['four categories', { ...valid, category: undefined, categories: ['food', 'drink', 'show', 'chill'] }, /at most 3 categories/],
+      ['four subcategories', { ...valid, category: undefined, categories: ['food'], subcategories: ['souvlaki', 'burger', 'sushi', 'italian'] }, /at most 3 subcategories/],
+      ['subcategory of an unpicked category', { ...valid, category: undefined, categories: ['drink'], subcategories: ['club'] }, /not in the list for drink/],
       ['owner_id', { ...valid, owner_id: '00000000-0000-0000-0000-000000000000' }, /Unknown field.*owner_id/],
       ['status', { ...valid, status: 'approved' }, /Unknown field.*status/],
     ]

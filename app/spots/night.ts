@@ -1,6 +1,6 @@
 import type { Spot } from "./types";
-import type { SpotCategory } from "../lib/spotCategories";
-import { spotInCategory } from "../lib/spotCategories";
+import type { SpotCategory } from "../lib/spotCategories.ts";
+import { spotInCategory } from "../lib/spotCategories.ts";
 
 /** Categories of the three stops, per mood. One copy for the API and the modal. */
 export function moodSequence(mood: string): SpotCategory[] {
