@@ -268,6 +268,44 @@ export function primarySubLabel(spot: SpotTaxonomy, lang: string): string | null
   return spotSubLabel(key, lang) || null
 }
 
+// ── Picking (wizard, admin) ─────────────────────────────────────────────────
+// Pure state transitions shared by every picker, so the 3 + 3 limits, the
+// "primary = first" rule and the "a subcategory needs its category" rule live
+// in one place.
+
+export type TaxonomyPick = { categories: SpotCategory[]; subcategories: string[] }
+
+/** Add or remove a category. Removing one also drops its subcategories. A 4th pick is ignored. */
+export function toggleSpotCategory(state: TaxonomyPick, key: SpotCategory): TaxonomyPick {
+  if (state.categories.includes(key)) {
+    const categories = state.categories.filter(c => c !== key)
+    const subcategories = state.subcategories.filter(s => {
+      const owner = subCategoryOf(s)
+      return owner != null && categories.includes(owner)
+    })
+    return { categories, subcategories }
+  }
+  if (state.categories.length >= MAX_SPOT_CATEGORIES) return state
+  return { ...state, categories: [...state.categories, key] }
+}
+
+/** Move a picked category to the front: it becomes the primary one. */
+export function makePrimaryCategory(state: TaxonomyPick, key: SpotCategory): TaxonomyPick {
+  if (!state.categories.includes(key)) return state
+  return { ...state, categories: [key, ...state.categories.filter(c => c !== key)] }
+}
+
+/** Add or remove a subcategory. Only subcategories of a picked category can be added; a 4th is ignored. */
+export function toggleSpotSub(state: TaxonomyPick, key: string): TaxonomyPick {
+  if (state.subcategories.includes(key)) {
+    return { ...state, subcategories: state.subcategories.filter(s => s !== key) }
+  }
+  const owner = subCategoryOf(key)
+  if (!owner || !state.categories.includes(owner)) return state
+  if (state.subcategories.length >= MAX_SPOT_SUBCATEGORIES) return state
+  return { ...state, subcategories: [...state.subcategories, key] }
+}
+
 // ── Validation (API, admin, wizard) ─────────────────────────────────────────
 
 export type TaxonomyInput = {

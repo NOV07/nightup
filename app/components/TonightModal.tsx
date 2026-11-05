@@ -3,7 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import SpotCard from "./SpotCard";
-import { SPOT_CATEGORIES, SUBCATEGORIES, MOODS, loc, type Spot, type SpotCategory } from "../spots/types";
+import { MOODS, loc, type Spot } from "../spots/types";
+import { moodSequence, pickSequence } from "../spots/night";
+import {
+  SPOT_CATEGORIES, spotCategoryDef, spotCategoryLabel, spotInCategory, spotSubsInCategory, subsOf, type SpotCategory,
+} from "../lib/spotCategories";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { getEventMood } from "../lib/eventMood";
 import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
@@ -32,29 +36,17 @@ export interface EventLite {
   price: string | null;
 }
 
-// client-side night builder (mirror του data.ts buildNight)
+// client-side night builder (fallback when /api/spots/build-night fails)
 function buildNight(all: Spot[], mood: string): Spot[] {
-  const pick = (c: SpotCategory): Spot | null => {
-    const pool = all.filter((s) => s.category === c);
-    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
-  };
-  const seq: SpotCategory[] =
-    mood === "food" ? ["food", "drink", "show"]
-    : mood === "wild" ? ["food", "drink", "nightlife"]
-    : mood === "diff" ? ["chill", "show", "drink"]
-    : ["food", "drink", "nightlife"];
-  return seq.map(pick).filter(Boolean) as Spot[];
+  return pickSequence(all, moodSequence(mood), true);
 }
 
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
   const { t, lang } = useLanguage();
   const WALKS = [t("tonight_walk_2"), t("tonight_walk_4")];
-  const SPOT_CAT_LABELS: Record<SpotCategory, string> = {
-    food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
-    show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
-    art: t("tonight_cat_art"), wellness: t("tonight_cat_wellness"),
-  };
+  // The stop's own category (the one it was picked for), shown uppercase via CSS.
+  const stopCategoryLabel = (s: Spot) => spotCategoryLabel(s.nightSlot ?? s.category, lang);
   const LOAD_STEPS = [t("tonight_load_1"), t("tonight_load_2"), t("tonight_load_3"), t("tonight_load_4")];
   const [view, setView] = useState<"tiles" | "subcats" | "results" | "night">("tiles");
   const [activeCat, setActiveCat] = useState<SpotCategory>("drink");
@@ -146,7 +138,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
 
   const keepNight = async () => {
     const lines = night.map((s, i) =>
-      `${STOP_TIMES[i] ?? ""} · ${SPOT_CAT_LABELS[s.category]}\n${s.name}${s.address ? `, ${s.address}` : ""}${s.neighborhood ? `, ${s.neighborhood}` : ""}`
+      `${STOP_TIMES[i] ?? ""} · ${stopCategoryLabel(s).toUpperCase()}\n${s.name}${s.address ? `, ${s.address}` : ""}${s.neighborhood ? `, ${s.neighborhood}` : ""}`
     );
     const text = `${t("tonight_share_text")}\n\n${lines.join("\n\n")}\n\nvia nightup.gr`;
     try {
@@ -167,12 +159,12 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   };
 
   const catSpots = spots.filter((s) =>
-    s.category === activeCat && (!activeSub || s.subcategory === activeSub)
+    spotInCategory(s, activeCat) && (!activeSub || spotSubsInCategory(s, activeCat).includes(activeSub))
   );
   const now = new Date();
   const days = t("tonight_days").split(",");
   const kicker = `${days[now.getDay()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}  ${t("filter_athens")}`;
-  const activeCatDef = SPOT_CATEGORIES.find((c) => c.key === activeCat);
+  const activeCatDef = spotCategoryDef(activeCat);
 
   if (!open) return null;
 
@@ -206,8 +198,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                       onMouseLeave={(e)=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor="rgba(255,255,255,0.055)";}}>
                       <SpotCategoryIcon category={c.key} size={22} />
                       <div>
-                        <div style={S.tileLabel}>{loc(lang, c.label, c.label_en)}</div>
-                        <div style={S.tileSub}>{loc(lang, c.sub, c.sub_en)}</div>
+                        <div style={S.tileLabel}>{loc(lang, c.label_el, c.label_en)}</div>
+                        <div style={S.tileSub}>{loc(lang, c.hint_el, c.hint_en)}</div>
                       </div>
                     </button>
                   ))}
@@ -229,17 +221,17 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
               <div>
                 <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_back")}</button>
                 <div style={S.resHead}>
-                  {activeCatDef ? loc(lang, activeCatDef.label, activeCatDef.label_en) : null} <em style={S.em}>· {t("tonight_vibe_q")}</em>
+                  {activeCatDef ? loc(lang, activeCatDef.label_el, activeCatDef.label_en) : null} <em style={S.em}>· {t("tonight_vibe_q")}</em>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 18 }}>
                   <button onClick={() => goResults(null)} style={S.subChip}>{t("tonight_all_sub")}</button>
-                  {SUBCATEGORIES[activeCat].map((sub) => {
-                    const count = spots.filter((s) => s.category === activeCat && s.subcategory === sub.value).length;
+                  {subsOf(activeCat).map((sub) => {
+                    const count = spots.filter((s) => spotInCategory(s, activeCat) && spotSubsInCategory(s, activeCat).includes(sub.key)).length;
                     const disabled = count === 0;
                     return (
                       <button
-                        key={sub.value}
-                        onClick={() => !disabled && goResults(sub.value)}
+                        key={sub.key}
+                        onClick={() => !disabled && goResults(sub.key)}
                         disabled={disabled}
                         style={{
                           ...S.subChip,
@@ -247,7 +239,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                           cursor: disabled ? "default" : "pointer",
                         }}
                       >
-                        {loc(lang, sub.label, sub.label_en)}{disabled ? ` · ${t("tonight_coming_soon")}` : ` · ${count}`}
+                        {loc(lang, sub.label_el, sub.label_en)}{disabled ? ` · ${t("tonight_coming_soon")}` : ` · ${count}`}
                       </button>
                     );
                   })}
@@ -262,10 +254,10 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                 <div style={S.resHead}>
                   {(() => {
                     if (activeSub) {
-                      const s = SUBCATEGORIES[activeCat].find((x) => x.value === activeSub);
-                      return s ? loc(lang, s.label, s.label_en) : activeSub;
+                      const s = subsOf(activeCat).find((x) => x.key === activeSub);
+                      return s ? loc(lang, s.label_el, s.label_en) : activeSub;
                     }
-                    return activeCatDef ? loc(lang, activeCatDef.label, activeCatDef.label_en) : null;
+                    return activeCatDef ? loc(lang, activeCatDef.label_el, activeCatDef.label_en) : null;
                   })()}
                   {" "}<em style={S.em}>· {t("tonight_near")}</em>
                 </div>
@@ -285,7 +277,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                   {night.map((s, i) => (
                     <div key={s.id}>
                       <div style={{ fontSize: 11.5, color: "#E8A020", fontWeight: 700, letterSpacing: "0.7px", marginBottom: 6 }}>
-                        {STOP_TIMES[i]} · {SPOT_CAT_LABELS[s.category]}
+                        {STOP_TIMES[i]} · <span style={{ textTransform: "uppercase" }}>{stopCategoryLabel(s)}</span>
                       </div>
                       <SpotCard spot={s} compact onNavigate={handleClose} />
                       {i < night.length - 1 && (

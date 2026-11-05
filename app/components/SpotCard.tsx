@@ -7,6 +7,7 @@ import { FiHeart } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { toast } from "sonner";
 import { spotPriceLabel, type Spot } from "../spots/types";
+import { primarySubLabel } from "../lib/spotCategories";
 import { useLanguage } from "../components/LanguageContext";
 import CroppedImage from "../../components/ui/CroppedImage";
 import { useOwned } from "../lib/useOwned";
@@ -31,7 +32,7 @@ export default function SpotCard({
   const isOwn = useOwned()?.spots.has(String(spot.id)) ?? false;
   const pathname = usePathname();
   const router = useRouter();
-  const { t: tToast } = useLanguage();
+  const { t: tToast, lang } = useLanguage();
   const price = spotPriceLabel(spot, tToast("spots_price_per_person"));
   const img = spot.coverImage || PLACE;
   // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
@@ -114,7 +115,7 @@ export default function SpotCard({
               {spot.name}
             </div>
             <div style={{ fontSize: 12, color: "#A1A1AA", marginTop: 3 }}>
-              {[spot.subcategory, spot.neighborhood].filter(Boolean).join(" · ")}
+              {[primarySubLabel(spot, lang), spot.neighborhood].filter(Boolean).join(" · ")}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, fontSize: 11.5, color: "#71717A" }}>
               {spot.rating != null && <span style={{ color: "#E8A020", flexShrink: 0 }}>★ {spot.rating}</span>}
@@ -186,7 +187,7 @@ export default function SpotCard({
             {spot.name}
           </div>
           <div style={{ fontSize: 12.5, color: "#A1A1AA", marginTop: 5 }}>
-            {[spot.subcategory, spot.neighborhood].filter(Boolean).join(" · ")}
+            {[primarySubLabel(spot, lang), spot.neighborhood].filter(Boolean).join(" · ")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12, fontSize: 12.5, color: "#71717A" }}>
             {spot.rating != null && <span style={{ color: "#E8A020", fontWeight: 600, flexShrink: 0 }}>★ {spot.rating}</span>}

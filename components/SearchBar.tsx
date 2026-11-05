@@ -8,6 +8,7 @@ import { CITIES, GENRE_FILTERS, NETWORK } from "../app/lib/searchData";
 import { genreLabel } from "../app/lib/genres";
 import { useLanguage } from "../app/components/LanguageContext";
 import { networkCategoryLabel } from "../app/lib/searchData";
+import { primaryCategory, spotCategoryLabel } from "../app/lib/spotCategories";
 import { useHideTonightFab } from "../app/components/TonightFabVisibilityContext";
 import { profileHref } from '@/app/lib/profileHref'
 
@@ -192,7 +193,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
       // professionals keep their role in the category and leave the subcategory
       // empty, so searching one without the other never matched them by type.
       sb.from("profiles").select("id, username, display_name, network_category, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${q}%,network_category.ilike.%${q}%,network_subcategory.ilike.%${q}%`).limit(4),
-      sb.from("spots").select("id, name, slug, category, neighborhood").ilike("name", pattern).eq("is_published", true).limit(2),
+      sb.from("spots").select("id, name, slug, category, categories, neighborhood").ilike("name", pattern).eq("is_published", true).limit(2),
       sb.from("music_releases").select("id, title, artist, type").ilike("title", pattern).eq("status", "approved").limit(2),
     ]);
     const found: SearchResult[] = [];
@@ -209,7 +210,7 @@ export default function SearchBar({ open, activeTab, onClose, onTabChange }: Sea
       found.push({ id: `prof-${p.id}`, title: p.display_name, subtitle: [networkCategoryLabel(p.network_subcategory || p.network_category, lang), p.location].filter(Boolean).join(" · "), type: "profile", href: profileHref(p.username) })
     );
     spotRes.data?.forEach((s: any) =>
-      found.push({ id: `spot-${s.id}`, title: s.name, subtitle: [s.category, s.neighborhood].filter(Boolean).join(" · "), type: "spot", href: `/spots/${s.slug}` })
+      found.push({ id: `spot-${s.id}`, title: s.name, subtitle: [spotCategoryLabel(primaryCategory(s), lang), s.neighborhood].filter(Boolean).join(" · "), type: "spot", href: `/spots/${s.slug}` })
     );
     relRes.data?.forEach((r: any) =>
       found.push({ id: `rel-${r.id}`, title: r.title, subtitle: r.artist, type: "release", href: `/nightwaves/release/${r.id}` })

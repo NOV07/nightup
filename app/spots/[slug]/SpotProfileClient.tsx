@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { SUBCATEGORIES, loc, spotPriceLabel, type Spot } from "../types";
+import { spotPriceLabel, type Spot } from "../types";
+import { spotCategoryLabel, spotSubLabel } from "../../lib/spotCategories";
 import { useLanguage } from "../../components/LanguageContext";
 import TranslatedText from "../../components/TranslatedText";
 import CroppedImage from "../../../components/ui/CroppedImage";
@@ -44,15 +45,10 @@ export default function SpotProfileClient({ spot, owner = null, events = [], lis
   const { t, lang } = useLanguage();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const CAT_LABEL: Record<string, string> = {
-    food: t("tonight_cat_food"), drink: t("tonight_cat_drink"), nightlife: t("tonight_cat_night"),
-    show: t("tonight_cat_show"), chill: t("tonight_cat_chill"), activity: t("tonight_cat_activity"),
-    art: t("tonight_cat_art"), wellness: t("tonight_cat_wellness"),
-  };
-  const subcatDef = spot.subcategory
-    ? SUBCATEGORIES[spot.category]?.find((s) => s.value === spot.subcategory)
-    : null;
-  const subcatLabel = subcatDef ? loc(lang, subcatDef.label, subcatDef.label_en) : spot.subcategory;
+  // Every category (primary first), then the subcategories.
+  const catLine = spot.categories.map((c) => spotCategoryLabel(c, lang)).join(" / ");
+  const subLine = spot.subcategories.map((k) => spotSubLabel(k, lang)).join(", ");
+  const taxonomyLabel = subLine ? `${catLine} · ${subLine}` : catLine;
   const cover = spot.coverImage || PLACE;
   // A stored crop was set against spot.coverImage — don't apply it to the PLACE fallback.
   const coverCrop = spot.coverImage ? spot.crop : null;
@@ -93,7 +89,7 @@ export default function SpotProfileClient({ spot, owner = null, events = [], lis
 
               <div style={{ minWidth: 0, paddingBottom: 6 }}>
                 <div style={{ fontSize: 11, letterSpacing: "2px", textTransform: "uppercase", color: "#E8A020", fontWeight: 700 }}>
-                  {CAT_LABEL[spot.category]}{subcatLabel ? ` · ${subcatLabel}` : ""}
+                  {taxonomyLabel}
                 </div>
                 <h1 style={{ fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: "clamp(26px, 7vw, 40px)", letterSpacing: "-1px", marginTop: 6, lineHeight: 1.05, overflowWrap: "anywhere" }}>{spot.name}</h1>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
@@ -126,7 +122,7 @@ export default function SpotProfileClient({ spot, owner = null, events = [], lis
               <span style={{ alignSelf: "flex-start", marginBottom: 12, background: "rgba(10,10,18,0.78)", color: "#E8A020", fontSize: 10, fontWeight: 700, letterSpacing: "0.6px", padding: "5px 10px", borderRadius: 4, border: "1px solid rgba(232,160,32,0.15)" }}>{t("spots_sponsored")}</span>
             )}
             <div style={{ fontSize: 11, letterSpacing: "2.5px", textTransform: "uppercase", color: "#E8A020", fontWeight: 700 }}>
-              {CAT_LABEL[spot.category]}{subcatLabel ? ` · ${subcatLabel}` : ""}
+              {taxonomyLabel}
             </div>
             <h1 style={{ fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 44, letterSpacing: "-1.2px", marginTop: 8, lineHeight: 1 }}>{spot.name}</h1>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 14, fontSize: 14, color: "#A1A1AA" }}>

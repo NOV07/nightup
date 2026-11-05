@@ -9,7 +9,8 @@ import CroppedImage from '@/components/ui/CroppedImage'
 import { SPOT_CROP_ASPECT, loc } from '@/app/spots/types'
 import {
   SPOT_CATEGORIES, MAX_SPOT_CATEGORIES, MAX_SPOT_SUBCATEGORIES,
-  spotCategoryLabel, spotSubLabel, subCategoryOf, type SpotCategory,
+  spotCategoryLabel, spotSubLabel, toggleSpotCategory, makePrimaryCategory, toggleSpotSub,
+  type SpotCategory, type TaxonomyPick,
 } from '@/app/lib/spotCategories'
 import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import SpotLivePreview from './SpotLivePreview'
@@ -258,28 +259,14 @@ function Step1({ form, set, stepErrors }: {
   const atMaxCats = form.categories.length >= MAX_SPOT_CATEGORIES
   const atMaxSubs = form.subcategories.length >= MAX_SPOT_SUBCATEGORIES
 
-  function toggleCategory(key: SpotCategory) {
-    if (form.categories.includes(key)) {
-      const categories = form.categories.filter(c => c !== key)
-      set('categories', categories)
-      // A subcategory only stays while one of its categories is still picked.
-      set('subcategories', form.subcategories.filter(s => {
-        const owner = subCategoryOf(s)
-        return owner != null && categories.includes(owner)
-      }))
-    } else if (!atMaxCats) {
-      set('categories', [...form.categories, key])
-    }
+  function apply(next: TaxonomyPick) {
+    set('categories', next.categories)
+    set('subcategories', next.subcategories)
   }
-
-  function makePrimary(key: SpotCategory) {
-    set('categories', [key, ...form.categories.filter(c => c !== key)])
-  }
-
-  function toggleSub(key: string) {
-    if (form.subcategories.includes(key)) set('subcategories', form.subcategories.filter(s => s !== key))
-    else if (!atMaxSubs) set('subcategories', [...form.subcategories, key])
-  }
+  const pickState: TaxonomyPick = { categories: form.categories, subcategories: form.subcategories }
+  const toggleCategory = (key: SpotCategory) => apply(toggleSpotCategory(pickState, key))
+  const makePrimary = (key: SpotCategory) => apply(makePrimaryCategory(pickState, key))
+  const toggleSub = (key: string) => apply(toggleSpotSub(pickState, key))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

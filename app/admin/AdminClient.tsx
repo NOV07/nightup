@@ -8,7 +8,9 @@ import ImageCropper, { type CropBox } from "../../components/ui/ImageCropper";
 import EventFormSteps, { type EventFormData } from "../../components/events/EventFormSteps";
 import { CURRENCIES, normalizeCurrency, parsePriceInput } from "../lib/formatPrice";
 import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
-import { SPOT_CROP_ASPECT, SUBCATEGORIES, type SpotCategory } from "../spots/types";
+import { SPOT_CROP_ASPECT } from "../spots/types";
+import SpotTaxonomyPicker from "../../components/spots/SpotTaxonomyPicker";
+import { primaryCategory, spotCategoriesOf, spotCategoryLabel, spotSubcategoriesOf, spotSubLabel, type SpotCategory } from "../lib/spotCategories";
 import LocationPicker from "../../components/maps/LocationPicker";
 import { useLanguage } from "../components/LanguageContext";
 import { profileHref } from '@/app/lib/profileHref'
@@ -31,7 +33,6 @@ type SelectOption = string | { value: string; label: string };
 const CITIES = ["Athens","Thessaloniki","Mykonos","Santorini","Heraklion","Patras","Rhodes","Ios","Corfu","Zakynthos"];
 const ART_CATEGORIES = ["Venues","Festivals","Artists","Guide","Music","Culture"];
 const RELEASE_TYPES = ["Single","EP","Album"];
-const SPOT_CATS = ["food","drink","nightlife","show","chill","activity","art","wellness"];
 const EVENT_TYPE_LABELS: Record<string, string> = {
   music: "Μουσική", culture: "Κουλτούρα", sports: "Αθλητισμός", other: "Άλλα",
 };
@@ -204,7 +205,7 @@ function toReleasePayload(form: Record<string, unknown>) {
 const defaultMixForm = { title:"",artist:"",genre:"house",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"",profile_id:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
-const defaultSpotForm = { name:"",slug:"",category:"drink",subcategory:"",city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,is_published:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
+const defaultSpotForm = { name:"",slug:"",categories:["drink"] as SpotCategory[],subcategories:[] as string[],city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,is_published:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
 
 export default function AdminClient() {
   const { t } = useLanguage();
@@ -744,7 +745,6 @@ export default function AdminClient() {
           price_level: spotForm.price_level ? parseInt(spotForm.price_level) : null,
           price_text: spotForm.price_text.trim() || null,
           rating: spotForm.rating ? parseFloat(spotForm.rating) : null,
-          subcategory: spotForm.subcategory || null,
           neighborhood: spotForm.neighborhood || null,
           address: spotForm.address || null,
         },
@@ -935,7 +935,7 @@ export default function AdminClient() {
       : isRelease            ? [item.type, genreLabel(item.primary_genre as string)].filter(Boolean).join(" · ")
       : isMix                ? genreLabel(item.genre as string)
       : isArtist             ? (item.origin as string) || ""
-      : isSpot               ? [item.category, item.subcategory, item.city].filter(Boolean).join(" · ")
+      : isSpot               ? [spotCategoryLabel(primaryCategory(item as any), "en"), spotSubLabel(spotSubcategoriesOf(item as any)[0], "en"), item.city].filter(Boolean).join(" · ")
       : (item.category as string) || "";
 
     // The secondary actions, shared between the desktop inline strip and the
@@ -1783,8 +1783,7 @@ export default function AdminClient() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div><label className={labelCls}>Name *</label><input required className={inputCls} style={inputStyle} value={spotForm.name} onChange={e => setSpotForm(f => ({ ...f, name:e.target.value }))} /></div>
                             <div><label className={labelCls}>Slug</label><input className={inputCls} style={inputStyle} value={spotForm.slug} onChange={e => setSpotForm(f => ({ ...f, slug:e.target.value }))} placeholder="my-spot-name" /></div>
-                            <div><label className={labelCls}>Category</label><select data-testid="admin-spot-category" className={inputCls} style={inputStyle} value={spotForm.category} onChange={e => setSpotForm(f => ({ ...f, category:e.target.value, subcategory:"" }))}>{SPOT_CATS.map(c => <option key={c}>{c}</option>)}</select></div>
-                            <div><label className={labelCls}>Subcategory</label><select data-testid="admin-spot-subcategory" className={inputCls} style={inputStyle} value={spotForm.subcategory} onChange={e => setSpotForm(f => ({ ...f, subcategory:e.target.value }))}><option value="">None</option>{(SUBCATEGORIES[spotForm.category as SpotCategory] ?? []).map(s => <option key={s.value} value={s.value}>{s.label_en}</option>)}</select></div>
+                            <SpotTaxonomyPicker labelCls={labelCls} value={{ categories: spotForm.categories, subcategories: spotForm.subcategories }} onChange={n => setSpotForm(f => ({ ...f, categories: n.categories, subcategories: n.subcategories }))} />
                             <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={spotForm.city} onChange={e => setSpotForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
                             <div><label className={labelCls}>Neighborhood</label><input className={inputCls} style={inputStyle} value={spotForm.neighborhood} onChange={e => setSpotForm(f => ({ ...f, neighborhood:e.target.value }))} /></div>
                             <div><label className={labelCls}>Address</label><input className={inputCls} style={inputStyle} value={spotForm.address} onChange={e => setSpotForm(f => ({ ...f, address:e.target.value }))} /></div>
@@ -1939,7 +1938,6 @@ export default function AdminClient() {
               artCategories={ART_CATEGORIES}
               releaseTypes={RELEASE_TYPES}
               musicGenres={GENRE_OPTIONS}
-              spotCategories={SPOT_CATS}
             />
             )}
           </div>
@@ -1998,13 +1996,13 @@ function eventGenrePatch(form: Record<string, unknown>) {
   return { genre: g, genres: g ? [g, ...rest] : rest };
 }
 
-function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputStyle, labelCls, genres, cities, artCategories, releaseTypes, musicGenres, spotCategories }: {
+function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputStyle, labelCls, genres, cities, artCategories, releaseTypes, musicGenres, }: {
   item: ContentItem; tab: string; subtab?: string;
   onSave: (table: string, id: string, data: Record<string, unknown>) => void;
   loading: boolean; error: string;
   inputCls: string; inputStyle: React.CSSProperties; labelCls: string;
   genres: SelectOption[]; cities: string[]; artCategories: string[];
-  releaseTypes: string[]; musicGenres: SelectOption[]; spotCategories: string[];
+  releaseTypes: string[]; musicGenres: SelectOption[];
 }) {
   const { t } = useLanguage();
   const [form, setForm] = useState<Record<string, unknown>>({ ...item });
@@ -2191,8 +2189,9 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
         {tab === "spots" && (<>
           {field("name","Name")}
           {field("slug","Slug")}
-          {field("category","Category","select",spotCategories)}
-          {field("subcategory","Subcategory")}
+          <SpotTaxonomyPicker labelCls={labelCls}
+            value={{ categories: spotCategoriesOf(form as any), subcategories: spotSubcategoriesOf(form as any) }}
+            onChange={n => setForm(f => ({ ...f, categories: n.categories, subcategories: n.subcategories }))} />
           {field("city","City","select",cities)}
           {field("neighborhood","Neighborhood")}
           {field("address","Address")}

@@ -9,6 +9,7 @@ import T from "../components/T";
 import { SearchResultCount } from "./SearchResultCount";
 import { profileHref } from '@/app/lib/profileHref'
 import { genreLabel } from "@/app/lib/genres";
+import { primaryCategory, spotCategoryLabel } from "@/app/lib/spotCategories";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +85,7 @@ export default async function SearchPage({ searchParams }: Props) {
       supabase.from("articles").select("id, title, category, hero_image").ilike("title", pattern).eq("status", "published").limit(10),
       supabase.from("mixes").select("id, title, artist, genre, cover_image").ilike("title", pattern).eq("status", "approved").limit(10),
       supabase.from("profiles").select("id, username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height, network_subcategory, location").not("network_tab", "is", null).or(`display_name.ilike.%${query}%,network_subcategory.ilike.%${query}%`).limit(10),
-      supabase.from("spots").select("id, name, slug, category, neighborhood, cover_image").ilike("name", pattern).eq("is_published", true).limit(10),
+      supabase.from("spots").select("id, name, slug, category, categories, neighborhood, cover_image").ilike("name", pattern).eq("is_published", true).limit(10),
       supabase.from("music_releases").select("id, title, artist, type, cover_image").ilike("title", pattern).eq("status", "approved").limit(10),
     ]);
 
@@ -132,7 +133,7 @@ export default async function SearchPage({ searchParams }: Props) {
     spotRes.data?.forEach((s: any) => groups.spot.push({
       id: `spot-${s.id}`, type: "spot",
       title: s.name,
-      subtitle: [s.category, s.neighborhood].filter(Boolean).join(" · "),
+      subtitle: [spotCategoryLabel(primaryCategory(s), "el"), s.neighborhood].filter(Boolean).join(" · "),
       image: s.cover_image,
       href: `/spots/${s.slug}`,
     }));

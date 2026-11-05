@@ -148,7 +148,7 @@ export default async function DashboardPage() {
   const { data: savedSpots } = spotIds.length > 0
     ? await supabase
         .from('spots')
-        .select('id, name, slug, cover_image, category, neighborhood, rating')
+        .select('id, name, slug, cover_image, category, categories, neighborhood, rating')
         .in('id', spotIds)
     : { data: [] }
 
