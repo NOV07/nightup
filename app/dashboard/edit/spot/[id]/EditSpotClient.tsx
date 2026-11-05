@@ -5,6 +5,7 @@ import SpotFormSteps, {
   spotFormToPayload, deserializeOpeningHours, type SpotFormData,
 } from '@/components/spots/SpotFormSteps'
 import { toGalleryItems } from '@/app/lib/types'
+import { spotCategoriesOf, spotSubcategoriesOf } from '@/app/lib/spotCategories'
 import { useLanguage } from '@/app/components/LanguageContext'
 
 /** The stored row, back into the wizard's state shape. */
@@ -12,8 +13,8 @@ function spotToForm(spot: any): Partial<SpotFormData> {
   const hasCrop = spot.crop_x != null && spot.crop_y != null && spot.crop_width != null && spot.crop_height != null
   return {
     name: spot.name ?? '',
-    category: spot.category ?? '',
-    subcategory: spot.subcategory ?? '',
+    categories: spotCategoriesOf(spot),
+    subcategories: spotSubcategoriesOf(spot),
     city: spot.city ?? '',
     neighborhood: spot.neighborhood ?? '',
     address: spot.address ?? '',

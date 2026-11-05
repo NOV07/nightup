@@ -2,10 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSupabase } from "../../lib/supabase";
 import { createClient } from "../../lib/supabase-server";
-import type { Spot } from "../types";
-import { spotCropFromRow } from "../types";
-import type { GalleryItem } from "../../lib/types";
-import { toGalleryItems } from "../../lib/types";
+import { SPOT_PAGE_COLS, mapSpotPage } from "../mapSpot";
 import SpotProfileClient, { type SpotOwner } from "./SpotProfileClient";
 import type { HostedEvent } from "../../../components/profile/HostedEventCard";
 import type { ProfileListing } from "../../../components/profile/ProfileListings";
@@ -14,31 +11,14 @@ import SpotViewTracker from "./SpotViewTracker";
 
 export const revalidate = 300;
 
-const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, gallery, price_level, price_text, rating, phone, website, instagram, opening_hours, is_sponsored, owner_id";
-
-async function getSpot(slug: string): Promise<Spot | null> {
+async function getSpot(slug: string) {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
-      .from("spots").select(COLS)
+      .from("spots").select(SPOT_PAGE_COLS)
       .eq("slug", slug).eq("is_published", true).single();
     if (error || !data) return null;
-    return {
-      id: String(data.id), name: data.name, slug: data.slug,
-      category: data.category, subcategory: data.subcategory,
-      city: data.city, neighborhood: data.neighborhood, address: data.address,
-      lat: data.lat, lng: data.lng, description: data.description,
-      coverImage: data.cover_image,
-      crop: spotCropFromRow(data),
-      priceLevel: data.price_level,
-      priceText: data.price_text ?? null,
-      rating: data.rating, phone: data.phone, website: data.website,
-      instagram: data.instagram, isSponsored: data.is_sponsored === true,
-      ownerId: data.owner_id ?? null,
-      gallery: toGalleryItems(data.gallery),
-      openingHours: data.opening_hours ?? null,
-    } as Spot & { gallery: GalleryItem[]; openingHours: any };
+    return mapSpotPage(data);
   } catch { return null; }
 }
 

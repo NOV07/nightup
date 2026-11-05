@@ -2,17 +2,14 @@
 // and only erasable TS syntax, so the API routes and
 // scripts/test-admin-add-spot.mjs (plain Node, no network) share one copy.
 
-import { SUBCATEGORIES, type SpotCategory } from '../spots/types.ts'
+import { validateSpotTaxonomy } from './spotCategories.ts'
 import { spotCoordsError } from './mapsCoords.ts'
 import { slugify } from './slug.ts'
 import { normalizeInstagram } from './instagram.ts'
 
-// Kept in sync with the spot_category enum in Postgres.
-export const SPOT_CATEGORY_KEYS: SpotCategory[] = ['food', 'drink', 'nightlife', 'show', 'chill', 'activity', 'art', 'wellness']
-
 /** Columns an owner may write through /api/spots and /api/spots/[id]. */
 export const SPOT_FIELDS = [
-  'name', 'category', 'subcategory', 'city', 'neighborhood', 'address',
+  'name', 'category', 'subcategory', 'categories', 'subcategories', 'city', 'neighborhood', 'address',
   'lat', 'lng', 'description', 'cover_image',
   'crop_x', 'crop_y', 'crop_width', 'crop_height',
   'gallery', 'price_level', 'price_text', 'phone', 'website', 'instagram', 'opening_hours',
@@ -24,6 +21,26 @@ export const SPOT_FIELDS = [
  * geo, id and created_at are deliberately absent.
  */
 export const ADMIN_SPOT_INPUT_FIELDS = [...SPOT_FIELDS, 'rating', 'is_sponsored', 'featured', 'is_published', 'slug']
+
+/**
+ * Returns a copy of a spot write payload whose category/subcategory columns
+ * are replaced by the validated four (categories, category, subcategories,
+ * subcategory). Accepts the new arrays or the legacy single values. When the
+ * payload carries none of them (and `required` is false) they are removed and
+ * the stored values stay as they are. `existingCategories` is only needed on
+ * an edit that sends subcategories without categories.
+ */
+export function withSpotTaxonomy(
+  body: Record<string, unknown>,
+  opts: { required?: boolean; existingCategories?: readonly string[] } = {},
+): { ok: true; row: Record<string, unknown> } | { ok: false; error: string } {
+  const taxonomy = validateSpotTaxonomy(body, opts)
+  if (!taxonomy.ok) return { ok: false, error: taxonomy.error }
+  const row = { ...body }
+  for (const k of ['categories', 'category', 'subcategories', 'subcategory']) delete row[k]
+  if (taxonomy.fields) Object.assign(row, taxonomy.fields)
+  return { ok: true, row }
+}
 
 const MAX_GALLERY = 8
 
@@ -76,20 +93,9 @@ export function checkAdminSpotInput(input: unknown): AdminSpotCheck {
   if (!row.name) return { ok: false, error: 'Name is required' }
   if (!row.city) return { ok: false, error: 'City is required' }
 
-  const category = body.category
-  if (typeof category !== 'string' || !SPOT_CATEGORY_KEYS.includes(category as SpotCategory)) {
-    return { ok: false, error: `Category must be one of: ${SPOT_CATEGORY_KEYS.join(', ')}` }
-  }
-  row.category = category
-
-  const sub = body.subcategory
-  if (sub == null || sub === '') {
-    row.subcategory = null
-  } else if (typeof sub !== 'string' || !SUBCATEGORIES[category as SpotCategory].some(s => s.value === sub)) {
-    return { ok: false, error: `Subcategory "${String(sub)}" is not in the list for ${category}` }
-  } else {
-    row.subcategory = sub
-  }
+  const taxonomy = validateSpotTaxonomy(body)
+  if (!taxonomy.ok) return { ok: false, error: taxonomy.error }
+  Object.assign(row, taxonomy.fields)
 
   for (const k of ['cover_image', 'website']) {
     if (row[k] && !isUrl(row[k] as string)) return { ok: false, error: `${k} must be an http(s) URL` }

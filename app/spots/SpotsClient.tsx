@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import SpotCard from "../components/SpotCard";
-import { SPOT_CATEGORIES, SUBCATEGORIES, loc, type Spot, type SpotCategory } from "./types";
+import type { Spot } from "./types";
+import { SPOT_CATEGORIES, spotInCategory, spotSubsInCategory, type SpotCategory } from "../lib/spotCategories";
+import { loc } from "./types";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { useLanguage } from "../components/LanguageContext";
 
@@ -12,7 +14,9 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
   const [subFilter, setSubFilter] = useState<Record<string, string | null>>({});
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const byCat = (c: SpotCategory) => spots.filter((s) => s.category === c);
+  // A spot shows in EVERY section of its categories (the primary one only
+  // decides its icon and card), but once per section.
+  const byCat = (c: SpotCategory) => spots.filter((s) => spotInCategory(s, c));
 
   const jump = (c: SpotCategory) => {
     setActive(c);
@@ -142,7 +146,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                   transition: "all .25s cubic-bezier(.22,.61,.36,1)",
                 }}
               >
-                <SpotCategoryIcon category={c.key} size={14} /> {loc(lang, c.label, c.label_en)}
+                <SpotCategoryIcon category={c.key} size={14} /> {loc(lang, c.label_el, c.label_en)}
               </button>
             );
           })}
@@ -164,7 +168,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                   <div>
                     <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <SpotCategoryIcon category={c.key} size={14} />
-                      {loc(lang, c.label, c.label_en)}
+                      {loc(lang, c.label_el, c.label_en)}
                     </p>
                     <div style={{ width: '24px', height: '1px', background: '#E8A020', marginTop: '6px' }} />
                   </div>
@@ -180,24 +184,24 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
                 >
                   {t("spots_all")}
                 </button>
-                {SUBCATEGORIES[c.key].map((sub) => {
-                  const n = items.filter((s) => s.subcategory === sub.value).length;
+                {c.subs.map((sub) => {
+                  const n = items.filter((s) => spotSubsInCategory(s, c.key).includes(sub.key)).length;
                   if (n === 0) return null;
-                  const on = subFilter[c.key] === sub.value;
+                  const on = subFilter[c.key] === sub.key;
                   return (
                     <button
-                      key={sub.value}
-                      onClick={() => setSubFilter((p) => ({ ...p, [c.key]: on ? null : sub.value }))}
+                      key={sub.key}
+                      onClick={() => setSubFilter((p) => ({ ...p, [c.key]: on ? null : sub.key }))}
                       style={subChipStyle(on)}
                     >
-                      {loc(lang, sub.label, sub.label_en)} · {n}
+                      {loc(lang, sub.label_el, sub.label_en)} · {n}
                     </button>
                   );
                 })}
               </div>
               <div className="spots-grid">
                 {items
-                  .filter((s) => !subFilter[c.key] || s.subcategory === subFilter[c.key])
+                  .filter((s) => !subFilter[c.key] || spotSubsInCategory(s, c.key).includes(subFilter[c.key]!))
                   .map((s) => <SpotCard key={s.id} spot={s} />)}
               </div>
             </div>

@@ -2,7 +2,8 @@
 import { useState } from 'react'
 import SpotCard from '@/app/components/SpotCard'
 import CroppedImage from '@/components/ui/CroppedImage'
-import { SPOT_CATEGORIES, SPOT_CROP_ASPECT, loc, spotPriceLabel, type Spot } from '@/app/spots/types'
+import { SPOT_CROP_ASPECT, spotPriceLabel, type Spot } from '@/app/spots/types'
+import { primarySubLabel, spotCategoryLabel } from '@/app/lib/spotCategories'
 import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import { normalizeInstagram } from '@/app/lib/instagram'
 import { serializeOpeningHours, DAY_LABELS_EN, CLOSED, type SpotFormData, type Day } from './SpotFormSteps'
@@ -38,8 +39,9 @@ export function formToSpot(form: SpotFormData, nameFallback = 'Το spot σου'
     id: 'preview',
     name: form.name || nameFallback,
     slug: 'preview',
-    category: (form.category || 'drink') as Spot['category'],
-    subcategory: form.subcategory || null,
+    category: form.categories[0] ?? 'drink',
+    categories: form.categories,
+    subcategories: form.subcategories,
     city: form.city,
     neighborhood: form.neighborhood || null,
     address: form.address || null,
@@ -84,7 +86,6 @@ function CardTab({ form }: { form: SpotFormData }) {
 
 function PageTab({ form, step }: { form: SpotFormData; step: number }) {
   const { t, lang } = useLanguage()
-  const cat = SPOT_CATEGORIES.find(c => c.key === form.category)
   const hours = serializeOpeningHours(form.opening_hours)
   const ig = normalizeInstagram(form.instagram)
   const contact = [form.phone, form.website, ig ? `@${ig}` : null].filter(Boolean)
@@ -108,17 +109,19 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,15,26,0.95) 0%, rgba(15,15,26,0) 55%)', pointerEvents: 'none' }} />
-        {cat && (
-          <div style={{ position: 'absolute', top: 12, left: 12 }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '4px 10px', borderRadius: 999, fontSize: 10, fontWeight: 700,
-              textTransform: 'uppercase', letterSpacing: '0.06em',
-              backgroundColor: 'rgba(232,160,32,0.18)', color: GOLD,
-              border: '1px solid rgba(232,160,32,0.4)', backdropFilter: 'blur(6px)',
-            }}>
-              <SpotCategoryIcon category={cat.key} size={12} /> {loc(lang, cat.label, cat.label_en)}
-            </span>
+        {form.categories.length > 0 && (
+          <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {form.categories.map(key => (
+              <span key={key} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '4px 10px', borderRadius: 999, fontSize: 10, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                backgroundColor: 'rgba(232,160,32,0.18)', color: GOLD,
+                border: '1px solid rgba(232,160,32,0.4)', backdropFilter: 'blur(6px)',
+              }}>
+                <SpotCategoryIcon category={key} size={12} /> {spotCategoryLabel(key, lang)}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -131,7 +134,7 @@ function PageTab({ form, step }: { form: SpotFormData; step: number }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
-            {form.subcategory || <span style={ghostStyle}>{t('wizard_subcategory')}</span>}
+            {primarySubLabel({ categories: form.categories, subcategories: form.subcategories }, lang) || <span style={ghostStyle}>{t('wizard_subcategory')}</span>}
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
             {form.address || form.city

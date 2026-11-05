@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useLanguage } from '@/app/components/LanguageContext'
 import type { Lang, TranslationKey } from '../lib/translations'
 import { networkCategoryLabel } from '../lib/searchData'
+import { primaryCategory, spotCategoryLabel } from '../lib/spotCategories'
 import { profileHref } from '@/app/lib/profileHref'
 import { genreLabel } from "../lib/genres";
 
@@ -263,7 +264,7 @@ export default function MyLibrary({ savedEvents, upcomingEvents, savedSpots, fol
                     key={spot.id}
                     href={`/spots/${spot.slug}`}
                     title={spot.name}
-                    sub={[spot.category, spot.neighborhood].filter(Boolean).join(' · ')}
+                    sub={[spotCategoryLabel(primaryCategory(spot), lang), spot.neighborhood].filter(Boolean).join(' · ')}
                     accent={spot.rating ? `★ ${spot.rating}` : undefined}
                   />
                 ))}

@@ -9,7 +9,7 @@ import {
   LuLeaf,
 } from "react-icons/lu";
 import type { IconType } from "react-icons";
-import type { SpotCategory } from "../spots/types";
+import type { SpotCategory } from "./spotCategories";
 
 const ICON_MAP: Record<SpotCategory, IconType> = {
   drink:     LuGlassWater,

@@ -3,7 +3,7 @@ import { createClient } from '@/app/lib/supabase-server'
 import { slugify, uniqueSlug } from '@/app/lib/slug'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
 import { normalizeInstagram } from '@/app/lib/instagram'
-import { SPOT_CATEGORY_KEYS as CATEGORIES, SPOT_FIELDS } from '@/app/lib/spotInput'
+import { SPOT_FIELDS, withSpotTaxonomy } from '@/app/lib/spotInput'
 
 // Re-exported for /api/spots/[id]; the list itself lives in spotInput so the
 // admin route whitelists the same columns.
@@ -52,12 +52,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  if (!body.name || !body.category) {
+  if (!body.name) {
     return NextResponse.json({ error: 'Missing required fields: name, category' }, { status: 400 })
   }
 
-  if (!(CATEGORIES as string[]).includes(String(body.category))) {
-    return NextResponse.json({ error: `category must be one of: ${CATEGORIES.join(', ')}` }, { status: 400 })
+  // 1–3 categories and up to 3 subcategories; the legacy single
+  // category/subcategory is still accepted and becomes a one-element list.
+  const taxonomy = withSpotTaxonomy(body)
+  if (!taxonomy.ok) {
+    return NextResponse.json({ error: taxonomy.error }, { status: 400 })
   }
 
   // lat/lng back the generated `geo` column that powers proximity search, so a
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest) {
   }
 
   const payload: Record<string, unknown> = {}
-  SPOT_FIELDS.forEach(k => { if (k in body) payload[k] = body[k] })
+  SPOT_FIELDS.forEach(k => { if (k in taxonomy.row) payload[k] = taxonomy.row[k] })
   if ('instagram' in payload) payload.instagram = normalizeInstagram(payload.instagram as string | null)
 
   // Only slugs that share the candidate's root can possibly collide with it

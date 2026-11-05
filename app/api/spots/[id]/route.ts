@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { SPOT_FIELDS } from '../route'
+import { withSpotTaxonomy } from '@/app/lib/spotInput'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
 import { normalizeInstagram } from '@/app/lib/instagram'
 
@@ -18,7 +19,7 @@ export async function PATCH(
 
   const { data: existing } = await supabase
     .from('spots')
-    .select('owner_id')
+    .select('owner_id, categories')
     .eq('id', id)
     .maybeSingle()
 
@@ -47,7 +48,14 @@ export async function PATCH(
   // Slug stays fixed after creation — it is the public URL. is_published and
   // owner_id are deliberately absent so an owner cannot self-publish.
   const updates: Record<string, unknown> = {}
-  SPOT_FIELDS.forEach(k => { if (k in body) updates[k] = body[k] })
+  // Same validator as create. Only the taxonomy columns the payload actually
+  // carries are written; subcategories sent alone are checked against the
+  // categories already stored.
+  const taxonomy = withSpotTaxonomy(body, { required: false, existingCategories: existing.categories ?? [] })
+  if (!taxonomy.ok) {
+    return NextResponse.json({ error: taxonomy.error }, { status: 400 })
+  }
+  SPOT_FIELDS.forEach(k => { if (k in taxonomy.row) updates[k] = taxonomy.row[k] })
   if ('instagram' in updates) updates.instagram = normalizeInstagram(updates.instagram as string | null)
 
   if (Object.keys(updates).length === 0) {

@@ -1,41 +1,16 @@
 import { getSupabase } from "../lib/supabase";
-import type { Spot, SpotCategory } from "./types";
-import { spotCropFromRow } from "./types";
+import type { Spot } from "./types";
+import type { SpotCategory } from "../lib/spotCategories";
+import { SPOT_COLS, mapSpot } from "./mapSpot";
 
-export function mapSpot(s: any): Spot {
-  return {
-    id: String(s.id),
-    name: s.name,
-    slug: s.slug,
-    category: s.category,
-    subcategory: s.subcategory,
-    city: s.city,
-    neighborhood: s.neighborhood,
-    address: s.address,
-    lat: s.lat,
-    lng: s.lng,
-    description: s.description,
-    coverImage: s.cover_image,
-    crop: spotCropFromRow(s),
-    priceLevel: s.price_level,
-    priceText: s.price_text ?? null,
-    rating: s.rating,
-    instagram: s.instagram,
-    isSponsored: s.is_sponsored === true,
-    featured: s.featured === true,
-  };
-}
-
-
-const COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored, featured";
+export { mapSpot };
 
 export async function getAllSpots(): Promise<Spot[]> {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("spots")
-      .select(COLS)
+      .select(SPOT_COLS)
       .eq("is_published", true)
       .order("is_sponsored", { ascending: false })
       .order("rating", { ascending: false });
@@ -47,14 +22,15 @@ export async function getAllSpots(): Promise<Spot[]> {
   }
 }
 
+/** Spots that have `category` among their categories (not only as primary). */
 export async function getSpotsByCategory(category: SpotCategory): Promise<Spot[]> {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("spots")
-      .select(COLS)
+      .select(SPOT_COLS)
       .eq("is_published", true)
-      .eq("category", category)
+      .contains("categories", [category])
       .order("is_sponsored", { ascending: false })
       .order("rating", { ascending: false });
     if (error || !data) return [];
@@ -63,18 +39,4 @@ export async function getSpotsByCategory(category: SpotCategory): Promise<Spot[]
     console.error("Spots fetch error:", e);
     return [];
   }
-}
-
-export async function buildNight(mood: string): Promise<Spot[]> {
-  const all = await getAllSpots();
-  const pickFrom = (c: SpotCategory): Spot | null => {
-    const pool = all.filter((s) => s.category === c);
-    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
-  };
-  const seq: SpotCategory[] =
-    mood === "food" ? ["food", "drink", "show"]
-    : mood === "wild" ? ["food", "drink", "nightlife"]
-    : mood === "diff" ? ["chill", "show", "drink"]
-    : ["food", "drink", "nightlife"];
-  return seq.map(pickFrom).filter(Boolean) as Spot[];
 }

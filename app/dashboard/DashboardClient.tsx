@@ -13,6 +13,7 @@ import ChangePasswordForm from '@/components/auth/ChangePasswordForm'
 import DeleteAccountSection from '@/components/account/DeleteAccountSection'
 import UpgradeModal from '@/components/auth/UpgradeModal'
 import { NETWORK, CITIES, networkCategoryLabel } from '../lib/searchData'
+import { primarySubLabel } from '../lib/spotCategories'
 import ConsumerDashboard from './ConsumerDashboard'
 import MyLibrary from './MyLibrary'
 import ScrollTabBar from '@/components/ui/ScrollTabBar'
@@ -1185,7 +1186,7 @@ export default function DashboardClient({ profile, events, releases, savedEvents
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">{ownedSpot.name}</p>
                       <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                        {[ownedSpot.subcategory, ownedSpot.neighborhood, ownedSpot.city].filter(Boolean).join(' · ')}
+                        {[primarySubLabel(ownedSpot, lang), ownedSpot.neighborhood, ownedSpot.city].filter(Boolean).join(' · ')}
                       </p>
                     </div>
                     <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{
