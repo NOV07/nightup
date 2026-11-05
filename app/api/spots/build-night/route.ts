@@ -1,29 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/app/lib/supabase";
 import { getAllSpots, mapSpot } from "@/app/spots/data";
-import type { Spot, SpotCategory } from "@/app/spots/types";
+import { moodSequence, pickSequence } from "@/app/spots/night";
+import type { Spot } from "@/app/spots/types";
+import type { SpotCategory } from "@/app/lib/spotCategories";
 
 const RADII_KM = [3, 6, 12];
-
-function moodSequence(mood: string): SpotCategory[] {
-  return mood === "food" ? ["food", "drink", "show"]
-    : mood === "wild" ? ["food", "drink", "nightlife"]
-    : mood === "diff" ? ["chill", "show", "drink"]
-    : ["food", "drink", "nightlife"];
-}
-
-function pickSequence(pool: Spot[], seq: SpotCategory[]): Spot[] {
-  const used = new Set<string>();
-  const result: Spot[] = [];
-  for (const category of seq) {
-    const match = pool.find((s) => s.category === category && !used.has(s.id));
-    if (match) {
-      used.add(match.id);
-      result.push(match);
-    }
-  }
-  return result;
-}
 
 async function buildNightNearby(
   seq: SpotCategory[],
@@ -54,12 +36,7 @@ async function buildNightNearby(
 }
 
 async function buildNightFallback(seq: SpotCategory[]): Promise<Spot[]> {
-  const all = await getAllSpots();
-  const pickFrom = (c: SpotCategory): Spot | null => {
-    const pool = all.filter((s) => s.category === c);
-    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
-  };
-  return seq.map(pickFrom).filter(Boolean) as Spot[];
+  return pickSequence(await getAllSpots(), seq, true);
 }
 
 export async function POST(req: NextRequest) {

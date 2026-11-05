@@ -12,33 +12,7 @@ import TonightFAB from "./TonightFAB";
 import { useTonightModal } from "./TonightContext";
 import { useRegisterModalOpen } from "./ModalStateContext";
 import type { Spot } from "../spots/types";
-import { spotCropFromRow } from "../spots/types";
-
-const SPOT_COLS =
-  "id, name, slug, category, subcategory, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored";
-
-function mapSpot(s: any): Spot {
-  return {
-    id: String(s.id),
-    name: s.name,
-    slug: s.slug,
-    category: s.category,
-    subcategory: s.subcategory,
-    city: s.city,
-    neighborhood: s.neighborhood,
-    address: s.address,
-    lat: s.lat,
-    lng: s.lng,
-    description: s.description,
-    coverImage: s.cover_image,
-    crop: spotCropFromRow(s),
-    priceLevel: s.price_level,
-    priceText: s.price_text ?? null,
-    rating: s.rating,
-    instagram: s.instagram,
-    isSponsored: s.is_sponsored === true,
-  };
-}
+import { SPOT_COLS, mapSpot } from "../spots/mapSpot";
 
 // Routes that render full-screen with no nav/footer/players.
 // /admin brings its own chrome (sidebar + mobile nav) from app/admin/layout.tsx,

@@ -41,6 +41,8 @@ export interface Spot {
   /** Account that owns the spot (spots.owner_id). Null for admin-added spots. */
   ownerId?: string | null;
   featured?: boolean;
+  /** Set by the night builder: the stop's category this spot was picked for. */
+  nightSlot?: SpotCategory;
   gallery?: GalleryItem[];
   openingHours?: Record<string, string> | null;
 }
