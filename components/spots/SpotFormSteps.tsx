@@ -6,9 +6,11 @@ import { GalleryPlayBadge } from '@/components/ui/GalleryLightbox'
 import type { GalleryItem } from '@/app/lib/types'
 import ImageCropper, { type CropBox } from '@/components/ui/ImageCropper'
 import CroppedImage from '@/components/ui/CroppedImage'
+import { SPOT_CROP_ASPECT, loc } from '@/app/spots/types'
 import {
-  SPOT_CATEGORIES, SUBCATEGORIES, SPOT_CROP_ASPECT, loc, type SpotCategory,
-} from '@/app/spots/types'
+  SPOT_CATEGORIES, MAX_SPOT_CATEGORIES, MAX_SPOT_SUBCATEGORIES,
+  spotCategoryLabel, spotSubLabel, subCategoryOf, type SpotCategory,
+} from '@/app/lib/spotCategories'
 import { SpotCategoryIcon } from '@/app/lib/spotIcons'
 import SpotLivePreview from './SpotLivePreview'
 import { useLanguage } from '@/app/components/LanguageContext'
@@ -61,8 +63,10 @@ export interface DayHours { closed: boolean; hours: string }
 
 export interface SpotFormData {
   name: string
-  category: SpotCategory | ''
-  subcategory: string
+  /** 1–3 categories, primary first. */
+  categories: SpotCategory[]
+  /** Up to 3 subcategory keys, each from one of the picked categories. */
+  subcategories: string[]
   city: string
   neighborhood: string
   address: string
@@ -129,7 +133,7 @@ const EMPTY_HOURS = DAYS.reduce((acc, d) => {
 }, {} as Record<Day, DayHours>)
 
 const DEFAULTS: SpotFormData = {
-  name: '', category: '', subcategory: '', city: '', neighborhood: '', address: '',
+  name: '', categories: [], subcategories: [], city: '', neighborhood: '', address: '',
   maps_url: '', lat: null, lng: null, cover_image: '', crop: null, gallery: [],
   opening_hours: EMPTY_HOURS,
   phone: '', website: '', instagram: '', price_level: 0, price_text: '', description: '',
@@ -171,8 +175,8 @@ export function deserializeOpeningHours(stored: Record<string, string> | null | 
 export function spotFormToPayload(form: SpotFormData) {
   return {
     name: form.name.trim(),
-    category: form.category,
-    subcategory: form.subcategory || null,
+    categories: form.categories,
+    subcategories: form.subcategories,
     city: form.city,
     neighborhood: form.neighborhood.trim() || null,
     address: form.address.trim() || null,
@@ -251,30 +255,71 @@ function Step1({ form, set, stepErrors }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
 }) {
   const { t, lang } = useLanguage()
-  const subs = form.category ? SUBCATEGORIES[form.category] : []
+  const atMaxCats = form.categories.length >= MAX_SPOT_CATEGORIES
+  const atMaxSubs = form.subcategories.length >= MAX_SPOT_SUBCATEGORIES
+
+  function toggleCategory(key: SpotCategory) {
+    if (form.categories.includes(key)) {
+      const categories = form.categories.filter(c => c !== key)
+      set('categories', categories)
+      // A subcategory only stays while one of its categories is still picked.
+      set('subcategories', form.subcategories.filter(s => {
+        const owner = subCategoryOf(s)
+        return owner != null && categories.includes(owner)
+      }))
+    } else if (!atMaxCats) {
+      set('categories', [...form.categories, key])
+    }
+  }
+
+  function makePrimary(key: SpotCategory) {
+    set('categories', [key, ...form.categories.filter(c => c !== key)])
+  }
+
+  function toggleSub(key: string) {
+    if (form.subcategories.includes(key)) set('subcategories', form.subcategories.filter(s => s !== key))
+    else if (!atMaxSubs) set('subcategories', [...form.subcategories, key])
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <label style={lbl}>{t('wizard_category')} *</label>
+        <label style={lbl}>{t('wizard_category')} * ({form.categories.length}/{MAX_SPOT_CATEGORIES})</label>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>{t('wizard_category_hint')}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
           {SPOT_CATEGORIES.map(c => {
-            const on = form.category === c.key
+            const on = form.categories.includes(c.key)
+            const primary = form.categories[0] === c.key
+            const blocked = !on && atMaxCats
             return (
               <button key={c.key} type="button"
-                onClick={() => {
-                  set('category', c.key)
-                  // The subcategory list is per-category, so a stale pick cannot carry over.
-                  if (form.category !== c.key) set('subcategory', '')
-                }}
+                disabled={blocked}
+                aria-pressed={on}
+                onClick={() => toggleCategory(c.key)}
                 style={{
-                  textAlign: 'left', padding: '14px 14px', borderRadius: 14, cursor: 'pointer',
-                  transition: 'all 0.15s', minHeight: 84,
+                  textAlign: 'left', padding: '14px 14px', borderRadius: 14, cursor: blocked ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s', minHeight: 84, opacity: blocked ? 0.4 : 1,
                   backgroundColor: on ? 'rgba(232,160,32,0.14)' : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${on ? 'rgba(232,160,32,0.45)' : 'rgba(255,255,255,0.1)'}`,
                 }}>
-                <div style={{ lineHeight: 1, display: 'flex' }}><SpotCategoryIcon category={c.key} size={22} /></div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, color: on ? '#E8A020' : 'white' }}>{loc(lang, c.label, c.label_en)}</div>
-                <div style={{ fontSize: 10, marginTop: 3, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>{loc(lang, c.sub, c.sub_en)}</div>
+                <div style={{ lineHeight: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <SpotCategoryIcon category={c.key} size={22} />
+                  {primary && (
+                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0F0F1A', backgroundColor: '#E8A020', borderRadius: 999, padding: '2px 7px' }}>
+                      {t('wizard_primary')}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, color: on ? '#E8A020' : 'white' }}>{loc(lang, c.label_el, c.label_en)}</div>
+                <div style={{ fontSize: 10, marginTop: 3, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>{loc(lang, c.hint_el, c.hint_en)}</div>
+                {on && !primary && (
+                  <span role="button" tabIndex={0}
+                    onClick={e => { e.stopPropagation(); makePrimary(c.key) }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); makePrimary(c.key) } }}
+                    style={{ display: 'inline-block', marginTop: 8, fontSize: 10, color: '#E8A020', textDecoration: 'underline', cursor: 'pointer' }}>
+                    {t('wizard_make_primary')}
+                  </span>
+                )}
               </button>
             )
           })}
@@ -282,23 +327,41 @@ function Step1({ form, set, stepErrors }: {
         <Err stepErrors={stepErrors} k="category" />
       </div>
 
-      {form.category && (
+      {form.categories.length > 0 && (
         <div>
-          <label style={lbl}>{t('wizard_subcategory')}</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {subs.map(s => {
-              const on = form.subcategory === s.value
+          <label style={lbl}>{t('wizard_subcategory')} ({form.subcategories.length}/{MAX_SPOT_SUBCATEGORIES})</label>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>{t('wizard_subcategory_hint')}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {form.categories.map(catKey => {
+              const def = SPOT_CATEGORIES.find(c => c.key === catKey)
+              if (!def) return null
               return (
-                <button key={s.value} type="button"
-                  onClick={() => set('subcategory', on ? '' : s.value)}
-                  style={{
-                    padding: '6px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
-                    backgroundColor: on ? 'rgba(232,160,32,0.18)' : 'rgba(255,255,255,0.05)',
-                    color: on ? '#E8A020' : 'rgba(255,255,255,0.4)',
-                    border: `1px solid ${on ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                  }}>
-                  {loc(lang, s.label, s.label_en)}
-                </button>
+                <div key={catKey}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <SpotCategoryIcon category={catKey} size={12} /> {loc(lang, def.label_el, def.label_en)}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {def.subs.map(sub => {
+                      const on = form.subcategories.includes(sub.key)
+                      const blocked = !on && atMaxSubs
+                      return (
+                        <button key={sub.key} type="button"
+                          disabled={blocked}
+                          aria-pressed={on}
+                          onClick={() => toggleSub(sub.key)}
+                          style={{
+                            padding: '6px 14px', borderRadius: 999, fontSize: 13, cursor: blocked ? 'not-allowed' : 'pointer', transition: 'all 0.15s',
+                            opacity: blocked ? 0.4 : 1,
+                            backgroundColor: on ? 'rgba(232,160,32,0.18)' : 'rgba(255,255,255,0.05)',
+                            color: on ? '#E8A020' : 'rgba(255,255,255,0.4)',
+                            border: `1px solid ${on ? 'rgba(232,160,32,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                          }}>
+                          {loc(lang, sub.label_el, sub.label_en)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -576,13 +639,9 @@ function Step4({ form, set, stepErrors }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
 }) {
   const { t, lang } = useLanguage()
-  const cat = SPOT_CATEGORIES.find(c => c.key === form.category)
   const hours = serializeOpeningHours(form.opening_hours)
-  const catLabel = cat ? loc(lang, cat.label, cat.label_en) : undefined
-  const subLabelDef = form.category && form.subcategory
-    ? SUBCATEGORIES[form.category]?.find(s => s.value === form.subcategory)
-    : null
-  const subLabel = subLabelDef ? loc(lang, subLabelDef.label, subLabelDef.label_en) : form.subcategory
+  const catLabel = form.categories.map(c => spotCategoryLabel(c, lang)).join(', ')
+  const subLabel = form.subcategories.map(sk => spotSubLabel(sk, lang)).join(', ')
   const summary: { label: string; value: string }[] = [
     { label: t('wizard_category'), value: [catLabel, subLabel].filter(Boolean).join(' · ') || '—' },
     { label: t('wizard_step_location'), value: [form.address, form.neighborhood, form.city].filter(Boolean).join(', ') || '—' },
@@ -852,7 +911,7 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     const e: Record<string, string> = {}
     const form = f
     if (n === 1) {
-      if (!form.category) e.category = t('err_pick_category')
+      if (form.categories.length === 0) e.category = t('err_pick_category')
       if (!form.name.trim()) e.name = t('err_name_required')
     }
     if (n === 2) {
