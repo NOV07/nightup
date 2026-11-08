@@ -40,6 +40,7 @@ create or replace function public.normalize_spot_sub(raw text, cat text default 
 returns text
 language plpgsql
 immutable
+set search_path = public
 as $$
 declare
   c text;
