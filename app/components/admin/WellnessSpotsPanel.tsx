@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import LocationPicker from "@/components/maps/LocationPicker";
 import { extractCoords } from "@/app/lib/mapsCoords";
 import { slugify } from "@/app/lib/slug";
-import { MAX_WELLNESS_PHOTOS } from "@/app/lib/wellnessSpots";
+import { MAX_WELLNESS_PHOTOS, MAX_WELLNESS_SUBCATEGORIES, WELLNESS_SUBS } from "@/app/lib/wellnessSpots";
 
 // Wellness spots tab. The admin panel is English, but this tab is Greek by
 // request, so the labels below are deliberately not routed through i18n.
@@ -24,6 +24,7 @@ interface WellnessSpot {
   coords_verified: boolean;
   verified_night: boolean;
   photo_urls: string[];
+  subcategories: string[];
   source_url: string | null;
   published: boolean;
 }
@@ -37,13 +38,13 @@ interface FormState {
   name: string; slug: string; area: string; kind: string; best_time: string;
   has_bench: "yes" | "no" | "unknown"; access_note: string; description: string;
   lat: number | null; lng: number | null; coords_verified: boolean; verified_night: boolean;
-  photo_urls: string[]; source_url: string; published: boolean;
+  photo_urls: string[]; subcategories: string[]; source_url: string; published: boolean;
 }
 
 const EMPTY: FormState = {
   name: "", slug: "", area: "", kind: "viewpoint", best_time: "sunset", has_bench: "unknown",
   access_note: "", description: "", lat: null, lng: null, coords_verified: false,
-  verified_night: false, photo_urls: [], source_url: "", published: false,
+  verified_night: false, photo_urls: [], subcategories: [], source_url: "", published: false,
 };
 
 function toForm(s: WellnessSpot): FormState {
@@ -52,7 +53,7 @@ function toForm(s: WellnessSpot): FormState {
     has_bench: s.has_bench === true ? "yes" : s.has_bench === false ? "no" : "unknown",
     access_note: s.access_note ?? "", description: s.description ?? "",
     lat: s.lat, lng: s.lng, coords_verified: s.coords_verified, verified_night: s.verified_night,
-    photo_urls: s.photo_urls ?? [], source_url: s.source_url ?? "", published: s.published,
+    photo_urls: s.photo_urls ?? [], subcategories: s.subcategories ?? [], source_url: s.source_url ?? "", published: s.published,
   };
 }
 
@@ -62,7 +63,7 @@ function toPayload(f: FormState) {
     best_time: f.best_time, has_bench: f.has_bench === "yes" ? true : f.has_bench === "no" ? false : null,
     access_note: f.access_note, description: f.description, lat: f.lat, lng: f.lng,
     coords_verified: f.coords_verified, verified_night: f.verified_night,
-    photo_urls: f.photo_urls, source_url: f.source_url, published: f.published,
+    photo_urls: f.photo_urls, subcategories: f.subcategories, source_url: f.source_url, published: f.published,
   };
 }
 
@@ -168,6 +169,14 @@ export default function WellnessSpotsPanel() {
     });
   }
 
+  function toggleSub(key: string) {
+    setForm(f => {
+      if (f.subcategories.includes(key)) return { ...f, subcategories: f.subcategories.filter(k => k !== key) };
+      if (f.subcategories.length >= MAX_WELLNESS_SUBCATEGORIES) return f;
+      return { ...f, subcategories: [...f.subcategories, key] };
+    });
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setFormError("");
@@ -257,6 +266,28 @@ export default function WellnessSpotsPanel() {
             <label className={labelCls}>Περιγραφή</label>
             <textarea rows={4} className={inputCls} style={inputStyle} value={form.description} onChange={e => set("description", e.target.value)} />
           </div>
+          <fieldset className="sm:col-span-2 min-w-0">
+            <legend className={labelCls}>Υποκατηγορίες Ευεξίας ({form.subcategories.length}/{MAX_WELLNESS_SUBCATEGORIES})</legend>
+            <div className="flex gap-2 flex-wrap">
+              {WELLNESS_SUBS.map(sub => {
+                const on = form.subcategories.includes(sub.key);
+                const blocked = !on && form.subcategories.length >= MAX_WELLNESS_SUBCATEGORIES;
+                return (
+                  <label key={sub.key} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                    style={{
+                      backgroundColor: on ? "rgba(79,195,161,0.15)" : "#0F0F1A",
+                      color: on ? "#4FC3A1" : "#aaa",
+                      border: `1px solid ${on ? "#4FC3A1" : "#444"}`,
+                      opacity: blocked ? 0.4 : 1, cursor: blocked ? "not-allowed" : "pointer",
+                    }}>
+                    <input type="checkbox" checked={on} disabled={blocked} onChange={() => toggleSub(sub.key)} />
+                    {sub.label_el}
+                  </label>
+                );
+              })}
+            </div>
+            <p className={hintCls} style={hintStyle}>Έως {MAX_WELLNESS_SUBCATEGORIES}. Φαίνονται ως φίλτρα στον δημόσιο χάρτη.</p>
+          </fieldset>
           <div className="sm:col-span-2">
             <label className={labelCls}>Πηγή (σύνδεσμος)</label>
             <input className={inputCls} style={inputStyle} value={form.source_url} onChange={e => set("source_url", e.target.value)} placeholder="https://…" />
@@ -370,6 +401,10 @@ export default function WellnessSpotsPanel() {
                     <Badge on={s.lat != null && s.lng != null}>{s.lat != null && s.lng != null ? "Pin" : "Χωρίς pin"}</Badge>
                     <Badge on={s.photo_urls.length > 0}>{s.photo_urls.length} φωτο</Badge>
                     {s.has_bench === true && <Badge on>Παγκάκι</Badge>}
+                    {(s.subcategories ?? []).map(k => (
+                      <Badge key={k} on>{WELLNESS_SUBS.find(x => x.key === k)?.label_el ?? k}</Badge>
+                    ))}
+                    {(s.subcategories ?? []).length === 0 && <Badge on={false}>Χωρίς υποκατηγορία</Badge>}
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">

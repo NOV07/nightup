@@ -29,7 +29,7 @@ const HIDE_TONIGHT_FAB_ROUTES = ["/events"];
 // flows too, where the FAB only gets in the way. /submit/* are the submission
 // forms (event, release, ...) and /auth/* holds the password-reset form: their
 // bottom buttons sit exactly where the FAB floats.
-const TONIGHT_FAB_EXCLUDED_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about", "/admin", "/dashboard", "/upgrade", "/onboarding", "/sign-in", "/submit", "/auth"];
+const TONIGHT_FAB_EXCLUDED_ROUTES = ["/network/listings", "/nightwaves", "/magazine", "/about", "/admin", "/dashboard", "/upgrade", "/onboarding", "/sign-in", "/submit", "/auth", "/map"];
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

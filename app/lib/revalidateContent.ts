@@ -41,6 +41,10 @@ const PUBLIC_PATHS: Record<string, Target[]> = {
   spots: [
     { path: '/spots' },
     { path: '/spots/[slug]', type: 'page' },
+    { path: '/map' },
+  ],
+  wellness_spots: [
+    { path: '/map' },
   ],
   profiles: [
     { path: '/about' },

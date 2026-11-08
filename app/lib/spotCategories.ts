@@ -19,42 +19,45 @@ export const MAX_SPOT_SUBCATEGORIES = 3
 export const SPOT_CATEGORIES = [
   {
     key: 'drink', emoji: '🍸', label_el: 'Ποτό', label_en: 'Drinks',
-    hint_el: 'cocktails · rooftop bar · wine & spirits · μπύρα', hint_en: 'cocktails · rooftop bar · wine & spirits · beer',
+    hint_el: 'cocktails · wine · μπύρα · ρακί / τσίπουρο', hint_en: 'cocktails · wine · beer · raki / tsipouro',
     subs: [
       { key: 'cocktail_bar', label_el: 'Cocktail bar', label_en: 'Cocktail bar' },
       { key: 'wine_bar', label_el: 'Wine bar', label_en: 'Wine bar' },
-      { key: 'rooftop_bar', label_el: 'Rooftop', label_en: 'Rooftop' },
-      { key: 'all_day_bar', label_el: 'All-day bar', label_en: 'All-day bar' },
       { key: 'beer_bar', label_el: 'Μπυραρία', label_en: 'Beer bar' },
-      { key: 'shots_bar', label_el: 'Σφηνάδικο', label_en: 'Shots bar' },
+      { key: 'raki_tsipouro', label_el: 'Ρακάδικο / Τσιπουράδικο', label_en: 'Raki / Tsipouro bar' },
+      { key: 'speakeasy', label_el: 'Speakeasy', label_en: 'Speakeasy' },
     ],
   },
   {
     key: 'food', emoji: '🍽', label_el: 'Φαγητό', label_en: 'Food',
-    hint_el: 'street food · κινέζικο · brunch', hint_en: 'street food · chinese · brunch',
+    hint_el: 'ιταλικό · ασιατικό · street food · brunch', hint_en: 'italian · asian · street food · brunch',
     subs: [
+      { key: 'italian', label_el: 'Ιταλικό', label_en: 'Italian' },
+      { key: 'asian', label_el: 'Ασιατικό', label_en: 'Asian' },
+      { key: 'mexican', label_el: 'Μεξικάνικο', label_en: 'Mexican' },
+      { key: 'restaurant', label_el: 'Εστιατόριο', label_en: 'Restaurant' },
       { key: 'souvlaki', label_el: 'Σουβλάκι', label_en: 'Souvlaki' },
       { key: 'burger', label_el: 'Μπέργκερ', label_en: 'Burger' },
-      { key: 'sushi', label_el: 'Σούσι', label_en: 'Sushi' },
-      { key: 'italian', label_el: 'Ιταλικό', label_en: 'Italian' },
-      { key: 'meze', label_el: 'Μεζεδοπωλείο', label_en: 'Meze' },
-      { key: 'brunch', label_el: 'Brunch', label_en: 'Brunch' },
-      { key: 'vegan', label_el: 'Vegan', label_en: 'Vegan' },
       { key: 'seafood', label_el: 'Θαλασσινά', label_en: 'Seafood' },
-      { key: 'creative', label_el: 'Creative', label_en: 'Creative' },
+      { key: 'vegan', label_el: 'Vegan', label_en: 'Vegan' },
+      { key: 'meze', label_el: 'Μεζεδοπωλείο', label_en: 'Meze' },
       { key: 'street_food', label_el: 'Street food', label_en: 'Street food' },
+      { key: 'brunch', label_el: 'Brunch', label_en: 'Brunch' },
     ],
   },
   {
     key: 'nightlife', emoji: '🎵', label_el: 'Νύχτα', label_en: 'Nightlife',
-    hint_el: 'club · bar hopping · live music', hint_en: 'club · bar hopping · live music',
+    hint_el: 'club · μπουζούκια · techno · karaoke', hint_en: 'club · bouzoukia · techno · karaoke',
     subs: [
       { key: 'club', label_el: 'Club', label_en: 'Club' },
+      { key: 'karaoke', label_el: 'Karaoke', label_en: 'Karaoke' },
+      { key: 'bouzoukia', label_el: 'Μπουζούκια / Λαϊκά', label_en: 'Bouzoukia / Laiko' },
+      { key: 'entechno', label_el: 'Έντεχνο', label_en: 'Entechno' },
       { key: 'underground', label_el: 'Underground / Techno', label_en: 'Underground / Techno' },
-      { key: 'mainstream', label_el: 'Mainstream', label_en: 'Mainstream' },
-      { key: 'live_stage', label_el: 'Live stage', label_en: 'Live stage' },
-      { key: 'bouzoukia', label_el: 'Μπουζούκια', label_en: 'Bouzoukia' },
       { key: 'disco', label_el: 'Disco / Retro', label_en: 'Disco / Retro' },
+      { key: 'rock_metal', label_el: 'Rock / Metal', label_en: 'Rock / Metal' },
+      { key: 'latin', label_el: 'Latin', label_en: 'Latin' },
+      { key: 'hiphop_rnb', label_el: 'Hip hop / R&B', label_en: 'Hip hop / R&B' },
     ],
   },
   {
@@ -62,7 +65,6 @@ export const SPOT_CATEGORIES = [
     hint_el: 'stand-up comedy · σινεμά · θέατρο', hint_en: 'stand-up comedy · cinema · theatre',
     subs: [
       { key: 'stand_up', label_el: 'Stand-up', label_en: 'Stand-up' },
-      { key: 'live_music', label_el: 'Live μουσική', label_en: 'Live music' },
       { key: 'theatre', label_el: 'Θέατρο', label_en: 'Theatre' },
       { key: 'cinema', label_el: 'Σινεμά', label_en: 'Cinema' },
       { key: 'performance', label_el: 'Performance', label_en: 'Performance' },
@@ -80,7 +82,7 @@ export const SPOT_CATEGORIES = [
   },
   {
     key: 'activity', emoji: '🎯', label_el: 'Δραστηριότητα', label_en: 'Activity',
-    hint_el: 'bowling · escape room · επιτραπέζια', hint_en: 'bowling · escape room · board games',
+    hint_el: 'bowling · escape room · paintball · επιτραπέζια', hint_en: 'bowling · escape room · paintball · board games',
     subs: [
       { key: 'escape_room', label_el: 'Escape room', label_en: 'Escape room' },
       { key: 'bowling', label_el: 'Bowling', label_en: 'Bowling' },
@@ -88,6 +90,9 @@ export const SPOT_CATEGORIES = [
       { key: 'billiards', label_el: 'Μπιλιάρδο', label_en: 'Billiards' },
       { key: 'karting', label_el: 'Καρτ', label_en: 'Karting' },
       { key: 'arcade', label_el: 'Mini golf / Arcade', label_en: 'Mini golf / Arcade' },
+      { key: 'paintball', label_el: 'Paintball', label_en: 'Paintball' },
+      { key: 'laser_tag', label_el: 'Laser tag', label_en: 'Laser tag' },
+      { key: 'airsoft', label_el: 'Airsoft', label_en: 'Airsoft' },
     ],
   },
   {
@@ -120,7 +125,7 @@ export const SPOT_CATEGORY_KEYS: SpotCategory[] = SPOT_CATEGORIES.map(c => c.key
 
 const CATEGORY_BY_KEY: Record<string, SpotCategoryDef> = Object.fromEntries(SPOT_CATEGORIES.map(c => [c.key, c]))
 
-// Subcategory keys are unique across ALL categories (live_stage vs live_music),
+// Subcategory keys are unique across ALL categories,
 // so one flat lookup is enough.
 const SUB_BY_KEY: Record<string, SpotSubDef & { category: SpotCategory }> = Object.fromEntries(
   SPOT_CATEGORIES.flatMap(c => c.subs.map(s => [s.key, { ...s, category: c.key }])),
@@ -181,28 +186,42 @@ export function spotSubLabel(key: string | null | undefined, lang: string): stri
 // two in sync.
 
 const SUB_ALIASES: Record<string, string> = {
-  'σουβλακι': 'souvlaki', 'μπεργκερ': 'burger', 'σουσι': 'sushi', 'ιταλικο': 'italian',
+  'σουβλακι': 'souvlaki', 'μπεργκερ': 'burger', 'ιταλικο': 'italian',
   'μεζεδοπωλειο': 'meze', 'θαλασσινα': 'seafood',
-  'rooftop': 'rooftop_bar', 'μπυραρια': 'beer_bar', 'σφηναδικο': 'shots_bar',
+  'μπυραρια': 'beer_bar', 'ρακαδικοτσιπουραδικο': 'raki_tsipouro', 'rakitsipourobar': 'raki_tsipouro',
+  'ασιατικο': 'asian', 'μεξικανικο': 'mexican', 'εστιατοριο': 'restaurant',
+  'εντεχνο': 'entechno', 'hiphoprb': 'hiphop_rnb', 'μπουζουκιαλαικα': 'bouzoukia', 'bouzoukialaiko': 'bouzoukia',
   'undergroundtechno': 'underground', 'μπουζουκια': 'bouzoukia', 'discoretro': 'disco',
-  'standupcomedy': 'stand_up', 'liveμουσικη': 'live_music', 'θεατρο': 'theatre', 'σινεμα': 'cinema',
+  'standupcomedy': 'stand_up', 'θεατρο': 'theatre', 'σινεμα': 'cinema',
   'specialtyκαφε': 'specialty_coffee', 'γλυκο': 'dessert', 'τσαι': 'tea', 'teabrunch': 'tea', 'τσαιbrunch': 'tea',
   'boardgamecafe': 'board_games', 'μπιλιαρδο': 'billiards', 'καρτ': 'karting', 'minigolfarcade': 'arcade',
   'μουσειο': 'museum', 'βιβλιοπωλειο': 'bookstore', 'bookstorereading': 'bookstore',
   'yogameditation': 'yoga', 'θαλασσια': 'sea_swim', 'φυση': 'nature_walk',
 }
 
+// Subcategories removed from the list. A legacy value still resolves, to the
+// closest key that is left (mirrors normalize_spot_sub() in the
+// spot_categories_restructure migration).
+const REMOVED_SUB_ALIASES: Record<string, string> = {
+  'sushi': 'asian', 'σουσι': 'asian', 'creative': 'restaurant',
+  'rooftop': 'cocktail_bar', 'rooftopbar': 'cocktail_bar', 'alldaybar': 'cocktail_bar',
+  'shotsbar': 'cocktail_bar', 'σφηναδικο': 'cocktail_bar',
+  'mainstream': 'club',
+}
+
 // Every key also matches itself without underscores ('streetfood', 'alldaybar').
 const SUB_LOOKUP: Record<string, string> = {
   ...Object.fromEntries(Object.keys(SUB_BY_KEY).map(k => [k.replace(/_/g, ''), k])),
   ...SUB_ALIASES,
+  ...REMOVED_SUB_ALIASES,
 }
 
 /**
  * Converts a stored or typed subcategory ('μεζεδοπωλείο', 'Cocktail bar',
- * 'meze') to its key. `category` only matters for 'live stage' (show →
- * live_music, anything else → live_stage). An unknown value comes back exactly
- * as it was given, so callers can tell it is not on the list.
+ * 'meze') to its key. `category` only matters for 'live stage' / 'live music':
+ * club, except when the category is show, where there is no such subcategory
+ * any more (the value comes back as given, so it is rejected). An unknown value
+ * comes back exactly as it was given, so callers can tell it is not on the list.
  */
 export function normalizeSpotSub(raw: string | null | undefined, category?: string | null): string | null {
   if (raw == null) return null
@@ -214,7 +233,7 @@ export function normalizeSpotSub(raw: string | null | undefined, category?: stri
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9α-ω]/g, '')
-  if (c === 'livestage') return category === 'show' ? 'live_music' : 'live_stage'
+  if (c === 'livestage' || c === 'livemusic' || c === 'liveμουσικη') return category === 'show' ? raw : 'club'
   return Object.hasOwn(SUB_LOOKUP, c) ? SUB_LOOKUP[c] : raw
 }
 
@@ -387,7 +406,7 @@ export function validateSpotTaxonomy(
   else if (typeof rawSubsInput === 'string') rawSubs = [rawSubsInput]
   else return { ok: false, error: 'subcategories must be a list' }
 
-  // 'live stage' means live_music only when show is chosen without nightlife.
+  // 'live stage' / 'live music' means club, unless show is chosen without nightlife (then it is rejected).
   const hint = categories.includes('show') && !categories.includes('nightlife') ? 'show' : categories[0]
   const subcategories: string[] = []
   for (const s of rawSubs) {

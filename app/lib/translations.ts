@@ -202,6 +202,22 @@ const translations = {
   listings_pub_30d:      { el: "Τελευταίες 30 ημέρες", en: "Last 30 days" },
   listings_filters:      { el: "Φίλτρα", en: "Filters" },
 
+  // ── Public map (/map) ───────────────────────────────────────────────────
+  map_open:            { el: "Άνοιξε τον χάρτη", en: "Open the map" },
+  map_breadcrumb:      { el: "Χάρτης", en: "Map" },
+  map_aria:            { el: "Χάρτης με spots και σημεία ευεξίας", en: "Map of spots and wellness places" },
+  map_filters:         { el: "Φίλτρα", en: "Filters" },
+  map_clear:           { el: "Καθαρισμός", en: "Clear" },
+  map_clear_filters:   { el: "Καθαρισμός φίλτρων", en: "Clear filters" },
+  map_soon:            { el: "Σύντομα εδώ", en: "Coming soon" },
+  map_no_results:      { el: "Κανένα σημείο με αυτά τα φίλτρα.", en: "No places match these filters." },
+  map_how_to_get:      { el: "Πώς φτάνεις:", en: "How to get there:" },
+  map_directions:      { el: "Οδηγίες στο Google Maps", en: "Directions in Google Maps" },
+  map_night_no:        { el: "Δεν το έχουμε επιβεβαιώσει ακόμα για βράδυ.", en: "We haven't confirmed it for night yet." },
+  map_night_yes:       { el: "Επιβεβαιωμένο βράδυ ✓", en: "Confirmed for night ✓" },
+  map_view_spot:       { el: "Δες τη σελίδα του", en: "Open its page" },
+  map_close:           { el: "Κλείσιμο", en: "Close" },
+  map_no_photo:        { el: "Χωρίς φωτογραφία", en: "No photo" },
   // ── Spots ──────────────────────────────────────────────
   spots_hero_title:   { el: "Πού πάμε", en: "Where are we going" },
   spots_hero_em:      { el: "απόψε;", en: "tonight?" },
