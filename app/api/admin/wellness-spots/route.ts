@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { slugify } from '@/app/lib/slug'
 import { parseWellnessInput, PUBLISH_NEEDS_PIN } from '@/app/lib/wellnessSpots'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
@@ -51,5 +52,6 @@ export async function POST(req: NextRequest) {
     console.error('[admin/wellness-spots POST]', error)
     return NextResponse.json({ error: 'Δεν αποθηκεύτηκε το σημείο.' }, { status: 500 })
   }
+  revalidatePublicPaths('wellness_spots')
   return NextResponse.json({ ok: true, spot: data })
 }

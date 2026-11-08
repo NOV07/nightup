@@ -1,16 +1,22 @@
 // Shared rules for wellness_spots (admin API + admin UI). The allowlist and the
 // checks live here so no route can write a column that is not listed.
 
+import { MAX_SPOT_SUBCATEGORIES, spotCategoryDef } from './spotCategories.ts'
+
 export const WELLNESS_KINDS = ['viewpoint', 'hill', 'park', 'square'] as const
 export const WELLNESS_BEST_TIMES = ['day', 'sunset', 'night', 'all'] as const
 export const WELLNESS_BUCKET = 'wellness-spots'
 export const MAX_WELLNESS_PHOTOS = 6
 
+/** The four Wellness subcategories (sunset_spot, yoga, sea_swim, nature_walk): the only values a wellness spot may carry. */
+export const WELLNESS_SUBS = spotCategoryDef('wellness')?.subs ?? []
+export const MAX_WELLNESS_SUBCATEGORIES = MAX_SPOT_SUBCATEGORIES
+
 /** The only columns a request may write. Anything else is dropped. */
 export const WELLNESS_FIELDS = [
   'name', 'slug', 'area', 'kind', 'description', 'best_time', 'has_bench',
   'access_note', 'lat', 'lng', 'coords_verified', 'verified_night',
-  'photo_urls', 'source_url', 'published',
+  'photo_urls', 'subcategories', 'source_url', 'published',
 ] as const
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -90,6 +96,20 @@ export function parseWellnessInput(input: unknown): Result {
       if (typeof src[k] !== 'boolean') return { ok: false, error: `Μη έγκυρη τιμή: ${k}.` }
       row[k] = src[k]
     }
+  }
+  if ('subcategories' in src) {
+    const raw = src.subcategories
+    if (!Array.isArray(raw)) return { ok: false, error: 'Οι υποκατηγορίες πρέπει να είναι λίστα.' }
+    const allowed = new Set<string>(WELLNESS_SUBS.map(s => s.key))
+    const subs: string[] = []
+    for (const v of raw) {
+      if (typeof v !== 'string' || !allowed.has(v)) return { ok: false, error: 'Μη έγκυρη υποκατηγορία (μόνο της Ευεξίας).' }
+      if (!subs.includes(v)) subs.push(v)
+    }
+    if (subs.length > MAX_WELLNESS_SUBCATEGORIES) {
+      return { ok: false, error: `Μέχρι ${MAX_WELLNESS_SUBCATEGORIES} υποκατηγορίες.` }
+    }
+    row.subcategories = subs
   }
   if ('photo_urls' in src) {
     const p = src.photo_urls
