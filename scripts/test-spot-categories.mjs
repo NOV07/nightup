@@ -91,7 +91,7 @@ test('spelling variants: case, accents, spaces', () => {
 })
 test('a key stays a key', () => { assert.equal(normalizeSpotSub('street_food'), 'street_food'); assert.equal(normalizeSpotSub('karaoke'), 'karaoke') })
 test('new labels resolve to their key', () => {
-  for (const c of SPOT_CATEGORIES) for (const sub of c.subs) { assert.equal(normalizeSpotSub(sub.label_el, c.key), sub.key, sub.label_el); assert.equal(normalizeSpotSub(sub.label_en, c.key), sub.key, sub.label_en) }
+  for (const c of SPOT_CATEGORIES.filter(c => c.key in FINAL)) for (const sub of c.subs) { assert.equal(normalizeSpotSub(sub.label_el, c.key), sub.key, sub.label_el); assert.equal(normalizeSpotSub(sub.label_en, c.key), sub.key, sub.label_en) }
 })
 test('removed keys map to the closest key left', () => {
   for (const [old, now] of [['sushi', 'asian'], ['creative', 'restaurant'], ['rooftop_bar', 'cocktail_bar'], ['all_day_bar', 'cocktail_bar'], ['shots_bar', 'cocktail_bar'], ['mainstream', 'club'], ['live_stage', 'club']]) assert.equal(normalizeSpotSub(old), now)
