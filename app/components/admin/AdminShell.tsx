@@ -148,6 +148,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               <div className="w-8 h-1 rounded-full mx-auto mb-4" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
               {([
                 { tab: "spots"    as Tab, label: "Spots",    badge: counts.byTab.spots },
+                { tab: "wellness" as Tab, label: "Wellness spots", badge: 0 },
                 { tab: "users"    as Tab, label: "Users",    badge: 0 },
                 { tab: "upgrades" as Tab, label: "Upgrades", badge: counts.byTab.upgrades },
                 { tab: "featured" as Tab, label: "Featured", badge: counts.byTab.featured },

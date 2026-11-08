@@ -11,6 +11,7 @@ import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
 import { SPOT_CROP_ASPECT } from "../spots/types";
 import SpotTaxonomyPicker from "../../components/spots/SpotTaxonomyPicker";
 import { primaryCategory, spotCategoriesOf, spotCategoryLabel, spotSubcategoriesOf, spotSubLabel, type SpotCategory } from "../lib/spotCategories";
+import WellnessSpotsPanel from "../components/admin/WellnessSpotsPanel";
 import LocationPicker from "../../components/maps/LocationPicker";
 import { useLanguage } from "../components/LanguageContext";
 import { profileHref } from '@/app/lib/profileHref'
@@ -1556,11 +1557,13 @@ export default function AdminClient() {
               </div>
             )}
 
+            {activeTab === "wellness" && <WellnessSpotsPanel />}
+
             {/* ── CONTENT tabs (events, articles, music, spots) ── */}
             {/* Listings sit out of this block: it renders Pending/Published/Hidden
                 off a `status` column they do not have, plus an Add form for
                 content the admin authors — listings are posted by creators. */}
-            {!["queue","users","upgrades","featured","listings", ...PROFILE_TAB_IDS].includes(activeTab) && (
+            {!["queue","users","upgrades","featured","listings","wellness", ...PROFILE_TAB_IDS].includes(activeTab) && (
               <>
                 {/* Music sub-tabs */}
                 {activeTab === "music" && (

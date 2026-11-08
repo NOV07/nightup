@@ -86,6 +86,7 @@ export default function AdminSidebar() {
         <NavItem label="Events"     tab="events" badge={counts.byTab.events} />
         <NavItem label="Nightwaves" tab="music"  badge={counts.byTab.music} />
         <NavItem label="Spots"      tab="spots"  badge={counts.byTab.spots} />
+        <NavItem label="Wellness spots" tab="wellness" />
         {/* No badge: listings have no pending state to count. */}
         <NavItem label="Listings"   tab="listings" />
         <NavItem label="Magazine"   active={magazineActive} onClick={() => router.push("/admin/magazine")} />
