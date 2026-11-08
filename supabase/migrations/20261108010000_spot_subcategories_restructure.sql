@@ -103,6 +103,7 @@ begin
     when 'karaoke'        then 'karaoke'
     when 'bouzoukia'      then 'bouzoukia'
     when 'μπουζουκιαλαικα' then 'bouzoukia'
+    when 'bouzoukialaiko' then 'bouzoukia'
     when 'μπουζουκια'     then 'bouzoukia'
     when 'entechno'       then 'entechno'
     when 'εντεχνο'        then 'entechno'

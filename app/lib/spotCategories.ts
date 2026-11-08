@@ -190,7 +190,7 @@ const SUB_ALIASES: Record<string, string> = {
   'μεζεδοπωλειο': 'meze', 'θαλασσινα': 'seafood',
   'μπυραρια': 'beer_bar', 'ρακαδικοτσιπουραδικο': 'raki_tsipouro', 'rakitsipourobar': 'raki_tsipouro',
   'ασιατικο': 'asian', 'μεξικανικο': 'mexican', 'εστιατοριο': 'restaurant',
-  'εντεχνο': 'entechno', 'hiphoprb': 'hiphop_rnb', 'μπουζουκιαλαικα': 'bouzoukia',
+  'εντεχνο': 'entechno', 'hiphoprb': 'hiphop_rnb', 'μπουζουκιαλαικα': 'bouzoukia', 'bouzoukialaiko': 'bouzoukia',
   'undergroundtechno': 'underground', 'μπουζουκια': 'bouzoukia', 'discoretro': 'disco',
   'standupcomedy': 'stand_up', 'θεατρο': 'theatre', 'σινεμα': 'cinema',
   'specialtyκαφε': 'specialty_coffee', 'γλυκο': 'dessert', 'τσαι': 'tea', 'teabrunch': 'tea', 'τσαιbrunch': 'tea',
