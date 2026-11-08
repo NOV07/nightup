@@ -90,8 +90,11 @@ export default function PublicMap({ points, selectedId, onSelect }: Props) {
       zoomControl: false,
       attributionControl: false,
     })
-    L.control.zoom({ zoomInTitle: t('spot_map_zoom_in'), zoomOutTitle: t('spot_map_zoom_out') }).addTo(map)
-    L.control.attribution({ prefix: false }).addTo(map)
+    // Zoom and attribution both sit top-right: the bottom corners are taken by
+    // the bottom sheet (phone), the card (desktop) and the site's player pill,
+    // and the attribution has to stay visible.
+    L.control.zoom({ position: 'topright', zoomInTitle: t('spot_map_zoom_in'), zoomOutTitle: t('spot_map_zoom_out') }).addTo(map)
+    L.control.attribution({ position: 'topright', prefix: false }).addTo(map)
 
     const tilePane = map.getPane('tilePane')
     if (tilePane) tilePane.style.filter = 'invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9)'
@@ -185,14 +188,16 @@ export default function PublicMap({ points, selectedId, onSelect }: Props) {
         </p>
       )}
       {tilesFailed && (
+        // A banner, not a cover: the pins keep working when the tiles do not load.
         <div role="alert" style={{
-          position: 'absolute', inset: 0, zIndex: 1000,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
-          backgroundColor: 'rgba(15,15,26,0.92)', color: 'rgba(255,255,255,0.8)', fontSize: 13, textAlign: 'center', padding: 16,
+          position: 'absolute', left: 12, right: 72, top: coarse ? 52 : 10, zIndex: 1000, maxWidth: 420,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          backgroundColor: 'rgba(15,15,26,0.94)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
+          color: 'rgba(255,255,255,0.8)', fontSize: 13, padding: '6px 6px 6px 12px',
         }}>
-          {t('spot_map_tiles_failed')}
+          <span>{t('spot_map_tiles_failed')}</span>
           <button type="button" onClick={retryTiles}
-            style={{ minHeight: 44, padding: '6px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', backgroundColor: 'rgba(232,160,32,0.12)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.35)' }}>
+            style={{ flex: 'none', minHeight: 44, padding: '6px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer', backgroundColor: 'rgba(232,160,32,0.12)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.35)' }}>
             {t('spot_map_retry')}
           </button>
         </div>
