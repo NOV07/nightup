@@ -62,10 +62,13 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   const lastPicked = useRef<string | null>(null);
 
   // A link that arrives while the map is open (?c=…&s=…) replaces the filters.
+  // Adjusted during render (React's pattern for state derived from a prop).
   const urlKey = serializeFilters(parseFilters(searchParams));
-  useEffect(() => {
-    setFilters((cur) => (serializeFilters(cur) === urlKey ? cur : parseFilters(new URLSearchParams(urlKey))));
-  }, [urlKey]);
+  const [seenUrlKey, setSeenUrlKey] = useState(urlKey);
+  if (urlKey !== seenUrlKey) {
+    setSeenUrlKey(urlKey);
+    if (serializeFilters(filters) !== urlKey) setFilters(parseFilters(new URLSearchParams(urlKey)));
+  }
 
   // The filters live in the URL, so a link can be sent.
   const update = useCallback((next: MapFilters) => {
