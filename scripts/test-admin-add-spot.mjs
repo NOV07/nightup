@@ -56,10 +56,10 @@ test('legacy single category/subcategory becomes one-element lists with the subc
   assert.equal(row.subcategory, 'cocktail_bar')
 })
 test('categories/subcategories arrays are accepted; first is primary', () => {
-  const { row } = ok({ ...base(), category: undefined, subcategory: undefined, categories: ['nightlife', 'drink'], subcategories: ['club', 'rooftop_bar'] })
+  const { row } = ok({ ...base(), category: undefined, subcategory: undefined, categories: ['nightlife', 'drink'], subcategories: ['club', 'cocktail_bar'] })
   assert.deepEqual(row.categories, ['nightlife', 'drink'])
   assert.equal(row.category, 'nightlife')
-  assert.deepEqual(row.subcategories, ['club', 'rooftop_bar'])
+  assert.deepEqual(row.subcategories, ['club', 'cocktail_bar'])
   assert.equal(row.subcategory, 'club')
 })
 test('categories wins over the legacy category when both are sent', () => {
@@ -84,7 +84,7 @@ test('invalid category', () => assert.match(err({ ...base(), category: 'casino' 
 test('subcategory not in the list', () => assert.match(err({ ...base(), subcategory: 'karaoke' }), /not in the list/))
 test('subcategory from another category', () => assert.match(err({ ...base(), subcategory: 'club' }), /not in the list for drink/))
 test('more than 3 categories', () => assert.match(err({ ...base(), category: undefined, categories: ['food', 'drink', 'show', 'chill'], subcategory: '' }), /at most 3 categories/))
-test('more than 3 subcategories', () => assert.match(err({ ...base(), category: undefined, subcategory: undefined, categories: ['food'], subcategories: ['souvlaki', 'burger', 'sushi', 'italian'] }), /at most 3 subcategories/))
+test('more than 3 subcategories', () => assert.match(err({ ...base(), category: undefined, subcategory: undefined, categories: ['food'], subcategories: ['souvlaki', 'burger', 'asian', 'italian'] }), /at most 3 subcategories/))
 test('empty categories list', () => assert.match(err({ ...base(), category: undefined, categories: [] }), /Category must be one of/))
 test('unknown category in the list', () => assert.match(err({ ...base(), category: undefined, categories: ['drink', 'casino'] }), /Category must be one of/))
 test('subcategory of a category that was not picked', () => assert.match(err({ ...base(), category: undefined, subcategory: undefined, categories: ['drink', 'food'], subcategories: ['club'] }), /not in the list for drink, food/))

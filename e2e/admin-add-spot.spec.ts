@@ -166,7 +166,7 @@ function suite(label: string) {
       ['bad category', { ...valid, category: 'casino' }, /Category must be one of/],
       ['bad subcategory', { ...valid, subcategory: 'karaoke' }, /not in the list/],
       ['four categories', { ...valid, category: undefined, categories: ['food', 'drink', 'show', 'chill'] }, /at most 3 categories/],
-      ['four subcategories', { ...valid, category: undefined, categories: ['food'], subcategories: ['souvlaki', 'burger', 'sushi', 'italian'] }, /at most 3 subcategories/],
+      ['four subcategories', { ...valid, category: undefined, categories: ['food'], subcategories: ['souvlaki', 'burger', 'asian', 'italian'] }, /at most 3 subcategories/],
       ['subcategory of an unpicked category', { ...valid, category: undefined, categories: ['drink'], subcategories: ['club'] }, /not in the list for drink/],
       ['owner_id', { ...valid, owner_id: '00000000-0000-0000-0000-000000000000' }, /Unknown field.*owner_id/],
       ['status', { ...valid, status: 'approved' }, /Unknown field.*status/],
