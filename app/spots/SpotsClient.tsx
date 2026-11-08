@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import SpotCard from "../components/SpotCard";
 import type { Spot } from "./types";
 import { SPOT_CATEGORIES, spotInCategory, spotSubsInCategory, type SpotCategory } from "../lib/spotCategories";
@@ -115,6 +116,15 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '160px', background: 'linear-gradient(to right, #0F0F1A, transparent)', pointerEvents: 'none', zIndex: 5 }} />
+
+        <div style={{ position: 'absolute', top: 20, left: 0, right: 0, zIndex: 10, pointerEvents: 'none' }}>
+          <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'flex-end' }}>
+            <Link href="/map" style={{ pointerEvents: 'auto', height: 44, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 10, borderRadius: 8, background: 'transparent', border: '1px solid #3A3A55', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8A020" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+              {t("map_open")}
+            </Link>
+          </div>
+        </div>
 
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '80rem', margin: '0 auto', padding: '0 24px' }}>
           <div id="hero-eyebrow" style={{ fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#E8A020', marginBottom: '10px', opacity: 0, fontFamily: 'var(--font-sans)' }}>Spots</div>

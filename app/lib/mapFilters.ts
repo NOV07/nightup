@@ -56,7 +56,9 @@ export function normalizeFilters(input: { categories?: readonly string[]; subcat
     const owner = subCategoryOf(s)
     if (owner && categories.includes(owner)) subs.add(s)
   }
-  return { categories, subcategories: [...subs] }
+  // Grouped by category (display order), so the same filters always give the same URL.
+  const subcategories = categories.flatMap(c => [...subs].filter(k => subCategoryOf(k) === c))
+  return { categories, subcategories }
 }
 
 /** Selecting a category on/off. Turning one off also drops its subcategories. */
