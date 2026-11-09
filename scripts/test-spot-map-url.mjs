@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Offline test for app/lib/spotMapUrl.ts.   node scripts/test-spot-map-url.mjs */
 import assert from 'node:assert/strict'
-import { spotMapUrl } from '../app/lib/spotMapUrl.ts'
+import { spotMapUrl, containsUrl } from '../app/lib/spotMapUrl.ts'
 
 const B = 'https://www.google.com/maps/search/?api=1&query='
 let failed = 0
@@ -33,5 +33,29 @@ test('nothing usable: null', () => {
 test('special characters are encoded', () => {
   const u = spotMapUrl({ name: 'Bar & Grill #1', city: 'Athina' })
   assert.equal(new URL(u).searchParams.get('query'), 'Bar & Grill #1 Athina')
+})
+test('address that holds a link is ignored, wherever the link sits', () => {
+  const want = B + encodeURIComponent('Ουλαλούμ Ηλιούπολη')
+  for (const address of [
+    'https://maps.app.goo.gl/TWT91mSPwagDkg8HA?g_st=ac',
+    'http://maps.app.goo.gl/x',
+    'Φαλήρου 22 https://maps.app.goo.gl/abc Αθήνα',
+    'Φαλήρου 22, https://example.com',
+    'maps.app.goo.gl/TWT91mSPwagDkg8HA',
+    'goo.gl/maps/abc',
+    'www.google.com/maps/place/x',
+    'google.com/maps',
+    'δες εδώ: HTTPS://WWW.GOOGLE.COM/maps',
+  ]) assert.equal(spotMapUrl({ name: 'Ουλαλούμ', address, city: 'Ηλιούπολη' }), want, address)
+})
+test('the reported case: link in address, city Athens', () => {
+  const u = spotMapUrl({ name: 'Ουλαλούμ', address: 'https://maps.app.goo.gl/TWT91mSPwagDkg8HA?g_st=ac', city: 'Athens' })
+  assert.equal(new URL(u).searchParams.get('query'), 'Ουλαλούμ Athens')
+})
+test('plain addresses are kept (incl. words that merely look like hosts)', () => {
+  for (const a of ['Φαλήρου 22, Αθήνα 117 42', 'Ermou 10', 'Google Street 5', 'Agoogle 4']) {
+    assert.equal(containsUrl(a), false, a)
+  }
+  assert.equal(containsUrl('see google.com'), true)
 })
 if (failed) process.exit(1)

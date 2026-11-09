@@ -13,6 +13,12 @@ export interface SpotMapInput {
 
 const clean = (s?: string | null) => (s ?? '').trim()
 
+// A scheme, or a Google/short-link host, anywhere in the text. An address that
+// holds a pasted link is not an address, so the whole value is dropped.
+const URL_IN_TEXT = /(?:https?:\/\/|\b(?:maps\.app\.goo\.gl|goo\.gl|(?:[\w-]+\.)*google\.[a-z.]+)(?:[/?#:\s]|$))/i
+
+export const containsUrl = (s?: string | null) => URL_IN_TEXT.test(s ?? '')
+
 /**
  * A text query (name + address + city, whatever exists) opens the place card;
  * bare coordinates only drop an empty pin, so they are the last resort.
@@ -20,7 +26,7 @@ const clean = (s?: string | null) => (s ?? '').trim()
  */
 export function spotMapUrl(spot: SpotMapInput): string | null {
   const name = clean(spot.name)
-  const address = clean(spot.address)
+  const address = containsUrl(spot.address) ? '' : clean(spot.address)
   const city = clean(spot.city)
   const parts = (address ? [name, address, city] : [name, city]).filter(Boolean)
   if (name || address) return BASE + encodeURIComponent(parts.join(' '))
