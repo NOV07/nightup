@@ -15,6 +15,7 @@ import type { CropBox } from "../../../components/ui/CroppedImage";
 import HostedEventCard, { type HostedEvent } from "../../../components/profile/HostedEventCard";
 import ProfileListings, { type ProfileListing } from "../../../components/profile/ProfileListings";
 import { normalizeInstagram } from "../../lib/instagram";
+import { spotMapUrl } from "../../lib/spotMapUrl";
 
 /** The owner account's profile, for the profile-style hero. */
 export interface SpotOwner {
@@ -57,9 +58,7 @@ export default function SpotProfileClient({ spot, owner = null, events = [], lis
   const hours = spot.openingHours
     ? Object.entries(spot.openingHours).sort(([a], [b]) => dayRank(a) - dayRank(b))
     : [];
-  const mapUrl = spot.lat && spot.lng
-    ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`
-    : spot.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address + " " + spot.city)}` : null;
+  const mapUrl = spotMapUrl(spot);
 
   return (
     <div style={{ background: "#0F0F1A", minHeight: "100vh" }}>
