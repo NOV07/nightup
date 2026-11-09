@@ -4,7 +4,7 @@ import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 import { withIngestedEventImage } from '@/app/lib/ingestImage'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
-import { withSpotTaxonomy } from '@/app/lib/spotInput'
+import { withSpotTaxonomy, spotAddressLinkError, ADDRESS_IS_LINK, ADDRESS_IS_LINK_MESSAGE } from '@/app/lib/spotInput'
 
 function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
@@ -34,6 +34,15 @@ export async function POST(req: NextRequest) {
   if (table === 'spots') {
     const coordsError = spotCoordsError(row, { allowEmpty: true })
     if (coordsError) return NextResponse.json({ error: coordsError }, { status: 400 })
+
+    // The admin edit form posts the whole row back, so only a changed address
+    // counts. The stored one is read only when the new text holds a link.
+    if (typeof row.address === 'string' && spotAddressLinkError(row.address)) {
+      const { data: stored } = await admin.from('spots').select('address').eq('id', id).maybeSingle()
+      if (spotAddressLinkError(row.address, stored?.address)) {
+        return NextResponse.json({ error: ADDRESS_IS_LINK_MESSAGE, code: ADDRESS_IS_LINK }, { status: 400 })
+      }
+    }
 
     // Category/subcategory go through the same validator as every other spot
     // write; a payload without them (e.g. the featured star) is left alone.

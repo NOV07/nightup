@@ -10,6 +10,7 @@ import { CURRENCIES, normalizeCurrency, parsePriceInput } from "../lib/formatPri
 import { isEventFeatured, featuredUntilFor } from "../lib/eventFeatured";
 import { SPOT_CROP_ASPECT } from "../spots/types";
 import SpotTaxonomyPicker from "../../components/spots/SpotTaxonomyPicker";
+import { containsUrl } from "../lib/spotMapUrl";
 import { primaryCategory, spotCategoriesOf, spotCategoryLabel, spotSubcategoriesOf, spotSubLabel, type SpotCategory } from "../lib/spotCategories";
 import WellnessSpotsPanel from "../components/admin/WellnessSpotsPanel";
 import LocationPicker from "../../components/maps/LocationPicker";
@@ -206,7 +207,7 @@ function toReleasePayload(form: Record<string, unknown>) {
 const defaultMixForm = { title:"",artist:"",genre:"house",cover_image:"",soundcloud_url:"",duration:"",description:"",tracklist:"",profile_id:"" };
 const defaultPlaylistForm = { title:"",platform:"Spotify",embed_url:"",cover_image:"",is_sponsored:false };
 const defaultArtistForm = { name:"",origin:"",about:"",photo:"",genres:"",style_tags:"",spotify_url:"",soundcloud_url:"",instagram:"",website:"" };
-const defaultSpotForm = { name:"",slug:"",categories:["drink"] as SpotCategory[],subcategories:[] as string[],city:"Athens",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,is_published:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
+const defaultSpotForm = { name:"",slug:"",categories:["drink"] as SpotCategory[],subcategories:[] as string[],city:"",neighborhood:"",address:"",description:"",cover_image:"",price_level:"2",price_text:"",rating:"",instagram:"",is_sponsored:false,featured:false,is_published:false,crop_x:null as number | null,crop_y:null as number | null,crop_width:null as number | null,crop_height:null as number | null,lat:null as number | null,lng:null as number | null };
 
 export default function AdminClient() {
   const { t } = useLanguage();
@@ -491,6 +492,11 @@ export default function AdminClient() {
   }
 
   async function handleEditSave(table: string, id: string, data: Record<string, unknown>) {
+    if (table === "spots" && typeof data.address === "string" && containsUrl(data.address)
+        && data.address.trim() !== String((editItem as Record<string, unknown> | null)?.address ?? "").trim()) {
+      setEditError(t("err_address_is_link"));
+      return;
+    }
     setEditLoading(true);
     setEditError("");
     // EditForm posts back the row it was seeded with. Anything on that row that
@@ -731,6 +737,8 @@ export default function AdminClient() {
   async function handleAddSpot(e: React.FormEvent) {
     e.preventDefault();
     // Without a pin the spot has no `geo` and never shows up in "near me".
+    if (!spotForm.city) { setAddError(t("err_pick_city")); return; }
+    if (containsUrl(spotForm.address)) { setAddError(t("err_address_is_link")); return; }
     if (spotForm.lat == null || spotForm.lng == null) { setAddError(t("err_map_pin_required")); return; }
     setAddLoading(true); setAddError(""); setAddSuccess("");
     // The route whitelists these columns and rejects anything else. No owner:
@@ -1787,7 +1795,7 @@ export default function AdminClient() {
                             <div><label className={labelCls}>Name *</label><input required className={inputCls} style={inputStyle} value={spotForm.name} onChange={e => setSpotForm(f => ({ ...f, name:e.target.value }))} /></div>
                             <div><label className={labelCls}>Slug</label><input className={inputCls} style={inputStyle} value={spotForm.slug} onChange={e => setSpotForm(f => ({ ...f, slug:e.target.value }))} placeholder="my-spot-name" /></div>
                             <SpotTaxonomyPicker labelCls={labelCls} value={{ categories: spotForm.categories, subcategories: spotForm.subcategories }} onChange={n => setSpotForm(f => ({ ...f, categories: n.categories, subcategories: n.subcategories }))} />
-                            <div><label className={labelCls}>City</label><select className={inputCls} style={inputStyle} value={spotForm.city} onChange={e => setSpotForm(f => ({ ...f, city:e.target.value }))}>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
+                            <div><label className={labelCls}>City</label><select required className={inputCls} style={inputStyle} value={spotForm.city} onChange={e => setSpotForm(f => ({ ...f, city:e.target.value }))}><option value="" disabled>{t("err_pick_city")}</option>{CITIES.map(c => <option key={c}>{c}</option>)}</select></div>
                             <div><label className={labelCls}>Neighborhood</label><input className={inputCls} style={inputStyle} value={spotForm.neighborhood} onChange={e => setSpotForm(f => ({ ...f, neighborhood:e.target.value }))} /></div>
                             <div><label className={labelCls}>Address</label><input className={inputCls} style={inputStyle} value={spotForm.address} onChange={e => setSpotForm(f => ({ ...f, address:e.target.value }))} /></div>
                             <div className="sm:col-span-2" data-testid="admin-add-spot-map">

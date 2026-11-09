@@ -6,6 +6,7 @@ import { validateSpotTaxonomy } from './spotCategories.ts'
 import { spotCoordsError } from './mapsCoords.ts'
 import { slugify } from './slug.ts'
 import { normalizeInstagram } from './instagram.ts'
+import { containsUrl } from './spotMapUrl.ts'
 
 /** Columns an owner may write through /api/spots and /api/spots/[id]. */
 export const SPOT_FIELDS = [
@@ -44,6 +45,23 @@ export function withSpotTaxonomy(
 
 const MAX_GALLERY = 8
 
+/** Stable error code for a link stored where a street address belongs. */
+export const ADDRESS_IS_LINK = 'address_is_link'
+export const ADDRESS_IS_LINK_MESSAGE = 'Address must be a street address, not a link. Put the map link in the map link field.'
+
+/**
+ * The code to answer with when a write would set `address` to text that holds
+ * a URL, else null. `current` is the stored address: resending the value that
+ * is already there is not a change, so an edit of other fields never fails on
+ * a spot that already has a link in its address. Not sent, not text, or empty
+ * all pass; the other validators own those cases.
+ */
+export function spotAddressLinkError(next: unknown, current?: string | null): typeof ADDRESS_IS_LINK | null {
+  if (typeof next !== 'string' || !containsUrl(next)) return null
+  if (typeof current === 'string' && next.trim() === current.trim()) return null
+  return ADDRESS_IS_LINK
+}
+
 // Upper bounds for free text. price_text matches the DB check constraint.
 const TEXT_LIMITS: Record<string, number> = {
   name: 120, city: 60, neighborhood: 120, address: 200, description: 3000,
@@ -52,7 +70,7 @@ const TEXT_LIMITS: Record<string, number> = {
 
 export type AdminSpotCheck =
   | { ok: true; row: Record<string, unknown>; slugRoot: string }
-  | { ok: false; error: string }
+  | { ok: false; error: string; code?: string }
 
 function isUrl(s: string): boolean {
   try {
@@ -86,6 +104,8 @@ export function checkAdminSpotInput(input: unknown): AdminSpotCheck {
     if (s.length > TEXT_LIMITS[k]) return { ok: false, error: `${k} is too long (max ${TEXT_LIMITS[k]} characters)` }
     row[k] = s || null
   }
+
+  if (spotAddressLinkError(row.address)) return { ok: false, error: ADDRESS_IS_LINK_MESSAGE, code: ADDRESS_IS_LINK }
 
   // Only the bare username is stored; the page adds the single "@".
   if ('instagram' in row) row.instagram = normalizeInstagram(row.instagram as string | null)

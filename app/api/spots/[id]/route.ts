@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { SPOT_FIELDS } from '../route'
-import { withSpotTaxonomy } from '@/app/lib/spotInput'
+import { withSpotTaxonomy, spotAddressLinkError, ADDRESS_IS_LINK, ADDRESS_IS_LINK_MESSAGE } from '@/app/lib/spotInput'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
 import { normalizeInstagram } from '@/app/lib/instagram'
 
@@ -19,7 +19,7 @@ export async function PATCH(
 
   const { data: existing } = await supabase
     .from('spots')
-    .select('owner_id, categories')
+    .select('owner_id, categories, address')
     .eq('id', id)
     .maybeSingle()
 
@@ -36,6 +36,12 @@ export async function PATCH(
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  // Only a change to a link is refused; a spot that already holds one can
+  // still have its other fields edited.
+  if (spotAddressLinkError(body.address, existing.address)) {
+    return NextResponse.json({ error: ADDRESS_IS_LINK_MESSAGE, code: ADDRESS_IS_LINK }, { status: 400 })
   }
 
   // A null lat/lng would empty the generated `geo` column and drop the spot

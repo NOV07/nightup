@@ -66,7 +66,7 @@ const UNIQUE_VIOLATION = '23505'
  */
 async function addSpot(data: unknown) {
   const check = checkAdminSpotInput(data)
-  if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 })
+  if (!check.ok) return NextResponse.json({ error: check.error, ...(check.code ? { code: check.code } : {}) }, { status: 400 })
 
   const admin = getSupabaseAdmin()
   // A slug taken between the read and the insert gets the next suffix instead

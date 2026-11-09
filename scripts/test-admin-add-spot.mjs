@@ -6,7 +6,7 @@
  *   node scripts/test-admin-add-spot.mjs
  */
 import assert from 'node:assert/strict'
-import { checkAdminSpotInput, SPOT_FIELDS, ADMIN_SPOT_INPUT_FIELDS } from '../app/lib/spotInput.ts'
+import { checkAdminSpotInput, SPOT_FIELDS, ADMIN_SPOT_INPUT_FIELDS, spotAddressLinkError, ADDRESS_IS_LINK } from '../app/lib/spotInput.ts'
 import { slugify, uniqueSlug } from '../app/lib/slug.ts'
 
 let passed = 0, failed = 0
@@ -99,6 +99,47 @@ test('is_published not boolean', () => assert.match(err({ ...base(), is_publishe
 test('not an object', () => assert.equal(err(null), 'Invalid request'))
 test('array body', () => assert.equal(err([]), 'Invalid request'))
 test('slug is accepted as input', () => assert.ok(ADMIN_SPOT_INPUT_FIELDS.includes('slug')))
+
+console.log('address must not hold a link')
+const LINK = 'https://maps.app.goo.gl/TWT91mSPwagDkg8HA?g_st=ac'
+test('admin add rejects a link in address with a stable code', () => {
+  const r = checkAdminSpotInput({ ...base(), address: LINK })
+  assert.equal(r.ok, false)
+  assert.equal(r.code, ADDRESS_IS_LINK)
+  assert.equal(r.code, 'address_is_link')
+})
+test('admin add rejects a link anywhere in the address', () => {
+  for (const a of ['Φαλήρου 22 ' + LINK, 'goo.gl/maps/x', 'www.google.com/maps']) {
+    assert.equal(checkAdminSpotInput({ ...base(), address: a }).code, ADDRESS_IS_LINK, a)
+  }
+})
+test('admin add still accepts a normal or empty address', () => {
+  ok({ ...base(), address: 'Φαλήρου 22, Αθήνα 117 42' })
+  ok({ ...base(), address: '' })
+  ok({ ...base(), address: null })
+})
+test('admin add still requires a city (no silent default)', () => {
+  assert.match(err({ ...base(), city: '' }), /City is required/)
+})
+test('create: link in address is refused, plain address and missing address pass', () => {
+  assert.equal(spotAddressLinkError(LINK), ADDRESS_IS_LINK)
+  assert.equal(spotAddressLinkError('Ermou 10'), null)
+  assert.equal(spotAddressLinkError(undefined), null)
+  assert.equal(spotAddressLinkError(null), null)
+  assert.equal(spotAddressLinkError(42), null)
+})
+test('edit: changing address to a link is refused', () => {
+  assert.equal(spotAddressLinkError(LINK, 'Ermou 10'), ADDRESS_IS_LINK)
+  assert.equal(spotAddressLinkError(LINK, null), ADDRESS_IS_LINK)
+  assert.equal(spotAddressLinkError(LINK + 'x', LINK), ADDRESS_IS_LINK, 'a different link is still a change')
+})
+test('edit: resending the stored value is not a change (other fields stay editable)', () => {
+  assert.equal(spotAddressLinkError(LINK, LINK), null)
+  assert.equal(spotAddressLinkError('  ' + LINK + ' ', LINK), null)
+})
+test('edit: replacing a stored link with a real address passes', () => {
+  assert.equal(spotAddressLinkError('Αγίου Γεωργίου 5', LINK), null)
+})
 
 console.log('slug')
 test('Greek name', () => assert.equal(slugify('Μπαρ Ουζερί'), 'bar-ouzeri'))

@@ -1004,6 +1004,7 @@ const translations = {
   err_cover_required:      { el: "Χρειάζεται μια φωτογραφία εξωφύλλου", en: "A cover photo is required" },
   err_avatar_required:     { el: "Χρειάζεται φωτογραφία προφίλ", en: "A profile photo is required" },
   err_email_invalid:       { el: "Το email δεν μοιάζει σωστό", en: "That email doesn't look right" },
+  err_address_is_link:     { el: "Εδώ γράψε μόνο τη διεύθυνση. Το link του χάρτη μπαίνει στο πεδίο παρακάτω.", en: "Enter the street address only. Put the map link in the field below." },
   err_maps_required:       { el: "Το Google Maps link είναι υποχρεωτικό", en: "The Google Maps link is required" },
   err_maps_no_coords:      { el: "Δεν βρήκαμε συντεταγμένες σε αυτό το link. Δοκίμασε το link από το «Κοινοποίηση» του Google Maps ή αντίγραψε το URL από τη μπάρα διευθύνσεων του browser.", en: "We could not find coordinates in that link. Try the link from Google Maps \"Share\", or copy the URL from your browser's address bar." },
   err_maps_unreachable:    { el: "Δεν μπορέσαμε να ελέγξουμε το link αυτή τη στιγμή. Δοκίμασε ξανά σε λίγο ή αντίγραψε το πλήρες URL από τον browser.", en: "We could not check that link right now. Try again in a moment, or copy the full URL from a browser." },

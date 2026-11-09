@@ -3,7 +3,7 @@ import { createClient } from '@/app/lib/supabase-server'
 import { slugify, uniqueSlug } from '@/app/lib/slug'
 import { spotCoordsError } from '@/app/lib/mapsCoords'
 import { normalizeInstagram } from '@/app/lib/instagram'
-import { SPOT_FIELDS, withSpotTaxonomy } from '@/app/lib/spotInput'
+import { SPOT_FIELDS, withSpotTaxonomy, spotAddressLinkError, ADDRESS_IS_LINK, ADDRESS_IS_LINK_MESSAGE } from '@/app/lib/spotInput'
 
 // Re-exported for /api/spots/[id]; the list itself lives in spotInput so the
 // admin route whitelists the same columns.
@@ -54,6 +54,10 @@ export async function POST(req: NextRequest) {
 
   if (!body.name) {
     return NextResponse.json({ error: 'Missing required fields: name, category' }, { status: 400 })
+  }
+
+  if (spotAddressLinkError(body.address)) {
+    return NextResponse.json({ error: ADDRESS_IS_LINK_MESSAGE, code: ADDRESS_IS_LINK }, { status: 400 })
   }
 
   // 1–3 categories and up to 3 subcategories; the legacy single

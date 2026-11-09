@@ -19,6 +19,7 @@ import type { TranslationKey } from '@/app/lib/translations'
 import { isShortMapsLink, isInGreece, validateCoords, extractCoords, firstUrl, type Coords } from '@/app/lib/mapsCoords'
 import LocationPicker from '@/components/maps/LocationPicker'
 import { normalizeInstagram } from '@/app/lib/instagram'
+import { containsUrl } from '@/app/lib/spotMapUrl'
 
 // Same list the event wizard offers — spots had no city constant of its own.
 const CITIES = ['Athens', 'Thessaloniki', 'Mykonos', 'Santorini', 'Heraklion', 'Patras', 'Rhodes', 'Ios', 'Corfu', 'Zakynthos']
@@ -904,6 +905,9 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
     if (n === 2) {
       if (!form.city) e.city = t('err_pick_city')
       if (!form.address.trim()) e.address = t('err_address_required')
+      // A spot saved with a link in its address can still be edited; only a
+      // changed address is checked (the server applies the same rule).
+      else if (containsUrl(form.address) && form.address.trim() !== (initialData?.address ?? '').trim()) e.address = t('err_address_is_link')
       // The link is how a new spot finds its place; an edit already has a pin.
       if (!isEdit && !form.maps_url.trim()) e.maps_url = t('err_maps_required')
       const p = effectivePin(form, resolved)
