@@ -59,6 +59,8 @@ async function openAddForm(page: Page) {
 
 async function fillSpot(page: Page, name: string, { pin = true, publish = false } = {}) {
   await page.locator('form input[required]').first().fill(name)
+  // City has no default: the only <select> in this form is the city picker.
+  await page.locator('form select').filter({ has: page.locator('option', { hasText: 'Athens' }) }).selectOption('Athens')
   // The form starts with 'drink' picked (primary). Add nightlife as a second category.
   await page.getByTestId('admin-spot-cat-nightlife').click()
   await page.getByTestId('admin-spot-sub-cocktail_bar').click()
