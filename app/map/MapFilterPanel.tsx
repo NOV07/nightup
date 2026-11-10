@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useSyncExternalStore } from "react";
 import {
   SPOT_CATEGORIES, subsOf, spotCategoryLabel, spotSubLabel,
 } from "../lib/spotCategories";
@@ -26,6 +26,8 @@ const chip = (on: boolean, accent: string): React.CSSProperties => ({
 
 // ── Date bar ────────────────────────────────────────────────────────────────
 
+const subscribeNever = () => () => {};
+
 /**
  * "Tonight", "Tomorrow" and a third button that shows the picked night as «Τρί 10 Νοε» and opens the
  * phone's own date picker (a hidden date input, opened with showPicker). The native input is not shown
@@ -35,8 +37,8 @@ export function MapDateBar({ night, tonight, onPick }: { night: string | null; t
   const { t, lang } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   // A browser without showPicker: the invisible input lies over the button and takes the tap itself.
-  const [overlay, setOverlay] = useState(false);
-  useEffect(() => { setOverlay(typeof HTMLInputElement.prototype.showPicker !== "function"); }, []);
+  // (false on the server, so the first render matches; read once in the browser.)
+  const overlay = useSyncExternalStore(subscribeNever, () => typeof HTMLInputElement.prototype.showPicker !== "function", () => false);
   const ready = night != null && tonight != null;
   const tomorrow = ready ? addDaysKey(tonight, 1) : "";
   const isTonight = ready && night === tonight;
