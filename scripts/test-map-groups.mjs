@@ -2,7 +2,8 @@
 /**
  * Offline tests for the groups of the public map (Events / Spots / Wellness):
  * the night and what it does to events and to open/closed status, the filters
- * of each group, hidden layers, counts and the URL (including old links).
+ * of each group, lighting the layers (the map opens with none), counts and the URL
+ * (including old links).
  * Logic in app/lib/mapFilters.ts. No network, no database.
  *
  *   node scripts/test-map-groups.mjs
@@ -10,7 +11,7 @@
 import assert from 'node:assert/strict'
 import {
   NO_FILTERS, mapContext, resolvePoints, normalizeFilters, parseFilters, parseOpenGroup, serializeFilters,
-  toggleGroupHidden, showGroup, toggleEventType, toggleEventGenre, setSpotStatus, toggleMapCategory, toggleMapSub,
+  toggleGroupShown, showGroup, toggleEventType, toggleEventGenre, setSpotStatus, toggleMapCategory, toggleMapSub,
   toggleWellnessSub, setNight, clearGroupFilters, clearAllFilters, hasFilters, hasGroupFilters, eventMatches, GROUPS,
 } from '../app/lib/mapFilters.ts'
 
@@ -49,10 +50,12 @@ const P = [
   well('plain', []),
 ]
 const ctxAt = (picked = null, now = NOW) => mapContext(picked, now)
-const run = (f = NO_FILTERS, ctx = ctxAt(f.night)) => resolvePoints(P, f, ctx)
+// The map opens with no group lit. Most tests below are about filters, so their F() lights all three.
+const ALL = ['events', 'spots', 'wellness']
+const F = (over) => normalizeFilters({ ...NO_FILTERS, shown: ALL, ...over })
+const run = (f = F(), ctx = ctxAt(f.night)) => resolvePoints(P, f, ctx)
 const ids = (r) => r.visible.map(p => p.id)
 const onlyKind = (r, kind) => r.visible.filter(p => p.kind === kind).map(p => p.id)
-const F = (over) => normalizeFilters({ ...NO_FILTERS, ...over })
 
 console.log('the night in force')
 test('tonight by default', () => { const c = ctxAt(); assert.equal(c.night, '2026-11-10'); assert.equal(c.tonight, '2026-11-10') })
@@ -74,7 +77,7 @@ test('the 03:00 event of today belongs to last night, not tonight', () => assert
 test('another night: Friday', () => assert.deepEqual(onlyKind(run(F({ night: '2026-11-13' })), 'event').sort(), ['e-friday-other', 'e-friday-sports']))
 test('the night of the 9th (picked before 06:00) shows the 03:00 event', () => {
   const late = at('2026-11-10T00:30:00Z')
-  assert.deepEqual(onlyKind(resolvePoints(P, NO_FILTERS, mapContext(null, late)), 'event'), ['e-early-today'])
+  assert.deepEqual(onlyKind(resolvePoints(P, F(), mapContext(null, late)), 'event'), ['e-early-today'])
 })
 
 console.log('Events: type x genre')
@@ -98,7 +101,7 @@ test('eventMatches ignores non-events', () => assert.equal(eventMatches(P.find(p
 
 console.log('Spots: open / closed / unknown')
 const sp = (f, ctx) => onlyKind(run(f, ctx), 'spot').sort()
-const status = (f = NO_FILTERS, ctx) => run(f, ctx).status
+const status = (f = F(), ctx) => run(f, ctx).status
 test('status of every spot on Tuesday 21:30', () => {
   const st = status()
   assert.equal(st['s-oulaloum'], 'closed'); assert.equal(st['s-club'], 'closed')   // club opens at 23:00
@@ -117,11 +120,11 @@ test('another night is judged at 21:30 of that date (Wednesday: Ουλαλούμ
 test('status filter on another night', () => assert.deepEqual(sp(F({ night: '2026-11-11', spotStatus: 'open' })).includes('s-oulaloum'), true))
 test('at the real moment tonight: Tuesday 23:30 the club is open', () => {
   const late = at('2026-11-10T21:30:00Z') // 23:30 Athens
-  assert.equal(resolvePoints(P, NO_FILTERS, mapContext(null, late)).status['s-club'], 'open')
+  assert.equal(resolvePoints(P, F(), mapContext(null, late)).status['s-club'], 'open')
 })
 test('before 06:00 the status is read at the real moment of the next calendar day', () => {
   const late = at('2026-11-10T22:30:00Z') // Wed 00:30 Athens, still the night of Tue
-  const r = resolvePoints(P, NO_FILTERS, mapContext(null, late))
+  const r = resolvePoints(P, F(), mapContext(null, late))
   assert.equal(r.status['s-club'], 'open')       // 23:00-5:00 from Tuesday
   assert.equal(r.status['s-oulaloum'], 'closed') // Tuesday is Κλειστά, no tail
 })
@@ -144,26 +147,60 @@ test('subcategories: OR', () => {
 test('a wellness point with no subcategory is hidden once one is chosen', () => assert.equal(we(F({ wellnessSubs: ['yoga'] })).includes('w-plain'), false))
 test('the status filter does not touch wellness', () => assert.equal(we(F({ spotStatus: 'open' })).length, 3))
 
-console.log('groups: layers and counts')
-test('hiding a group removes its points but not the others', () => {
-  assert.equal(onlyKind(run(F({ hidden: ['events'] })), 'event').length, 0)
-  assert.equal(onlyKind(run(F({ hidden: ['spots', 'wellness'] })), 'event').length, 4)
-  assert.equal(run(F({ hidden: ['events', 'spots', 'wellness'] })).visible.length, 0)
+console.log('groups: the map opens empty; lighting a layer')
+test('default: no group is lit, so nothing is drawn', () => {
+  assert.deepEqual(NO_FILTERS.shown, []); assert.deepEqual(run(NO_FILTERS).visible, [])
 })
-test('counts: per group, with the filters, whether the layer is on or not', () => {
-  assert.deepEqual(run().counts, { events: 4, spots: 6, wellness: 3 })
-  assert.deepEqual(run(F({ hidden: ['spots'], spotStatus: 'closed', evTypes: ['culture'] })).counts, { events: 1, spots: 3, wellness: 3 })
+test('lighting one group draws only that group', () => {
+  assert.equal(onlyKind(run(F({ shown: ['events'] })), 'event').length, 4); assert.equal(run(F({ shown: ['events'] })).visible.length, 4)
+  assert.equal(run(F({ shown: ['spots'] })).visible.length, 6); assert.equal(run(F({ shown: ['wellness'] })).visible.length, 3)
 })
-test('toggleGroupHidden / showGroup', () => {
-  assert.deepEqual(toggleGroupHidden(NO_FILTERS, 'spots').hidden, ['spots']); assert.deepEqual(toggleGroupHidden(F({ hidden: ['spots'] }), 'spots').hidden, [])
-  assert.deepEqual(showGroup(F({ hidden: ['events', 'spots'] }), 'events').hidden, ['spots'])
+test('all three lit draws everything', () => assert.equal(run(F()).visible.length, 13))
+test('counts: per group, with the filters, whether the layer is lit or not (what lighting it would show)', () => {
+  assert.deepEqual(run(NO_FILTERS).counts, { events: 4, spots: 6, wellness: 3 })
+  assert.deepEqual(run(F()).counts, { events: 4, spots: 6, wellness: 3 })
+  assert.deepEqual(run(F({ shown: ['events'], spotStatus: 'closed', evTypes: ['culture'] })).counts, { events: 1, spots: 3, wellness: 3 })
+  assert.deepEqual(run({ ...NO_FILTERS, spotStatus: 'closed', evTypes: ['culture'] }).counts, { events: 1, spots: 3, wellness: 3 })
 })
-test('a hidden layer keeps its filters', () => assert.deepEqual(toggleGroupHidden(F({ evTypes: ['music'] }), 'events').evTypes, ['music']))
-test('hasFilters / hasGroupFilters (hidden layers and the date are not filters)', () => {
-  assert.equal(hasFilters(F({ hidden: ['spots'], night: '2026-11-13' })), false)
+test('filters narrow a lit group and leave the others', () => assert.deepEqual(onlyKind(run(F({ shown: ['events', 'wellness'], evTypes: ['sports'] })), 'wellness').length, 3))
+test('toggleGroupShown / showGroup', () => {
+  assert.deepEqual(toggleGroupShown(NO_FILTERS, 'spots').shown, ['spots']); assert.deepEqual(toggleGroupShown(F({ shown: ['spots'] }), 'spots').shown, [])
+  assert.deepEqual(toggleGroupShown(toggleGroupShown(NO_FILTERS, 'wellness'), 'events').shown, ['events', 'wellness'])   // display order
+  assert.deepEqual(showGroup(NO_FILTERS, 'events').shown, ['events']); assert.deepEqual(showGroup(F({ shown: ['spots'] }), 'spots').shown, ['spots'])
+})
+test('a layer that is off keeps its filters', () => assert.deepEqual(toggleGroupShown(F({ shown: ['events'], evTypes: ['music'] }), 'events').evTypes, ['music']))
+test('hasFilters / hasGroupFilters (lit layers and the date are not filters)', () => {
+  assert.equal(hasFilters(F({ shown: ['spots'], night: '2026-11-13' })), false)
   assert.equal(hasGroupFilters(F({ evGenres: ['techno'] }), 'events'), true); assert.equal(hasGroupFilters(F({ evGenres: ['techno'] }), 'spots'), false)
   assert.equal(hasGroupFilters(F({ spotStatus: 'open' }), 'spots'), true); assert.equal(hasGroupFilters(F({ wellnessSubs: ['yoga'] }), 'wellness'), true)
 })
+
+console.log('picking a filter in a group that is off lights it')
+const off = NO_FILTERS
+test('event type and genre', () => {
+  assert.deepEqual(toggleEventType(off, 'music').shown, ['events']); assert.deepEqual(toggleEventGenre(off, 'techno').shown, ['events'])
+})
+test('spots: status open / closed, category, subcategory', () => {
+  assert.deepEqual(setSpotStatus(off, 'open').shown, ['spots']); assert.deepEqual(setSpotStatus(off, 'closed').shown, ['spots'])
+  assert.deepEqual(toggleMapCategory(off, 'drink').shown, ['spots']); assert.deepEqual(toggleMapSub(off, 'cocktail_bar').shown, ['spots'])
+})
+test('wellness subcategory', () => assert.deepEqual(toggleWellnessSub(off, 'yoga').shown, ['wellness']))
+test('only its own group is lit; the others stay as they were', () => {
+  assert.deepEqual(toggleEventType(F({ shown: ['wellness'] }), 'music').shown, ['events', 'wellness'])
+  assert.deepEqual(toggleMapCategory(F({ shown: ['events'] }), 'food').shown, ['events', 'spots'])
+})
+test('taking a filter off, or choosing «all», lights nothing', () => {
+  const f = { ...off, evTypes: ['music'], evGenres: ['techno'], spotStatus: 'open', categories: ['drink'], wellnessSubs: ['yoga'] }
+  assert.deepEqual(toggleEventType(f, 'music').shown, []); assert.deepEqual(toggleEventGenre(f, 'techno').shown, [])
+  assert.deepEqual(setSpotStatus(f, 'all').shown, []); assert.deepEqual(toggleMapCategory(f, 'drink').shown, []); assert.deepEqual(toggleWellnessSub(f, 'yoga').shown, [])
+  assert.deepEqual(setSpotStatus(off, 'all').shown, [])
+})
+test('picking a filter in a group that is already lit changes nothing else', () => assert.deepEqual(toggleEventType(F({ shown: ['events'] }), 'music').shown, ['events']))
+test('an ignored pick (unknown or not a Spots sub) lights nothing', () => {
+  assert.deepEqual(toggleMapSub(off, 'yoga'), off); assert.deepEqual(toggleMapSub(off, 'rooftop_bar'), off); assert.deepEqual(toggleMapCategory(off, 'wellness'), off)
+  assert.deepEqual(toggleWellnessSub(off, 'club').shown, [])
+})
+test('opening a panel is not a filter: the pure toggles are the only way a layer lights itself', () => assert.deepEqual(clearGroupFilters(off, 'events').shown, []))
 
 console.log('toggles and normalising')
 test('event type / genre toggle, display order', () => {
@@ -172,8 +209,8 @@ test('event type / genre toggle, display order', () => {
   assert.deepEqual(toggleEventGenre(f, 'jazz').evGenres, ['techno'])
 })
 test('normalize drops unknown types, genres, statuses, groups and bad dates', () => {
-  const f = normalizeFilters({ hidden: ['spots', 'nope', 'spots'], night: '31/12/2026', evTypes: ['music', 'x'], evGenres: ['techno', 'nope', 'Techno'], spotStatus: 'maybe' })
-  assert.deepEqual(f, { ...NO_FILTERS, hidden: ['spots'], evTypes: ['music'], evGenres: ['techno'] })
+  const f = normalizeFilters({ shown: ['spots', 'nope', 'spots'], night: '31/12/2026', evTypes: ['music', 'x'], evGenres: ['techno', 'nope', 'Techno'], spotStatus: 'maybe' })
+  assert.deepEqual(f, { ...NO_FILTERS, shown: ['spots'], evTypes: ['music'], evGenres: ['techno'] })
 })
 test('legacy genre spellings become keys', () => assert.deepEqual(normalizeFilters({ evGenres: ['Ρεμπέτικα'] }).evGenres, ['rebetiko']))
 test('wellness subs and spots subs stay apart', () => {
@@ -181,49 +218,82 @@ test('wellness subs and spots subs stay apart', () => {
   assert.deepEqual(toggleMapSub(NO_FILTERS, 'yoga'), NO_FILTERS)
 })
 test('setSpotStatus, setNight', () => { assert.equal(setSpotStatus(NO_FILTERS, 'open').spotStatus, 'open'); assert.equal(setNight(NO_FILTERS, '2026-11-13').night, '2026-11-13'); assert.equal(setNight(F({ night: '2026-11-13' }), null).night, null) })
-test('clear one group; clear all keeps the night', () => {
-  const f = F({ evTypes: ['music'], evGenres: ['jazz'], spotStatus: 'open', categories: ['drink'], wellnessSubs: ['yoga'], hidden: ['wellness'], night: '2026-11-13' })
+test('clear one group or all: filters go, nothing is lit by it; the night stays', () => {
+  const f = F({ evTypes: ['music'], evGenres: ['jazz'], spotStatus: 'open', categories: ['drink'], wellnessSubs: ['yoga'], shown: ['wellness'], night: '2026-11-13' })
   assert.deepEqual(clearGroupFilters(f, 'events'), { ...f, evTypes: [], evGenres: [] })
   assert.deepEqual(clearGroupFilters(f, 'spots'), { ...f, spotStatus: 'all', categories: [], subcategories: [] })
   assert.deepEqual(clearGroupFilters(f, 'wellness'), { ...f, wellnessSubs: [] })
-  assert.deepEqual(clearAllFilters(f), { ...NO_FILTERS, night: '2026-11-13' })
+  assert.deepEqual(clearAllFilters(f), { ...NO_FILTERS, shown: ['wellness'], night: '2026-11-13' })
+  assert.deepEqual(clearAllFilters({ ...f, shown: [] }).shown, [])   // clearing never lights a group
 })
 test('GROUPS order', () => assert.deepEqual([...GROUPS], ['events', 'spots', 'wellness']))
 
-console.log('URL: c s ws et eg st hide date (+ open)')
+console.log('URL: show c s ws et eg st date (+ open)')
 const parse = (q) => parseFilters(new URLSearchParams(q))
-test('nothing is written for the defaults', () => assert.equal(serializeFilters(NO_FILTERS), ''))
+test('nothing is written for the defaults (an empty map, no filter, tonight)', () => assert.equal(serializeFilters(NO_FILTERS), ''))
 test('every parameter', () => {
-  const f = F({ categories: ['drink', 'nightlife'], subcategories: ['cocktail_bar', 'club'], wellnessSubs: ['yoga', 'sea_swim'], evTypes: ['music', 'culture'], evGenres: ['techno', 'jazz'], spotStatus: 'closed', hidden: ['wellness'], night: '2026-11-13' })
-  assert.equal(serializeFilters(f), 'c=drink,nightlife&s=cocktail_bar,club&ws=yoga,sea_swim&et=music,culture&eg=techno,jazz&st=closed&hide=wellness&date=2026-11-13')
+  const f = F({ shown: ['events', 'spots', 'wellness'], categories: ['drink', 'nightlife'], subcategories: ['cocktail_bar', 'club'], wellnessSubs: ['yoga', 'sea_swim'], evTypes: ['music', 'culture'], evGenres: ['techno', 'jazz'], spotStatus: 'closed', night: '2026-11-13' })
+  assert.equal(serializeFilters(f), 'c=drink,nightlife&s=cocktail_bar,club&ws=yoga,sea_swim&et=music,culture&eg=techno,jazz&st=closed&show=events,spots,wellness&date=2026-11-13')
+})
+test('show is written in display order, only the lit groups', () => {
+  assert.equal(serializeFilters(F({ shown: ['wellness', 'events'] })), 'show=events,wellness'); assert.equal(serializeFilters(F({ shown: ['spots'] })), 'show=spots')
+})
+test('filters set but nothing lit: show= with no value, so the filters do not light anything on reload', () => {
+  assert.equal(serializeFilters({ ...NO_FILTERS, evTypes: ['music'] }), 'et=music&show=')
+  assert.equal(serializeFilters({ ...NO_FILTERS, night: '2026-11-13' }), 'date=2026-11-13')
 })
 test('parse every parameter', () =>
-  assert.deepEqual(parse('c=drink&s=cocktail_bar&ws=yoga&et=music&eg=techno&st=open&hide=events,wellness&date=2026-11-13'),
-    F({ categories: ['drink'], subcategories: ['cocktail_bar'], wellnessSubs: ['yoga'], evTypes: ['music'], evGenres: ['techno'], spotStatus: 'open', hidden: ['events', 'wellness'], night: '2026-11-13' })))
-test('round trip', () => {
-  const f = F({ categories: ['food'], subcategories: ['italian'], evTypes: ['sports'], evGenres: ['rock'], spotStatus: 'open', hidden: ['events'], night: '2026-12-24', wellnessSubs: ['nature_walk'] })
-  assert.deepEqual(parse(serializeFilters(f)), f)
+  assert.deepEqual(parse('show=events,wellness&c=drink&s=cocktail_bar&ws=yoga&et=music&eg=techno&st=open&date=2026-11-13'),
+    F({ shown: ['events', 'wellness'], categories: ['drink'], subcategories: ['cocktail_bar'], wellnessSubs: ['yoga'], evTypes: ['music'], evGenres: ['techno'], spotStatus: 'open', night: '2026-11-13' })))
+test('show decides what is lit; with it, filters light nothing by themselves', () => {
+  assert.deepEqual(parse('show=events&st=open').shown, ['events']); assert.deepEqual(parse('show=&et=music').shown, []); assert.deepEqual(parse('show=spots&et=music').shown, ['spots'])
 })
-test('garbage gives the defaults', () => assert.deepEqual(parse('c=%3Cscript%3E&s=;;,&et=zzz&eg=,&st=maybe&hide=all&date=tomorrow&ws=club'), NO_FILTERS))
-test('the date is not written for tonight (null), only when one was picked', () => { assert.equal(serializeFilters(F({ night: null })), ''); assert.equal(serializeFilters(F({ night: '2026-11-13' })), 'date=2026-11-13') })
+test('round trip, including a layer that is off but has filters', () => {
+  for (const f of [
+    F({ shown: ['spots', 'wellness'], categories: ['food'], subcategories: ['italian'], evTypes: ['sports'], evGenres: ['rock'], spotStatus: 'open', night: '2026-12-24', wellnessSubs: ['nature_walk'] }),
+    F({ shown: ['events'], evTypes: ['music'], spotStatus: 'closed' }),     // Spots has a filter but is off
+    { ...NO_FILTERS, evGenres: ['jazz'] },                                   // filters, nothing lit
+    F({ shown: ['events'] }), NO_FILTERS, { ...NO_FILTERS, night: '2026-11-13' },
+  ]) assert.deepEqual(parse(serializeFilters(f)), f, serializeFilters(f))
+})
+test('garbage gives the defaults', () => assert.deepEqual(parse('c=%3Cscript%3E&s=;;,&et=zzz&eg=,&st=maybe&show=all,none&date=tomorrow&ws=club'), NO_FILTERS))
+test('the date is not written for tonight (null), only when one was picked', () => { assert.equal(serializeFilters(F({ shown: [], night: null })), ''); assert.equal(serializeFilters(F({ shown: [], night: '2026-11-13' })), 'date=2026-11-13') })
 test('a sub whose category is not selected is dropped', () => assert.deepEqual(parse('s=cocktail_bar'), NO_FILTERS))
+test('a date alone lights nothing', () => assert.deepEqual(parse('date=2026-11-13'), { ...NO_FILTERS, night: '2026-11-13' }))
 
-console.log('URL: old links keep working')
-test('?c=wellness&s=yoga: wellness was a category; its subs go to Wellness, Spots go off (it was the only category)', () =>
-  assert.deepEqual(parse('c=wellness&s=yoga'), F({ wellnessSubs: ['yoga'], hidden: ['spots'] })))
-test('?c=wellness alone', () => assert.deepEqual(parse('c=wellness'), F({ hidden: ['spots'] })))
-test('?c=wellness,drink&s=yoga,cocktail_bar: both groups keep their share, Spots stay on', () =>
-  assert.deepEqual(parse('c=wellness,drink&s=yoga,cocktail_bar'), F({ categories: ['drink'], subcategories: ['cocktail_bar'], wellnessSubs: ['yoga'] })))
-test('?c=drink&s=cocktail_bar is unchanged', () => assert.deepEqual(parse('c=drink&s=cocktail_bar'), F({ categories: ['drink'], subcategories: ['cocktail_bar'] })))
-test('?events=1 (old switch, and the button on /events) opens the Events panel and filters nothing', () => {
-  assert.deepEqual(parse('events=1'), NO_FILTERS); assert.equal(parseOpenGroup(new URLSearchParams('events=1')), 'events')
+console.log('URL: old links and the buttons keep working')
+test('?events=1 (the button on /events, and the old switch): Events is lit, its panel opens, no filter', () => {
+  assert.deepEqual(parse('events=1'), { ...NO_FILTERS, shown: ['events'] }); assert.equal(parseOpenGroup(new URLSearchParams('events=1')), 'events')
 })
+test('?show=spots&open=spots (the button on /spots): Spots lit, its panel opens', () => {
+  assert.deepEqual(parse('show=spots&open=spots'), { ...NO_FILTERS, shown: ['spots'] }); assert.equal(parseOpenGroup(new URLSearchParams('show=spots&open=spots')), 'spots')
+})
+test('a spots filter (c, s, st) without show lights Spots', () => {
+  for (const q of ['c=drink', 'c=drink&s=cocktail_bar', 'st=open', 'st=closed']) assert.deepEqual(parse(q).shown, ['spots'], q)
+})
+test('?ws= lights Wellness; ?et= and ?eg= light Events', () => {
+  assert.deepEqual(parse('ws=yoga').shown, ['wellness']); assert.deepEqual(parse('et=music').shown, ['events']); assert.deepEqual(parse('eg=techno').shown, ['events'])
+})
+test('filters of several groups light all of them', () => assert.deepEqual(parse('c=drink&ws=yoga&et=music').shown, ['events', 'spots', 'wellness']))
+test('an old link carries its filters along unchanged', () => assert.deepEqual(parse('c=drink&s=cocktail_bar&st=open'), F({ shown: ['spots'], categories: ['drink'], subcategories: ['cocktail_bar'], spotStatus: 'open' })))
+test('?hide=… of the previous scheme is ignored, without an error', () => {
+  assert.deepEqual(parse('hide=spots,wellness'), NO_FILTERS); assert.deepEqual(parse('hide=spots&c=drink').shown, ['spots']); assert.deepEqual(parse('hide=garbage,,'), NO_FILTERS)
+  assert.deepEqual(parse('show=events&hide=events'), { ...NO_FILTERS, shown: ['events'] })
+})
+test('?c=wellness&s=yoga: wellness was a category; its subs go to Wellness, which is lit; Spots stay off', () =>
+  assert.deepEqual(parse('c=wellness&s=yoga'), F({ shown: ['wellness'], wellnessSubs: ['yoga'] })))
+test('?c=wellness alone lights Wellness', () => assert.deepEqual(parse('c=wellness'), F({ shown: ['wellness'] })))
+test('?c=wellness,drink&s=yoga,cocktail_bar: both groups lit with their share', () =>
+  assert.deepEqual(parse('c=wellness,drink&s=yoga,cocktail_bar'), F({ shown: ['spots', 'wellness'], categories: ['drink'], subcategories: ['cocktail_bar'], wellnessSubs: ['yoga'] })))
 test('?open=… opens one group, bad values open none', () => {
   const o = (q) => parseOpenGroup(new URLSearchParams(q))
   assert.equal(o('open=spots'), 'spots'); assert.equal(o('open=wellness'), 'wellness'); assert.equal(o('open=events'), 'events')
   assert.equal(o('open=nope'), null); assert.equal(o(''), null); assert.equal(o('events=0'), null)
 })
-test('?open is never written back', () => assert.equal(serializeFilters(parse('open=events&events=1')), ''))
+test('?open is never written back; the button links settle into a clean show= after the first change', () => {
+  assert.equal(serializeFilters(parse('open=events&events=1')), 'show=events')
+  assert.equal(serializeFilters(parse('show=spots&open=spots')), 'show=spots')
+})
 
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)

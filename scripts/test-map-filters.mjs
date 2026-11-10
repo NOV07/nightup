@@ -36,6 +36,8 @@ const P = [
 ]
 const ids = (f) => filterPoints(P, f).map(p => p.id)
 const F = (categories, subcategories = []) => ({ ...NO_FILTERS, categories, subcategories })
+// The same filters with the Spots layer lit: what picking a category or a status (or an old link) gives.
+const LIT = (f) => ({ ...f, shown: ['spots'] })
 
 console.log('no filter')
 test('everything shows, wellness-only included', () => assert.equal(ids(NO_FILTERS).length, P.length))
@@ -78,13 +80,13 @@ test('nightlife + karaoke', () => assert.deepEqual(ids(F(['nightlife'], ['karaok
 test('empty point list', () => assert.deepEqual(filterPoints([], F(['drink'])), []))
 
 console.log('toggling')
-test('selecting a sub also selects its category', () => assert.deepEqual(toggleMapSub(NO_FILTERS, 'cocktail_bar'), F(['drink'], ['cocktail_bar'])))
+test('selecting a sub also selects its category (and lights Spots)', () => assert.deepEqual(toggleMapSub(NO_FILTERS, 'cocktail_bar'), LIT(F(['drink'], ['cocktail_bar']))))
 test('turning a category off drops its subs only', () => {
-  const f = F(['drink', 'nightlife'], ['cocktail_bar', 'club'])
-  assert.deepEqual(toggleMapCategory(f, 'drink'), F(['nightlife'], ['club']))
+  const f = LIT(F(['drink', 'nightlife'], ['cocktail_bar', 'club']))
+  assert.deepEqual(toggleMapCategory(f, 'drink'), LIT(F(['nightlife'], ['club'])))
 })
 test('turning the last sub off keeps the category (whole category shows again)', () =>
-  assert.deepEqual(toggleMapSub(F(['drink'], ['cocktail_bar']), 'cocktail_bar'), F(['drink'])))
+  assert.deepEqual(toggleMapSub(LIT(F(['drink'], ['cocktail_bar'])), 'cocktail_bar'), LIT(F(['drink']))))
 test('unknown sub is ignored', () => assert.deepEqual(toggleMapSub(NO_FILTERS, 'rooftop_bar'), NO_FILTERS))
 test('a wellness sub is not a Spots sub', () => assert.deepEqual(toggleMapSub(NO_FILTERS, 'yoga'), NO_FILTERS))
 test('wellness cannot be toggled as a Spots category', () => assert.deepEqual(toggleMapCategory(NO_FILTERS, 'wellness'), NO_FILTERS))
@@ -93,9 +95,11 @@ test('normalize: unknown keys, duplicates and orphan subs are dropped, display o
 
 console.log('URL (?c=…&s=…)')
 test('serialize empty', () => assert.equal(serializeFilters(NO_FILTERS), ''))
-test('serialize', () => assert.equal(serializeFilters(F(['drink', 'nightlife'], ['cocktail_bar', 'club'])), 'c=drink,nightlife&s=cocktail_bar,club'))
-test('serialize categories only', () => assert.equal(serializeFilters(F(['food'])), 'c=food'))
-test('parse', () => assert.deepEqual(parseFilters(new URLSearchParams('c=nightlife,drink&s=club,cocktail_bar')), F(['drink', 'nightlife'], ['cocktail_bar', 'club'])))
+test('serialize (Spots lit)', () => assert.equal(serializeFilters(LIT(F(['drink', 'nightlife'], ['cocktail_bar', 'club']))), 'c=drink,nightlife&s=cocktail_bar,club&show=spots'))
+test('serialize categories only', () => assert.equal(serializeFilters(LIT(F(['food']))), 'c=food&show=spots'))
+test('serialize filters with nothing lit: show= says so', () => assert.equal(serializeFilters(F(['food'])), 'c=food&show='))
+test('parse: a link with Spots filters and no show lights Spots', () => assert.deepEqual(parseFilters(new URLSearchParams('c=nightlife,drink&s=club,cocktail_bar')), LIT(F(['drink', 'nightlife'], ['cocktail_bar', 'club']))))
+test('parse: with show, show decides', () => assert.deepEqual(parseFilters(new URLSearchParams('show=&c=drink')), F(['drink'])))
 test('round trip', () => {
   const f = F(['nightlife', 'food'], ['club', 'italian'])
   assert.deepEqual(parseFilters(new URLSearchParams(serializeFilters(f))), normalizeFilters(f))
