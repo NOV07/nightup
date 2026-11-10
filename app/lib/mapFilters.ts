@@ -23,8 +23,8 @@ import { isDateKey } from './dateKey.ts'
 import { eventInNight, nightOf, clampNight, statusMoment } from './athensTime.ts'
 import { spotStatusAt, type SpotStatus } from './openingHours.ts'
 
-export type EventType = 'music' | 'culture' | 'sports' | 'other'
-export const EVENT_TYPES: readonly EventType[] = ['music', 'culture', 'sports', 'other']
+import { EVENT_TYPES, type EventType } from './eventTypes.ts'
+export { EVENT_TYPES, type EventType }
 
 export type GroupKey = 'events' | 'spots' | 'wellness'
 export const GROUPS: readonly GroupKey[] = ['events', 'spots', 'wellness']

@@ -12,7 +12,8 @@ import {
   athensParts, nightOf, timeToMinutes, eventInNight, clampNight, statusMoment, eventLoadWindow,
   NIGHT_START_MINUTES, EVENING_CHECK_MINUTES, MAX_NIGHTS_AHEAD,
 } from '../app/lib/athensTime.ts'
-import { eventTypeOf, eventGenresOf, eventToPoint } from '../app/lib/mapEvents.ts'
+import { eventGenresOf, eventToPoint } from '../app/lib/mapEvents.ts'
+import { eventTypeOf } from '../app/lib/eventTypes.ts'
 import { spotStatusAt } from '../app/lib/openingHours.ts'
 
 let passed = 0, failed = 0

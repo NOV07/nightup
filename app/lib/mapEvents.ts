@@ -2,27 +2,10 @@
 // row turns into one. No React, no Supabase, so scripts/test-map-filters.mjs can
 // load it in plain Node.
 
-import type { MapPoint, EventType } from './mapFilters.ts'
+import type { MapPoint } from './mapFilters.ts'
+import { eventTypeOf } from './eventTypes.ts'
 import { inRange } from './mapsCoords.ts'
 import { normalizeGenre } from './genres.ts'
-
-/**
- * The organiser form offers these wording-style values (EVENT_TYPES in
- * components/events/EventFormSteps.tsx) next to the four stored keys. The four
- * below are music events; 'Private Party' and 'Other' are not, and fall to 'other'.
- */
-const LEGACY_MUSIC_TYPES: ReadonlySet<string> = new Set(['Club Night', 'Live Show', 'Festival', 'Open Air'])
-
-/**
- * The map's event type of a stored `events.type`:
- *   music | culture | sports | other   as they are
- *   Club Night | Live Show | Festival | Open Air   -> music (exact spelling, as the form writes them)
- *   Private Party | Other | null | anything unknown   -> other
- */
-export function eventTypeOf(raw: unknown): EventType {
-  if (raw === 'music' || raw === 'culture' || raw === 'sports' || raw === 'other') return raw
-  return typeof raw === 'string' && LEGACY_MUSIC_TYPES.has(raw) ? 'music' : 'other'
-}
 
 /** Genre keys of an event, legacy spellings converted, unknown values dropped, no duplicates. */
 export function eventGenresOf(row: { genres?: unknown; genre?: unknown }): string[] {

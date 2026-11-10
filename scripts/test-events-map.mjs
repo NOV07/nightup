@@ -7,7 +7,8 @@
  *   node scripts/test-events-map.mjs
  */
 import assert from 'node:assert/strict'
-import { eventToPoint, eventTypeOf } from '../app/lib/mapEvents.ts'
+import { eventToPoint } from '../app/lib/mapEvents.ts'
+import { eventTypeOf } from '../app/lib/eventTypes.ts'
 import { MAP_EVENT_COLOR, mapPointColor, MAP_CATEGORY_COLORS } from '../app/lib/mapColors.ts'
 import { eventCoordsError } from '../app/lib/mapsCoords.ts'
 
