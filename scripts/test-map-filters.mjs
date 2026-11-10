@@ -33,7 +33,7 @@ const P = [
   pt('s-bowl', 'spot', ['activity'], ['bowling']),
 ]
 const ids = (f) => filterPoints(P, f).map(p => p.id)
-const F = (categories, subcategories = []) => ({ categories, subcategories })
+const F = (categories, subcategories = [], events = false) => ({ categories, subcategories, events })
 
 console.log('no filter')
 test('everything shows', () => assert.equal(ids(NO_FILTERS).length, P.length))
