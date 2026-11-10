@@ -30,7 +30,7 @@ const CSS = `
 .nm-controls { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 0 16px 10px; max-width: 792px; width: 100%; box-sizing: border-box; }
 .nm-panel { flex: none; max-height: 38vh; overflow-y: auto; box-sizing: border-box; padding: 10px 16px 12px; }
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
-.nm-stage { flex: 1; min-width: 0; position: relative; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
+.nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
 .nm-count { position: absolute; z-index: 1000; left: 10px; top: 10px; max-width: calc(100% - 72px); box-sizing: border-box; padding: 6px 10px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 12px; line-height: 1.35; color: #fff; pointer-events: none; }
 .nm-legend { flex: none; list-style: none; margin: 0; padding: 10px 16px 14px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #A9ABC0; }
 .nm-legend li { display: inline-flex; align-items: center; gap: 6px; }
