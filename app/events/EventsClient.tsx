@@ -14,6 +14,7 @@ import { usePlayerStore } from "../components/PlayerContext";
 
 import { CITIES, GENRE_FILTERS, CITY_LABELS } from "../lib/searchConstants";
 import { genreLabel, eventHasGenre, normalizeGenre } from "../lib/genres";
+import { eventTypeOf, eventsOfType } from "../lib/eventTypes";
 
 interface Event {
   id: string;
@@ -106,13 +107,15 @@ function SectionHeader({
 }
 
 export default function EventsClient({
-  events,
+  events: storedEvents,
   nearbyCity,
 }: {
   events: Event[];
   nearbyCity: string;
 }) {
   const { lang, t } = useLanguage();
+  // The cards show their category badge from `type`: give them the same type the tabs use.
+  const events = storedEvents.map((e) => ({ ...e, type: eventTypeOf(e.type) }));
   const { currentTrack } = usePlayerStore();
   const searchParams = useSearchParams();
   const [genre, setGenre] = useState("All");
@@ -145,29 +148,34 @@ export default function EventsClient({
   const el = lang === "el";
 
   // ── Derivations ──────────────────────────────────────────────
-  const allHot = [...events]
+  // The Music tab holds the music events only (eventTypeOf, the rule /map uses too: Club Night,
+  // Live Show, Festival and Open Air count as music); every other tab holds its own type. All the
+  // sections, counts and filters of the Music tab below are worked out from these.
+  const musicEvents = eventsOfType(events, "music");
+
+  const allHot = [...musicEvents]
     .filter((e) => e.featured)
     .sort((a, b) => (b.interestedCount + b.goingCount) - (a.interestedCount + a.goingCount));
   const hotEvents = allHot.slice(0, 3);
   const hotIds    = new Set(allHot.map((e) => e.id));
 
-  const allPopular = [...events]
+  const allPopular = [...musicEvents]
     .filter((e) => !hotIds.has(e.id))
     .sort((a, b) => (b.interestedCount + b.goingCount) - (a.interestedCount + a.goingCount));
   const popularEvents = allPopular.slice(0, 4);
 
-  const allTonight    = events.filter((e) => e.date?.slice(0, 10) === today);
+  const allTonight    = musicEvents.filter((e) => e.date?.slice(0, 10) === today);
   const tonightEvents = allTonight.slice(0, 8);
 
-  const allWeekend    = events.filter((e) => { const d = e.date?.slice(0, 10); return d >= fri && d <= sun; });
+  const allWeekend    = musicEvents.filter((e) => { const d = e.date?.slice(0, 10); return d >= fri && d <= sun; });
   const weekendEvents = allWeekend.slice(0, 8);
 
-  const nearYouCount = events.filter((e) =>
+  const nearYouCount = musicEvents.filter((e) =>
     e.city?.toLowerCase().includes(nearbyCity.toLowerCase())
   ).length;
 
   // ── Filter ───────────────────────────────────────────────────
-  const filtered = events.filter((e) => {
+  const filtered = musicEvents.filter((e) => {
     if (genre !== "All" && !eventHasGenre(e, genre)) return false;
     if (city !== "All Cities" && e.city !== city) return false;
     if (dateFilter && e.date?.slice(0, 10) !== dateFilter) return false;
@@ -184,14 +192,7 @@ export default function EventsClient({
 
   const isFiltering = genre !== "All" || city !== "All Cities" || dateFilter || query;
 
-  const categoryTypeMap: Record<string, string> = {
-    culture: 'culture',
-    sports: 'sports',
-    other: 'other',
-  };
-  const categoryEvents = events.filter(
-    (e) => e.type === categoryTypeMap[activeCategory]
-  );
+  const categoryEvents = eventsOfType(events, activeCategory);
 
   // ── Filter modal handlers ────────────────────────────────────
   function handleApplyFilters(result: EventsFilterResult) {
