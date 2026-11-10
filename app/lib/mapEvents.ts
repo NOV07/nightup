@@ -2,11 +2,9 @@
 // row turns into one. No React, no Supabase, so scripts/test-map-filters.mjs can
 // load it in plain Node.
 
-import type { MapPoint } from './mapFilters.ts'
+import type { MapPoint, EventType } from './mapFilters.ts'
 import { inRange } from './mapsCoords.ts'
 import { normalizeGenre } from './genres.ts'
-
-export type EventType = 'music' | 'culture' | 'sports' | 'other'
 
 /**
  * The map's event type of a stored `events.type`: music, culture, sports and

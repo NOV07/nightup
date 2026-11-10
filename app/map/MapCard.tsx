@@ -7,6 +7,7 @@ import { directionsUrl, type MapPoint } from "../lib/mapFilters";
 import { spotCategoryLabel, spotSubLabel } from "../lib/spotCategories";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { useLanguage } from "../components/LanguageContext";
+import type { SpotStatus } from "../lib/openingHours";
 
 const badge: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 6, minHeight: 26, padding: "0 10px", borderRadius: 6,
@@ -27,7 +28,14 @@ function eventWhen(date: string, time: string | null, lang: string): string {
  * a venue shows its categories and a link to its page; an event shows when and
  * where, with directions and a link to the event.
  */
-const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; onClose: () => void }>(function MapCard({ point, onClose }, ref) {
+const STATUS_STYLE: Record<SpotStatus, { bg: string; fg: string }> = {
+  open: { bg: "#1B3A2C", fg: "#34D399" },
+  closed: { bg: "#2A2A38", fg: "#A9ABC0" },
+  unknown: { bg: "#2A2A38", fg: "#D5D6E3" },
+};
+
+/** `status` and `hoursLine` ("Τρίτη: 18:00-1:30") are for venues: read from their published hours at the picked night. */
+const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatus; hoursLine?: string | null; onClose: () => void }>(function MapCard({ point, status, hoursLine, onClose }, ref) {
   const { t, lang } = useLanguage();
   const primary = point.categories[0];
   const labels = [
@@ -100,7 +108,17 @@ const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; onClose: () => voi
           </a>
         </>
       ) : (
-        <Link href={`/spots/${point.slug}`} className="nm-cta">{t("map_view_spot")}</Link>
+        <>
+          {status && (
+            <div data-testid="map-card-status" style={{ marginTop: 12, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <span style={{ ...badge, background: STATUS_STYLE[status].bg, color: STATUS_STYLE[status].fg, fontWeight: 600 }}>
+                {t(status === "open" ? "map_spot_open" : status === "closed" ? "map_spot_closed" : "map_spot_unknown")}
+              </span>
+              {hoursLine && <span style={{ fontSize: 13, color: "#A9ABC0" }}>{hoursLine}</span>}
+            </div>
+          )}
+          <Link href={`/spots/${point.slug}`} className="nm-cta">{t("map_view_spot")}</Link>
+        </>
       )}
     </div>
   );

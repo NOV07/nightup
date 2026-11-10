@@ -16,6 +16,12 @@ export const MAP_CATEGORY_COLORS: Record<SpotCategory, string> = {
   wellness: '#4FC3A1',
 }
 
+/** Colours of the three group boxes and their dots in the filter bar (not of the pins: those follow the category). */
+export const MAP_GROUP_COLORS = { events: '#E8A020', spots: '#C084FC', wellness: '#34D399' } as const
+
+/** A spot that is closed at the picked moment. Open spots keep their category colour; spots with no readable hours are an empty outline in it. */
+export const MAP_CLOSED_COLOR = '#6B6B80'
+
 /** The events layer: one gold for every event pin (drawn as a diamond, so it reads apart from spots and wellness). */
 export const MAP_EVENT_COLOR = '#E8A020'
 
