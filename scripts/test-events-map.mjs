@@ -1,18 +1,13 @@
 #!/usr/bin/env node
 /**
  * Offline tests for the events layer of /map: which events become a point
- * (date, coordinates), how the layer switch and the category filters interact,
- * the ?events=1 URL state, the pin colour, and the event coordinate check the
+ * (date window, coordinates), the pin colour, and the event coordinate check the
  * API routes use. No network, no database.
  *
  *   node scripts/test-events-map.mjs
  */
 import assert from 'node:assert/strict'
 import { eventToPoint } from '../app/lib/mapEvents.ts'
-import {
-  NO_FILTERS, visiblePoints, hasFilters, parseFilters, serializeFilters, toggleMapEvents,
-  toggleMapCategory, toggleMapSub, clearCategoryFilters, normalizeFilters,
-} from '../app/lib/mapFilters.ts'
 import { MAP_EVENT_COLOR, mapPointColor, MAP_CATEGORY_COLORS } from '../app/lib/mapColors.ts'
 import { eventCoordsError } from '../app/lib/mapsCoords.ts'
 
@@ -62,58 +57,8 @@ test('no time / venue / city give nulls', () => {
   assert.deepEqual(p.event, { date: '2026-11-14', time: null, venue: null, type: 'other', genres: [] }); assert.equal(p.area, null)
 })
 
-console.log('layer switch and filters')
-const pt = (id, kind, categories, subcategories = []) => ({ id, kind, categories, subcategories })
-const P = [
-  pt('s-bar', 'spot', ['drink'], ['cocktail_bar']),
-  pt('w-yoga', 'wellness', ['wellness'], ['yoga']),
-  pt('e-1', 'event', []),
-  pt('e-2', 'event', []),
-]
-const F = (categories = [], subcategories = [], events = false) => ({ categories, subcategories, events })
-const ids = (f) => visiblePoints(P, f).map(p => p.id)
-test('default: events layer is off', () => assert.deepEqual(ids(NO_FILTERS), ['s-bar', 'w-yoga']))
-test('layer on: events join the rest', () => assert.deepEqual(ids(F([], [], true)), ['s-bar', 'w-yoga', 'e-1', 'e-2']))
-test('category filter does not hide events when the layer is on', () => assert.deepEqual(ids(F(['wellness'], [], true)), ['w-yoga', 'e-1', 'e-2']))
-test('category filter does not reveal events when the layer is off', () => assert.deepEqual(ids(F(['drink'])), ['s-bar']))
-test('subcategory filter leaves events alone', () => assert.deepEqual(ids(F(['wellness'], ['yoga'], true)), ['w-yoga', 'e-1', 'e-2']))
-test('toggleMapEvents flips only the layer', () => {
-  const f = F(['drink'], ['cocktail_bar'])
-  assert.deepEqual(toggleMapEvents(f), F(['drink'], ['cocktail_bar'], true))
-  assert.deepEqual(toggleMapEvents(toggleMapEvents(f)), f)
-})
-test('category toggles keep the layer state', () => {
-  assert.equal(toggleMapCategory(F([], [], true), 'drink').events, true)
-  assert.equal(toggleMapSub(F([], [], true), 'yoga').events, true)
-  assert.equal(toggleMapCategory(F(['drink'], [], true), 'drink').events, true)
-})
-test('hasFilters ignores the layer; clear keeps it', () => {
-  assert.equal(hasFilters(F([], [], true)), false)
-  assert.deepEqual(clearCategoryFilters(F(['drink'], ['cocktail_bar'], true)), F([], [], true))
-  assert.deepEqual(clearCategoryFilters(F(['drink'])), NO_FILTERS)
-})
-
-console.log('URL (?events=1)')
-test('serialize', () => {
-  assert.equal(serializeFilters(F([], [], true)), 'events=1')
-  assert.equal(serializeFilters(F(['drink'], [], true)), 'c=drink&events=1')
-  assert.equal(serializeFilters(F(['drink'])), 'c=drink')
-})
-test('parse', () => {
-  assert.deepEqual(parseFilters(new URLSearchParams('events=1')), F([], [], true))
-  assert.deepEqual(parseFilters(new URLSearchParams('c=wellness&s=yoga&events=1')), F(['wellness'], ['yoga'], true))
-})
-test('only events=1 turns it on', () => {
-  for (const v of ['0', 'true', '', 'yes', '2']) assert.equal(parseFilters(new URLSearchParams(`events=${v}`)).events, false)
-  assert.deepEqual(parseFilters(new URLSearchParams('')), NO_FILTERS)
-})
-test('round trip', () => {
-  const f = F(['nightlife', 'wellness'], ['club', 'yoga'], true)
-  assert.deepEqual(parseFilters(new URLSearchParams(serializeFilters(f))), f)
-})
-test('normalize drops a non-boolean events value', () => assert.equal(normalizeFilters({ events: 'yes' }).events, false))
-
 console.log('pin colour')
+const pt = (id, kind, categories) => ({ id, kind, categories })
 test('events are gold #E8A020', () => { assert.equal(MAP_EVENT_COLOR, '#E8A020'); assert.equal(mapPointColor(pt('e', 'event', [])), '#E8A020') })
 test('spots and wellness keep their category colour', () => {
   assert.equal(mapPointColor(pt('s', 'spot', ['nightlife'])), MAP_CATEGORY_COLORS.nightlife)

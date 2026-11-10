@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 /**
- * Offline tests for the public map: filter logic and URL (app/lib/mapFilters.ts),
- * pin colours (app/lib/mapColors.ts) and the wellness subcategory validation
- * (app/lib/wellnessSpots.ts). No network, no database.
+ * Offline tests for the Spots / Wellness category filters of the public map
+ * (app/lib/mapFilters.ts), their URL, the pin colours (app/lib/mapColors.ts)
+ * and the wellness subcategory validation (app/lib/wellnessSpots.ts). The
+ * groups, the date and the open/closed status are in test-map-groups.mjs.
+ * No network, no database.
  *
  *   node scripts/test-map-filters.mjs
  */
 import assert from 'node:assert/strict'
 import {
   NO_FILTERS, filterPoints, pointMatches, normalizeFilters, toggleMapCategory, toggleMapSub,
-  parseFilters, serializeFilters, directionsUrl, hasFilters,
+  parseFilters, serializeFilters, directionsUrl, hasFilters, SPOT_FILTER_CATEGORIES,
 } from '../app/lib/mapFilters.ts'
 import { MAP_CATEGORY_COLORS, mapColorOf } from '../app/lib/mapColors.ts'
 import { SPOT_CATEGORY_KEYS } from '../app/lib/spotCategories.ts'
@@ -21,44 +23,49 @@ function test(name, fn) {
   catch (e) { failed++; console.log(`  FAIL ${name}\n       ${e.message}`) }
 }
 
+// Points as the Spots filter sees them. «wellness» is NOT a Spots category any more: a venue that
+// also carries it is found through its other categories (wine: drink + food + wellness).
 const pt = (id, kind, categories, subcategories = []) => ({ id, kind, categories, subcategories })
 const P = [
-  pt('w-strefi', 'wellness', ['wellness'], ['sunset_spot']),
-  pt('w-lyk', 'wellness', ['wellness'], ['sunset_spot', 'nature_walk']),
-  pt('w-hymettus', 'wellness', ['wellness'], ['nature_walk']),
-  pt('w-plain', 'wellness', ['wellness'], []),              // no subcategory set yet
   pt('s-cocktail', 'spot', ['drink'], ['cocktail_bar']),
   pt('s-wine', 'spot', ['drink', 'food'], ['wine_bar', 'italian']),
   pt('s-club', 'spot', ['nightlife'], ['club']),
   pt('s-bowl', 'spot', ['activity'], ['bowling']),
+  pt('s-spa', 'spot', ['wellness'], []),                        // only wellness: no category matches it
+  pt('s-café', 'spot', ['chill', 'wellness'], ['all_day_cafe']), // chill + wellness
 ]
 const ids = (f) => filterPoints(P, f).map(p => p.id)
-const F = (categories, subcategories = [], events = false) => ({ categories, subcategories, events })
+const F = (categories, subcategories = []) => ({ ...NO_FILTERS, categories, subcategories })
 
 console.log('no filter')
-test('everything shows', () => assert.equal(ids(NO_FILTERS).length, P.length))
+test('everything shows, wellness-only included', () => assert.equal(ids(NO_FILTERS).length, P.length))
 test('hasFilters', () => { assert.equal(hasFilters(NO_FILTERS), false); assert.equal(hasFilters(F(['drink'])), true) })
+test('wellness is not a Spots category', () => {
+  assert.equal(SPOT_FILTER_CATEGORIES.includes('wellness'), false)
+  assert.equal(SPOT_FILTER_CATEGORIES.length, SPOT_CATEGORY_KEYS.length - 1)
+})
 
 console.log('one category')
-test('wellness: all four wellness points, including the one with no subcategory', () =>
-  assert.deepEqual(ids(F(['wellness'])), ['w-strefi', 'w-lyk', 'w-hymettus', 'w-plain']))
 test('drink: both drink points (one is also food)', () => assert.deepEqual(ids(F(['drink'])), ['s-cocktail', 's-wine']))
 test('a category nobody has gives nothing', () => assert.deepEqual(ids(F(['art'])), []))
+test('a spot with wellness AND another category is filtered by the other one', () => {
+  assert.deepEqual(ids(F(['chill'])), ['s-café'])
+  assert.equal(ids(F(['drink'])).includes('s-café'), false)
+})
+test('a wellness-only spot shows with no category selected, and disappears once one is', () => {
+  assert.ok(ids(NO_FILTERS).includes('s-spa')); assert.equal(ids(F(['drink'])).includes('s-spa'), false)
+})
 
 console.log('several categories = OR')
 test('drink + nightlife', () => assert.deepEqual(ids(F(['drink', 'nightlife'])), ['s-cocktail', 's-wine', 's-club']))
-test('wellness + activity', () => assert.deepEqual(ids(F(['wellness', 'activity'])), ['w-strefi', 'w-lyk', 'w-hymettus', 'w-plain', 's-bowl']))
-test('all categories on = everything', () => assert.equal(ids(F(SPOT_CATEGORY_KEYS)).length, P.length))
+test('all categories on = every spot that has one of them', () => assert.equal(ids(F(SPOT_FILTER_CATEGORIES)).length, P.length - 1))
 
 console.log('subcategories = OR inside a category')
-test('wellness + sunset_spot', () => assert.deepEqual(ids(F(['wellness'], ['sunset_spot'])), ['w-strefi', 'w-lyk']))
-test('wellness + sunset_spot + nature_walk', () => assert.deepEqual(ids(F(['wellness'], ['sunset_spot', 'nature_walk'])), ['w-strefi', 'w-lyk', 'w-hymettus']))
-test('a point with no subcategory is hidden once a sub is chosen', () => assert.equal(ids(F(['wellness'], ['yoga'])).includes('w-plain'), false))
 test('drink + cocktail_bar', () => assert.deepEqual(ids(F(['drink'], ['cocktail_bar'])), ['s-cocktail']))
+test('drink + two subs', () => assert.deepEqual(ids(F(['drink'], ['cocktail_bar', 'wine_bar'])), ['s-cocktail', 's-wine']))
 test('subs of one category do not narrow another category', () =>
-  assert.deepEqual(ids(F(['drink', 'wellness'], ['cocktail_bar'])), ['w-strefi', 'w-lyk', 'w-hymettus', 'w-plain', 's-cocktail']))
+  assert.deepEqual(ids(F(['drink', 'nightlife'], ['cocktail_bar'])), ['s-cocktail', 's-club']))
 test('multi-category point matches through ONE of its categories', () => {
-  // wine: drink (wine_bar) + food (italian). food + italian -> yes; drink + cocktail_bar -> no.
   assert.deepEqual(ids(F(['food'], ['italian'])), ['s-wine'])
   assert.deepEqual(ids(F(['drink'], ['cocktail_bar'])), ['s-cocktail'])
 })
@@ -66,35 +73,35 @@ test('a sub of the point does not count under a category it was not picked for',
   assert.equal(pointMatches(pt('x', 'spot', ['drink', 'food'], ['italian']), F(['drink'], ['wine_bar'])), false))
 
 console.log('combinations with zero results')
-test('wellness + a sub nobody has', () => assert.deepEqual(ids(F(['wellness'], ['sea_swim'])), []))
-test('drink + a sub that only the other drink point lacks', () => assert.deepEqual(ids(F(['drink'], ['speakeasy'])), []))
+test('drink + a sub that no drink point has', () => assert.deepEqual(ids(F(['drink'], ['speakeasy'])), []))
 test('nightlife + karaoke', () => assert.deepEqual(ids(F(['nightlife'], ['karaoke'])), []))
 test('empty point list', () => assert.deepEqual(filterPoints([], F(['drink'])), []))
 
 console.log('toggling')
-test('selecting a sub also selects its category', () =>
-  assert.deepEqual(toggleMapSub(NO_FILTERS, 'yoga'), F(['wellness'], ['yoga'])))
+test('selecting a sub also selects its category', () => assert.deepEqual(toggleMapSub(NO_FILTERS, 'cocktail_bar'), F(['drink'], ['cocktail_bar'])))
 test('turning a category off drops its subs only', () => {
-  const f = F(['drink', 'wellness'], ['cocktail_bar', 'yoga'])
-  assert.deepEqual(toggleMapCategory(f, 'drink'), F(['wellness'], ['yoga']))
+  const f = F(['drink', 'nightlife'], ['cocktail_bar', 'club'])
+  assert.deepEqual(toggleMapCategory(f, 'drink'), F(['nightlife'], ['club']))
 })
 test('turning the last sub off keeps the category (whole category shows again)', () =>
-  assert.deepEqual(toggleMapSub(F(['wellness'], ['yoga']), 'yoga'), F(['wellness'])))
+  assert.deepEqual(toggleMapSub(F(['drink'], ['cocktail_bar']), 'cocktail_bar'), F(['drink'])))
 test('unknown sub is ignored', () => assert.deepEqual(toggleMapSub(NO_FILTERS, 'rooftop_bar'), NO_FILTERS))
+test('a wellness sub is not a Spots sub', () => assert.deepEqual(toggleMapSub(NO_FILTERS, 'yoga'), NO_FILTERS))
+test('wellness cannot be toggled as a Spots category', () => assert.deepEqual(toggleMapCategory(NO_FILTERS, 'wellness'), NO_FILTERS))
 test('normalize: unknown keys, duplicates and orphan subs are dropped, display order kept', () =>
-  assert.deepEqual(normalizeFilters({ categories: ['wellness', 'nope', 'drink', 'drink'], subcategories: ['yoga', 'club', 'zzz', 'yoga'] }), F(['drink', 'wellness'], ['yoga'])))
+  assert.deepEqual(normalizeFilters({ categories: ['nightlife', 'nope', 'drink', 'drink', 'wellness'], subcategories: ['cocktail_bar', 'museum', 'zzz', 'cocktail_bar', 'yoga'] }), F(['drink', 'nightlife'], ['cocktail_bar'])))
 
 console.log('URL (?c=…&s=…)')
 test('serialize empty', () => assert.equal(serializeFilters(NO_FILTERS), ''))
-test('serialize', () => assert.equal(serializeFilters(F(['drink', 'wellness'], ['cocktail_bar', 'sunset_spot'])), 'c=drink,wellness&s=cocktail_bar,sunset_spot'))
+test('serialize', () => assert.equal(serializeFilters(F(['drink', 'nightlife'], ['cocktail_bar', 'club'])), 'c=drink,nightlife&s=cocktail_bar,club'))
 test('serialize categories only', () => assert.equal(serializeFilters(F(['food'])), 'c=food'))
-test('parse', () => assert.deepEqual(parseFilters(new URLSearchParams('c=wellness,drink&s=yoga,cocktail_bar')), F(['drink', 'wellness'], ['cocktail_bar', 'yoga'])))
+test('parse', () => assert.deepEqual(parseFilters(new URLSearchParams('c=nightlife,drink&s=club,cocktail_bar')), F(['drink', 'nightlife'], ['cocktail_bar', 'club'])))
 test('round trip', () => {
-  const f = F(['nightlife', 'wellness'], ['club', 'nature_walk'])
-  assert.deepEqual(parseFilters(new URLSearchParams(serializeFilters(f))), f)
+  const f = F(['nightlife', 'food'], ['club', 'italian'])
+  assert.deepEqual(parseFilters(new URLSearchParams(serializeFilters(f))), normalizeFilters(f))
 })
 test('garbage in the URL gives no filter', () => assert.deepEqual(parseFilters(new URLSearchParams('c=%3Cscript%3E&s=;;,')), NO_FILTERS))
-test('a sub without its category in the URL is dropped', () => assert.deepEqual(parseFilters(new URLSearchParams('s=yoga')), NO_FILTERS))
+test('a sub without its category in the URL is dropped', () => assert.deepEqual(parseFilters(new URLSearchParams('s=cocktail_bar')), NO_FILTERS))
 test('no params', () => assert.deepEqual(parseFilters(new URLSearchParams('')), NO_FILTERS))
 
 console.log('colours and directions')
