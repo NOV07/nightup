@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
   clearAllFilters, clearGroupFilters, hasFilters, mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
-  setNight, setSpotStatus, showGroup, toggleEventGenre, toggleEventType, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
+  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
   type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import { DAY_NAMES } from "../lib/openingHours";
@@ -32,6 +32,7 @@ const CSS = `
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
 .nm-count { position: absolute; z-index: 1000; left: 10px; top: 10px; max-width: calc(100% - 72px); box-sizing: border-box; padding: 6px 10px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 12px; line-height: 1.35; color: #fff; pointer-events: none; }
+.nm-hint { position: absolute; z-index: 1000; left: 50%; bottom: 14px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); box-sizing: border-box; padding: 8px 12px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 13px; line-height: 1.35; text-align: center; color: #D5D6E3; pointer-events: none; }
 .nm-legend { flex: none; list-style: none; margin: 0; padding: 10px 16px 14px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #A9ABC0; }
 .nm-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .nm-card { position: absolute; z-index: 1100; left: 20px; bottom: 20px; width: 340px; max-width: calc(100% - 40px); max-height: calc(100% - 40px); overflow-y: auto; box-sizing: border-box; background: #1A1A28; border-radius: 8px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); outline: none; }
@@ -161,9 +162,13 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   };
 
   const empty = points.length === 0;
-  const noMatch = !empty && !!resolved && visible.length === 0;
+  const anyLit = filters.shown.length > 0;
+  // Nothing is lit at first: the map is empty on purpose and says what to do. Once a group is lit
+  // but has nothing to show with the current filters, it is "no results" instead.
+  const showHint = !empty && !anyLit;
+  const noMatch = !empty && anyLit && !!resolved && visible.length === 0;
+  // How many points each group would show, lit or not (the numbers of the group boxes use the same).
   const counts = resolved?.counts ?? null;
-  const shown = counts ? { events: filters.shown.includes("events") ? counts.events : 0, spots: filters.shown.includes("spots") ? counts.spots : 0, wellness: filters.shown.includes("wellness") ? counts.wellness : 0 } : null;
 
   // What the card says about a venue: its status at the picked night and that day's hours.
   const status = selected && resolved ? resolved.status[selected.id] : undefined;
@@ -186,7 +191,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
         <MapDateBar night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} onPick={(n) => update(setNight(filters, n))} />
         <MapGroupBar filters={filters} counts={counts} open={open} panelId={panelId}
           onToggleLayer={(g) => update(toggleGroupShown(filters, g))}
-          onToggleOpen={(g) => { if (open !== g && !filters.shown.includes(g)) update(showGroup(filters, g)); setOpen(open === g ? null : g); }} />
+          onToggleOpen={(g) => setOpen(open === g ? null : g)} />
       </div>
       <MapGroupPanel group={open} filters={filters} id={panelId} handlers={handlers} />
 
@@ -195,8 +200,10 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           <PublicMap points={visible} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40} />
 
           <div className="nm-count" data-testid="map-counter" role="status">
-            {shown && ctx ? `${shown.events} ${t("map_events")} · ${shown.spots} ${t("map_spots")} · ${shown.wellness} ${t("map_wellness")} · ${dayLabel(ctx.night, lang)}` : "…"}
+            {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${dayLabel(ctx.night, lang)}` : "…"}
           </div>
+
+          {showHint && <div className="nm-hint" role="status" data-testid="map-empty-hint">{t("map_pick_layers")}</div>}
 
           {empty && (
             <div className="nm-overlay" role="status"><p>{t("map_soon")}</p></div>
@@ -204,7 +211,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           {noMatch && (
             <div className="nm-overlay" role="status">
               <p>{t("map_no_results")}</p>
-              {(hasFilters(filters) || filters.shown.length < 3) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
+              {hasFilters(filters) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
             </div>
           )}
 
