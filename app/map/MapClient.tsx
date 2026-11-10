@@ -7,11 +7,12 @@ import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
   clearAllFilters, clearGroupFilters, hasFilters, mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
-  setNight, setSpotStatus, showGroup, toggleEventGenre, toggleEventType, toggleGroupHidden, toggleMapCategory, toggleMapSub, toggleWellnessSub,
+  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupPanel, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
   type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import { DAY_NAMES } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
+import { formatNightLabel } from "../lib/mapDate";
 import { useAthensNow } from "../lib/useAthensNow";
 import { MapDateBar, MapGroupBar, MapGroupPanel, MapLegend, type PanelHandlers } from "./MapFilterPanel";
 import MapCard from "./MapCard";
@@ -23,7 +24,7 @@ const PublicMap = dynamic(() => import("@/components/maps/PublicMap"), {
 });
 
 const CSS = `
-.nm-root { background: #0F0F1A; color: #fff; display: flex; flex-direction: column; min-height: min(calc(100dvh - 60px), 1000px); }
+.nm-root { background: #0F0F1A; color: #fff; display: flex; flex-direction: column; min-height: min(calc(100dvh - 61px), 1000px); }
 .nm-crumb { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; font-size: 14px; color: #A9ABC0; }
 .nm-crumb a { color: #A9ABC0; text-decoration: none; display: inline-flex; align-items: center; min-height: 24px; }
 .nm-crumb a:hover { color: #fff; }
@@ -32,6 +33,7 @@ const CSS = `
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
 .nm-count { position: absolute; z-index: 1000; left: 10px; top: 10px; max-width: calc(100% - 72px); box-sizing: border-box; padding: 6px 10px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 12px; line-height: 1.35; color: #fff; pointer-events: none; }
+.nm-hint { position: absolute; z-index: 1000; left: 50%; bottom: 14px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); box-sizing: border-box; padding: 8px 12px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 13px; line-height: 1.35; text-align: center; color: #D5D6E3; pointer-events: none; }
 .nm-legend { flex: none; list-style: none; margin: 0; padding: 10px 16px 14px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #A9ABC0; }
 .nm-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .nm-card { position: absolute; z-index: 1100; left: 20px; bottom: 20px; width: 340px; max-width: calc(100% - 40px); max-height: calc(100% - 40px); overflow-y: auto; box-sizing: border-box; background: #1A1A28; border-radius: 8px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); outline: none; }
@@ -53,8 +55,11 @@ const CSS = `
   .nm-body { padding: 0; }
   .nm-stage { border-radius: 0; border-left: 0; border-right: 0; }
   .nm-panel { max-height: 42vh; }
-  /* The site's player pill and nav sit over the bottom of the page: keep the legend clear of them. */
-  .nm-legend { padding-bottom: 76px; }
+  /* The page is exactly the screen between the navbar (57px) and the full-width player bar at the bottom
+     (--mobile-radio-bar-height, plus the home-indicator inset): the map takes what the bars and the
+     legend leave, and the legend ends right above the player instead of under it. */
+  .nm-root { min-height: calc(100dvh - 57px - var(--mobile-radio-bar-height, 54px) - env(safe-area-inset-bottom, 0px)); }
+  .nm-legend { padding-bottom: 14px; }
   .nm-card { left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 62%; border-radius: 8px 8px 0 0; padding: 10px 16px 20px; box-shadow: 0 -8px 24px rgba(0,0,0,0.45); }
   .nm-card-handle { display: block; width: 36px; height: 4px; border-radius: 2px; background: #3A3A55; margin: 0 auto 14px; }
   .nm-card-close { top: 14px; }
@@ -63,12 +68,6 @@ const CSS = `
 `;
 
 const DAY_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-/** "Σάβ 14 Νοε" for a YYYY-MM-DD date, read as a plain calendar date. */
-function dayLabel(date: string, lang: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString(lang === "en" ? "en-GB" : "el-GR", { weekday: "short", day: "numeric", month: "short" });
-}
 
 const NONE: MapPoint[] = [];
 
@@ -161,9 +160,13 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   };
 
   const empty = points.length === 0;
-  const noMatch = !empty && !!resolved && visible.length === 0;
+  const anyLit = filters.shown.length > 0;
+  // Nothing is lit at first: the map is empty on purpose and says what to do. Once a group is lit
+  // but has nothing to show with the current filters, it is "no results" instead.
+  const showHint = !empty && !anyLit;
+  const noMatch = !empty && anyLit && !!resolved && visible.length === 0;
+  // How many points each group would show, lit or not (the numbers of the group boxes use the same).
   const counts = resolved?.counts ?? null;
-  const shown = counts ? { events: filters.hidden.includes("events") ? 0 : counts.events, spots: filters.hidden.includes("spots") ? 0 : counts.spots, wellness: filters.hidden.includes("wellness") ? 0 : counts.wellness } : null;
 
   // What the card says about a venue: its status at the picked night and that day's hours.
   const status = selected && resolved ? resolved.status[selected.id] : undefined;
@@ -185,8 +188,13 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
       <div className="nm-controls">
         <MapDateBar night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} onPick={(n) => update(setNight(filters, n))} />
         <MapGroupBar filters={filters} counts={counts} open={open} panelId={panelId}
-          onToggleLayer={(g) => update(toggleGroupHidden(filters, g))}
-          onToggleOpen={(g) => { if (open !== g && filters.hidden.includes(g)) update(showGroup(filters, g)); setOpen(open === g ? null : g); }} />
+          onToggleLayer={(g) => update(toggleGroupShown(filters, g))}
+          onToggleOpen={(g) => {
+            // The name opens the group's filters and lights the group if it is off; closing never turns it off.
+            const next = toggleGroupPanel(filters, open, g);
+            if (next.filters !== filters) update(next.filters);
+            setOpen(next.open);
+          }} />
       </div>
       <MapGroupPanel group={open} filters={filters} id={panelId} handlers={handlers} />
 
@@ -195,8 +203,10 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           <PublicMap points={visible} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40} />
 
           <div className="nm-count" data-testid="map-counter" role="status">
-            {shown && ctx ? `${shown.events} ${t("map_events")} · ${shown.spots} ${t("map_spots")} · ${shown.wellness} ${t("map_wellness")} · ${dayLabel(ctx.night, lang)}` : "…"}
+            {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}` : "…"}
           </div>
+
+          {showHint && <div className="nm-hint" role="status" data-testid="map-empty-hint">{t("map_pick_layers")}</div>}
 
           {empty && (
             <div className="nm-overlay" role="status"><p>{t("map_soon")}</p></div>
@@ -204,7 +214,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           {noMatch && (
             <div className="nm-overlay" role="status">
               <p>{t("map_no_results")}</p>
-              {(hasFilters(filters) || filters.hidden.length > 0) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
+              {hasFilters(filters) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
             </div>
           )}
 

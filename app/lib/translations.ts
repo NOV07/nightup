@@ -233,6 +233,7 @@ const translations = {
   map_legend_closed:   { el: "κλειστό", en: "closed" },
   map_legend_unknown:  { el: "χωρίς ωράριο", en: "no hours" },
   map_legend_wellness: { el: "Wellness", en: "Wellness" },
+  map_pick_layers:     { el: "Διάλεξε τι θες να δεις: Events, Spots ή Wellness", en: "Pick what to see: Events, Spots or Wellness" },
   map_filters:         { el: "Φίλτρα", en: "Filters" },
   map_clear:           { el: "Καθαρισμός", en: "Clear" },
   map_clear_filters:   { el: "Καθαρισμός φίλτρων", en: "Clear filters" },

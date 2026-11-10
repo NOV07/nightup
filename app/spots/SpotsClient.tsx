@@ -119,7 +119,7 @@ export default function SpotsClient({ spots }: { spots: Spot[] }) {
 
         <div style={{ position: 'absolute', top: 20, left: 0, right: 0, zIndex: 10, pointerEvents: 'none' }}>
           <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'flex-end' }}>
-            <Link href="/map" style={{ pointerEvents: 'auto', height: 44, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 10, borderRadius: 8, background: 'transparent', border: '1px solid #3A3A55', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <Link href="/map?show=spots&open=spots" data-testid="spots-open-map" style={{ pointerEvents: 'auto', height: 44, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 10, borderRadius: 8, background: 'transparent', border: '1px solid #3A3A55', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8A020" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
               {t("map_open")}
             </Link>
