@@ -126,8 +126,9 @@ test('it contains every night that can be picked, with its morning after', () =>
 
 console.log('event type, genres and the point')
 test('the four types as they are', () => { for (const t of ['music', 'culture', 'sports', 'other']) assert.equal(eventTypeOf(t), t) })
-test('anything else or null is other (legacy mapping pending)', () => {
-  for (const v of ['Club Night', 'Live Show', 'Festival', '', null, undefined, 3, 'MUSIC', {}]) assert.equal(eventTypeOf(v), 'other', String(v))
+test('the legacy form values: the four music ones, then everything else is other', () => {
+  for (const v of ['Club Night', 'Live Show', 'Festival', 'Open Air']) assert.equal(eventTypeOf(v), 'music', v)
+  for (const v of ['Private Party', 'Other', '', null, undefined, 3, 'MUSIC', {}]) assert.equal(eventTypeOf(v), 'other', String(v))
 })
 test('genre keys: legacy spellings converted, unknown dropped, no duplicates', () => {
   assert.deepEqual(eventGenresOf({ genres: ['techno', 'house'] }), ['techno', 'house'])

@@ -7,7 +7,7 @@
  *   node scripts/test-events-map.mjs
  */
 import assert from 'node:assert/strict'
-import { eventToPoint } from '../app/lib/mapEvents.ts'
+import { eventToPoint, eventTypeOf } from '../app/lib/mapEvents.ts'
 import { MAP_EVENT_COLOR, mapPointColor, MAP_CATEGORY_COLORS } from '../app/lib/mapColors.ts'
 import { eventCoordsError } from '../app/lib/mapsCoords.ts'
 
@@ -55,6 +55,31 @@ test('missing title, id or date: not on the map', () => {
 test('no time / venue / city give nulls', () => {
   const p = eventToPoint(row({ time: null, venue: '', city: null }), WIN, null)
   assert.deepEqual(p.event, { date: '2026-11-14', time: null, venue: null, type: 'other', genres: [] }); assert.equal(p.area, null)
+})
+
+console.log('event type (events.type -> the map\'s four types)')
+test('the four stored keys stay as they are', () => {
+  for (const t of ['music', 'culture', 'sports', 'other']) assert.equal(eventTypeOf(t), t)
+})
+test('Club Night, Live Show, Festival, Open Air -> music', () => {
+  for (const t of ['Club Night', 'Live Show', 'Festival', 'Open Air']) assert.equal(eventTypeOf(t), 'music', t)
+})
+test('Private Party and Other -> other (every value of the organiser form is covered)', () => {
+  for (const t of ['Private Party', 'Other']) assert.equal(eventTypeOf(t), 'other', t)
+})
+test('null, undefined, empty and unknown values -> other', () => {
+  for (const t of [null, undefined, '', ' ', 'concert', 'Techno', 'Theatre', 0, 1, true, {}, [], ['music']]) assert.equal(eventTypeOf(t), 'other', JSON.stringify(t))
+})
+test('the match is exact: other spellings of the legacy values are unknown, so other', () => {
+  for (const t of ['club night', 'Club night', 'CLUB NIGHT', ' Club Night', 'Club Night ', 'live show', 'open air', 'MUSIC', 'Music', 'Culture', 'Sports', 'festival']) assert.equal(eventTypeOf(t), 'other', JSON.stringify(t))
+})
+test('every value the organiser form offers has a type', () => {
+  const FORM = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
+  assert.deepEqual(FORM.map(eventTypeOf), ['music', 'music', 'music', 'music', 'other', 'other'])
+})
+test('the point carries the mapped type', () => {
+  const type = (raw) => eventToPoint(row({ type: raw }), WIN, null).event.type
+  assert.equal(type('Club Night'), 'music'); assert.equal(type('Private Party'), 'other'); assert.equal(type('culture'), 'culture'); assert.equal(type(null), 'other')
 })
 
 console.log('pin colour')
