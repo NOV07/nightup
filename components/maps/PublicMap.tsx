@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
-import { mapColorOf } from '@/app/lib/mapColors'
+import { mapPointColor, MAP_CLOSED_COLOR } from '@/app/lib/mapColors'
 import type { MapPoint } from '@/app/lib/mapFilters'
+import type { SpotStatus } from '@/app/lib/openingHours'
+import type { TranslationKey } from '@/app/lib/translations'
 
 // Public map of /map. Same look as the LocationPicker (dark filtered OSM tiles,
 // two-finger pan on touch screens, visible © OpenStreetMap), but read-only: it
@@ -19,7 +21,9 @@ const ATTRIBUTION = '<a href="https://www.openstreetmap.org/copyright" target="_
 const TILE_ERRORS_BEFORE_NOTICE = 5
 
 // Pin = a real <button> (Enter/Space/Tab work natively) with a 44px hit area and
-// a smaller visible shape: circle for wellness, rounded square for venues.
+// a smaller visible shape: circle for wellness, rounded square for venues,
+// diamond for events. A venue shows its status: filled in its category colour =
+// open, grey = closed, an empty outline in its category colour = no readable hours.
 const CSS = `
 .nightup-public-map .leaflet-container { background: #16162a; font-family: inherit; }
 .nightup-public-map .leaflet-tile { outline: 1px solid transparent; }
@@ -28,7 +32,11 @@ const CSS = `
 .nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 28px; height: 28px; border: 3px solid #0F0F1A; box-shadow: 0 2px 5px rgba(0,0,0,0.55); transition: width .12s, height .12s, border-color .12s; }
 .nightup-public-map .nm-pin-dot.is-round { border-radius: 50%; }
 .nightup-public-map .nm-pin-dot.is-square { width: 26px; height: 26px; border-radius: 7px; }
+.nightup-public-map .nm-pin-dot.is-unknown { background: transparent !important; border-color: var(--pin-color); box-shadow: none; }
+.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-unknown { border-color: #FFFFFF; background: var(--pin-color) !important; }
+.nightup-public-map .nm-pin-dot.is-diamond { width: 22px; height: 22px; border-radius: 4px; transform: rotate(45deg); }
 .nightup-public-map .nm-pin.is-selected .nm-pin-dot { width: 42px; height: 42px; border: 4px solid #FFFFFF; }
+.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-diamond { width: 32px; height: 32px; }
 .nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-square { width: 40px; height: 40px; }
 .nightup-public-map .nm-pin:focus-visible { outline: none; }
 .nightup-public-map .nm-pin:focus-visible .nm-pin-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
@@ -39,6 +47,19 @@ const CSS = `
 .nightup-public-map .leaflet-control-attribution a { color: #E8A020; }
 `
 
+const STATUS_LABEL: Record<SpotStatus, TranslationKey> = { open: 'map_spot_open', closed: 'map_spot_closed', unknown: 'map_spot_unknown' }
+
+/** Colours and label of a pin. Called for new pins and again when the status of an existing one changes. */
+function paintPin(el: HTMLButtonElement, p: MapPoint, status: SpotStatus | undefined, label: (k: TranslationKey) => string) {
+  const dot = el.firstElementChild as HTMLElement
+  const color = mapPointColor(p)
+  const st = p.kind === 'spot' ? status : undefined
+  dot.classList.toggle('is-unknown', st === 'unknown')
+  dot.style.background = st === 'closed' ? MAP_CLOSED_COLOR : color
+  dot.style.setProperty('--pin-color', color)
+  el.setAttribute('aria-label', st ? `${p.name}, ${label(STATUS_LABEL[st])}` : p.name)
+}
+
 function makePinElement(p: MapPoint): HTMLButtonElement {
   const b = document.createElement('button')
   b.type = 'button'
@@ -47,8 +68,7 @@ function makePinElement(p: MapPoint): HTMLButtonElement {
   b.setAttribute('aria-label', p.name)
   b.setAttribute('aria-pressed', 'false')
   const dot = document.createElement('span')
-  dot.className = `nm-pin-dot ${p.kind === 'wellness' ? 'is-round' : 'is-square'}`
-  dot.style.background = mapColorOf(p.categories[0])
+  dot.className = `nm-pin-dot ${p.kind === 'wellness' ? 'is-round' : p.kind === 'event' ? 'is-diamond' : 'is-square'}`
   dot.setAttribute('aria-hidden', 'true')
   b.appendChild(dot)
   return b
@@ -58,9 +78,15 @@ type Props = {
   points: readonly MapPoint[]
   selectedId: string | null
   onSelect: (id: string | null) => void
+  /** Accessible name of the map. Defaults to the public map's. */
+  ariaLabel?: string
+  /** Open / closed / unknown of each venue, by point id. */
+  statusById?: Record<string, SpotStatus>
+  /** Pixels the corner notices (two-finger hint, tile banner) move down, to leave room for an overlay on the map. */
+  topInset?: number
 }
 
-export default function PublicMap({ points, selectedId, onSelect }: Props) {
+export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0 }: Props) {
   const { t } = useLanguage()
   const elRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -138,8 +164,10 @@ export default function PublicMap({ points, selectedId, onSelect }: Props) {
       if (!wanted.has(id)) { m.marker.remove(); markers.delete(id) }
     }
     for (const p of points) {
-      if (markers.has(p.id)) continue
+      const have = markers.get(p.id)
+      if (have) { paintPin(have.el, p, statusById?.[p.id], t); continue }
       const el = makePinElement(p)
+      paintPin(el, p, statusById?.[p.id], t)
       const icon = L.divIcon({ className: 'nm-pin-wrap', html: el, iconSize: [44, 44], iconAnchor: [22, 22] })
       // keyboard:false -> the inner <button> is the only tab stop.
       const marker = L.marker([p.lat, p.lng], { icon, keyboard: false, riseOnHover: true }).addTo(map)
@@ -154,7 +182,8 @@ export default function PublicMap({ points, selectedId, onSelect }: Props) {
       if (points.length === 1) map.setView([points[0].lat, points[0].lng], FIT_MAX_ZOOM)
       else map.fitBounds(L.latLngBounds(points.map(p => [p.lat, p.lng] as L.LatLngTuple)), { padding: [60, 60], maxZoom: FIT_MAX_ZOOM })
     }
-  }, [points])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points, statusById])
 
   // Selected pin: bigger with a white outline; bring the point into view.
   useEffect(() => {
@@ -180,17 +209,17 @@ export default function PublicMap({ points, selectedId, onSelect }: Props) {
   return (
     <div className="nightup-public-map" style={{ position: 'absolute', inset: 0 }}>
       <style>{CSS}</style>
-      <div ref={elRef} role="application" aria-label={t('map_aria')} data-testid="public-map"
+      <div ref={elRef} role="application" aria-label={ariaLabel ?? t('map_aria')} data-testid="public-map"
         style={{ position: 'absolute', inset: 0 }} />
       {coarse && (
-        <p style={{ position: 'absolute', left: 12, top: 10, zIndex: 500, margin: 0, padding: '4px 8px', borderRadius: 6, background: 'rgba(15,15,26,0.8)', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>
+        <p style={{ position: 'absolute', left: 12, top: 10 + topInset, zIndex: 500, margin: 0, padding: '4px 8px', borderRadius: 6, background: 'rgba(15,15,26,0.8)', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>
           {t('spot_map_two_fingers')}
         </p>
       )}
       {tilesFailed && (
         // A banner, not a cover: the pins keep working when the tiles do not load.
         <div role="alert" style={{
-          position: 'absolute', left: 12, right: 72, top: coarse ? 52 : 10, zIndex: 1000, maxWidth: 420,
+          position: 'absolute', left: 12, right: 72, top: (coarse ? 52 : 10) + topInset, zIndex: 1000, maxWidth: 420,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
           backgroundColor: 'rgba(15,15,26,0.94)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
           color: 'rgba(255,255,255,0.8)', fontSize: 13, padding: '6px 6px 6px 12px',

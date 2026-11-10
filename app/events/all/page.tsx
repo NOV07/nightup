@@ -51,7 +51,8 @@ export default async function EventsAllPage() {
         city: e.city,
         interestedCount: e.interested_count ?? 0,
         goingCount: e.going_count ?? 0,
-        type: e.type ?? 'music',
+        // The raw value: the page filters with eventTypeOf (null is Other there, as on /map).
+        type: e.type ?? null,
       }));
     }
   } catch {}

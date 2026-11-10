@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 import { withIngestedEventImage } from '@/app/lib/ingestImage'
-import { spotCoordsError } from '@/app/lib/mapsCoords'
+import { spotCoordsError, eventCoordsError } from '@/app/lib/mapsCoords'
 import { withSpotTaxonomy, spotAddressLinkError, ADDRESS_IS_LINK, ADDRESS_IS_LINK_MESSAGE } from '@/app/lib/spotInput'
 
 function isAdmin(req: NextRequest) {
@@ -54,6 +54,10 @@ export async function POST(req: NextRequest) {
     const taxonomy = withSpotTaxonomy(row, { required: false, existingCategories })
     if (!taxonomy.ok) return NextResponse.json({ error: taxonomy.error }, { status: 400 })
     row = taxonomy.row
+  }
+  if (table === 'events') {
+    const coordsError = eventCoordsError(row)
+    if (coordsError) return NextResponse.json({ error: coordsError }, { status: 400 })
   }
   if (table === 'events' && typeof row.image_url === 'string' && row.image_url.trim()) {
     // The edit forms normally send the flag along, but a partial payload has to

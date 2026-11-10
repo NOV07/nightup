@@ -39,6 +39,9 @@ export default function NewEventClient({ venueDefaults, artistName }: { venueDef
         city:              data.city,
         address:           data.address || null,
         maps_url:          data.maps_url || null,
+        // Pin confirmed in the form; both null without a link. Not derived from maps_url on the server.
+        lat:               data.maps_url.trim() ? data.lat : null,
+        lng:               data.maps_url.trim() ? data.lng : null,
         image_url:         data.image_url || null,
         gallery:           data.gallery,
         ticket_url:        data.ticket_url || null,

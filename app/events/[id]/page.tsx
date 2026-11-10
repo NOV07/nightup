@@ -1,3 +1,4 @@
+import EventLocationMap from '@/components/maps/EventLocationMap'
 import { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
@@ -48,7 +49,7 @@ export default async function EventPage({ params }: Props) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, currency, profile_id, editorial_owner_name, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level, going_count, interested_count')
+    .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, genre, description, ticket_url, lineup, contributors, price, currency, profile_id, editorial_owner_name, instagram, facebook, tiktok, website, gallery, dress_code, age_restriction_level, going_count, interested_count, lat, lng')
     .eq('id', id)
     .eq('status', 'approved')
     .single()
@@ -280,6 +281,11 @@ export default async function EventPage({ params }: Props) {
             <span><PriceLabel price={event.price} currency={event.currency} /></span>
           </div>
         </div>
+
+        {/* Where it is: only for events whose organiser confirmed a pin. */}
+        {typeof event.lat === 'number' && typeof event.lng === 'number' && (
+          <EventLocationMap lat={event.lat} lng={event.lng} name={event.venue || event.title || ''} />
+        )}
 
         {/* Save / Going / Interested */}
         <EventActions

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
 import { parseEventGenres } from '@/app/lib/genres'
+import { eventCoordsError } from '@/app/lib/mapsCoords'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 // Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
 // Duplicated rather than imported: that module is a client component.
@@ -48,11 +50,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `currency must be one of: ${CURRENCIES.join(', ')}` }, { status: 400 })
   }
 
+  const coordsError = eventCoordsError(body)
+  if (coordsError) return NextResponse.json({ error: coordsError }, { status: 400 })
+
   const allowed = [
     'title', 'genres', 'type', 'short_description', 'full_description',
     'date', 'time', 'end_time', 'venue', 'city', 'address', 'maps_url', 'image_url',
     'gallery', 'ticket_url', 'price', 'currency', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
     'instagram', 'facebook', 'tiktok', 'contact_email',
+    'lat', 'lng',
   ]
   const payload: Record<string, unknown> = {}
   allowed.forEach(k => { if (k in body) payload[k] = body[k] })
@@ -92,6 +98,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Rows start as 'pending' (not public), so this changes nothing visible yet; it keeps every
+  // write to events behind the same call, and the admin approval clears the cached pages for real.
+  revalidatePublicPaths('events')
   return NextResponse.json(data)
 }
 

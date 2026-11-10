@@ -774,3 +774,10 @@ body.nav-menu-open {
     bottom: 170px !important;
   }
 }
+
+/* Leaflet maps: the panes, pins and controls use z-index 200-1000. Without a stacking context of
+   their own those numbers compete with the whole page, so a map painted over the sticky navbar
+   (z-40) and its mobile menu (z-35). Isolating the container keeps every z-index inside the map. */
+.leaflet-container {
+  isolation: isolate;
+}

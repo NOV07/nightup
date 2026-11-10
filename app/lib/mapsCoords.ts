@@ -59,6 +59,15 @@ export function spotCoordsError(
 }
 
 /**
+ * Coordinate check for an event write. Both null (no link, no pin) is fine; a
+ * payload without lat/lng keys leaves them untouched; otherwise both must be
+ * real numbers in range. Numeric strings are rejected on purpose.
+ */
+export function eventCoordsError(body: Record<string, unknown>): string | null {
+  return spotCoordsError(body, { allowEmpty: true })
+}
+
+/**
  * 'exact'     the place itself, as Google stores it.
  * 'viewport'  only the centre of the map the user was looking at (`@lat,lng`),
  *             which can be hundreds of metres off; the UI asks for a check.

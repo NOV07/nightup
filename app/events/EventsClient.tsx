@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiMapPin } from "react-icons/fi";
@@ -14,6 +14,7 @@ import { usePlayerStore } from "../components/PlayerContext";
 
 import { CITIES, GENRE_FILTERS, CITY_LABELS } from "../lib/searchConstants";
 import { genreLabel, eventHasGenre, normalizeGenre } from "../lib/genres";
+import { eventTypeOf, eventsOfType } from "../lib/eventTypes";
 
 interface Event {
   id: string;
@@ -106,13 +107,15 @@ function SectionHeader({
 }
 
 export default function EventsClient({
-  events,
+  events: storedEvents,
   nearbyCity,
 }: {
   events: Event[];
   nearbyCity: string;
 }) {
   const { lang, t } = useLanguage();
+  // The cards show their category badge from `type`: give them the same type the tabs use.
+  const events = storedEvents.map((e) => ({ ...e, type: eventTypeOf(e.type) }));
   const { currentTrack } = usePlayerStore();
   const searchParams = useSearchParams();
   const [genre, setGenre] = useState("All");
@@ -120,6 +123,16 @@ export default function EventsClient({
   const [dateFilter, setDateFilter] = useState("");
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<'music' | 'culture' | 'sports' | 'other'>('music');
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // The tab row scrolls sideways on a narrow screen: keep the picked tab in view (the row only, not the page).
+  useEffect(() => {
+    const row = tabsRef.current;
+    const tab = row?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!row || !tab) return;
+    const left = tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2;
+    row.scrollTo({ left: Math.max(0, left) });
+  }, [activeCategory]);
 
   // ── Filter modal ─────────────────────────────────────────────
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -145,29 +158,34 @@ export default function EventsClient({
   const el = lang === "el";
 
   // ── Derivations ──────────────────────────────────────────────
-  const allHot = [...events]
+  // The Music tab holds the music events only (eventTypeOf, the rule /map uses too: Club Night,
+  // Live Show, Festival and Open Air count as music); every other tab holds its own type. All the
+  // sections, counts and filters of the Music tab below are worked out from these.
+  const musicEvents = eventsOfType(events, "music");
+
+  const allHot = [...musicEvents]
     .filter((e) => e.featured)
     .sort((a, b) => (b.interestedCount + b.goingCount) - (a.interestedCount + a.goingCount));
   const hotEvents = allHot.slice(0, 3);
   const hotIds    = new Set(allHot.map((e) => e.id));
 
-  const allPopular = [...events]
+  const allPopular = [...musicEvents]
     .filter((e) => !hotIds.has(e.id))
     .sort((a, b) => (b.interestedCount + b.goingCount) - (a.interestedCount + a.goingCount));
   const popularEvents = allPopular.slice(0, 4);
 
-  const allTonight    = events.filter((e) => e.date?.slice(0, 10) === today);
+  const allTonight    = musicEvents.filter((e) => e.date?.slice(0, 10) === today);
   const tonightEvents = allTonight.slice(0, 8);
 
-  const allWeekend    = events.filter((e) => { const d = e.date?.slice(0, 10); return d >= fri && d <= sun; });
+  const allWeekend    = musicEvents.filter((e) => { const d = e.date?.slice(0, 10); return d >= fri && d <= sun; });
   const weekendEvents = allWeekend.slice(0, 8);
 
-  const nearYouCount = events.filter((e) =>
+  const nearYouCount = musicEvents.filter((e) =>
     e.city?.toLowerCase().includes(nearbyCity.toLowerCase())
   ).length;
 
   // ── Filter ───────────────────────────────────────────────────
-  const filtered = events.filter((e) => {
+  const filtered = musicEvents.filter((e) => {
     if (genre !== "All" && !eventHasGenre(e, genre)) return false;
     if (city !== "All Cities" && e.city !== city) return false;
     if (dateFilter && e.date?.slice(0, 10) !== dateFilter) return false;
@@ -184,14 +202,7 @@ export default function EventsClient({
 
   const isFiltering = genre !== "All" || city !== "All Cities" || dateFilter || query;
 
-  const categoryTypeMap: Record<string, string> = {
-    culture: 'culture',
-    sports: 'sports',
-    other: 'other',
-  };
-  const categoryEvents = events.filter(
-    (e) => e.type === categoryTypeMap[activeCategory]
-  );
+  const categoryEvents = eventsOfType(events, activeCategory);
 
   // ── Filter modal handlers ────────────────────────────────────
   function handleApplyFilters(result: EventsFilterResult) {
@@ -312,6 +323,16 @@ export default function EventsClient({
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100px', background: 'linear-gradient(transparent, #0F0F1A)', pointerEvents: 'none', zIndex: 5 }} />
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '160px', background: 'linear-gradient(to right, #0F0F1A, transparent)', pointerEvents: 'none', zIndex: 5 }} />
 
+        {/* Discreet entry to the map with the events layer on, same look as the one on /spots. */}
+        <div style={{ position: 'absolute', top: 20, left: 0, right: 0, zIndex: 10, pointerEvents: 'none' }}>
+          <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'flex-end' }}>
+            <Link href="/map?events=1" data-testid="events-open-map" style={{ pointerEvents: 'auto', height: 44, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 10, borderRadius: 8, background: 'transparent', border: '1px solid #3A3A55', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8A020" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+              {t("map_open")}
+            </Link>
+          </div>
+        </div>
+
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '80rem', margin: '0 auto', padding: '0 24px' }}>
           <div id="hero-eyebrow" style={{ fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#E8A020', marginBottom: '10px', opacity: 0, fontFamily: 'var(--font-sans)' }}>Events</div>
           <h1 style={{ fontFamily: 'var(--font-spectral)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 300, color: '#fff', lineHeight: 1.15, margin: 0, minHeight: '4rem' }}>
@@ -324,18 +345,24 @@ export default function EventsClient({
       <div className="max-w-7xl mx-auto px-4 py-8" style={{ backgroundColor: '#0A0A12' }}>
 
       {/* ── Category tabs ─────────────────────────────────── */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: "24px", display: "flex" }}>
+      <style>{`.ev-tabs { overflow-x: auto; scrollbar-width: none; } .ev-tabs::-webkit-scrollbar { display: none; }`}</style>
+      {/* One row that scrolls sideways when it does not fit (no scrollbar). The 1px rule is an inset shadow,
+          so the picked tab's 2px underline sits on it without a negative margin that would add a vertical scroll. */}
+      <div ref={tabsRef} className="ev-tabs" data-testid="events-tabs" style={{ boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.07)", marginBottom: "24px", display: "flex" }}>
         {(['music', 'culture', 'sports', 'other'] as const).map((key) => {
           const catLabels = { music: t('event_cat_music'), culture: t('event_cat_culture'), sports: t('event_cat_sports'), other: t('event_cat_other') };
           const isActive = activeCategory === key;
           return (
             <button
               key={key}
+              data-active={isActive}
               onClick={() => setActiveCategory(key)}
               onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#EDEDF2'; }}
               onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#5A5A6A'; }}
               style={{
-                padding: "12px 20px",
+                padding: "12px clamp(12px, 3.2vw, 20px)",
+                flex: "none",
+                whiteSpace: "nowrap",
                 fontSize: "13px",
                 letterSpacing: "0.08em",
                 background: "none",
@@ -345,7 +372,6 @@ export default function EventsClient({
                 cursor: "pointer",
                 transition: "color 0.15s",
                 fontFamily: "var(--font-sans), Inter, sans-serif",
-                marginBottom: "-1px",
               }}
             >
               {catLabels[key]}

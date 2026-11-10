@@ -18,6 +18,7 @@ import { useLanguage } from '@/app/components/LanguageContext'
 import type { TranslationKey } from '@/app/lib/translations'
 import { isShortMapsLink, isInGreece, validateCoords, extractCoords, firstUrl, type Coords } from '@/app/lib/mapsCoords'
 import LocationPicker from '@/components/maps/LocationPicker'
+import { parseDayHours } from '@/app/lib/openingHours'
 import { normalizeInstagram } from '@/app/lib/instagram'
 import { containsUrl } from '@/app/lib/spotMapUrl'
 
@@ -595,8 +596,12 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {DAYS.map(day => {
             const v = form.opening_hours[day]
+            // Does the public map understand this day? Shown for days with something written; a blank day is simply not shown.
+            const text = v.closed ? CLOSED : v.hours.trim()
+            const mapReads = text ? parseDayHours(text) !== null : null
             return (
-              <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div key={day}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ width: 92, flexShrink: 0, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{lang === 'en' ? DAY_LABELS_EN[day] : day}</span>
                 <button type="button"
                   onClick={() => set('opening_hours', { ...form.opening_hours, [day]: { closed: !v.closed, hours: '' } })}
@@ -614,6 +619,12 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
                   value={v.hours}
                   onChange={e => set('opening_hours', { ...form.opening_hours, [day]: { closed: false, hours: e.target.value } })}
                   placeholder={t('wizard_hours_ph')} />
+              </div>
+              {mapReads !== null && (
+                <p data-testid={`hours-read-${day}`} style={{ margin: '4px 0 0 102px', fontSize: 11.5, color: mapReads ? 'rgba(34,197,94,0.85)' : 'rgba(255,255,255,0.45)' }}>
+                  {mapReads ? t('wizard_hours_read') : t('wizard_hours_unread')}
+                </p>
+              )}
               </div>
             )
           })}

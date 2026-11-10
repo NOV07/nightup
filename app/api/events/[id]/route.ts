@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
 import { parseEventGenres } from '@/app/lib/genres'
+import { eventCoordsError } from '@/app/lib/mapsCoords'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 // Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
 // Duplicated rather than imported: that module is a client component.
@@ -52,7 +54,7 @@ export async function PATCH(
 
   const { data: existing } = await supabase
     .from('events')
-    .select('profile_id')
+    .select('profile_id, maps_url')
     .eq('id', id)
     .single()
 
@@ -74,16 +76,27 @@ export async function PATCH(
     return NextResponse.json({ error: `currency must be one of: ${CURRENCIES.join(', ')}` }, { status: 400 })
   }
 
+  const coordsError = eventCoordsError(body)
+  if (coordsError) return NextResponse.json({ error: coordsError }, { status: 400 })
+
   const allowed = [
     'title', 'genres', 'type', 'short_description', 'full_description',
     'date', 'time', 'end_time', 'venue', 'city', 'address', 'maps_url', 'image_url',
     'gallery', 'ticket_url', 'price', 'currency', 'age_restriction_level', 'dress_code', 'lineup', 'contributors',
     'instagram', 'facebook', 'tiktok', 'contact_email',
+    'lat', 'lng',
     // legacy fields kept for backwards compat
     'genre', 'description', 'min_age',
   ]
   const payload: Record<string, unknown> = {}
   allowed.forEach(k => { if (k in body) payload[k] = body[k] })
+
+  // A new link without a new pin (an API client, not the form) would leave the old
+  // place on the map: clear it. The form always sends lat/lng together with maps_url.
+  if ('maps_url' in body && !('lat' in body) && !('lng' in body)) {
+    const next = typeof body.maps_url === 'string' ? body.maps_url.trim() : ''
+    if (next !== String(existing.maps_url ?? '').trim()) { payload.lat = null; payload.lng = null }
+  }
 
   // Keys only; the legacy singular `genre` always mirrors genres[0].
   if ('genres' in body || 'genre' in body) {
@@ -114,5 +127,8 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // An owner edits an event that may already be live (title, date, pin…): the cached pages that
+  // show events, /map among them, must not keep the old copy for the whole revalidate window.
+  revalidatePublicPaths('events')
   return NextResponse.json(data)
 }
