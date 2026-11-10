@@ -8,7 +8,7 @@
  *   node scripts/test-events-map.mjs
  */
 import assert from 'node:assert/strict'
-import { eventToPoint, localToday } from '../app/lib/mapEvents.ts'
+import { eventToPoint } from '../app/lib/mapEvents.ts'
 import {
   NO_FILTERS, visiblePoints, hasFilters, parseFilters, serializeFilters, toggleMapEvents,
   toggleMapCategory, toggleMapSub, clearCategoryFilters, normalizeFilters,
@@ -22,48 +22,44 @@ function test(name, fn) {
   catch (e) { failed++; console.log(`  FAIL ${name}\n       ${e.message}`) }
 }
 
-const TODAY = '2026-11-10'
+const WIN = { from: '2026-11-09', to: '2027-01-10' }
 const row = (over = {}) => ({ id: 'ev1', title: 'Techno night', date: '2026-11-14', time: '22:00:00', venue: 'Gazi Hall', city: 'Athens', lat: 37.9778, lng: 23.7117, ...over })
 
 console.log('which events become a point')
 test('valid upcoming event', () => {
-  const p = eventToPoint(row(), TODAY, '/img.png')
+  const p = eventToPoint(row(), WIN, '/img.png')
   assert.equal(p.kind, 'event'); assert.equal(p.id, 'e-ev1'); assert.equal(p.slug, 'ev1')
   assert.deepEqual([p.lat, p.lng], [37.9778, 23.7117]); assert.deepEqual(p.categories, []); assert.equal(p.image, '/img.png')
-  assert.deepEqual(p.event, { date: '2026-11-14', time: '22:00:00', venue: 'Gazi Hall' })
+  assert.deepEqual(p.event, { date: '2026-11-14', time: '22:00:00', venue: 'Gazi Hall', type: 'other', genres: [] })
 })
-test('today counts, yesterday does not', () => {
-  assert.ok(eventToPoint(row({ date: TODAY }), TODAY, null))
-  assert.equal(eventToPoint(row({ date: '2026-11-09' }), TODAY, null), null)
+test('the window includes both ends and nothing outside', () => {
+  assert.ok(eventToPoint(row({ date: WIN.from }), WIN, null)); assert.ok(eventToPoint(row({ date: WIN.to }), WIN, null))
+  assert.equal(eventToPoint(row({ date: '2026-11-08' }), WIN, null), null); assert.equal(eventToPoint(row({ date: '2027-01-11' }), WIN, null), null)
 })
-test('a date with a time part still compares by day', () => assert.ok(eventToPoint(row({ date: '2026-11-10T00:00:00' }), TODAY, null)))
+test('a date with a time part still compares by day', () => assert.ok(eventToPoint(row({ date: '2026-11-09T00:00:00' }), WIN, null)))
 test('no coordinates: not on the map (old events)', () => {
-  assert.equal(eventToPoint(row({ lat: null, lng: null }), TODAY, null), null)
-  assert.equal(eventToPoint(row({ lat: undefined, lng: undefined }), TODAY, null), null)
+  assert.equal(eventToPoint(row({ lat: null, lng: null }), WIN, null), null)
+  assert.equal(eventToPoint(row({ lat: undefined, lng: undefined }), WIN, null), null)
 })
 test('only one coordinate: not on the map', () => {
-  assert.equal(eventToPoint(row({ lng: null }), TODAY, null), null)
-  assert.equal(eventToPoint(row({ lat: null }), TODAY, null), null)
+  assert.equal(eventToPoint(row({ lng: null }), WIN, null), null)
+  assert.equal(eventToPoint(row({ lat: null }), WIN, null), null)
 })
 test('string, NaN or out-of-range coordinates: not on the map', () => {
-  assert.equal(eventToPoint(row({ lat: '37.9' }), TODAY, null), null)
-  assert.equal(eventToPoint(row({ lat: NaN }), TODAY, null), null)
-  assert.equal(eventToPoint(row({ lat: 91 }), TODAY, null), null)
-  assert.equal(eventToPoint(row({ lng: -181 }), TODAY, null), null)
+  assert.equal(eventToPoint(row({ lat: '37.9' }), WIN, null), null)
+  assert.equal(eventToPoint(row({ lat: NaN }), WIN, null), null)
+  assert.equal(eventToPoint(row({ lat: 91 }), WIN, null), null)
+  assert.equal(eventToPoint(row({ lng: -181 }), WIN, null), null)
 })
-test('coordinate 0 is a real value, not "missing"', () => assert.ok(eventToPoint(row({ lat: 0, lng: 0 }), TODAY, null)))
+test('coordinate 0 is a real value, not "missing"', () => assert.ok(eventToPoint(row({ lat: 0, lng: 0 }), WIN, null)))
 test('missing title, id or date: not on the map', () => {
-  assert.equal(eventToPoint(row({ title: '  ' }), TODAY, null), null)
-  assert.equal(eventToPoint(row({ id: null }), TODAY, null), null)
-  assert.equal(eventToPoint(row({ date: null }), TODAY, null), null)
+  assert.equal(eventToPoint(row({ title: '  ' }), WIN, null), null)
+  assert.equal(eventToPoint(row({ id: null }), WIN, null), null)
+  assert.equal(eventToPoint(row({ date: null }), WIN, null), null)
 })
 test('no time / venue / city give nulls', () => {
-  const p = eventToPoint(row({ time: null, venue: '', city: null }), TODAY, null)
-  assert.deepEqual(p.event, { date: '2026-11-14', time: null, venue: null }); assert.equal(p.area, null)
-})
-test('localToday uses local date parts, zero padded', () => {
-  assert.equal(localToday(new Date(2026, 0, 5, 23, 59)), '2026-01-05')
-  assert.equal(localToday(new Date(2026, 10, 10, 0, 0)), '2026-11-10')
+  const p = eventToPoint(row({ time: null, venue: '', city: null }), WIN, null)
+  assert.deepEqual(p.event, { date: '2026-11-14', time: null, venue: null, type: 'other', genres: [] }); assert.equal(p.area, null)
 })
 
 console.log('layer switch and filters')
