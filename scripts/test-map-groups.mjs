@@ -11,7 +11,7 @@
 import assert from 'node:assert/strict'
 import {
   NO_FILTERS, mapContext, resolvePoints, normalizeFilters, parseFilters, parseOpenGroup, serializeFilters,
-  toggleGroupShown, showGroup, toggleEventType, toggleEventGenre, setSpotStatus, toggleMapCategory, toggleMapSub,
+  toggleGroupShown, toggleGroupPanel, showGroup, toggleEventType, toggleEventGenre, setSpotStatus, toggleMapCategory, toggleMapSub,
   toggleWellnessSub, setNight, clearGroupFilters, clearAllFilters, hasFilters, hasGroupFilters, eventMatches, GROUPS,
 } from '../app/lib/mapFilters.ts'
 
@@ -200,7 +200,36 @@ test('an ignored pick (unknown or not a Spots sub) lights nothing', () => {
   assert.deepEqual(toggleMapSub(off, 'yoga'), off); assert.deepEqual(toggleMapSub(off, 'rooftop_bar'), off); assert.deepEqual(toggleMapCategory(off, 'wellness'), off)
   assert.deepEqual(toggleWellnessSub(off, 'club').shown, [])
 })
-test('opening a panel is not a filter: the pure toggles are the only way a layer lights itself', () => assert.deepEqual(clearGroupFilters(off, 'events').shown, []))
+test('clearing a group\'s filters never lights it', () => assert.deepEqual(clearGroupFilters(off, 'events').shown, []))
+
+console.log('a tap on the NAME of a group: the panel opens and the group lights; closing leaves it as it is')
+test('off group: the name opens its panel and lights it', () => {
+  const r = toggleGroupPanel(NO_FILTERS, null, 'spots'); assert.equal(r.open, 'spots'); assert.deepEqual(r.filters.shown, ['spots'])
+})
+test('lit group: the name opens its panel, the layer stays as it was', () => {
+  const f = F({ shown: ['events', 'spots'] }); const r = toggleGroupPanel(f, null, 'events'); assert.equal(r.open, 'events'); assert.deepEqual(r.filters.shown, ['events', 'spots'])
+  assert.equal(r.filters, f, 'nothing to change: the same filters object comes back')
+})
+test('the same name again closes the panel and does not turn the group off', () => {
+  const lit = toggleGroupPanel(NO_FILTERS, null, 'wellness'); const closed = toggleGroupPanel(lit.filters, lit.open, 'wellness')
+  assert.equal(closed.open, null); assert.deepEqual(closed.filters.shown, ['wellness'])
+})
+test('closing a panel does not light a group the dot had switched off', () => {
+  const off2 = toggleGroupShown(toggleGroupPanel(NO_FILTERS, null, 'events').filters, 'events')   // opened (lit), then the dot turned it off
+  assert.deepEqual(off2.shown, []); const r = toggleGroupPanel(off2, 'events', 'events'); assert.equal(r.open, null); assert.deepEqual(r.filters.shown, [])
+})
+test('another name switches the panel and lights that group; the first one stays as it was', () => {
+  const a = toggleGroupPanel(NO_FILTERS, null, 'events'); const b = toggleGroupPanel(a.filters, a.open, 'spots')
+  assert.equal(b.open, 'spots'); assert.deepEqual(b.filters.shown, ['events', 'spots'])
+})
+test('the dot is still the only thing that switches a layer off, and it does not touch the panel', () => {
+  const a = toggleGroupPanel(NO_FILTERS, null, 'spots'); assert.deepEqual(toggleGroupShown(a.filters, 'spots').shown, [])
+  assert.deepEqual(toggleGroupShown(NO_FILTERS, 'events').shown, ['events'])   // the dot lights without opening anything (the panel state is not part of the filters)
+})
+test('only `shown` changes; filters and the night are kept', () => {
+  const f = { ...NO_FILTERS, evTypes: ['music'], night: '2026-11-13' }; const r = toggleGroupPanel(f, null, 'events')
+  assert.deepEqual({ ...r.filters, shown: [] }, f)
+})
 
 console.log('toggles and normalising')
 test('event type / genre toggle, display order', () => {

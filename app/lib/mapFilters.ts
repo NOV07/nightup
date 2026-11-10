@@ -157,6 +157,15 @@ export function showGroup(f: MapFilters, g: GroupKey): MapFilters {
   return f.shown.includes(g) ? f : normalizeFilters({ ...f, shown: [...f.shown, g] })
 }
 // Picking a filter in a group lights it; taking one off, or choosing «all», changes nothing about the layer.
+/**
+ * A tap on the NAME of a group: its panel opens or closes, and opening it lights the group if it is off.
+ * Closing the panel leaves the group as it is (it never turns a layer off). The dot is the only way to
+ * switch a layer off; see toggleGroupShown.
+ */
+export function toggleGroupPanel(f: MapFilters, open: GroupKey | null, g: GroupKey): { filters: MapFilters; open: GroupKey | null } {
+  if (open === g) return { filters: f, open: null }
+  return { filters: showGroup(f, g), open: g }
+}
 export const toggleEventType = (f: MapFilters, t: EventType): MapFilters => {
   const n = normalizeFilters({ ...f, evTypes: flip(f.evTypes, t) })
   return n.evTypes.length > f.evTypes.length ? showGroup(n, 'events') : n

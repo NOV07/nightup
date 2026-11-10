@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
   clearAllFilters, clearGroupFilters, hasFilters, mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
-  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
+  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupPanel, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
   type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import { DAY_NAMES } from "../lib/openingHours";
@@ -189,7 +189,12 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
         <MapDateBar night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} onPick={(n) => update(setNight(filters, n))} />
         <MapGroupBar filters={filters} counts={counts} open={open} panelId={panelId}
           onToggleLayer={(g) => update(toggleGroupShown(filters, g))}
-          onToggleOpen={(g) => setOpen(open === g ? null : g)} />
+          onToggleOpen={(g) => {
+            // The name opens the group's filters and lights the group if it is off; closing never turns it off.
+            const next = toggleGroupPanel(filters, open, g);
+            if (next.filters !== filters) update(next.filters);
+            setOpen(next.open);
+          }} />
       </div>
       <MapGroupPanel group={open} filters={filters} id={panelId} handlers={handlers} />
 
