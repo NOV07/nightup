@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiMapPin } from "react-icons/fi";
@@ -123,6 +123,16 @@ export default function EventsClient({
   const [dateFilter, setDateFilter] = useState("");
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<'music' | 'culture' | 'sports' | 'other'>('music');
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // The tab row scrolls sideways on a narrow screen: keep the picked tab in view (the row only, not the page).
+  useEffect(() => {
+    const row = tabsRef.current;
+    const tab = row?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!row || !tab) return;
+    const left = tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2;
+    row.scrollTo({ left: Math.max(0, left) });
+  }, [activeCategory]);
 
   // ── Filter modal ─────────────────────────────────────────────
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -335,18 +345,24 @@ export default function EventsClient({
       <div className="max-w-7xl mx-auto px-4 py-8" style={{ backgroundColor: '#0A0A12' }}>
 
       {/* ── Category tabs ─────────────────────────────────── */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: "24px", display: "flex" }}>
+      <style>{`.ev-tabs { overflow-x: auto; scrollbar-width: none; } .ev-tabs::-webkit-scrollbar { display: none; }`}</style>
+      {/* One row that scrolls sideways when it does not fit (no scrollbar). The 1px rule is an inset shadow,
+          so the picked tab's 2px underline sits on it without a negative margin that would add a vertical scroll. */}
+      <div ref={tabsRef} className="ev-tabs" data-testid="events-tabs" style={{ boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.07)", marginBottom: "24px", display: "flex" }}>
         {(['music', 'culture', 'sports', 'other'] as const).map((key) => {
           const catLabels = { music: t('event_cat_music'), culture: t('event_cat_culture'), sports: t('event_cat_sports'), other: t('event_cat_other') };
           const isActive = activeCategory === key;
           return (
             <button
               key={key}
+              data-active={isActive}
               onClick={() => setActiveCategory(key)}
               onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#EDEDF2'; }}
               onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#5A5A6A'; }}
               style={{
-                padding: "12px 20px",
+                padding: "12px clamp(12px, 3.2vw, 20px)",
+                flex: "none",
+                whiteSpace: "nowrap",
                 fontSize: "13px",
                 letterSpacing: "0.08em",
                 background: "none",
@@ -356,7 +372,6 @@ export default function EventsClient({
                 cursor: "pointer",
                 transition: "color 0.15s",
                 fontFamily: "var(--font-sans), Inter, sans-serif",
-                marginBottom: "-1px",
               }}
             >
               {catLabels[key]}
