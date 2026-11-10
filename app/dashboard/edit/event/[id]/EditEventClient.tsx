@@ -25,6 +25,8 @@ export default function EditEventClient({ event, isArtist = false }: { event: an
     city:              event.city ?? '',
     address:           event.address ?? '',
     maps_url:          event.maps_url ?? '',
+    lat:               typeof event.lat === 'number' ? event.lat : null,
+    lng:               typeof event.lng === 'number' ? event.lng : null,
     image_url:         event.image_url ?? '',
     gallery:           Array.isArray(event.gallery) ? event.gallery : [],
     ticket_url:        event.ticket_url ?? '',
@@ -70,6 +72,9 @@ export default function EditEventClient({ event, isArtist = false }: { event: an
         city:              data.city,
         address:           data.address || null,
         maps_url:          data.maps_url || null,
+        // Pin confirmed in the form; both null without a link. Not derived from maps_url on the server.
+        lat:               data.maps_url.trim() ? data.lat : null,
+        lng:               data.maps_url.trim() ? data.lng : null,
         image_url:         data.image_url || null,
         gallery:           data.gallery,
         ticket_url:        data.ticket_url || null,

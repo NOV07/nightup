@@ -4,6 +4,7 @@ import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 import { withIngestedEventImage } from '@/app/lib/ingestImage'
 import { checkAdminSpotInput } from '@/app/lib/spotInput'
+import { eventCoordsError } from '@/app/lib/mapsCoords'
 import { uniqueSlug } from '@/app/lib/slug'
 
 function isAdmin(req: NextRequest) {
@@ -36,6 +37,8 @@ export async function POST(req: NextRequest) {
   let row = data as Record<string, unknown>
   let imageWarning: string | undefined
   if (table === 'events') {
+    const coordsError = eventCoordsError(row)
+    if (coordsError) return NextResponse.json({ error: coordsError }, { status: 400 })
     const ingested = await withIngestedEventImage(row, !!row.has_copyright_restriction)
     row = ingested.row
     imageWarning = ingested.warning

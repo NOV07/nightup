@@ -130,6 +130,8 @@ function eventItemToFormData(item: Record<string, any>): Partial<EventFormData> 
     city:              item.city ?? "",
     address:           item.address ?? "",
     maps_url:          item.maps_url ?? "",
+    lat:               typeof item.lat === "number" ? item.lat : null,
+    lng:               typeof item.lng === "number" ? item.lng : null,
     image_url:         item.image_url ?? "",
     gallery:           Array.isArray(item.gallery) ? item.gallery : [],
     ticket_url:        item.ticket_url ?? "",
@@ -168,6 +170,9 @@ function eventFormDataToRow(data: EventFormData) {
     city:              data.city,
     address:           data.address || null,
     maps_url:          data.maps_url || null,
+    // Confirmed pin from the shared form; null together when there is no link.
+    lat:               data.maps_url.trim() ? data.lat : null,
+    lng:               data.maps_url.trim() ? data.lng : null,
     image_url:         data.image_url || null,
     gallery:           data.gallery,
     ticket_url:        data.ticket_url || null,
@@ -2070,7 +2075,9 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
       // coerced here too — events.price is numeric and an empty or symbol-bearing
       // string is rejected by the column.
       // An emptied price_text goes back as null so the € level fallback shows.
-      const payload = tab === "events" ? { ...form, price: parsePriceInput(form.price as string), ...eventGenrePatch(form) }
+      // A new Maps URL means a new place: the old pin is cleared (it is re-set from the event form).
+      const mapsChanged = tab === "events" && String(form.maps_url ?? "").trim() !== String(item.maps_url ?? "").trim();
+      const payload = tab === "events" ? { ...form, price: parsePriceInput(form.price as string), ...eventGenrePatch(form), ...(mapsChanged ? { lat: null, lng: null } : {}) }
         : tab === "spots" ? { ...form, price_text: String(form.price_text ?? "").trim() || null }
         : form;
       onSave(getTable(), String(item.id), payload);
@@ -2114,6 +2121,7 @@ function EditForm({ item, tab, subtab, onSave, loading, error, inputCls, inputSt
           )}
           {field("address","Address")}
           {field("maps_url","Maps URL")}
+          <p className="sm:col-span-2 text-xs -mt-2" style={{ color:"rgba(255,255,255,0.5)" }}>{t("admin_event_pin_note")}</p>
           {field("ticket_url","Ticket URL","text",undefined,true)}
           {field("short_description","Short Description","text",undefined,true)}
           {field("editorial_owner_name","Organizer name")}

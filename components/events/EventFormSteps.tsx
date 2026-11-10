@@ -7,6 +7,8 @@ import EventLivePreview from './EventLivePreview'
 import { compressImage } from '@/app/lib/compressImage'
 import { CURRENCIES, type CurrencyCode, currencySymbol, formatMoney } from '@/app/lib/formatPrice'
 import { GENRES, genreLabel } from '@/app/lib/genres'
+import { useMapsPin, type MapsPin } from '@/app/lib/useMapsPin'
+import PinConfirmCard from '@/components/maps/PinConfirmCard'
 
 const EVENT_TYPES = ['Club Night', 'Live Show', 'Festival', 'Open Air', 'Private Party', 'Other']
 // events.type doubles as the category the public /events tabs filter on, so the
@@ -63,6 +65,9 @@ export interface EventFormData {
   city: string
   address: string
   maps_url: string
+  // Confirmed pin for the link above; both null when there is no link (or no place in it).
+  lat: number | null
+  lng: number | null
   image_url: string
   gallery: string[]
   ticket_url: string
@@ -90,7 +95,7 @@ type SetField = <K extends keyof EventFormData>(k: K, v: EventFormData[K]) => vo
 const DEFAULTS: EventFormData = {
   title: '', genres: [], type: '', short_description: '', full_description: '',
   date: '', start_time: '', end_time: '', venue: '', city: '', address: '',
-  maps_url: '', image_url: '', gallery: [], ticket_url: '', price: '', currency: 'EUR',
+  maps_url: '', lat: null, lng: null, image_url: '', gallery: [], ticket_url: '', price: '', currency: 'EUR',
   age_restriction_level: 'none',
   dress_code: '', lineup: '', contributors: '', instagram: '', facebook: '', tiktok: '',
   contact_email: '', editorial_owner_name: '', terms_accepted: false,
@@ -113,6 +118,16 @@ interface Props {
 }
 
 // ── Sub-components (defined outside to prevent remount on each render) ────
+
+function Spinner() {
+  return (
+    <span aria-hidden style={{
+      display: 'inline-block', width: 12, height: 12, marginRight: 8, verticalAlign: '-1px',
+      border: '2px solid rgba(232,160,32,0.3)', borderTopColor: '#E8A020', borderRadius: '50%',
+      animation: 'nightup-spin 0.8s linear infinite',
+    }} />
+  )
+}
 
 function Err({ stepErrors, k }: { stepErrors: Record<string, string>; k: string }) {
   return stepErrors[k] ? <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{stepErrors[k]}</p> : null
@@ -254,9 +269,10 @@ function GalleryUrlInput({ onAdd }: { onAdd: (url: string) => void }) {
   )
 }
 
-function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, handleImageChange, onGalleryAdd, onGalleryRemove, isAdmin, showCityOther, onCitySelect }: {
+function Step2({ form, set, pin, stepErrors, uploading, uploadError, fileInputRef, handleImageChange, onGalleryAdd, onGalleryRemove, isAdmin, showCityOther, onCitySelect }: {
   form: EventFormData
   set: SetField
+  pin: MapsPin
   stepErrors: Record<string, string>
   uploading: boolean
   uploadError: string
@@ -319,7 +335,31 @@ function Step2({ form, set, stepErrors, uploading, uploadError, fileInputRef, ha
 
       <div>
         <label style={lbl}>{t('event_form_maps_url_label')}</label>
-        <input style={inp} value={form.maps_url} onChange={e => set('maps_url', e.target.value)} placeholder="https://maps.google.com/..." />
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8, lineHeight: 1.5 }}>{t('event_map_help')}</p>
+        <input ref={pin.inputRef} style={inp} value={pin.url} data-testid="event-maps-url"
+          onChange={e => pin.onUrlChange(e.target.value)}
+          onBlur={() => { void pin.ensure() }}
+          placeholder="https://maps.google.com/..." />
+        {/* Fixed height whether or not a check runs, so nothing below jumps under a finger. */}
+        <p role="status" style={{ fontSize: 12, color: '#E8A020', margin: '6px 0 0', minHeight: 18 }}>
+          {pin.checking && <><Spinner />{t('spot_maps_checking')}</>}
+        </p>
+        {pin.notFound && !pin.coords && (
+          <div role="alert" data-testid="event-map-not-found" style={{
+            padding: '12px 14px', borderRadius: 12, marginTop: 8,
+            backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.35)',
+          }}>
+            <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.5 }}>{t('event_map_not_found')}</p>
+            {pin.unreachable && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: '4px 0 0' }}>{t('err_maps_unreachable')}</p>}
+          </div>
+        )}
+        {pin.coords && pin.url.trim() !== '' && (
+          <div style={{ marginTop: 8 }}>
+            <PinConfirmCard coords={pin.coords} info={pin.info} confirmed={pin.confirmed} disabled={pin.checking}
+              onPinChange={pin.onPinChange} onConfirm={pin.confirm} onChangeLink={pin.changeLink} />
+          </div>
+        )}
+        <Err stepErrors={stepErrors} k="pin" />
       </div>
 
       <div>
@@ -601,6 +641,17 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   // it is still empty. An existing event whose city is off the list opens it too.
   const [cityOther, setCityOther] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const advancing = useRef(false)
+
+  const pin = useMapsPin({
+    initialUrl: initialData?.maps_url ?? '',
+    initialCoords: initialData?.lat != null && initialData?.lng != null ? { lat: initialData.lat, lng: initialData.lng } : null,
+    sync: patch => setForm(prev => ({ ...prev, ...patch })),
+  })
+  // The "press OK" error goes away as soon as the pin is confirmed (or removed).
+  useEffect(() => {
+    if (!pin.pending) setStepErrors(prev => (prev.pin ? { ...prev, pin: '' } : prev))
+  }, [pin.pending])
 
   // Held in a ref so an inline onChange prop does not re-fire the effect.
   const onChangeRef = useRef(onChange)
@@ -661,6 +712,8 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
       if (!form.venue.trim()) e.venue = t('event_form_err_venue_required')
       if (!form.city) e.city = t('event_form_err_city_required')
       if (!form.image_url) e.image_url = t('event_form_err_image_required')
+      // A found pin must be confirmed; read from refs so it is right right after a lookup.
+      if (pin.isPending()) e.pin = t('event_map_err_confirm')
     }
     if (n === 4) {
       if (!form.contact_email.trim()) e.contact_email = t('event_form_err_email_required')
@@ -669,10 +722,18 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
     return e
   }
 
-  function next() {
-    const errs = validate(step)
-    if (Object.keys(errs).length) { setStepErrors(errs); return }
-    setStep(s => s + 1)
+  async function next() {
+    if (advancing.current) return
+    advancing.current = true
+    try {
+      // Date and venue step: wait for a running short-link lookup (or start one).
+      if (step === 2) await pin.ensure()
+      const errs = validate(step)
+      if (Object.keys(errs).length) { setStepErrors(errs); return }
+      setStep(s => s + 1)
+    } finally {
+      advancing.current = false
+    }
   }
 
   function back() { setStep(s => s - 1) }
@@ -693,6 +754,8 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
   }
 
   function handleFinalSubmit() {
+    // The step indicator lets a user jump ahead: an unconfirmed pin still blocks the save.
+    if (pin.isPending()) { setStepErrors({ pin: t('event_map_err_confirm') }); setStep(2); return }
     const errs = validate(4)
     if (Object.keys(errs).length) { setStepErrors(errs); return }
     const rawPrice = form.price.replace(/[^0-9.]/g, '')
@@ -705,6 +768,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
       display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : '1fr 380px',
       gap: 28, alignItems: 'start',
     }}>
+      <style>{'@keyframes nightup-spin { to { transform: rotate(360deg) } }'}</style>
       <div style={{ minWidth: 0 }}>
       {isMobile && (
         <button type="button" onClick={() => setPreviewOpen(true)}
@@ -724,7 +788,7 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
         </h2>
 
         {step === 1 && <Step1 form={form} set={set} toggleGenre={toggleGenre} stepErrors={stepErrors} isAdmin={isAdmin} askOrganizerName={askOrganizerName} />}
-        {step === 2 && <Step2 form={form} set={set} stepErrors={stepErrors} uploading={uploading} uploadError={uploadError} fileInputRef={fileInputRef} handleImageChange={handleImageChange} onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage} isAdmin={isAdmin} showCityOther={showCityOther} onCitySelect={selectCity} />}
+        {step === 2 && <Step2 form={form} set={set} pin={pin} stepErrors={stepErrors} uploading={uploading} uploadError={uploadError} fileInputRef={fileInputRef} handleImageChange={handleImageChange} onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage} isAdmin={isAdmin} showCityOther={showCityOther} onCitySelect={selectCity} />}
         {step === 3 && <Step3 form={form} set={set} stepErrors={stepErrors} />}
         {step === 4 && <Step4 form={form} set={set} stepErrors={stepErrors} isAdmin={isAdmin} isEdit={isEdit} />}
 
@@ -744,8 +808,13 @@ export default function EventFormSteps({ initialData, onSubmit, loading, error, 
             </button>
           )}
           {step < 4 ? (
-            <button type="button" onClick={next}
-              style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            // Stays clickable while a link resolves (next() waits for it) and when
+            // dimmed, so a click explains what is missing.
+            <button type="button" onClick={next} data-testid="wizard-next"
+              aria-busy={step === 2 && pin.checking} aria-disabled={step === 2 && pin.pending}
+              style={{ flex: 1, padding: '13px 0', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                cursor: step === 2 && pin.checking ? 'wait' : 'pointer',
+                opacity: step === 2 && pin.checking ? 0.6 : step === 2 && pin.pending ? 0.4 : 1,
                 backgroundColor: '#E8A020', color: '#0F0F1A', border: 'none' }}>
               {t('event_form_continue')}
             </button>

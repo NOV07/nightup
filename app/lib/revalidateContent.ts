@@ -62,6 +62,8 @@ const PUBLIC_PATHS: Record<string, Target[]> = {
   events: [
     { path: '/' },
     { path: '/about' },
+    // The events layer of the public map.
+    { path: '/map' },
   ],
 }
 
