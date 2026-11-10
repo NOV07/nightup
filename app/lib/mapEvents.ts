@@ -4,12 +4,32 @@
 
 import type { MapPoint } from './mapFilters.ts'
 import { inRange } from './mapsCoords.ts'
+import { normalizeGenre } from './genres.ts'
 
-/** Today as YYYY-MM-DD from LOCAL date parts, like app/events/page.tsx (a UTC date would cut off today's events). */
-export function localToday(now: Date = new Date()): string {
-  const m = String(now.getMonth() + 1).padStart(2, '0')
-  const d = String(now.getDate()).padStart(2, '0')
-  return `${now.getFullYear()}-${m}-${d}`
+export type EventType = 'music' | 'culture' | 'sports' | 'other'
+
+/**
+ * The map's event type of a stored `events.type`: music, culture, sports and
+ * other as they are; anything else, or null, is 'other'.
+ *
+ * TODO(decision pending): the organiser form still offers legacy values such
+ * as 'Club Night' and 'Live Show'. Whether those rows exist in production and
+ * should count as 'music' waits for the distribution of events.type; when it
+ * is known, that mapping goes here and nowhere else.
+ */
+export function eventTypeOf(raw: unknown): EventType {
+  return raw === 'music' || raw === 'culture' || raw === 'sports' || raw === 'other' ? raw : 'other'
+}
+
+/** Genre keys of an event, legacy spellings converted, unknown values dropped, no duplicates. */
+export function eventGenresOf(row: { genres?: unknown; genre?: unknown }): string[] {
+  const raw = Array.isArray(row.genres) && row.genres.length ? row.genres : row.genre ? [row.genre] : []
+  const keys: string[] = []
+  for (const g of raw) {
+    const k = typeof g === 'string' ? normalizeGenre(g) : null
+    if (k && !keys.includes(k)) keys.push(k)
+  }
+  return keys
 }
 
 export type EventPointRow = {
@@ -21,18 +41,24 @@ export type EventPointRow = {
   city?: unknown
   lat?: unknown
   lng?: unknown
+  type?: unknown
+  genres?: unknown
+  genre?: unknown
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 
 /**
  * The map point of an event, or null when it must not be on the map: no (or
- * invalid) coordinates, no id/title, or a date before `today` (YYYY-MM-DD).
- * Status is checked by the query (approved only).
+ * invalid) coordinates, no id/title, or a date outside `window` (YYYY-MM-DD,
+ * both ends included; see eventLoadWindow). Which night is shown is decided in
+ * the browser. Status is checked by the query (approved only).
  */
-export function eventToPoint(row: EventPointRow, today: string, image: string | null): MapPoint | null {
+export function eventToPoint(row: EventPointRow, window: { from: string; to: string }, image: string | null): MapPoint | null {
   if (!isNum(row.lat) || !isNum(row.lng) || !inRange(row.lat, row.lng)) return null
-  if (typeof row.date !== 'string' || row.date.slice(0, 10) < today) return null
+  if (typeof row.date !== 'string') return null
+  const date = row.date.slice(0, 10)
+  if (date < window.from || date > window.to) return null
   if (row.id == null || typeof row.title !== 'string' || !row.title.trim()) return null
   return {
     kind: 'event',
@@ -49,9 +75,11 @@ export function eventToPoint(row: EventPointRow, today: string, image: string | 
     verifiedNight: false,
     image,
     event: {
-      date: row.date.slice(0, 10),
+      date,
       time: typeof row.time === 'string' && row.time ? row.time : null,
       venue: typeof row.venue === 'string' && row.venue ? row.venue : null,
+      type: eventTypeOf(row.type),
+      genres: eventGenresOf(row),
     },
   }
 }

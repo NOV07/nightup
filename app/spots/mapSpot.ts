@@ -10,8 +10,19 @@ import { spotCategoriesOf, spotSubcategoriesOf, primaryCategory } from "../lib/s
 export const SPOT_COLS =
   "id, name, slug, category, subcategory, categories, subcategories, city, neighborhood, address, lat, lng, description, cover_image, crop_x, crop_y, crop_width, crop_height, price_level, price_text, rating, instagram, is_sponsored, featured";
 
+/** The map reads the published opening hours too (open / closed status); no other list needs them. */
+export const SPOT_MAP_COLS = `${SPOT_COLS}, opening_hours`;
+
 /** Extra columns the single-spot page needs on top of SPOT_COLS. */
 export const SPOT_PAGE_COLS = `${SPOT_COLS}, gallery, phone, website, opening_hours, owner_id`;
+
+/** opening_hours is jsonb: keep it only when it is a day -> text map. */
+export function hoursOf(v: unknown): Record<string, string> | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v)) if (typeof val === "string") out[k] = val;
+  return Object.keys(out).length ? out : null;
+}
 
 /** Works for table rows and for spots_nearby() RPC rows (fewer columns). */
 export function mapSpot(s: any): Spot {
@@ -38,6 +49,8 @@ export function mapSpot(s: any): Spot {
     instagram: s.instagram,
     isSponsored: s.is_sponsored === true,
     featured: s.featured === true,
+    // Only when the row carries the column (SPOT_MAP_COLS), so other lists keep their shape.
+    ...("opening_hours" in s ? { openingHours: hoursOf(s.opening_hours) } : {}),
   };
 }
 

@@ -1,8 +1,9 @@
 import { getSupabase } from '../lib/supabase'
-import { getAllSpots } from '../spots/data'
+import { getAllSpotsForMap } from '../spots/data'
 import type { MapPoint } from '../lib/mapFilters'
 import { isSpotSub, type SpotCategory } from '../lib/spotCategories'
-import { eventToPoint, localToday } from '../lib/mapEvents'
+import { eventToPoint } from '../lib/mapEvents'
+import { eventLoadWindow } from '../lib/athensTime'
 import { getEventCoverImage } from '../lib/getEventCoverImage'
 
 // Only the columns the public map needs. Not source_url, not coords_verified.
@@ -42,7 +43,7 @@ async function getWellnessPoints(): Promise<MapPoint[]> {
 }
 
 async function getSpotPoints(): Promise<MapPoint[]> {
-  const spots = await getAllSpots() // published only; never throws
+  const spots = await getAllSpotsForMap() // published only, with opening hours; never throws
   return spots
     .filter(s => isNum(s.lat) && isNum(s.lng))
     .map((s): MapPoint => ({
@@ -59,24 +60,31 @@ async function getSpotPoints(): Promise<MapPoint[]> {
       accessNote: null,
       verifiedNight: false,
       image: s.coverImage ?? null,
+      hours: s.openingHours ?? null,
     }))
 }
 
-/** Approved, upcoming events with a confirmed pin. Old events have no coordinates and stay off the map. */
+/**
+ * Approved events with a confirmed pin, dated from yesterday to 61 days ahead
+ * (see eventLoadWindow). Which night is shown, and from which hour, is decided
+ * in the browser, so this page can stay cached. Old events have no coordinates
+ * and stay off the map.
+ */
 export async function getEventPoints(): Promise<MapPoint[]> {
   try {
-    const today = localToday()
+    const window = eventLoadWindow(new Date())
     const { data, error } = await getSupabase()
       .from('events')
-      .select('id, title, image_url, has_copyright_restriction, date, time, venue, city, lat, lng')
+      .select('id, title, image_url, has_copyright_restriction, date, time, venue, city, lat, lng, type, genres, genre')
       .eq('status', 'approved')
-      .gte('date', today)
+      .gte('date', window.from)
+      .lte('date', window.to)
       .not('lat', 'is', null)
       .not('lng', 'is', null)
       .order('date', { ascending: true })
     if (error || !data) return []
     return data.flatMap(r => {
-      const p = eventToPoint(r, today, getEventCoverImage(r))
+      const p = eventToPoint(r, window, getEventCoverImage(r))
       return p ? [p] : []
     })
   } catch (e) {

@@ -34,7 +34,20 @@ export type MapPoint = {
   /** First photo, or null (the card shows a placeholder). */
   image: string | null
   /** Events only (slug is then the event id, categories are empty). */
-  event?: { date: string; time: string | null; venue: string | null }
+  event?: {
+    date: string
+    time: string | null
+    venue: string | null
+    /** One of the four event types; see eventTypeOf in mapEvents.ts. */
+    type: 'music' | 'culture' | 'sports' | 'other'
+    /** Genre keys (app/lib/genres.ts), may be empty. */
+    genres: string[]
+  }
+  /**
+   * Spots only: the published opening hours (day name -> text) when the spot
+   * has any; null when it has none or they are not a day -> text map.
+   */
+  hours?: Record<string, string> | null
 }
 
 export type MapFilters = {
