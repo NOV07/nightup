@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
   clearAllFilters, clearGroupFilters, hasFilters, mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
-  setNight, setSpotStatus, showGroup, toggleEventGenre, toggleEventType, toggleGroupHidden, toggleMapCategory, toggleMapSub, toggleWellnessSub,
+  setNight, setSpotStatus, showGroup, toggleEventGenre, toggleEventType, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
   type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import { DAY_NAMES } from "../lib/openingHours";
@@ -163,7 +163,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   const empty = points.length === 0;
   const noMatch = !empty && !!resolved && visible.length === 0;
   const counts = resolved?.counts ?? null;
-  const shown = counts ? { events: filters.hidden.includes("events") ? 0 : counts.events, spots: filters.hidden.includes("spots") ? 0 : counts.spots, wellness: filters.hidden.includes("wellness") ? 0 : counts.wellness } : null;
+  const shown = counts ? { events: filters.shown.includes("events") ? counts.events : 0, spots: filters.shown.includes("spots") ? counts.spots : 0, wellness: filters.shown.includes("wellness") ? counts.wellness : 0 } : null;
 
   // What the card says about a venue: its status at the picked night and that day's hours.
   const status = selected && resolved ? resolved.status[selected.id] : undefined;
@@ -185,8 +185,8 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
       <div className="nm-controls">
         <MapDateBar night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} onPick={(n) => update(setNight(filters, n))} />
         <MapGroupBar filters={filters} counts={counts} open={open} panelId={panelId}
-          onToggleLayer={(g) => update(toggleGroupHidden(filters, g))}
-          onToggleOpen={(g) => { if (open !== g && filters.hidden.includes(g)) update(showGroup(filters, g)); setOpen(open === g ? null : g); }} />
+          onToggleLayer={(g) => update(toggleGroupShown(filters, g))}
+          onToggleOpen={(g) => { if (open !== g && !filters.shown.includes(g)) update(showGroup(filters, g)); setOpen(open === g ? null : g); }} />
       </div>
       <MapGroupPanel group={open} filters={filters} id={panelId} handlers={handlers} />
 
@@ -204,7 +204,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           {noMatch && (
             <div className="nm-overlay" role="status">
               <p>{t("map_no_results")}</p>
-              {(hasFilters(filters) || filters.hidden.length > 0) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
+              {(hasFilters(filters) || filters.shown.length < 3) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
             </div>
           )}
 

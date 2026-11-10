@@ -67,7 +67,7 @@ export function MapGroupBar({ filters, counts, open, panelId, onToggleLayer, onT
   return (
     <div style={{ display: "flex", gap: 6 }}>
       {GROUPS.map((g) => {
-        const visible = !filters.hidden.includes(g);
+        const visible = filters.shown.includes(g);
         const isOpen = open === g;
         const color = MAP_GROUP_COLORS[g];
         const name = t(GROUP_LABEL[g]);
