@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { featuredUntilFor } from '@/app/lib/eventFeatured'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 function isAdmin(req: NextRequest) {
   return verifyAdminToken(req.cookies.get('admin_auth')?.value)
@@ -25,5 +26,6 @@ export async function POST(req: NextRequest) {
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePublicPaths('events')
   return NextResponse.json({ ok: true })
 }

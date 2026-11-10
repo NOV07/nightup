@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { featuredUntilFor } from '@/app/lib/eventFeatured'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 export async function POST(req: NextRequest) {
   if (!verifyAdminToken(req.cookies.get('admin_auth')?.value)) {
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       .from('events')
       .update({ featured_until: featuredUntilFor(true) })
       .eq('id', request.event_id)
+    revalidatePublicPaths('events')
   }
 
   return NextResponse.json({ success: true })

@@ -3,6 +3,7 @@ import { createClient } from '@/app/lib/supabase-server'
 import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
 import { parseEventGenres } from '@/app/lib/genres'
 import { eventCoordsError } from '@/app/lib/mapsCoords'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 // Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
 // Duplicated rather than imported: that module is a client component.
@@ -97,6 +98,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Rows start as 'pending' (not public), so this changes nothing visible yet; it keeps every
+  // write to events behind the same call, and the admin approval clears the cached pages for real.
+  revalidatePublicPaths('events')
   return NextResponse.json(data)
 }
 

@@ -3,6 +3,7 @@ import { createClient } from '@/app/lib/supabase-server'
 import { CURRENCIES, parsePriceInput } from '@/app/lib/formatPrice'
 import { parseEventGenres } from '@/app/lib/genres'
 import { eventCoordsError } from '@/app/lib/mapsCoords'
+import { revalidatePublicPaths } from '@/app/lib/revalidateContent'
 
 // Kept in sync with AGE_LEVELS in components/events/EventFormSteps.tsx.
 // Duplicated rather than imported: that module is a client component.
@@ -126,5 +127,8 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // An owner edits an event that may already be live (title, date, pin…): the cached pages that
+  // show events, /map among them, must not keep the old copy for the whole revalidate window.
+  revalidatePublicPaths('events')
   return NextResponse.json(data)
 }
