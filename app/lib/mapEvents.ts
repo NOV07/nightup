@@ -7,16 +7,21 @@ import { inRange } from './mapsCoords.ts'
 import { normalizeGenre } from './genres.ts'
 
 /**
- * The map's event type of a stored `events.type`: music, culture, sports and
- * other as they are; anything else, or null, is 'other'.
- *
- * TODO(decision pending): the organiser form still offers legacy values such
- * as 'Club Night' and 'Live Show'. Whether those rows exist in production and
- * should count as 'music' waits for the distribution of events.type; when it
- * is known, that mapping goes here and nowhere else.
+ * The organiser form offers these wording-style values (EVENT_TYPES in
+ * components/events/EventFormSteps.tsx) next to the four stored keys. The four
+ * below are music events; 'Private Party' and 'Other' are not, and fall to 'other'.
+ */
+const LEGACY_MUSIC_TYPES: ReadonlySet<string> = new Set(['Club Night', 'Live Show', 'Festival', 'Open Air'])
+
+/**
+ * The map's event type of a stored `events.type`:
+ *   music | culture | sports | other   as they are
+ *   Club Night | Live Show | Festival | Open Air   -> music (exact spelling, as the form writes them)
+ *   Private Party | Other | null | anything unknown   -> other
  */
 export function eventTypeOf(raw: unknown): EventType {
-  return raw === 'music' || raw === 'culture' || raw === 'sports' || raw === 'other' ? raw : 'other'
+  if (raw === 'music' || raw === 'culture' || raw === 'sports' || raw === 'other') return raw
+  return typeof raw === 'string' && LEGACY_MUSIC_TYPES.has(raw) ? 'music' : 'other'
 }
 
 /** Genre keys of an event, legacy spellings converted, unknown values dropped, no duplicates. */
