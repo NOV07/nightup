@@ -12,6 +12,7 @@ import {
 } from "../lib/mapFilters";
 import { DAY_NAMES } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
+import { formatNightLabel } from "../lib/mapDate";
 import { useAthensNow } from "../lib/useAthensNow";
 import { MapDateBar, MapGroupBar, MapGroupPanel, MapLegend, type PanelHandlers } from "./MapFilterPanel";
 import MapCard from "./MapCard";
@@ -64,12 +65,6 @@ const CSS = `
 `;
 
 const DAY_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-/** "Σάβ 14 Νοε" for a YYYY-MM-DD date, read as a plain calendar date. */
-function dayLabel(date: string, lang: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString(lang === "en" ? "en-GB" : "el-GR", { weekday: "short", day: "numeric", month: "short" });
-}
 
 const NONE: MapPoint[] = [];
 
@@ -200,7 +195,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           <PublicMap points={visible} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40} />
 
           <div className="nm-count" data-testid="map-counter" role="status">
-            {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${dayLabel(ctx.night, lang)}` : "…"}
+            {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}` : "…"}
           </div>
 
           {showHint && <div className="nm-hint" role="status" data-testid="map-empty-hint">{t("map_pick_layers")}</div>}

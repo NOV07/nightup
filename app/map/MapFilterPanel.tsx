@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   SPOT_CATEGORIES, subsOf, spotCategoryLabel, spotSubLabel,
 } from "../lib/spotCategories";
@@ -11,7 +11,7 @@ import {
   type GroupKey, type MapFilters, type SpotStatusFilter,
 } from "../lib/mapFilters";
 import { addDaysKey } from "../lib/dateKey";
-import { MAX_NIGHTS_AHEAD } from "../lib/athensTime";
+import { formatNightLabel, nightBounds } from "../lib/mapDate";
 import { useLanguage } from "../components/LanguageContext";
 import type { TranslationKey } from "../lib/translations";
 
@@ -26,26 +26,53 @@ const chip = (on: boolean, accent: string): React.CSSProperties => ({
 
 // ── Date bar ────────────────────────────────────────────────────────────────
 
-/** "Tonight", "Tomorrow" and any day up to 60 nights ahead. `night` is the night in force. */
+/**
+ * "Tonight", "Tomorrow" and a third button that shows the picked night as «Τρί 10 Νοε» and opens the
+ * phone's own date picker (a hidden date input, opened with showPicker). The native input is not shown
+ * because phones print its date in their own order (11/10/2026 reads as October, not November).
+ */
 export function MapDateBar({ night, tonight, onPick }: { night: string | null; tonight: string | null; onPick: (night: string | null) => void }) {
   const { t, lang } = useLanguage();
+  const inputRef = useRef<HTMLInputElement>(null);
+  // A browser without showPicker: the invisible input lies over the button and takes the tap itself.
+  const [overlay, setOverlay] = useState(false);
+  useEffect(() => { setOverlay(typeof HTMLInputElement.prototype.showPicker !== "function"); }, []);
   const ready = night != null && tonight != null;
   const tomorrow = ready ? addDaysKey(tonight, 1) : "";
   const isTonight = ready && night === tonight;
   const isTomorrow = ready && night === tomorrow;
   const other = ready && !isTonight && !isTomorrow;
+  const bounds = ready ? nightBounds(tonight) : null;
+  const label = ready ? formatNightLabel(night, lang) : "…";
+
+  function openPicker() {
+    const el = inputRef.current;
+    if (!el) return;
+    try {
+      if (typeof el.showPicker === "function") { el.showPicker(); return; }
+    } catch { /* not allowed here: fall through to the click */ }
+    el.focus();
+    el.click();
+  }
+
   return (
     <div role="group" aria-label={t("map_date_bar")} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <button type="button" aria-pressed={isTonight} disabled={!ready} onClick={() => onPick(null)} style={chip(isTonight, "#E8A020")}>{t("map_tonight")}</button>
       <button type="button" aria-pressed={isTomorrow} disabled={!ready} onClick={() => ready && onPick(tomorrow)} style={chip(isTomorrow, "#E8A020")}>{t("map_tomorrow")}</button>
-      <input type="date" aria-label={t("map_pick_day")} data-testid="map-date-input" lang={lang}
-        min={ready ? tonight : undefined} max={ready ? addDaysKey(tonight, MAX_NIGHTS_AHEAD) : undefined}
-        value={ready ? night : ""} disabled={!ready}
-        onChange={(e) => { const v = e.target.value; if (v) onPick(v === tonight ? null : v); }}
-        style={{
-          flex: "1 1 140px", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "0 10px", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box",
-          background: "#1A1A28", color: "#fff", colorScheme: "dark", border: `1px solid ${other ? "#E8A020" : LINE}`,
-        }} />
+      <div style={{ position: "relative", flex: "1 1 120px", minWidth: 0, display: "flex" }}>
+        <button type="button" data-testid="map-date-button" disabled={!ready} onClick={openPicker}
+          aria-label={`${t("map_pick_day")}: ${label}`} style={{ ...chip(other, "#E8A020"), flex: 1, justifyContent: "center", paddingLeft: 10, paddingRight: 10 }}>
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
+            <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" />
+          </svg>
+          <span data-testid="map-date-label">{label}</span>
+        </button>
+        <input ref={inputRef} type="date" data-testid="map-date-input" lang={lang} aria-label={t("map_pick_day")}
+          tabIndex={-1} aria-hidden={overlay ? undefined : true}
+          min={bounds?.min} max={bounds?.max} value={ready ? night : ""} disabled={!ready}
+          onChange={(e) => { const v = e.target.value; if (v) onPick(v === tonight ? null : v); }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, border: 0, padding: 0, margin: 0, cursor: "pointer", pointerEvents: overlay ? "auto" : "none", colorScheme: "dark" }} />
+      </div>
     </div>
   );
 }
