@@ -8,6 +8,7 @@ import type { CropBox } from "../../../components/ui/CroppedImage";
 import { CITIES, GENRE_FILTERS } from "../../lib/searchConstants";
 import { genreLabel, eventHasGenre, normalizeGenre } from "../../lib/genres";
 import { useLanguage } from "../../components/LanguageContext";
+import { eventTypeOf } from "../../lib/eventTypes";
 const PAGE_SIZE = 12;
 
 interface Event {
@@ -63,7 +64,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
   }, [query, city, genre, dateFrom, router]);
 
   const filtered = initialEvents.filter((e) => {
-    if (activeType !== "All" && (e.type ?? "music") !== activeType) return false;
+    if (activeType !== "All" && eventTypeOf(e.type) !== activeType) return false;
     if (genre !== "All" && !eventHasGenre(e, genre)) return false;
     if (city !== "All Cities" && e.city?.toLowerCase() !== city.toLowerCase()) return false;
     if (dateFrom && e.date < dateFrom) return false;
@@ -193,7 +194,7 @@ export default function EventsAllClient({ initialEvents }: { initialEvents: Even
               className="animate-fade-up hover:scale-[1.02] hover:-translate-y-0.5 transition-all duration-300"
               style={{ animationDelay: `${0.2 + i * 0.05}s` }}
             >
-              <EventCard {...e} badge={e.isRadarPick ? "Nightup Radar" : undefined} />
+              <EventCard {...e} type={eventTypeOf(e.type)} badge={e.isRadarPick ? "Nightup Radar" : undefined} />
             </div>
           ))}
         </div>
