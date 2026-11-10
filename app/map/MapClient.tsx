@@ -24,7 +24,7 @@ const PublicMap = dynamic(() => import("@/components/maps/PublicMap"), {
 });
 
 const CSS = `
-.nm-root { background: #0F0F1A; color: #fff; display: flex; flex-direction: column; min-height: min(calc(100dvh - 60px), 1000px); }
+.nm-root { background: #0F0F1A; color: #fff; display: flex; flex-direction: column; min-height: min(calc(100dvh - 61px), 1000px); }
 .nm-crumb { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; font-size: 14px; color: #A9ABC0; }
 .nm-crumb a { color: #A9ABC0; text-decoration: none; display: inline-flex; align-items: center; min-height: 24px; }
 .nm-crumb a:hover { color: #fff; }
@@ -55,8 +55,11 @@ const CSS = `
   .nm-body { padding: 0; }
   .nm-stage { border-radius: 0; border-left: 0; border-right: 0; }
   .nm-panel { max-height: 42vh; }
-  /* The site's player pill and nav sit over the bottom of the page: keep the legend clear of them. */
-  .nm-legend { padding-bottom: 76px; }
+  /* The page is exactly the screen between the navbar (57px) and the full-width player bar at the bottom
+     (--mobile-radio-bar-height, plus the home-indicator inset): the map takes what the bars and the
+     legend leave, and the legend ends right above the player instead of under it. */
+  .nm-root { min-height: calc(100dvh - 57px - var(--mobile-radio-bar-height, 54px) - env(safe-area-inset-bottom, 0px)); }
+  .nm-legend { padding-bottom: 14px; }
   .nm-card { left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 62%; border-radius: 8px 8px 0 0; padding: 10px 16px 20px; box-shadow: 0 -8px 24px rgba(0,0,0,0.45); }
   .nm-card-handle { display: block; width: 36px; height: 4px; border-radius: 2px; background: #3A3A55; margin: 0 auto 14px; }
   .nm-card-close { top: 14px; }
