@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 import MapClient from "./MapClient";
 import { getMapPoints } from "./data";
 
-// Revalidated at once by revalidatePublicPaths('spots' | 'wellness_spots') when
+// Revalidated at once by revalidatePublicPaths('spots' | 'wellness_spots' | 'events') when
 // the admin changes a row; this window is only the fallback.
 export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Χάρτης - Nightup",
-  description: "Ο χάρτης της Nightup: spots και σημεία ευεξίας στην Αθήνα, με φίλτρα ανά κατηγορία.",
+  description: "Ο χάρτης της Nightup: spots, σημεία ευεξίας και events στην Αθήνα, με φίλτρα ανά κατηγορία.",
   alternates: { canonical: "/map" },
 };
 

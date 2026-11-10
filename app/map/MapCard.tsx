@@ -13,11 +13,19 @@ const badge: React.CSSProperties = {
   background: "#0F0F1A", fontSize: 12, color: "#fff",
 };
 
+/** "Sat 14 Nov · 22:00" in the page language. The date is a plain YYYY-MM-DD, read as a local date. */
+function eventWhen(date: string, time: string | null, lang: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const day = new Date(y, (m || 1) - 1, d || 1).toLocaleDateString(lang === "en" ? "en-GB" : "el-GR", { weekday: "short", day: "numeric", month: "short" });
+  return time ? `${day} · ${time.slice(0, 5)}` : day;
+}
+
 /**
  * The card of the picked point. Phone: a bottom sheet; desktop: a card over the
  * map (the layout is in the .nm-card rules of MapClient). A wellness point shows
  * how to get there, whether the night visit is confirmed and a Google Maps link;
- * a venue shows its categories and a link to its page.
+ * a venue shows its categories and a link to its page; an event shows when and
+ * where, with directions and a link to the event.
  */
 const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; onClose: () => void }>(function MapCard({ point, onClose }, ref) {
   const { t, lang } = useLanguage();
@@ -45,7 +53,14 @@ const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; onClose: () => voi
         )}
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 6, paddingRight: 36 }}>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, lineHeight: 1.2, overflowWrap: "anywhere" }}>{point.name}</h2>
-          {point.area && <div style={{ fontSize: 14, color: "#A9ABC0" }}>{point.area}</div>}
+          {point.event ? (
+            <>
+              <div data-testid="map-card-when" style={{ fontSize: 14, color: "#E8A020", fontWeight: 600 }}>{eventWhen(point.event.date, point.event.time, lang)}</div>
+              {(point.event.venue || point.area) && (
+                <div style={{ fontSize: 14, color: "#A9ABC0" }}>{[point.event.venue, point.area].filter(Boolean).join(", ")}</div>
+              )}
+            </>
+          ) : point.area && <div style={{ fontSize: 14, color: "#A9ABC0" }}>{point.area}</div>}
           {labels.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {labels.map((l) => (
@@ -61,7 +76,15 @@ const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; onClose: () => voi
 
       {point.description && <p style={{ margin: "14px 0 0", fontSize: 14, lineHeight: 1.5, color: "#D5D6E3" }}>{point.description}</p>}
 
-      {point.kind === "wellness" ? (
+      {point.kind === "event" ? (
+        <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+          <a href={directionsUrl(point.lat, point.lng)} target="_blank" rel="noopener noreferrer" className="nm-cta"
+            style={{ marginTop: 0, flex: 1, width: "auto", background: "transparent", color: "#fff", border: "1px solid #3A3A55" }}>
+            {t("map_event_directions")}
+          </a>
+          <Link href={`/events/${point.slug}`} className="nm-cta" style={{ marginTop: 0, flex: 1, width: "auto" }}>{t("map_view_event")}</Link>
+        </div>
+      ) : point.kind === "wellness" ? (
         <>
           {point.accessNote && (
             <div style={{ marginTop: 12, fontSize: 14, lineHeight: 1.45, color: "#D5D6E3" }}>

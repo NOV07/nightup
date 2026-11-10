@@ -1,7 +1,7 @@
 "use client";
 
 import { SPOT_CATEGORIES, subsOf, spotCategoryLabel, spotSubLabel, type SpotCategory } from "../lib/spotCategories";
-import { MAP_CATEGORY_COLORS } from "../lib/mapColors";
+import { MAP_CATEGORY_COLORS, MAP_EVENT_COLOR } from "../lib/mapColors";
 import { hasFilters, type MapFilters } from "../lib/mapFilters";
 import { useLanguage } from "../components/LanguageContext";
 
@@ -9,13 +9,14 @@ type Props = {
   filters: MapFilters;
   onToggleCategory: (key: SpotCategory) => void;
   onToggleSub: (key: string) => void;
+  onToggleEvents: () => void;
   onClear: () => void;
 };
 
 const BORDER_OFF = "#2E2E46";
 
 /** Desktop: a column with a checkbox tree. The subcategories of a category open under it when it is on. */
-export function MapFilterSide({ filters, onToggleCategory, onToggleSub, onClear }: Props) {
+export function MapFilterSide({ filters, onToggleCategory, onToggleSub, onToggleEvents, onClear }: Props) {
   const { t, lang } = useLanguage();
   return (
     <div style={{ background: "#1A1A28", borderRadius: 8, padding: 16 }}>
@@ -27,6 +28,14 @@ export function MapFilterSide({ filters, onToggleCategory, onToggleSub, onClear 
         </button>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {/* The events layer: a switch of its own, not a category. */}
+        <button type="button" aria-pressed={filters.events} onClick={onToggleEvents} data-testid="map-events-toggle"
+          style={{ width: "100%", minHeight: 48, padding: "0 12px", display: "flex", alignItems: "center", gap: 12, borderRadius: 8, background: filters.events ? "#16213E" : "transparent", border: 0, color: "#fff", fontSize: 15, cursor: "pointer", textAlign: "left" }}>
+          <span aria-hidden="true" style={{ flex: "none", width: 20, height: 20, borderRadius: 4, boxSizing: "border-box", border: `2px solid ${filters.events ? MAP_EVENT_COLOR : "#4A4A66"}`, background: filters.events ? MAP_EVENT_COLOR : "transparent" }} />
+          <span style={{ flex: 1, fontWeight: filters.events ? 600 : 400 }}>{t("map_events")}</span>
+          <span aria-hidden="true" style={{ flex: "none", width: 9, height: 9, borderRadius: 2, transform: "rotate(45deg)", background: MAP_EVENT_COLOR }} />
+        </button>
+        <div aria-hidden="true" style={{ height: 1, background: "#2E2E46", margin: "4px 12px 6px" }} />
         {SPOT_CATEGORIES.map((c) => {
           const on = filters.categories.includes(c.key);
           const color = MAP_CATEGORY_COLORS[c.key];
@@ -67,11 +76,15 @@ const chip = (on: boolean, accent: string): React.CSSProperties => ({
 });
 
 /** Phone: a row of category chips, then one row of subcategory chips for every selected category that has some. */
-export function MapFilterBar({ filters, onToggleCategory, onToggleSub, onClear }: Props) {
+export function MapFilterBar({ filters, onToggleCategory, onToggleSub, onToggleEvents, onClear }: Props) {
   const { t, lang } = useLanguage();
   return (
     <div>
       <div style={{ display: "flex", gap: 8, padding: "0 16px 8px", overflowX: "auto" }} className="nm-scroll">
+        <button type="button" aria-pressed={filters.events} onClick={onToggleEvents} data-testid="map-events-toggle" style={chip(filters.events, MAP_EVENT_COLOR)}>
+          <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 2, transform: "rotate(45deg)", background: MAP_EVENT_COLOR }} />
+          {t("map_events")}
+        </button>
         {SPOT_CATEGORIES.map((c) => {
           const on = filters.categories.includes(c.key);
           return (

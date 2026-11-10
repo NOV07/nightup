@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
-import { mapColorOf } from '@/app/lib/mapColors'
+import { mapPointColor } from '@/app/lib/mapColors'
 import type { MapPoint } from '@/app/lib/mapFilters'
 
 // Public map of /map. Same look as the LocationPicker (dark filtered OSM tiles,
@@ -19,7 +19,8 @@ const ATTRIBUTION = '<a href="https://www.openstreetmap.org/copyright" target="_
 const TILE_ERRORS_BEFORE_NOTICE = 5
 
 // Pin = a real <button> (Enter/Space/Tab work natively) with a 44px hit area and
-// a smaller visible shape: circle for wellness, rounded square for venues.
+// a smaller visible shape: circle for wellness, rounded square for venues,
+// diamond for events.
 const CSS = `
 .nightup-public-map .leaflet-container { background: #16162a; font-family: inherit; }
 .nightup-public-map .leaflet-tile { outline: 1px solid transparent; }
@@ -28,7 +29,9 @@ const CSS = `
 .nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 28px; height: 28px; border: 3px solid #0F0F1A; box-shadow: 0 2px 5px rgba(0,0,0,0.55); transition: width .12s, height .12s, border-color .12s; }
 .nightup-public-map .nm-pin-dot.is-round { border-radius: 50%; }
 .nightup-public-map .nm-pin-dot.is-square { width: 26px; height: 26px; border-radius: 7px; }
+.nightup-public-map .nm-pin-dot.is-diamond { width: 22px; height: 22px; border-radius: 4px; transform: rotate(45deg); }
 .nightup-public-map .nm-pin.is-selected .nm-pin-dot { width: 42px; height: 42px; border: 4px solid #FFFFFF; }
+.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-diamond { width: 32px; height: 32px; }
 .nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-square { width: 40px; height: 40px; }
 .nightup-public-map .nm-pin:focus-visible { outline: none; }
 .nightup-public-map .nm-pin:focus-visible .nm-pin-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
@@ -47,8 +50,8 @@ function makePinElement(p: MapPoint): HTMLButtonElement {
   b.setAttribute('aria-label', p.name)
   b.setAttribute('aria-pressed', 'false')
   const dot = document.createElement('span')
-  dot.className = `nm-pin-dot ${p.kind === 'wellness' ? 'is-round' : 'is-square'}`
-  dot.style.background = mapColorOf(p.categories[0])
+  dot.className = `nm-pin-dot ${p.kind === 'wellness' ? 'is-round' : p.kind === 'event' ? 'is-diamond' : 'is-square'}`
+  dot.style.background = mapPointColor(p)
   dot.setAttribute('aria-hidden', 'true')
   b.appendChild(dot)
   return b
@@ -58,9 +61,11 @@ type Props = {
   points: readonly MapPoint[]
   selectedId: string | null
   onSelect: (id: string | null) => void
+  /** Accessible name of the map. Defaults to the public map's. */
+  ariaLabel?: string
 }
 
-export default function PublicMap({ points, selectedId, onSelect }: Props) {
+export default function PublicMap({ points, selectedId, onSelect, ariaLabel }: Props) {
   const { t } = useLanguage()
   const elRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -180,7 +185,7 @@ export default function PublicMap({ points, selectedId, onSelect }: Props) {
   return (
     <div className="nightup-public-map" style={{ position: 'absolute', inset: 0 }}>
       <style>{CSS}</style>
-      <div ref={elRef} role="application" aria-label={t('map_aria')} data-testid="public-map"
+      <div ref={elRef} role="application" aria-label={ariaLabel ?? t('map_aria')} data-testid="public-map"
         style={{ position: 'absolute', inset: 0 }} />
       {coarse && (
         <p style={{ position: 'absolute', left: 12, top: 10, zIndex: 500, margin: 0, padding: '4px 8px', borderRadius: 6, background: 'rgba(15,15,26,0.8)', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>

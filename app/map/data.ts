@@ -2,6 +2,8 @@ import { getSupabase } from '../lib/supabase'
 import { getAllSpots } from '../spots/data'
 import type { MapPoint } from '../lib/mapFilters'
 import { isSpotSub, type SpotCategory } from '../lib/spotCategories'
+import { eventToPoint, localToday } from '../lib/mapEvents'
+import { getEventCoverImage } from '../lib/getEventCoverImage'
 
 // Only the columns the public map needs. Not source_url, not coords_verified.
 const WELLNESS_COLS = 'id, slug, name, area, description, access_note, lat, lng, verified_night, photo_urls, subcategories'
@@ -60,8 +62,31 @@ async function getSpotPoints(): Promise<MapPoint[]> {
     }))
 }
 
-/** Published points of both tables. A failed read gives fewer points, never an error. */
+/** Approved, upcoming events with a confirmed pin. Old events have no coordinates and stay off the map. */
+export async function getEventPoints(): Promise<MapPoint[]> {
+  try {
+    const today = localToday()
+    const { data, error } = await getSupabase()
+      .from('events')
+      .select('id, title, image_url, has_copyright_restriction, date, time, venue, city, lat, lng')
+      .eq('status', 'approved')
+      .gte('date', today)
+      .not('lat', 'is', null)
+      .not('lng', 'is', null)
+      .order('date', { ascending: true })
+    if (error || !data) return []
+    return data.flatMap(r => {
+      const p = eventToPoint(r, today, getEventCoverImage(r))
+      return p ? [p] : []
+    })
+  } catch (e) {
+    console.error('Map events fetch error:', e)
+    return []
+  }
+}
+
+/** Points of the three layers. A failed read gives fewer points, never an error. */
 export async function getMapPoints(): Promise<MapPoint[]> {
-  const [wellness, spots] = await Promise.all([getWellnessPoints(), getSpotPoints()])
-  return [...spots, ...wellness]
+  const [wellness, spots, events] = await Promise.all([getWellnessPoints(), getSpotPoints(), getEventPoints()])
+  return [...spots, ...wellness, ...events]
 }

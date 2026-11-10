@@ -16,5 +16,12 @@ export const MAP_CATEGORY_COLORS: Record<SpotCategory, string> = {
   wellness: '#4FC3A1',
 }
 
+/** The events layer: one gold for every event pin (drawn as a diamond, so it reads apart from spots and wellness). */
+export const MAP_EVENT_COLOR = '#E8A020'
+
+/** Pin colour of a point: events are gold, the rest follow their first category. */
+export const mapPointColor = (p: { kind: string; categories: readonly SpotCategory[] }): string =>
+  p.kind === 'event' ? MAP_EVENT_COLOR : mapColorOf(p.categories[0])
+
 export const mapColorOf = (category: SpotCategory | undefined): string =>
   (category && MAP_CATEGORY_COLORS[category]) || '#A9ABC0'

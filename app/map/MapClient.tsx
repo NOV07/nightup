@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
-  NO_FILTERS, filterPoints, hasFilters, parseFilters, serializeFilters, toggleMapCategory, toggleMapSub,
+  clearCategoryFilters, visiblePoints, hasFilters, parseFilters, serializeFilters, toggleMapCategory, toggleMapEvents, toggleMapSub,
   type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import type { SpotCategory } from "../lib/spotCategories";
@@ -61,7 +61,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const lastPicked = useRef<string | null>(null);
 
-  // A link that arrives while the map is open (?c=…&s=…) replaces the filters.
+  // A link that arrives while the map is open (?c=…&s=…&events=1) replaces the filters.
   // Adjusted during render (React's pattern for state derived from a prop).
   const urlKey = serializeFilters(parseFilters(searchParams));
   const [seenUrlKey, setSeenUrlKey] = useState(urlKey);
@@ -77,7 +77,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     window.history.replaceState(window.history.state, "", qs ? `/map?${qs}` : "/map");
   }, []);
 
-  const visible = useMemo(() => filterPoints(points, filters), [points, filters]);
+  const visible = useMemo(() => visiblePoints(points, filters), [points, filters]);
   // A pin that a filter has hidden cannot stay open.
   const selected = visible.find((p) => p.id === selectedId) ?? null;
 
@@ -110,7 +110,8 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     filters,
     onToggleCategory: (key: SpotCategory) => update(toggleMapCategory(filters, key)),
     onToggleSub: (key: string) => update(toggleMapSub(filters, key)),
-    onClear: () => update(NO_FILTERS),
+    onToggleEvents: () => update(toggleMapEvents(filters)),
+    onClear: () => update(clearCategoryFilters(filters)),
   };
 
   const empty = points.length === 0;
@@ -149,5 +150,5 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   );
 }
 
-// ids are `w-<uuid>` / `s-<uuid>`: letters, digits and dashes only.
+// ids are `w-<uuid>` / `s-<uuid>` / `e-<uuid>`: letters, digits and dashes only.
 const CSS_ESCAPE = (id: string) => id.replace(/[^a-zA-Z0-9_-]/g, "");
