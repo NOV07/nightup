@@ -12,7 +12,6 @@ import {
 } from "../lib/mapFilters";
 import { DAY_NAMES, closesSoon } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
-import { formatNightLabel } from "../lib/mapDate";
 import { useAthensNow } from "../lib/useAthensNow";
 import { useUserLocation } from "../lib/useUserLocation";
 import { filterByRadius, nextRadius, isFarFromData, joinQuery, parseNear, serializeNear, type NearState } from "../lib/mapNear";
@@ -34,12 +33,12 @@ const CSS = `
 .nm-crumb { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; font-size: 14px; color: #A9ABC0; }
 .nm-crumb a { color: #A9ABC0; text-decoration: none; display: inline-flex; align-items: center; min-height: 24px; }
 .nm-crumb a:hover { color: #fff; }
+.nm-main { position: absolute; inset: 0; }
 .nm-map-layer { position: absolute; inset: 0; }
 .nm-map-layer.is-hidden { visibility: hidden; pointer-events: none; }
 .nm-list-wrap { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 68px 0 76px; background: #0F0F1A; }
 .nm-list-empty { margin: 0; padding: 24px 20px; font-size: 15px; color: #D5D6E3; }
 .nm-lst { left: 12px; }
-.nm-list-wrap .nm-count { position: static; margin: 10px; max-width: none; }
 .nm-list { margin: 0; padding: 0; list-style: none; }
 .nm-row { width: 100%; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: transparent; border: 0; border-bottom: 1px solid #1E1E32; color: #fff; text-align: left; cursor: pointer; font: inherit; }
 .nm-row:hover, .nm-row[aria-pressed="true"] { background: #1A1A28; }
@@ -60,7 +59,7 @@ const CSS = `
 .nm-row-dist { font-size: 12px; color: #A9ABC0; }
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
-.nm-count { position: absolute; z-index: 1000; left: 10px; top: 10px; max-width: calc(100% - 72px); box-sizing: border-box; padding: 6px 10px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 12px; line-height: 1.35; color: #fff; pointer-events: none; }
+.nm-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .nm-round { position: absolute; z-index: 1000; bottom: 12px; width: 48px; height: 48px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 .nm-round:disabled { opacity: 0.7; cursor: progress; }
 .nm-loc { right: 12px; }
@@ -98,7 +97,7 @@ const CSS = `
 @media (min-width: 900px) {
   /* Wide screens: the filters are a column on the left of the map, no scrim. */
   .nm-sheet { left: 0; right: auto; top: 0; width: 360px; max-height: none; border-radius: 0; border-top: 0; border-right: 1px solid #3A3A55; box-shadow: none; }
-  .nm-sheet ~ .nm-fbtn { left: 372px; }
+  .nm-stage.has-sheet .nm-main { left: 360px; }
 }
 .nm-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #D5D6E3; }
 .nm-legend li { display: inline-flex; align-items: center; gap: 6px; }
@@ -115,7 +114,7 @@ const CSS = `
   .nm-body { padding: 0 32px; }
 }
 @media (max-width: 767px) {
-  .nm-crumb { padding: 8px 16px; }
+  .nm-crumb { display: none; }
   .nm-body { padding: 0; }
   .nm-stage { border-radius: 0; border-left: 0; border-right: 0; }
   /* The page is exactly the screen between the navbar (57px) and the full-width player bar at the bottom
@@ -307,11 +306,9 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     if (text && text.trim()) hoursLine = `${lang === "en" ? DAY_EN[idx] : DAY_NAMES[idx]}: ${text.trim()}`;
   }
 
-  const counter = (
-    <div className="nm-count" data-testid="map-counter" role="status">
-      {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}${userPos ? ` · ${shown.length} ${t("map_near_in_range")}` : ""}` : "…"}
-    </div>
-  );
+  // Screen readers get the number of places (the counter is no longer drawn on the map).
+  const countText = pluralLabel(shown.length, { one: t("map_count_one"), many: t("map_count_many") });
+
 
   return (
     <div className="nm-root" lang={lang}>
@@ -322,21 +319,21 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
       </nav>
 
       <div className="nm-body">
-        <div className="nm-stage">
+        <div className={`nm-stage${sheetOpen ? " has-sheet" : ""}`}>
+          <div className="nm-main">
           <div className={`nm-map-layer${view === "list" ? " is-hidden" : ""}`} aria-hidden={view === "list" ? true : undefined}>
-          <PublicMap points={shown} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40}
+          <PublicMap points={shown} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={56} quiet
             userLocation={userPos ? { ...userPos, radiusKm: near.radius === "all" ? null : near.radius } : null} />
           </div>
           {view === "list" && (
             <div className="nm-list-wrap">
-              {counter}
               {anyLit
                 ? <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />
                 : <p className="nm-list-empty" role="status" data-testid="map-list-empty">{t("map_list_empty_pick")}</p>}
             </div>
           )}
 
-          {view === "map" && counter}
+          <div className="nm-sr" role="status" data-testid="map-count">{anyLit ? countText : ""}</div>
 
           <button ref={filterBtnRef} type="button" className={`nm-fbtn${filterCount > 0 ? " is-active" : ""}`} data-testid="map-filter-button"
             aria-haspopup="dialog" aria-expanded={sheetOpen} onClick={openSheet}>
@@ -380,6 +377,8 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           )}
 
           {selected && <MapCard ref={cardRef} point={selected} status={status} closingSoon={!!selected && closingSoon.has(selected.id)} hoursLine={hoursLine} onClose={close} />}
+
+          </div>
 
           {sheetOpen && (
             <MapSheet onClose={closeSheet} onClear={clearEverything} returnFocus={filterBtnRef}

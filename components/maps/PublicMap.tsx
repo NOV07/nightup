@@ -56,6 +56,7 @@ const CSS = `
 .nightup-public-map .nm-user-wrap { background: none; border: none; pointer-events: none; }
 .nightup-public-map .nm-user-halo { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(76,141,255,0.22); }
 .nightup-public-map .nm-user-dot { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; box-sizing: border-box; border-radius: 50%; background: #4C8DFF; border: 2.5px solid #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+@media (pointer: coarse) { .nightup-public-map.is-quiet .leaflet-control-zoom { display: none; } }
 .nightup-public-map .leaflet-bar { border: 1px solid rgba(255,255,255,0.14); box-shadow: none; }
 .nightup-public-map .leaflet-bar a { background: #111120; color: #E8A020; border-bottom-color: rgba(255,255,255,0.12); }
 .nightup-public-map .leaflet-bar a:hover, .nightup-public-map .leaflet-bar a:focus { background: #1b1b30; color: #E8A020; }
@@ -110,11 +111,13 @@ type Props = {
   statusById?: Record<string, SpotStatus>
   /** Pixels the corner notices (two-finger hint, tile banner) move down, to leave room for an overlay on the map. */
   topInset?: number
+  /** The full-screen map page: no zoom buttons on touch screens and the two-finger hint only appears when a finger is put on the map. */
+  quiet?: boolean
   /** Where the person is (only while "Near me" is on) and the radius to frame, or null for none. Never stored. */
   userLocation?: { lat: number; lng: number; radiusKm: number | null } | null
 }
 
-export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0, userLocation = null }: Props) {
+export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0, userLocation = null, quiet = false }: Props) {
   const { t } = useLanguage()
   const elRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -129,6 +132,7 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   const tRef = useRef(t)
   const [tilesFailed, setTilesFailed] = useState(false)
   const [coarse, setCoarse] = useState(false)
+  const [hint, setHint] = useState(false)
 
   useEffect(() => { onSelectRef.current = onSelect; tRef.current = t })
 
@@ -229,6 +233,15 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     tilesRef.current = tiles
 
     map.on('click', () => onSelectRef.current(null))
+    // Quiet mode: the two-finger hint shows for a moment when one finger touches the map, not at rest.
+    let hintTimer: ReturnType<typeof setTimeout> | undefined
+    const onTouch = (e: TouchEvent) => {
+      if (!isCoarse || e.touches.length !== 1) return
+      setHint(true)
+      clearTimeout(hintTimer)
+      hintTimer = setTimeout(() => setHint(false), 2500)
+    }
+    el.addEventListener('touchstart', onTouch, { passive: true })
     map.on('zoomend', syncMarkers)
 
     const ro = new ResizeObserver(() => map.invalidateSize())
@@ -237,6 +250,8 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     const markers = markersRef.current
     const clusters = clustersRef.current
     return () => {
+      el.removeEventListener('touchstart', onTouch)
+      clearTimeout(hintTimer)
       ro.disconnect()
       map.remove()
       mapRef.current = null
@@ -322,19 +337,19 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   }
 
   return (
-    <div className="nightup-public-map" style={{ position: 'absolute', inset: 0 }}>
+    <div className={`nightup-public-map${quiet ? ' is-quiet' : ''}`} style={{ position: 'absolute', inset: 0 }}>
       <style>{CSS}</style>
       <div ref={elRef} role="application" aria-label={ariaLabel ?? t('map_aria')} data-testid="public-map"
         style={{ position: 'absolute', inset: 0 }} />
-      {coarse && (
-        <p style={{ position: 'absolute', left: 12, top: 10 + topInset, zIndex: 500, margin: 0, padding: '4px 8px', borderRadius: 6, background: 'rgba(15,15,26,0.8)', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>
+      {coarse && (!quiet || hint) && (
+        <p role={quiet ? 'status' : undefined} style={{ position: 'absolute', left: 12, top: 10 + topInset, zIndex: 500, margin: 0, padding: '4px 8px', borderRadius: 6, background: 'rgba(15,15,26,0.8)', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>
           {t('spot_map_two_fingers')}
         </p>
       )}
       {tilesFailed && (
         // A banner, not a cover: the pins keep working when the tiles do not load.
         <div role="alert" style={{
-          position: 'absolute', left: 12, right: 72, top: (coarse ? 52 : 10) + topInset, zIndex: 1000, maxWidth: 420,
+          position: 'absolute', left: 12, right: 72, top: (coarse && !quiet ? 52 : 10) + topInset, zIndex: 1000, maxWidth: 420,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
           backgroundColor: 'rgba(15,15,26,0.94)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
           color: 'rgba(255,255,255,0.8)', fontSize: 13, padding: '6px 6px 6px 12px',
