@@ -12,6 +12,12 @@ export const DEFAULT_NEAR_RADIUS: NearRadius = 3
 export const FAR_FROM_DATA_KM = 100
 
 export type NearState = { on: boolean; radius: NearRadius }
+/** The radius chip: 1 → 3 → 5 → all → 1. */
+export function nextRadius(r: NearRadius): NearRadius {
+  const i = NEAR_RADII.indexOf(r)
+  return NEAR_RADII[(i + 1) % NEAR_RADII.length]
+}
+
 export const NO_NEAR: NearState = { on: false, radius: DEFAULT_NEAR_RADIUS }
 
 export type LatLng = { lat: number; lng: number }
