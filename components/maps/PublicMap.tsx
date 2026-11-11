@@ -1,9 +1,10 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { mapEmojiOf } from '@/app/lib/mapEmoji'
+import { CLUSTER_CELL_PX, CLUSTER_MAX_ZOOM, clusterByGrid } from '@/app/lib/mapCluster'
 import type { MapPoint } from '@/app/lib/mapFilters'
 import type { SpotStatus } from '@/app/lib/openingHours'
 import type { TranslationKey } from '@/app/lib/translations'
@@ -45,6 +46,10 @@ const CSS = `
 .nightup-public-map .nm-pin-dot.is-closed .nm-pin-emoji { filter: grayscale(1); opacity: 0.85; }
 .nightup-public-map .nm-pin-dot.is-unknown { background: rgba(15,15,26,0.78); border-color: #E8A020; }
 .nightup-public-map .nm-pin.is-selected .nm-pin-dot { transform: scale(1.18); border: 3px solid #FFFFFF; }
+.nightup-public-map .nm-cluster { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.nightup-public-map .nm-cluster-dot { box-sizing: border-box; min-width: 38px; height: 38px; padding: 0 6px; border-radius: 19px; border: 2.5px solid #F5B335; background: #1A1A28; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(245,179,53,0.22), 0 2px 6px rgba(0,0,0,0.55); pointer-events: none; }
+.nightup-public-map .nm-cluster:focus-visible { outline: none; }
+.nightup-public-map .nm-cluster:focus-visible .nm-cluster-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
 .nightup-public-map .nm-pin:focus-visible { outline: none; }
 .nightup-public-map .nm-pin:focus-visible .nm-pin-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
 .nightup-public-map .nm-user-wrap { background: none; border: none; pointer-events: none; }
@@ -117,10 +122,60 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   const onSelectRef = useRef(onSelect)
   const fitKeyRef = useRef<string | null>(null)
   const userOnRef = useRef(false)
+  const clustersRef = useRef<Map<string, L.Marker>>(new Map())
+  const pointsRef = useRef<readonly MapPoint[]>(points)
+  const selectedRef = useRef<string | null>(selectedId)
+  const tRef = useRef(t)
   const [tilesFailed, setTilesFailed] = useState(false)
   const [coarse, setCoarse] = useState(false)
 
-  useEffect(() => { onSelectRef.current = onSelect })
+  useEffect(() => { onSelectRef.current = onSelect; tRef.current = t })
+
+  // Which points are drawn as their own pin and which are folded into a cluster at this zoom.
+  // Pin markers are kept (just taken off the map) so a pin keeps its element; cluster markers are
+  // reused while their members stay the same.
+  const syncMarkers = useCallback(() => {
+    const map = mapRef.current
+    if (!map) return
+    const zoom = map.getZoom()
+    const items = pointsRef.current.map(p => {
+      const px = map.project([p.lat, p.lng], zoom)
+      return { id: p.id, x: px.x, y: px.y, lat: p.lat, lng: p.lng, solo: p.event?.radar === true || p.id === selectedRef.current }
+    })
+    const { singles, clusters } = zoom > CLUSTER_MAX_ZOOM
+      ? { singles: items.map(i => i.id), clusters: [] }
+      : clusterByGrid(items, CLUSTER_CELL_PX)
+    const single = new Set(singles)
+    for (const [id, m] of markersRef.current) {
+      if (single.has(id)) { if (!map.hasLayer(m.marker)) m.marker.addTo(map) }
+      else m.marker.remove()
+    }
+    const want = new Set(clusters.map(c => c.key))
+    for (const [key, m] of clustersRef.current) {
+      if (!want.has(key)) { m.remove(); clustersRef.current.delete(key) }
+    }
+    for (const c of clusters) {
+      if (clustersRef.current.has(c.key)) continue
+      const b = document.createElement('button')
+      b.type = 'button'
+      b.className = 'nm-cluster'
+      b.setAttribute('aria-label', `${c.ids.length} ${tRef.current('map_cluster_aria')}`)
+      const dot = document.createElement('span')
+      dot.className = 'nm-cluster-dot'
+      dot.setAttribute('aria-hidden', 'true')
+      dot.textContent = String(c.ids.length)
+      b.appendChild(dot)
+      const marker = L.marker([c.lat, c.lng], { icon: L.divIcon({ className: 'nm-pin-wrap', html: b, iconSize: [44, 44], iconAnchor: [22, 22] }), keyboard: false, riseOnHover: true }).addTo(map)
+      marker.on('click', () => {
+        const members = c.ids.map(id => markersRef.current.get(id)?.marker.getLatLng()).filter((x): x is L.LatLng => !!x)
+        if (members.length === 0) return
+        const bounds = L.latLngBounds(members)
+        if (bounds.getNorthEast().equals(bounds.getSouthWest())) map.setView(bounds.getCenter(), Math.min(map.getZoom() + 2, 19))
+        else map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18 })
+      })
+      clustersRef.current.set(c.key, marker)
+    }
+  }, [])
   const userLat = userLocation?.lat ?? null
   const userLng = userLocation?.lng ?? null
   const userRadius = userLocation?.radiusKm ?? null
@@ -165,17 +220,20 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     tilesRef.current = tiles
 
     map.on('click', () => onSelectRef.current(null))
+    map.on('zoomend', syncMarkers)
 
     const ro = new ResizeObserver(() => map.invalidateSize())
     ro.observe(el)
     mapRef.current = map
     const markers = markersRef.current
+    const clusters = clustersRef.current
     return () => {
       ro.disconnect()
       map.remove()
       mapRef.current = null
       tilesRef.current = null
       markers.clear()
+      clusters.clear()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -185,6 +243,7 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
+    pointsRef.current = points
     const markers = markersRef.current
     const wanted = new Set(points.map(p => p.id))
     for (const [id, m] of markers) {
@@ -197,10 +256,11 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
       paintPin(el, p, statusById?.[p.id], t)
       const icon = L.divIcon({ className: 'nm-pin-wrap', html: el, iconSize: [44, 44], iconAnchor: [22, 22] })
       // keyboard:false -> the inner <button> is the only tab stop.
-      const marker = L.marker([p.lat, p.lng], { icon, keyboard: false, riseOnHover: true }).addTo(map)
+      const marker = L.marker([p.lat, p.lng], { icon, keyboard: false, riseOnHover: true })
       marker.on('click', () => onSelectRef.current(p.id))
       markers.set(p.id, { marker, el })
     }
+    syncMarkers()
 
     // Frame the visible points when the set changes (filters), not on selection.
     const key = points.map(p => p.id).sort().join('|')
@@ -215,6 +275,8 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
 
   // Selected pin: bigger with a white outline; bring the point into view.
   useEffect(() => {
+    selectedRef.current = selectedId
+    syncMarkers()
     for (const [id, { marker, el }] of markersRef.current) {
       const on = id === selectedId
       el.classList.toggle('is-selected', on)
@@ -227,7 +289,7 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
       const sheet = window.matchMedia('(max-width: 767px)').matches
       map.panInside(sel.marker.getLatLng(), { paddingTopLeft: [40, 40], paddingBottomRight: [40, sheet ? 380 : 40] })
     }
-  }, [selectedId, points])
+  }, [selectedId, points, syncMarkers])
 
   // "Near me": a blue dot with a soft halo, an optional dashed circle of the radius, and the view framed on it.
   useEffect(() => {
