@@ -2,13 +2,13 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
   clearAllFilters, clearGroupFilters, hasFilters, mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
-  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupPanel, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
-  type GroupKey, type MapFilters, type MapPoint,
+  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
+  NO_FILTERS, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import { DAY_NAMES, closesSoon } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
@@ -17,7 +17,9 @@ import { useAthensNow } from "../lib/useAthensNow";
 import { useUserLocation } from "../lib/useUserLocation";
 import { NEAR_RADII, filterByRadius, isFarFromData, joinQuery, parseNear, serializeNear, type NearState } from "../lib/mapNear";
 import type { TranslationKey } from "../lib/translations";
-import { MapDateBar, MapGroupBar, MapGroupPanel, MapLegend, type PanelHandlers } from "./MapFilterPanel";
+import { MapDateBar, MapGroupRows, MapLegend, type PanelHandlers } from "./MapFilterPanel";
+import MapSheet from "./MapSheet";
+import { activeFilterCount, pluralLabel } from "../lib/mapUi";
 import MapCard from "./MapCard";
 import MapList from "./MapList";
 
@@ -68,12 +70,41 @@ const CSS = `
 .nm-row-status.is-closed { color: #A9ABC0; }
 .nm-row-soon { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(245,179,53,0.16); color: #F5B335; }
 .nm-row-dist { font-size: 12px; color: #A9ABC0; }
-.nm-panel { flex: none; max-height: 38vh; overflow-y: auto; box-sizing: border-box; padding: 10px 16px 12px; }
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
 .nm-count { position: absolute; z-index: 1000; left: 10px; top: 10px; max-width: calc(100% - 72px); box-sizing: border-box; padding: 6px 10px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 12px; line-height: 1.35; color: #fff; pointer-events: none; }
-.nm-hint { position: absolute; z-index: 1000; left: 50%; bottom: 14px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); box-sizing: border-box; padding: 8px 12px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 13px; line-height: 1.35; text-align: center; color: #D5D6E3; pointer-events: none; }
-.nm-legend { flex: none; list-style: none; margin: 0; padding: 10px 16px 14px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #A9ABC0; }
+.nm-fbtn { position: absolute; z-index: 1000; left: 12px; top: 12px; max-width: calc(100% - 76px); height: 44px; padding: 0 16px; border-radius: 22px; display: flex; align-items: center; gap: 8px; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); white-space: nowrap; }
+.nm-fbtn > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.nm-fbtn.is-active { border-color: #E8A020; }
+.nm-fbtn-n { flex: none; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: #E8A020; color: #0F0F1A; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.nm-scrim { position: absolute; z-index: 1150; inset: 0; background: rgba(0,0,0,0.4); }
+.nm-sheet { position: absolute; z-index: 1200; left: 0; right: 0; bottom: 0; max-height: 78%; display: flex; flex-direction: column; box-sizing: border-box; background: #1A1A28; border-top: 1px solid #3A3A55; border-radius: 14px 14px 0 0; outline: none; box-shadow: 0 -8px 24px rgba(0,0,0,0.45); }
+.nm-sheet-top { flex: none; padding: 10px 16px 6px; }
+.nm-sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: #3A3A55; margin: 0 auto 10px; }
+.nm-sheet-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nm-sheet-title h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.nm-link { min-height: 44px; padding: 0 4px; background: none; border: 0; color: #F5B335; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.nm-sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 12px; }
+.nm-sheet-foot { flex: none; padding: 10px 16px 14px; border-top: 1px solid #22223A; }
+.nm-go { width: 100%; min-height: 48px; border: 0; border-radius: 8px; background: #E8A020; color: #0F0F1A; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.nm-h { margin: 12px 0 8px; font-size: 12px; font-weight: 600; color: #A9ABC0; }
+.nm-sw { flex: none; position: relative; width: 38px; height: 22px; border-radius: 11px; background: #33334A; }
+.nm-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.nm-sw[data-on="1"] { background: var(--sw-on, #E8A020); }
+.nm-sw[data-on="1"]::after { left: 19px; }
+@media (prefers-reduced-motion: no-preference) {
+  .nm-sheet { animation: nm-sheet-in .2s ease-out; }
+  .nm-scrim { animation: nm-fade-in .2s ease-out; }
+  .nm-sw::after { transition: left .15s; }
+}
+@keyframes nm-sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes nm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (min-width: 900px) {
+  /* Wide screens: the filters are a column on the left of the map, no scrim. */
+  .nm-sheet { left: 0; right: auto; top: 0; width: 360px; max-height: none; border-radius: 0; border-top: 0; border-right: 1px solid #3A3A55; box-shadow: none; }
+  .nm-sheet ~ .nm-fbtn { left: 372px; }
+}
+.nm-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #D5D6E3; }
 .nm-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .nm-card { position: absolute; z-index: 1100; left: 20px; bottom: 20px; width: 340px; max-width: calc(100% - 40px); max-height: calc(100% - 40px); overflow-y: auto; box-sizing: border-box; background: #1A1A28; border-radius: 8px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); outline: none; }
 .nm-card-handle { display: none; }
@@ -85,20 +116,17 @@ const CSS = `
 .nm-overlay button { margin-top: 14px; min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .nm-root button:focus-visible, .nm-root a:focus-visible, .nm-root input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (min-width: 768px) {
-  .nm-controls, .nm-legend { padding-left: 32px; padding-right: 32px; }
-  .nm-panel { padding-left: 32px; padding-right: 32px; max-width: 792px; box-sizing: border-box; border-radius: 0 0 8px 8px; }
+  .nm-controls { padding-left: 32px; padding-right: 32px; }
   .nm-body { padding: 0 32px; }
 }
 @media (max-width: 767px) {
   .nm-crumb { padding: 8px 16px; }
   .nm-body { padding: 0; }
   .nm-stage { border-radius: 0; border-left: 0; border-right: 0; }
-  .nm-panel { max-height: 42vh; }
   /* The page is exactly the screen between the navbar (57px) and the full-width player bar at the bottom
      (--mobile-radio-bar-height, plus the home-indicator inset): the map takes what the bars and the
      legend leave, and the legend ends right above the player instead of under it. */
   .nm-root { min-height: calc(100dvh - 57px - var(--mobile-radio-bar-height, 54px) - env(safe-area-inset-bottom, 0px)); }
-  .nm-legend { padding-bottom: 14px; }
   .nm-card { left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 62%; border-radius: 8px 8px 0 0; padding: 10px 16px 20px; box-shadow: 0 -8px 24px rgba(0,0,0,0.45); }
   .nm-card-handle { display: block; width: 36px; height: 4px; border-radius: 2px; background: #3A3A55; margin: 0 auto 14px; }
   .nm-card-close { top: 14px; }
@@ -120,9 +148,10 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   const { t, lang } = useLanguage();
   const searchParams = useSearchParams();
   const now = useAthensNow();
-  const panelId = useId();
   const [filters, setFilters] = useState<MapFilters>(() => parseFilters(searchParams));
-  const [open, setOpen] = useState<GroupKey | null>(() => parseOpenGroup(searchParams));
+  // The filters sheet. A link with ?open=events (or spots, wellness) opens it.
+  const [sheetOpen, setSheetOpen] = useState(() => parseOpenGroup(searchParams) !== null);
+  const filterBtnRef = useRef<HTMLButtonElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // "Near me": whether it is on and the radius live in the URL (near=1&r=3), never the position.
   // From a link it only gets the button ready; the position is asked when the button is pressed.
@@ -142,12 +171,12 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     setSeenUrlKey(urlKey);
     if (serializeFilters(filters) !== urlKey) setFilters(parseFilters(new URLSearchParams(urlKey)));
   }
-  // ?open=… only ever opens a panel (our own URL updates drop it, which must not close it again).
+  // ?open=… only ever opens the sheet (our own URL updates drop it, which must not close it again).
   const urlOpen = parseOpenGroup(searchParams);
   const [seenOpen, setSeenOpen] = useState(urlOpen);
   if (urlOpen !== seenOpen) {
     setSeenOpen(urlOpen);
-    if (urlOpen) setOpen(urlOpen);
+    if (urlOpen) setSheetOpen(true);
   }
 
   // The filters live in the URL, so a link can be sent. A picked night that is tonight (or already
@@ -198,8 +227,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     setSelectedId(id);
     if (id) {
       lastPicked.current = id;
-      // Phone: the card takes the room the open filters were using.
-      if (window.matchMedia("(max-width: 767px)").matches) setOpen(null);
+      setSheetOpen(false);
     }
   }, []);
 
@@ -235,6 +263,14 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     : tooFar ? "map_near_far" : null;
   const locating = near.on && loc.status === "loading";
 
+  const openSheet = () => { setSelectedId(null); setSheetOpen(true); };
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
+  // Clear: groups, filters, the night (back to tonight) and Near me; the sheet stays open to pick again.
+  const clearEverything = () => {
+    update(NO_FILTERS);
+    if (near.on) { setNear({ ...near, on: false }); loc.reset(); }
+  };
+
   const handlers: PanelHandlers = {
     onToggleEventType: (k) => update(toggleEventType(filters, k)),
     onToggleGenre: (k) => update(toggleEventGenre(filters, k)),
@@ -247,10 +283,10 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
   const empty = points.length === 0;
   const anyLit = filters.shown.length > 0;
-  // Nothing is lit at first: the map is empty on purpose and says what to do. Once a group is lit
-  // but has nothing to show with the current filters, it is "no results" instead.
-  const showHint = !empty && !anyLit;
+  // Nothing is lit at first: the map is empty on purpose (the filter button says what to do). Once a
+  // group is lit but has nothing to show with the current filters, it is "no results" instead.
   const noMatch = !empty && anyLit && !!resolved && visible.length === 0;
+  const filterCount = activeFilterCount(filters, !!userPos);
   const nearNone = !!userPos && visible.length > 0 && shown.length === 0;
   // How many points each group would show, lit or not (the numbers of the group boxes use the same).
   const counts = resolved?.counts ?? null;
@@ -279,15 +315,6 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
       </nav>
 
       <div className="nm-controls">
-        <MapDateBar night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} onPick={(n) => update(setNight(filters, n))} />
-        <MapGroupBar filters={filters} counts={counts} open={open} panelId={panelId}
-          onToggleLayer={(g) => update(toggleGroupShown(filters, g))}
-          onToggleOpen={(g) => {
-            // The name opens the group's filters and lights the group if it is off; closing never turns it off.
-            const next = toggleGroupPanel(filters, open, g);
-            if (next.filters !== filters) update(next.filters);
-            setOpen(next.open);
-          }} />
         <div className="nm-near">
           <button type="button" className="nm-near-btn" data-testid="near-me" aria-pressed={!!userPos} disabled={locating} aria-busy={locating} onClick={pressNear}>
             {t("map_near_me")}
@@ -315,7 +342,6 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           </p>
         )}
       </div>
-      <MapGroupPanel group={open} filters={filters} id={panelId} handlers={handlers} />
 
       <div className="nm-body">
         <div className="nm-stage">
@@ -332,7 +358,11 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
           {view === "map" && counter}
 
-          {showHint && <div className="nm-hint" role="status" data-testid="map-empty-hint">{t("map_pick_layers")}</div>}
+          <button ref={filterBtnRef} type="button" className={`nm-fbtn${filterCount > 0 ? " is-active" : ""}`} data-testid="map-filter-button"
+            aria-haspopup="dialog" aria-expanded={sheetOpen} onClick={openSheet}>
+            <span>{filterCount > 0 ? t("map_filters") : t("map_filter_prompt")}</span>
+            {filterCount > 0 && <span className="nm-fbtn-n" data-testid="map-filter-count">{filterCount}</span>}
+          </button>
 
           {empty && (
             <div className="nm-overlay" role="status"><p>{t("map_soon")}</p></div>
@@ -349,10 +379,18 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           )}
 
           {selected && <MapCard ref={cardRef} point={selected} status={status} closingSoon={!!selected && closingSoon.has(selected.id)} hoursLine={hoursLine} onClose={close} />}
+
+          {sheetOpen && (
+            <MapSheet onClose={closeSheet} onClear={clearEverything} returnFocus={filterBtnRef}
+              seeLabel={pluralLabel(shown.length, { one: t("map_see_one"), many: t("map_see_many") })}>
+              <h3 className="nm-h">{t("map_date_bar")}</h3>
+              <MapDateBar night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} onPick={(n) => update(setNight(filters, n))} />
+              <MapGroupRows filters={filters} counts={counts} handlers={handlers} onToggleLayer={(g) => update(toggleGroupShown(filters, g))} />
+              <MapLegend />
+            </MapSheet>
+          )}
         </div>
       </div>
-
-      <MapLegend />
     </div>
   );
 }

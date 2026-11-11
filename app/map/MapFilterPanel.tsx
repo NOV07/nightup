@@ -83,53 +83,46 @@ export function MapDateBar({ night, tonight, onPick }: { night: string | null; t
 
 const GROUP_LABEL: Record<GroupKey, TranslationKey> = { events: "map_events", spots: "map_spots", wellness: "map_wellness" };
 
-/** Three boxes. The dot shows or hides the layer; the name opens or closes that group's filters. */
-export function MapGroupBar({ filters, counts, open, panelId, onToggleLayer, onToggleOpen }: {
+/**
+ * The three groups as rows with a switch and the number of points the group would show. A lit group
+ * opens its own filters underneath (picking a filter in an off group lights it, see mapFilters).
+ */
+export function MapGroupRows({ filters, counts, handlers, onToggleLayer }: {
   filters: MapFilters;
   counts: Record<GroupKey, number> | null;
-  open: GroupKey | null;
-  panelId: string;
+  handlers: PanelHandlers;
   onToggleLayer: (g: GroupKey) => void;
-  onToggleOpen: (g: GroupKey) => void;
 }) {
   const { t } = useLanguage();
   return (
-    <div style={{ display: "flex", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
       {GROUPS.map((g) => {
-        const visible = filters.shown.includes(g);
-        const isOpen = open === g;
+        const on = filters.shown.includes(g);
         const color = MAP_GROUP_COLORS[g];
         const name = t(GROUP_LABEL[g]);
         return (
-          <div key={g} data-testid={`map-group-${g}`} style={{
-            display: "flex", alignItems: "center", flex: 1, minWidth: 0, height: 44, borderRadius: 8, overflow: "hidden", boxSizing: "border-box",
-            border: `1px solid ${isOpen ? color : LINE}`, opacity: visible ? 1 : 0.55,
-          }}>
-            <button type="button" aria-pressed={visible} aria-label={`${t("map_show_layer")} ${name}`} data-testid={`map-layer-${g}`}
+          <section key={g} data-testid={`map-group-${g}`} style={{ border: `1px solid ${on ? color : LINE}`, borderRadius: 10, overflow: "hidden" }}>
+            <button type="button" role="switch" aria-checked={on} aria-label={`${t("map_show_layer")} ${name}`} data-testid={`map-layer-${g}`}
               onClick={() => onToggleLayer(g)}
-              style={{ flex: "none", width: 32, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: 0, cursor: "pointer", padding: 0 }}>
-              <span aria-hidden="true" style={{ width: 14, height: 14, borderRadius: g === "events" ? 3 : g === "wellness" ? "50%" : 4, transform: g === "events" ? "rotate(45deg) scale(.85)" : undefined, boxSizing: "border-box", border: `2px solid ${color}`, background: visible ? color : "transparent", display: "block" }} />
+              style={{ width: "100%", minHeight: 52, display: "flex", alignItems: "center", gap: 12, padding: "0 12px", background: "none", border: 0, color: "#fff", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+              <span aria-hidden="true" className="nm-sw" data-on={on ? "1" : "0"} style={{ ["--sw-on" as string]: color }} />
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>{name}</span>
+              {hasGroupFilters(filters, g) && <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: color }} />}
+              <span data-testid={`map-count-${g}`} style={{ fontSize: 13, color: MUTED, minWidth: 18, textAlign: "right" }}>{counts ? counts[g] : "…"}</span>
             </button>
-            <button type="button" aria-expanded={isOpen} aria-controls={panelId} data-testid={`map-open-${g}`}
-              aria-label={`${t("map_filters")}: ${name}`} onClick={() => onToggleOpen(g)}
-              style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, background: "none", border: 0, color: "#fff", textAlign: "left", cursor: "pointer", padding: "0 6px 0 0", fontFamily: "inherit" }}>
-              <span style={{ minWidth: 0, display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
-                <span style={{ fontSize: 11, color: MUTED, fontWeight: 400, whiteSpace: "nowrap" }}>
-                  <span data-testid={`map-count-${g}`}>{counts ? counts[g] : "…"}</span>
-                  {hasGroupFilters(filters, g) && <span aria-hidden="true" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: color, marginLeft: 5, verticalAlign: "middle" }} />}
-                </span>
-              </span>
-              <span aria-hidden="true" style={{ color: MUTED, fontSize: 10, flex: "none" }}>{isOpen ? "▴" : "▾"}</span>
-            </button>
-          </div>
+            {on && (
+              <div style={{ padding: "0 12px 12px" }}>
+                <MapGroupFilters group={g} filters={filters} handlers={handlers} />
+              </div>
+            )}
+          </section>
         );
       })}
     </div>
   );
 }
 
-// ── The open group's filters ────────────────────────────────────────────────
+// ── A group's filters ───────────────────────────────────────────────────────
 
 export type PanelHandlers = {
   onToggleEventType: (t: (typeof EVENT_TYPES)[number]) => void;
@@ -148,14 +141,12 @@ const EVENT_TYPE_LABEL: Record<(typeof EVENT_TYPES)[number], TranslationKey> = {
   music: "event_cat_music", culture: "event_cat_culture", sports: "event_cat_sports", other: "event_cat_other",
 };
 
-export function MapGroupPanel({ group, filters, id, handlers }: { group: GroupKey | null; filters: MapFilters; id: string; handlers: PanelHandlers }) {
+function MapGroupFilters({ group, filters, handlers }: { group: GroupKey; filters: MapFilters; handlers: PanelHandlers }) {
   const { t, lang } = useLanguage();
   const uid = useId();
-  if (!group) return <div id={id} hidden />;
   const color = MAP_GROUP_COLORS[group];
   return (
-    <div id={id} role="region" aria-label={`${t("map_filters")}: ${t(GROUP_LABEL[group])}`} data-testid="map-panel"
-      className="nm-panel" style={{ background: "#1A1A28", borderBottom: "1px solid #22223A" }}>
+    <div data-testid="map-panel">
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button type="button" onClick={() => handlers.onClearGroup(group)} disabled={!hasGroupFilters(filters, group)}
           style={{ minHeight: 32, background: "transparent", border: 0, color: MUTED, fontSize: 12, cursor: hasGroupFilters(filters, group) ? "pointer" : "default", opacity: hasGroupFilters(filters, group) ? 1 : 0.5, fontFamily: "inherit" }}>
@@ -242,14 +233,18 @@ export function MapGroupPanel({ group, filters, id, handlers }: { group: GroupKe
 
 export function MapLegend() {
   const { t } = useLanguage();
-  const sw: React.CSSProperties = { width: 14, height: 14, display: "inline-block", boxSizing: "border-box", flex: "none", borderRadius: "50%" };
+  const uid = useId();
+  const sw: React.CSSProperties = { width: 16, height: 16, display: "inline-block", boxSizing: "border-box", flex: "none", borderRadius: "50%" };
   return (
-    <ul aria-label={t("map_legend")} data-testid="map-legend" className="nm-legend">
-      <li><i aria-hidden="true" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)" }} />{t("map_legend_active")}</li>
-      <li><i aria-hidden="true" style={{ ...sw, background: "#6B6B80" }} />{t("map_legend_closed")}</li>
-      <li><i aria-hidden="true" style={{ ...sw, background: "rgba(15,15,26,0.78)", border: "2px solid #E8A020" }} />{t("map_legend_unknown")}</li>
-      <li><i aria-hidden="true" className="nm-legend-radar" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)", boxShadow: "0 0 0 3px rgba(245,179,53,0.35)" }} />{t("map_legend_radar")}</li>
-      <li><i aria-hidden="true" style={{ ...sw, background: "#4C8DFF", border: "2px solid #fff", boxShadow: "0 0 0 3px rgba(76,141,255,0.25)" }} />{t("map_legend_you")}</li>
-    </ul>
+    <section aria-labelledby={uid} style={{ marginTop: 18 }}>
+      <h3 id={uid} style={{ ...rowTitle, marginTop: 0 }}>{t("map_legend_title")}</h3>
+      <ul aria-label={t("map_legend")} data-testid="map-legend" className="nm-legend">
+        <li><i aria-hidden="true" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)" }} />{t("map_legend_active")}</li>
+        <li><i aria-hidden="true" style={{ ...sw, background: "#6B6B80" }} />{t("map_legend_closed")}</li>
+        <li><i aria-hidden="true" style={{ ...sw, background: "rgba(15,15,26,0.78)", border: "2px solid #E8A020" }} />{t("map_legend_unknown")}</li>
+        <li><i aria-hidden="true" className="nm-legend-radar" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)", boxShadow: "0 0 0 3px rgba(245,179,53,0.35)" }} />{t("map_legend_radar")}</li>
+        <li><i aria-hidden="true" style={{ ...sw, background: "#4C8DFF", border: "2px solid #fff", boxShadow: "0 0 0 3px rgba(76,141,255,0.25)" }} />{t("map_legend_you")}</li>
+      </ul>
+    </section>
   );
 }
