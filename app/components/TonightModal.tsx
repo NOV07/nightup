@@ -439,8 +439,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes tn-rise { from { opacity: 0; transform: translateY(18px) rotateX(-14deg); } to { opacity: 1; transform: none; } }
-        @keyframes tn-icon-in { from { opacity: 0; scale: .55; translate: 0 6px; } }
-        @keyframes tn-glow-once { 0% { opacity: 0; } 40% { opacity: .9; } 100% { opacity: 0; } }
+        @keyframes tn-icon-in { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
         @keyframes tn-in-fwd { from { opacity: 0; transform: translateX(34px); } }
         @keyframes tn-in-back { from { opacity: 0; transform: translateX(-34px); } }
         @keyframes tn-out-fwd { to { opacity: 0; transform: translateX(-34px); } }
@@ -480,11 +479,10 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
           background: radial-gradient(circle, rgba(232,160,32,.55), rgba(232,160,32,0) 70%);
           animation: tn-ripple .6s ease-out forwards; }
         .tn-icon { position: relative; transform: translateZ(26px); align-self: flex-start; line-height: 0;
-          animation: tn-icon-in .55s cubic-bezier(.34,1.45,.5,1) calc(var(--i, 0) * 70ms + 380ms) both; }
+          animation: tn-icon-in .7s cubic-bezier(.22,.61,.36,1) calc(var(--i, 0) * 70ms + 120ms) backwards; }
         .tn-icon::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; pointer-events: none; z-index: -1;
           background: radial-gradient(circle, rgba(232,160,32,.5), transparent 68%);
-          opacity: 0; scale: .6; transition: opacity .35s, scale .35s;
-          animation: tn-glow-once 1s ease calc(var(--i, 0) * 70ms + 380ms) backwards; }
+          opacity: 0; scale: .6; transition: opacity .35s, scale .35s; }
         .tn[data-track] .tn-icon::before { opacity: 1; scale: 1; }
         .tn-label { transform: translateZ(14px); }
         .tn-sub { transform: translateZ(8px); }
