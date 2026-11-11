@@ -34,14 +34,11 @@ const CSS = `
 .nm-crumb { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; font-size: 14px; color: #A9ABC0; }
 .nm-crumb a { color: #A9ABC0; text-decoration: none; display: inline-flex; align-items: center; min-height: 24px; }
 .nm-crumb a:hover { color: #fff; }
-.nm-controls { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 0 16px 10px; max-width: 792px; width: 100%; box-sizing: border-box; }
-.nm-near { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.nm-seg { order: 2; margin-left: auto; display: inline-flex; border: 1px solid #3A3A55; border-radius: 8px; overflow: hidden; }
-.nm-seg button { min-height: 44px; padding: 0 16px; border: 0; background: #1A1A28; color: #D5D6E3; font-size: 14px; font-weight: 600; cursor: pointer; }
-.nm-seg button[aria-pressed="true"] { background: #E8A020; color: #0F0F1A; }
 .nm-map-layer { position: absolute; inset: 0; }
 .nm-map-layer.is-hidden { visibility: hidden; pointer-events: none; }
-.nm-list-wrap { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
+.nm-list-wrap { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 68px 0 76px; background: #0F0F1A; }
+.nm-list-empty { margin: 0; padding: 24px 20px; font-size: 15px; color: #D5D6E3; }
+.nm-lst { left: 12px; }
 .nm-list-wrap .nm-count { position: static; margin: 10px; max-width: none; }
 .nm-list { margin: 0; padding: 0; list-style: none; }
 .nm-row { width: 100%; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: transparent; border: 0; border-bottom: 1px solid #1E1E32; color: #fff; text-align: left; cursor: pointer; font: inherit; }
@@ -115,7 +112,6 @@ const CSS = `
 .nm-overlay button { margin-top: 14px; min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .nm-root button:focus-visible, .nm-root a:focus-visible, .nm-root input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (min-width: 768px) {
-  .nm-controls { padding-left: 32px; padding-right: 32px; }
   .nm-body { padding: 0 32px; }
 }
 @media (max-width: 767px) {
@@ -325,15 +321,6 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
         <span style={{ color: "#fff", fontWeight: 600 }} aria-current="page">{t("map_breadcrumb")}</span>
       </nav>
 
-      <div className="nm-controls">
-        <div className="nm-near">
-          <div className="nm-seg" role="group" aria-label={t("map_view_label")}>
-            <button type="button" aria-pressed={view === "map"} data-testid="view-map" onClick={() => setView("map")}>{t("map_view_map")}</button>
-            <button type="button" aria-pressed={view === "list"} data-testid="view-list" onClick={() => setView("list")}>{t("map_view_list")}</button>
-          </div>
-        </div>
-      </div>
-
       <div className="nm-body">
         <div className="nm-stage">
           <div className={`nm-map-layer${view === "list" ? " is-hidden" : ""}`} aria-hidden={view === "list" ? true : undefined}>
@@ -343,7 +330,9 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           {view === "list" && (
             <div className="nm-list-wrap">
               {counter}
-              <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />
+              {anyLit
+                ? <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />
+                : <p className="nm-list-empty" role="status" data-testid="map-list-empty">{t("map_list_empty_pick")}</p>}
             </div>
           )}
 
@@ -375,6 +364,10 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
               {near.radius === "all" ? t("map_near_all") : `${near.radius} ${t("map_unit_km")}`}
             </button>
           )}
+          <button type="button" className="nm-round nm-lst" data-testid="list-toggle" aria-label={view === "list" ? t("map_view_map") : t("map_view_list")}
+            onClick={() => setView((v) => (v === "list" ? "map" : "list"))}>
+            <span aria-hidden="true">{view === "list" ? "🗺️" : "📋"}</span>
+          </button>
           <button type="button" className="nm-round nm-loc" data-testid="near-me" aria-label={t("map_near_aria")} aria-pressed={!!userPos}
             aria-busy={locating} disabled={locating} onClick={pressNear}>
             <span aria-hidden="true">📍</span>
