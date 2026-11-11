@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Offline tests for the clean map (v3): the number on the filter button, the plural of
- * "See N places" in both languages, and the radius chip cycle 1 → 3 → 5 → all → 1.
+ * Offline tests for the controls of the map (v3/v4): the number on the filter button (how many things
+ * differ from the default), the plural of the screen-reader count in both languages, and the radius chip
+ * cycle 1 → 3 → 5 → all → 1.
  * No network, no database.
  *
  *   node scripts/test-map-v3.mjs
@@ -9,7 +10,7 @@
 import assert from 'node:assert/strict'
 import { activeFilterCount, pluralLabel } from '../app/lib/mapUi.ts'
 import { nextRadius, NEAR_RADII, DEFAULT_NEAR_RADIUS, parseNear, serializeNear } from '../app/lib/mapNear.ts'
-import { NO_FILTERS, toggleGroupShown, setNight, showGroup } from '../app/lib/mapFilters.ts'
+import { NO_FILTERS, toggleGroupShown, setNight, tapGroup, normalizeFilters } from '../app/lib/mapFilters.ts'
 import translations from '../app/lib/translations.ts'
 
 let passed = 0, failed = 0
@@ -18,58 +19,58 @@ function test(name, fn) {
   catch (e) { failed++; console.log(`  FAIL ${name}\n       ${e.message}`) }
 }
 
-console.log('filter button count')
-test('nothing chosen = 0 (the button says "Choose what to see")', () => {
+console.log('filter button count (changes from the default)')
+const F = (over) => normalizeFilters({ ...NO_FILTERS, ...over })
+test('the default (all groups shown, tonight, no filter, no Near me) = 0: no number', () => {
   assert.equal(activeFilterCount(NO_FILTERS, false), 0)
 })
-test('lit groups count one each', () => {
-  let f = toggleGroupShown(NO_FILTERS, 'events')
-  assert.equal(activeFilterCount(f, false), 1)
-  f = showGroup(showGroup(f, 'spots'), 'wellness')
-  assert.equal(activeFilterCount(f, false), 3)
-  assert.equal(activeFilterCount(toggleGroupShown(f, 'spots'), false), 2)
+test('every hidden group counts one', () => {
+  assert.equal(activeFilterCount(toggleGroupShown(NO_FILTERS, 'events'), false), 1)
+  assert.equal(activeFilterCount(F({ shown: ['spots', 'wellness'] }), false), 1)
+  assert.equal(activeFilterCount(F({ shown: ['spots'] }), false), 2)
+  assert.equal(activeFilterCount(F({ shown: ['wellness'] }), false), 2)
+})
+test('the solo tap on a group (two hidden) = 2; hiding the last one brings all back = 0', () => {
+  const solo = tapGroup(NO_FILTERS, null, 'spots')
+  assert.equal(activeFilterCount(solo.filters, false), 2)
+  assert.equal(activeFilterCount(tapGroup(solo.filters, solo.focus, 'spots').filters, false), 0)
 })
 test('a night other than tonight adds one; tonight (null) adds nothing', () => {
-  const now = new Date('2026-11-10T19:30:00Z')
-  const tomorrow = setNight(NO_FILTERS, '2026-11-11')
-  assert.equal(activeFilterCount(tomorrow, false), 1)
-  assert.equal(activeFilterCount({ shown: [], night: null }, false), 0)
-  assert.ok(now)
+  assert.equal(activeFilterCount(setNight(NO_FILTERS, '2026-11-11'), false), 1)
+  assert.equal(activeFilterCount(setNight(NO_FILTERS, null), false), 0)
 })
 test('Near me adds one, only when it is active', () => {
   assert.equal(activeFilterCount(NO_FILTERS, true), 1)
-  const f = setNight(showGroup(NO_FILTERS, 'events'), '2026-11-12')
-  assert.equal(activeFilterCount(f, true), 3)
-  assert.equal(activeFilterCount(f, false), 2)
+  assert.equal(activeFilterCount(setNight(NO_FILTERS, '2026-11-12'), true), 2)
+  assert.equal(activeFilterCount(setNight(NO_FILTERS, '2026-11-12'), false), 1)
 })
-test('filters inside a group (type, genre, status, categories) do not add to the number', () => {
-  const f = { ...showGroup(NO_FILTERS, 'spots'), categories: ['drink', 'food'], spotStatus: 'open', evGenres: ['techno'] }
-  assert.equal(activeFilterCount(f, false), 1)
+test('any group filter adds exactly one, however many there are', () => {
+  for (const over of [{ evTypes: ['music'] }, { evGenres: ['techno'] }, { spotStatus: 'open' }, { spotStatus: 'closed' }, { categories: ['drink'] }, { categories: ['drink'], subcategories: ['cocktail_bar'] }, { wellnessSubs: ['yoga'] }]) {
+    assert.equal(activeFilterCount(F(over), false), 1, JSON.stringify(over))
+  }
+  assert.equal(activeFilterCount(F({ evTypes: ['music', 'sports'], evGenres: ['techno', 'jazz'], spotStatus: 'open', categories: ['drink', 'food'], subcategories: ['cocktail_bar'], wellnessSubs: ['yoga', 'sea_swim'] }), false), 1)
+})
+test('a filter of a hidden group still counts (it is still a change from the default)', () => {
+  assert.equal(activeFilterCount(F({ shown: ['events', 'wellness'], spotStatus: 'open' }), false), 2)
+})
+test('all four kinds at once', () => {
+  assert.equal(activeFilterCount(F({ shown: ['events', 'wellness'], night: '2026-11-13', evTypes: ['music'] }), true), 4)
 })
 
-console.log('"See N places"')
-const tpl = (lang) => ({ one: translations.map_see_one[lang], many: translations.map_see_many[lang] })
-test('Greek: 1 → «Δες 1 σημείο», otherwise «Δες N σημεία» (also 0 and 2)', () => {
-  assert.equal(pluralLabel(1, tpl('el')), 'Δες 1 σημείο')
-  assert.equal(pluralLabel(0, tpl('el')), 'Δες 0 σημεία')
-  assert.equal(pluralLabel(2, tpl('el')), 'Δες 2 σημεία')
-  assert.equal(pluralLabel(12, tpl('el')), 'Δες 12 σημεία')
+console.log('count text for screen readers')
+test('Greek: 1 → «1 σημείο», otherwise «N σημεία» (also 0 and 2)', () => {
+  const c = { one: translations.map_count_one.el, many: translations.map_count_many.el }
+  assert.deepEqual([1, 0, 2, 12].map(n => pluralLabel(n, c)), ['1 σημείο', '0 σημεία', '2 σημεία', '12 σημεία'])
 })
-test('English: 1 → "See 1 place", otherwise "See N places"', () => {
-  assert.equal(pluralLabel(1, tpl('en')), 'See 1 place')
-  assert.equal(pluralLabel(0, tpl('en')), 'See 0 places')
-  assert.equal(pluralLabel(25, tpl('en')), 'See 25 places')
+test('English: 1 → "1 place", otherwise "N places"', () => {
+  const c = { one: translations.map_count_one.en, many: translations.map_count_many.en }
+  assert.deepEqual([1, 0, 25].map(n => pluralLabel(n, c)), ['1 place', '0 places', '25 places'])
 })
-test('the count text for screen readers follows the same rule', () => {
-  const c = (lang) => ({ one: translations.map_count_one[lang], many: translations.map_count_many[lang] })
-  assert.deepEqual([1, 5].map(n => pluralLabel(n, c('el'))), ['1 σημείο', '5 σημεία'])
-  assert.deepEqual([1, 5].map(n => pluralLabel(n, c('en'))), ['1 place', '5 places'])
-})
-test('every new text exists in Greek and English', () => {
-  for (const k of ['map_filter_prompt', 'map_sheet_title', 'map_see_one', 'map_see_many', 'map_count_one', 'map_count_many', 'map_legend_title', 'map_list_empty_pick', 'map_near_aria', 'map_near_radius_change', 'map_near_me', 'map_view_list', 'map_view_map']) {
+test('every text of the controls exists in Greek and English', () => {
+  for (const k of ['map_filters', 'map_reset', 'map_dock_close', 'map_legend_title', 'map_count_one', 'map_count_many', 'map_near_aria', 'map_near_radius_change', 'map_near_me', 'map_view_list', 'map_view_map', 'map_tonight', 'map_tomorrow', 'map_date_bar']) {
     assert.ok(translations[k]?.el && translations[k]?.en, k)
   }
-  assert.equal(translations.map_filter_prompt.el, 'Διάλεξε τι θες να δεις')
+  assert.equal(translations.map_filters.el, 'Φίλτρα'); assert.equal(translations.map_reset.el, 'Επαναφορά')
 })
 
 console.log('radius chip')

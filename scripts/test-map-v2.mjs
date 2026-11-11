@@ -101,7 +101,7 @@ test('URL: near=1&r=3, defaults and bad values', () => {
 test('URL never carries coordinates, whatever the state holds', () => {
   const state = { on: true, radius: 3, lat: 37.9764, lng: 23.7253, coords: MONASTIRAKI }
   const out = joinQuery(serializeFilters({ ...NO_FILTERS, shown: ['spots'] }), serializeNear(state))
-  assert.equal(out, 'show=spots&near=1&r=3')
+  assert.equal(out, 'hide=events,wellness&near=1&r=3')
   assert.ok(!/37\.|23\.|lat|lng|coord/.test(out))
   // and a link that carries a position is not read as one
   const parsed = parseNear(qs('near=1&r=3&lat=37.97&lng=23.72'))
@@ -109,7 +109,7 @@ test('URL never carries coordinates, whatever the state holds', () => {
 })
 test('near params do not disturb the filters', () => {
   assert.equal(serializeFilters(parseFilters(qs('near=1&r=3'))), serializeFilters(NO_FILTERS))
-  assert.equal(serializeFilters(parseFilters(qs('show=spots&c=drink&near=1&r=1'))), serializeFilters(parseFilters(qs('show=spots&c=drink'))))
+  assert.equal(serializeFilters(parseFilters(qs('hide=events,wellness&c=drink&near=1&r=1'))), serializeFilters(parseFilters(qs('hide=events,wellness&c=drink'))))
 })
 test('distance text', () => {
   const u = { km: 'χλμ', m: 'μ' }
