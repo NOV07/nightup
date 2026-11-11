@@ -204,6 +204,9 @@ const translations = {
 
   // ── Public map (/map) ───────────────────────────────────────────────────
   map_open:            { el: "Άνοιξε τον χάρτη", en: "Open the map" },
+  map_row_title:       { el: "Δες τα στον χάρτη", en: "See them on the map" },
+  map_row_events:      { el: "Τα events της βραδιάς σε χάρτη", en: "Tonight's events on a map" },
+  map_row_spots:       { el: "Τα spots σε χάρτη", en: "Spots on a map" },
   map_breadcrumb:      { el: "Χάρτης", en: "Map" },
   map_aria:            { el: "Χάρτης με spots, σημεία ευεξίας και events", en: "Map of spots, wellness places and events" },
   map_events:          { el: "Events", en: "Events" },
