@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
-  clearAllFilters, hasFilters, mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
+  mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
   setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleMapCategory, toggleMapSub, toggleWellnessSub,
   NO_FILTERS, tapGroup as tapGroupOf, type DockFocus, type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
@@ -108,7 +108,6 @@ const CSS = `
 .nm-cta { margin-top: 14px; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; box-sizing: border-box; border-radius: 8px; background: #E8A020; color: #0F0F1A; font-size: 15px; font-weight: 600; text-decoration: none; }
 .nm-overlay { position: absolute; z-index: 1050; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(320px, calc(100% - 32px)); box-sizing: border-box; background: #1A1A28; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
 .nm-overlay p { margin: 0; font-size: 15px; color: #D5D6E3; }
-.nm-overlay button { margin-top: 14px; min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .nm-root button:focus-visible, .nm-root a:focus-visible, .nm-root input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (min-width: 768px) {
   .nm-body { padding: 0 32px; }
@@ -303,9 +302,6 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     onToggleWellnessSub: (k) => update(toggleWellnessSub(filters, k)),
   };
 
-  const empty = points.length === 0;
-  // Every group is shown at first. When the filters leave nothing to show, it is "no results".
-  const noMatch = !empty && !!resolved && visible.length === 0;
   const filterCount = activeFilterCount(filters, !!userPos);
   const nearNone = !!userPos && visible.length > 0 && shown.length === 0;
 
@@ -353,15 +349,6 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
           <MapInfo />
 
-          {empty && (
-            <div className="nm-overlay" role="status"><p>{t("map_soon")}</p></div>
-          )}
-          {noMatch && (
-            <div className="nm-overlay" role="status">
-              <p>{t("map_no_results")}</p>
-              {hasFilters(filters) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
-            </div>
-          )}
           {nearNone && (
             <div className="nm-overlay" role="status" data-testid="near-none"><p>{t("map_near_none")}</p></div>
           )}
