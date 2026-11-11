@@ -11,6 +11,7 @@ import { primarySubLabel } from "../lib/spotCategories";
 import { useLanguage } from "../components/LanguageContext";
 import CroppedImage from "../../components/ui/CroppedImage";
 import { useOwned } from "../lib/useOwned";
+import { useTilt } from "./useTilt";
 
 const PLACE = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80";
 
@@ -22,12 +23,19 @@ export default function SpotCard({
   compact = false,
   onNavigate,
   initialSaved,
+  animated = false,
+  index = 0,
 }: {
   spot: Spot;
   compact?: boolean;
   onNavigate?: () => void;
   initialSaved?: boolean;
+  // Only used by the compact card inside TonightModal: rise-in stagger + light touch tilt.
+  // The modal's <style> owns the .tn / .tn-card classes. Default false = unchanged everywhere else.
+  animated?: boolean;
+  index?: number;
 }) {
+  const { ref: tiltRef, handlers: tiltHandlers } = useTilt<HTMLDivElement>(4);
   const [saved, setSaved] = useState(initialSaved ?? false);
   const isOwn = useOwned()?.spots.has(String(spot.id)) ?? false;
   const pathname = usePathname();
@@ -73,21 +81,24 @@ export default function SpotCard({
     return (
       <Link href={`/spots/${spot.slug}`} onClick={onNavigate} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
         <div
+          ref={animated ? tiltRef : undefined}
+          className={animated ? "tn tn-card" : undefined}
+          {...(animated ? tiltHandlers : {})}
           style={{
             display: "flex",
             gap: 13,
             background: "#1A1A28",
             border: "1px solid rgba(255,255,255,0.055)",
-            borderRadius: 6,
+            borderRadius: animated ? 20 : 6,
             padding: 11,
             cursor: "pointer",
-            transition: "all .25s cubic-bezier(.22,.61,.36,1)",
-          }}
-          onMouseEnter={(e) => {
+            ...(animated ? { "--i": index } : { transition: "all .25s cubic-bezier(.22,.61,.36,1)" }),
+          } as React.CSSProperties}
+          onMouseEnter={animated ? undefined : (e) => {
             e.currentTarget.style.borderColor = "rgba(232,160,32,0.15)";
             e.currentTarget.style.transform = "translateY(-2px)";
           }}
-          onMouseLeave={(e) => {
+          onMouseLeave={animated ? undefined : (e) => {
             e.currentTarget.style.borderColor = "rgba(255,255,255,0.055)";
             e.currentTarget.style.transform = "none";
           }}
@@ -96,7 +107,7 @@ export default function SpotCard({
             style={{
               width: 78,
               height: 78,
-              borderRadius: 6,
+              borderRadius: animated ? 12 : 6,
               flexShrink: 0,
               position: "relative",
               overflow: "hidden",

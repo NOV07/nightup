@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import Link from "next/link";
 import SpotCard from "./SpotCard";
 import { MOODS, loc, type Spot } from "../spots/types";
@@ -14,6 +14,7 @@ import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
 import CroppedImage from "../../components/ui/CroppedImage";
 import { useLanguage } from "./LanguageContext";
 import { useUserLocation } from "../lib/useUserLocation";
+import { useTilt, reducedMotion } from "./useTilt";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
@@ -41,58 +42,38 @@ function buildNight(all: Spot[], mood: string): Spot[] {
   return pickSequence(all, moodSequence(mood), true);
 }
 
-const reducedMotion = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-// Tile/button with a light CSS-only 3D tilt (pointer events, so touch works too),
-// a gold glare that follows the pointer and a ripple on click. Tilt is written via
-// CSS vars straight to the DOM in rAF (no setState per move). The ripple lives in its own
-// overflow:hidden wrapper so the tile itself keeps preserve-3d.
+// Tile/button with the tilt (useTilt), a gold glare, a draw-once on its icon and a ripple on click.
+// The ripple lives in its own overflow:hidden wrapper so the tile itself keeps preserve-3d.
 function TiltTile({ className = "", style, index = 0, max = 8, dim, pop, onPress, onActivate, children }: {
   className?: string; style?: React.CSSProperties; index?: number; max?: number;
   dim?: boolean; pop?: boolean; onPress?: () => void; onActivate: () => void; children: React.ReactNode;
 }) {
-  const ref = useRef<HTMLButtonElement>(null);
+  const { ref, handlers } = useTilt<HTMLButtonElement>(max);
   const fx = useRef<HTMLSpanElement>(null);
-  const raf = useRef<number | null>(null);
-  const pt = useRef({ x: 0, y: 0 });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => {
-    if (raf.current != null) cancelAnimationFrame(raf.current);
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  const reset = () => {
+  // Draw-once: strokes of the category icon draw themselves a single time, then the inline
+  // dash styles are removed so the final icon is exactly the original, never clipped.
+  useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (raf.current != null) { cancelAnimationFrame(raf.current); raf.current = null; }
-    el.removeAttribute("data-track");
-    el.style.setProperty("--rx", "0deg");
-    el.style.setProperty("--ry", "0deg");
-    el.style.setProperty("--go", "0");
-  };
-  const apply = () => {
-    raf.current = null;
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    if (!r.width || !r.height) return;
-    const px = Math.min(1, Math.max(0, (pt.current.x - r.left) / r.width));
-    const py = Math.min(1, Math.max(0, (pt.current.y - r.top) / r.height));
-    el.style.setProperty("--ry", `${((px - 0.5) * 2 * max).toFixed(2)}deg`);
-    el.style.setProperty("--rx", `${(-(py - 0.5) * 2 * max).toFixed(2)}deg`);
-    el.style.setProperty("--mx", `${(px * 100).toFixed(1)}%`);
-    el.style.setProperty("--my", `${(py * 100).toFixed(1)}%`);
-    el.style.setProperty("--go", "1");
-  };
-  const track = (e: React.PointerEvent) => {
-    if (reducedMotion()) return;
-    ref.current?.setAttribute("data-track", "");
-    pt.current = { x: e.clientX, y: e.clientY };
-    if (raf.current == null) raf.current = requestAnimationFrame(apply);
-  };
-  const end = (e: React.PointerEvent) => { if (e.type !== "pointerup" || e.pointerType !== "mouse") reset(); };
+    if (!el || reducedMotion()) return;
+    el.querySelectorAll<SVGGeometryElement>(".tn-icon svg :is(path, line, circle, rect, polyline)").forEach((sh) => {
+      if (typeof sh.getTotalLength !== "function") return;
+      let len = 0;
+      try { len = sh.getTotalLength(); } catch { return; }
+      if (!len) return;
+      const st = sh.style;
+      st.strokeDasharray = `${len}`;
+      st.strokeDashoffset = `${len}`;
+      st.animation = `tn-draw .9s cubic-bezier(.22,.61,.36,1) ${index * 70 + 380}ms both`;
+      sh.addEventListener("animationend", () => {
+        st.animation = ""; st.strokeDasharray = ""; st.strokeDashoffset = "";
+      }, { once: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const click = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (timer.current) return;
@@ -113,14 +94,14 @@ function TiltTile({ className = "", style, index = 0, max = 8, dim, pop, onPress
   return (
     <button ref={ref} className={`tn ${className}${dim ? " tn-dim" : ""}${pop ? " tn-pop" : ""}`}
       style={{ ...style, "--i": index } as React.CSSProperties}
-      onPointerEnter={track} onPointerMove={track} onPointerLeave={end} onPointerCancel={end} onPointerUp={end}
-      onClick={click}>
+      {...handlers} onClick={click}>
       <span ref={fx} className="tn-fx" aria-hidden="true" />
       {children}
     </button>
   );
 }
 
+const VIEW_RANK = { tiles: 0, subcats: 1, results: 2, night: 3 } as const;
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
   const { t, lang } = useLanguage();
@@ -128,7 +109,29 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   // The stop's own category (the one it was picked for), shown uppercase via CSS.
   const stopCategoryLabel = (s: Spot) => spotCategoryLabel(s.nightSlot ?? s.category, lang);
   const LOAD_STEPS = [t("tonight_load_1"), t("tonight_load_2"), t("tonight_load_3"), t("tonight_load_4")];
-  const [view, setView] = useState<"tiles" | "subcats" | "results" | "night">("tiles");
+  type View = "tiles" | "subcats" | "results" | "night";
+  const [view, setViewRaw] = useState<View>("tiles");
+  // Screen transition: the previous view stays mounted for 300ms (leave) while the new one enters.
+  const [dir, setDir] = useState<"fwd" | "back" | null>(null);
+  const [leave, setLeave] = useState<View | null>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setView = (v: View) => {
+    if (v === view) return;
+    if (reducedMotion()) { setViewRaw(v); return; }
+    setDir(VIEW_RANK[v] > VIEW_RANK[view] ? "fwd" : "back");
+    setLeave(view);
+    setViewRaw(v);
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    leaveTimer.current = setTimeout(() => setLeave(null), 300);
+  };
+  const [nightKey, setNightKey] = useState(0);
+  const [moodClosing, setMoodClosing] = useState(false);
+  const [subPicked, setSubPicked] = useState<string | null>(null);
+  const uiTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    uiTimers.current.forEach(clearTimeout);
+  }, []);
   const [activeCat, setActiveCat] = useState<SpotCategory>("drink");
   const [activeSub, setActiveSub] = useState<string | null>(null);
   const [moodOpen, setMoodOpen] = useState(false);
@@ -144,7 +147,9 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   // Sync body class and reset view whenever open prop changes
   useEffect(() => {
     if (open) {
-      setView("tiles");
+      setViewRaw("tiles");
+      setDir(null);
+      setLeave(null);
       document.body.classList.add("tonight-open");
     } else {
       document.body.classList.remove("tonight-open");
@@ -162,6 +167,18 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
     if (open) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, handleClose]);
+
+  // Mood sheet closes with a short exit animation before it unmounts.
+  const closeMood = () => {
+    if (reducedMotion()) { setMoodOpen(false); return; }
+    setMoodClosing(true);
+    uiTimers.current.push(setTimeout(() => { setMoodOpen(false); setMoodClosing(false); }, 250));
+  };
+  const pickSub = (key: string | null) => {
+    if (reducedMotion()) { goResults(key); return; }
+    setSubPicked(key ?? "__all");
+    uiTimers.current.push(setTimeout(() => { setSubPicked(null); goResults(key); }, 200));
+  };
 
   const goCategory = (c: SpotCategory) => { setActiveCat(c); setActiveSub(null); setView("subcats"); };
   const goResults = (sub: string | null) => { setActiveSub(sub); setView("results"); };
@@ -197,7 +214,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   };
 
   const pickMood = (mood: string) => {
-    setMoodOpen(false);
+    closeMood();
     if (status === "idle") {
       setPendingMood(mood);
       requestLocation();
@@ -235,6 +252,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
     const minDelay = new Promise<void>((resolve) => setTimeout(resolve, 1100));
     Promise.all([fetchNight("chill"), minDelay]).then(([nightSpots]) => {
       setNight(nightSpots);
+      setNightKey((k) => k + 1);
       setLoading(false);
     });
   };
@@ -246,6 +264,140 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   const days = t("tonight_days").split(",");
   const kicker = `${days[now.getDay()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}  ${t("filter_athens")}`;
   const activeCatDef = spotCategoryDef(activeCat);
+
+  const renderView = (v: View) => (
+    <>
+      {/* ── TILES ── */}
+      {v === "tiles" && (
+        <div>
+          <div style={S.kicker}>{kicker}</div>
+          <h2 style={S.h2}>{t("tonight_what_doing")} <em style={S.em}>{t("spots_hero_em")}</em></h2>
+          <p style={S.sub}>{t("tonight_sub")}</p>
+          <div style={S.grid}>
+            {SPOT_CATEGORIES.map((c, i) => (
+              <TiltTile key={c.key} className="tn-tile" style={S.tile} index={i}
+                dim={picked !== null && picked !== c.key} pop={picked === c.key}
+                onPress={() => setPicked(c.key)}
+                onActivate={() => { setPicked(null); goCategory(c.key); }}>
+                <div className="tn-icon"><SpotCategoryIcon category={c.key} size={22} /></div>
+                <div>
+                  <div className="tn-label" style={S.tileLabel}>{loc(lang, c.label_el, c.label_en)}</div>
+                  <div className="tn-sub" style={S.tileSub}>{loc(lang, c.hint_el, c.hint_en)}</div>
+                </div>
+              </TiltTile>
+            ))}
+          </div>
+          <TiltTile className="tn-surprise" style={S.surprise} max={3}
+            dim={picked !== null && picked !== "__surprise"} pop={picked === "__surprise"}
+            onPress={() => setPicked("__surprise")}
+            onActivate={() => { setPicked(null); setMoodOpen(true); }}>
+            <span className="tn-twinkle" style={{ fontSize: 20 }}>✨</span>
+            <span>{t("tonight_surprise")}<br/><span style={{ fontWeight: 400, fontSize: 10.5, opacity: 0.7 }}>{t("tonight_surprise_sub")}</span></span>
+          </TiltTile>
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <button onClick={handleClose} style={S.skip}>{t("tonight_skip")}</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── SUBCATS ── */}
+      {v === "subcats" && (
+        <div>
+          <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_back")}</button>
+          <div style={S.resHead}>
+            {activeCatDef ? loc(lang, activeCatDef.label_el, activeCatDef.label_en) : null} <em style={S.em}>· {t("tonight_vibe_q")}</em>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 18 }}>
+            <button onClick={() => pickSub(null)} className={`tn-chip${subPicked === "__all" ? " tn-chip-pop" : ""}`} style={{ ...S.subChip, "--i": 0 } as React.CSSProperties}>{t("tonight_all_sub")}</button>
+            {subsOf(activeCat).map((sub, si) => {
+              const count = spots.filter((s) => spotInCategory(s, activeCat) && spotSubsInCategory(s, activeCat).includes(sub.key)).length;
+              const disabled = count === 0;
+              return (
+                <button
+                  key={sub.key}
+                  onClick={() => !disabled && pickSub(sub.key)}
+                  disabled={disabled}
+                  className={`tn-chip${subPicked === sub.key ? " tn-chip-pop" : ""}`}
+                  style={{
+                    ...S.subChip,
+                    "--i": si + 1,
+                    opacity: disabled ? 0.4 : 1,
+                    cursor: disabled ? "default" : "pointer",
+                  } as React.CSSProperties}
+                >
+                  {loc(lang, sub.label_el, sub.label_en)}{disabled ? ` · ${t("tonight_coming_soon")}` : ` · ${count}`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── RESULTS ── */}
+      {v === "results" && (
+        <div>
+          <button onClick={() => setView("subcats")} style={S.back}>{t("tonight_back")}</button>
+          <div style={S.resHead}>
+            {(() => {
+              if (activeSub) {
+                const s = subsOf(activeCat).find((x) => x.key === activeSub);
+                return s ? loc(lang, s.label_el, s.label_en) : activeSub;
+              }
+              return activeCatDef ? loc(lang, activeCatDef.label_el, activeCatDef.label_en) : null;
+            })()}
+            {" "}<em style={S.em}>· {t("tonight_near")}</em>
+          </div>
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12, perspective: 900 }}>
+            {catSpots.map((s, i) => <SpotCard key={s.id} spot={s} compact animated index={i} onNavigate={handleClose} />)}
+          </div>
+        </div>
+      )}
+
+      {/* ── NIGHT ── */}
+      {v === "night" && (
+        <div>
+          <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_new_search")}</button>
+          <div style={S.nightKicker}>{t("tonight_kicker")}</div>
+          <div style={S.nightTitle}>{t("tonight_title")} <em style={S.em}>{t("tonight_title_em")}</em></div>
+          <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 6 }}>
+            {night.map((s, i) => (
+              <div key={`${nightKey}-${s.id}`} className="tn-appear" style={{ "--d": `${i * 850 + 200}ms` } as React.CSSProperties}>
+                <div style={{ fontSize: 11.5, color: "#E8A020", fontWeight: 700, letterSpacing: "0.7px", marginBottom: 6 }}>
+                  {STOP_TIMES[i]} · <span style={{ textTransform: "uppercase" }}>{stopCategoryLabel(s)}</span>
+                </div>
+                <SpotCard spot={s} compact onNavigate={handleClose} />
+                {i < night.length - 1 && (
+                  <div className="tn-walk" style={{ "--d": `${i * 850 + 700}ms`, "--dt": `${i * 850 + 1000}ms` } as React.CSSProperties}>
+                    <span className="tn-walk-line" />
+                    <span className="tn-walk-txt">· {WALKS[i] ?? t("tonight_walk_min")}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {matchedEvent && (
+            <Link key={`ev-${nightKey}`} href={`/events/${matchedEvent.id}`} onClick={handleClose} className="tn-appear" style={{ ...S.eventCard, "--d": "3000ms" } as React.CSSProperties}>
+              <div style={S.eventKicker}>🎉 {t("tonight_try_event")}</div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
+                <div style={{ position: "relative", ...S.eventImg }}>
+                  <CroppedImage src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} crop={getEventCrop(matchedEvent)} sizes="52px" style={{ borderRadius: S.eventImg.borderRadius }} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={S.eventTitle}>{matchedEvent.title}</div>
+                  <div style={S.eventMeta}>{matchedEvent.date}{matchedEvent.time ? ` · ${matchedEvent.time}` : ""}</div>
+                  <div style={S.eventMeta}>{matchedEvent.venue}</div>
+                </div>
+              </div>
+            </Link>
+          )}
+          <div key={`btn-${nightKey}`} className="tn-appear" style={{ display: "flex", gap: 10, marginTop: 22, "--d": "3200ms" } as React.CSSProperties}>
+            <button onClick={reroll} style={S.btnGhost}>{t("tonight_reroll")}</button>
+            <button onClick={keepNight} style={S.btnGold}>{copied ? t("tonight_copied") : t("tonight_keep")}</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 
   if (!open) return null;
 
@@ -266,146 +418,20 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
           </div>
 
           <div style={S.scroll} className="tonight-modal-scroll">
-            {/* ── TILES ── */}
-            {view === "tiles" && (
-              <div>
-                <div style={S.kicker}>{kicker}</div>
-                <h2 style={S.h2}>{t("tonight_what_doing")} <em style={S.em}>{t("spots_hero_em")}</em></h2>
-                <p style={S.sub}>{t("tonight_sub")}</p>
-                <div style={S.grid}>
-                  {SPOT_CATEGORIES.map((c, i) => (
-                    <TiltTile key={c.key} className="tn-tile" style={S.tile} index={i}
-                      dim={picked !== null && picked !== c.key} pop={picked === c.key}
-                      onPress={() => setPicked(c.key)}
-                      onActivate={() => { setPicked(null); goCategory(c.key); }}>
-                      <div className="tn-icon" style={{ animationDelay: `${-i * 0.6}s` }}><SpotCategoryIcon category={c.key} size={22} /></div>
-                      <div>
-                        <div className="tn-label" style={S.tileLabel}>{loc(lang, c.label_el, c.label_en)}</div>
-                        <div className="tn-sub" style={S.tileSub}>{loc(lang, c.hint_el, c.hint_en)}</div>
-                      </div>
-                    </TiltTile>
-                  ))}
-                </div>
-                <TiltTile className="tn-surprise" style={S.surprise} max={3}
-                  dim={picked !== null && picked !== "__surprise"} pop={picked === "__surprise"}
-                  onPress={() => setPicked("__surprise")}
-                  onActivate={() => { setPicked(null); setMoodOpen(true); }}>
-                  <span className="tn-twinkle" style={{ fontSize: 20 }}>✨</span>
-                  <span>{t("tonight_surprise")}<br/><span style={{ fontWeight: 400, fontSize: 10.5, opacity: 0.7 }}>{t("tonight_surprise_sub")}</span></span>
-                </TiltTile>
-                <div style={{ textAlign: "center", marginTop: 16 }}>
-                  <button onClick={handleClose} style={S.skip}>{t("tonight_skip")}</button>
-                </div>
-              </div>
-            )}
-
-            {/* ── SUBCATS ── */}
-            {view === "subcats" && (
-              <div>
-                <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_back")}</button>
-                <div style={S.resHead}>
-                  {activeCatDef ? loc(lang, activeCatDef.label_el, activeCatDef.label_en) : null} <em style={S.em}>· {t("tonight_vibe_q")}</em>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 18 }}>
-                  <button onClick={() => goResults(null)} style={S.subChip}>{t("tonight_all_sub")}</button>
-                  {subsOf(activeCat).map((sub) => {
-                    const count = spots.filter((s) => spotInCategory(s, activeCat) && spotSubsInCategory(s, activeCat).includes(sub.key)).length;
-                    const disabled = count === 0;
-                    return (
-                      <button
-                        key={sub.key}
-                        onClick={() => !disabled && goResults(sub.key)}
-                        disabled={disabled}
-                        style={{
-                          ...S.subChip,
-                          opacity: disabled ? 0.4 : 1,
-                          cursor: disabled ? "default" : "pointer",
-                        }}
-                      >
-                        {loc(lang, sub.label_el, sub.label_en)}{disabled ? ` · ${t("tonight_coming_soon")}` : ` · ${count}`}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ── RESULTS ── */}
-            {view === "results" && (
-              <div>
-                <button onClick={() => setView("subcats")} style={S.back}>{t("tonight_back")}</button>
-                <div style={S.resHead}>
-                  {(() => {
-                    if (activeSub) {
-                      const s = subsOf(activeCat).find((x) => x.key === activeSub);
-                      return s ? loc(lang, s.label_el, s.label_en) : activeSub;
-                    }
-                    return activeCatDef ? loc(lang, activeCatDef.label_el, activeCatDef.label_en) : null;
-                  })()}
-                  {" "}<em style={S.em}>· {t("tonight_near")}</em>
-                </div>
-                <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                  {catSpots.map((s) => <SpotCard key={s.id} spot={s} compact onNavigate={handleClose} />)}
-                </div>
-              </div>
-            )}
-
-            {/* ── NIGHT ── */}
-            {view === "night" && (
-              <div>
-                <button onClick={() => setView("tiles")} style={S.back}>{t("tonight_new_search")}</button>
-                <div style={S.nightKicker}>{t("tonight_kicker")}</div>
-                <div style={S.nightTitle}>{t("tonight_title")} <em style={S.em}>{t("tonight_title_em")}</em></div>
-                <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {night.map((s, i) => (
-                    <div key={s.id}>
-                      <div style={{ fontSize: 11.5, color: "#E8A020", fontWeight: 700, letterSpacing: "0.7px", marginBottom: 6 }}>
-                        {STOP_TIMES[i]} · <span style={{ textTransform: "uppercase" }}>{stopCategoryLabel(s)}</span>
-                      </div>
-                      <SpotCard spot={s} compact onNavigate={handleClose} />
-                      {i < night.length - 1 && (
-                        <div style={{ fontSize: 11, color: "#E8A020", opacity: 0.82, margin: "8px 0 8px 6px" }}>
-                          · {WALKS[i] ?? t("tonight_walk_min")}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {matchedEvent && (
-                  <Link href={`/events/${matchedEvent.id}`} onClick={handleClose} style={S.eventCard}>
-                    <div style={S.eventKicker}>🎉 {t("tonight_try_event")}</div>
-                    <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
-                      <div style={{ position: "relative", ...S.eventImg }}>
-                        <CroppedImage src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} crop={getEventCrop(matchedEvent)} sizes="52px" style={{ borderRadius: S.eventImg.borderRadius }} />
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={S.eventTitle}>{matchedEvent.title}</div>
-                        <div style={S.eventMeta}>{matchedEvent.date}{matchedEvent.time ? ` · ${matchedEvent.time}` : ""}</div>
-                        <div style={S.eventMeta}>{matchedEvent.venue}</div>
-                      </div>
-                    </div>
-                  </Link>
-                )}
-                <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-                  <button onClick={reroll} style={S.btnGhost}>{t("tonight_reroll")}</button>
-                  <button onClick={keepNight} style={S.btnGold}>{copied ? t("tonight_copied") : t("tonight_keep")}</button>
-                </div>
-              </div>
-            )}
+            {leave && <div key={`l-${leave}`} className="tn-leave" data-dir={dir} aria-hidden="true">{renderView(leave)}</div>}
+            <div key={view} className={dir ? "tn-enter" : undefined} data-dir={dir ?? undefined}>{renderView(view)}</div>
           </div>
 
           {/* mood sheet */}
           {moodOpen && (
-            <div style={S.overlay} onClick={(e)=>{if(e.target===e.currentTarget)setMoodOpen(false);}}>
-              <div style={S.sheet}>
+            <div className={`tn-overlay${moodClosing ? " tn-closing" : ""}`} style={S.overlay} onClick={(e)=>{if(e.target===e.currentTarget)closeMood();}}>
+              <div className={`tn-sheet${moodClosing ? " tn-closing" : ""}`} style={S.sheet}>
                 <div style={S.grab} />
                 <h3 style={S.sheetH3}>{t("tonight_sheet_h")}</h3>
                 <p style={S.sheetP}>{t("tonight_sheet_p")}</p>
                 <div style={S.moods}>
-                  {MOODS.map((m) => (
-                    <button key={m.key} onClick={() => pickMood(m.key)} style={S.mood}
-                      onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.borderColor="rgba(232,160,32,0.15)";}}
-                      onMouseLeave={(e)=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor="rgba(255,255,255,0.055)";}}>
+                  {MOODS.map((m, mi) => (
+                    <button key={m.key} onClick={() => pickMood(m.key)} className="tn-mood" style={{ ...S.mood, "--i": mi } as React.CSSProperties}>
                       <div style={{ fontSize: 25 }}>{m.emoji}</div>
                       <div style={S.moodLabel}>{loc(lang, m.label, m.label_en)}</div>
                       <div style={S.moodDesc}>{loc(lang, m.desc, m.desc_en)}</div>
@@ -434,7 +460,19 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes tn-rise { from { opacity: 0; transform: translateY(18px) rotateX(-14deg); } to { opacity: 1; transform: none; } }
-        @keyframes tn-float { from { transform: translateZ(26px) translateY(3px); } to { transform: translateZ(26px) translateY(-3px); } }
+        @keyframes tn-draw { 0% { opacity: 0; } 1% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 1; } }
+        @keyframes tn-in-fwd { from { opacity: 0; transform: translateX(34px); } }
+        @keyframes tn-in-back { from { opacity: 0; transform: translateX(-34px); } }
+        @keyframes tn-out-fwd { to { opacity: 0; transform: translateX(-34px); } }
+        @keyframes tn-out-back { to { opacity: 0; transform: translateX(34px); } }
+        @keyframes tn-appear { from { opacity: 0; transform: translateY(18px); } }
+        @keyframes tn-chip-in { from { opacity: 0; transform: translateY(10px) scale(.85); } 70% { transform: translateY(0) scale(1.04); } to { transform: none; } }
+        @keyframes tn-chip-pop { 0% { scale: 1; } 40% { scale: .92; } 75% { scale: 1.06; } 100% { scale: 1; } }
+        @keyframes tn-line { from { transform: scaleY(0); } }
+        @keyframes tn-fade { from { opacity: 0; } }
+        @keyframes tn-fade-out { to { opacity: 0; } }
+        @keyframes tn-sheet-in { from { transform: translateY(110%); } }
+        @keyframes tn-sheet-out { to { transform: translateY(110%); } }
         @keyframes tn-ripple { from { transform: scale(0); opacity: 1; } to { transform: scale(18); opacity: 0; } }
         @keyframes tn-pop {
           0% { scale: 1; }
@@ -461,7 +499,11 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         .tn-ripple { position: absolute; width: 20px; height: 20px; border-radius: 50%;
           background: radial-gradient(circle, rgba(232,160,32,.55), rgba(232,160,32,0) 70%);
           animation: tn-ripple .6s ease-out forwards; }
-        .tn-icon { transform: translateZ(26px); will-change: transform; animation: tn-float 4.5s ease-in-out infinite alternate; align-self: flex-start; }
+        .tn-icon { position: relative; transform: translateZ(26px); align-self: flex-start; line-height: 0; }
+        .tn-icon::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; pointer-events: none; z-index: -1;
+          background: radial-gradient(circle, rgba(232,160,32,.5), transparent 68%);
+          opacity: 0; scale: .6; transition: opacity .35s, scale .35s; }
+        .tn[data-track] .tn-icon::before { opacity: 1; scale: 1; }
         .tn-label { transform: translateZ(14px); }
         .tn-sub { transform: translateZ(8px); }
         .tn-surprise { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); animation-duration: .6s; animation-delay: .75s; }
@@ -472,7 +514,32 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         .tn-twinkle { display: inline-block; animation: tn-twinkle 3s ease-in-out infinite; }
         .tn-dim { opacity: .35; scale: .96; }
         .tn-pop { opacity: 1; animation: tn-pop .45s ease; }
+        .tn-enter { animation: .38s cubic-bezier(.22,.61,.36,1) backwards; }
+        .tn-enter[data-dir="fwd"] { animation-name: tn-in-fwd; }
+        .tn-enter[data-dir="back"] { animation-name: tn-in-back; }
+        .tn-leave { position: absolute; top: 0; left: 24px; right: 24px; pointer-events: none; animation: .3s cubic-bezier(.22,.61,.36,1) forwards; }
+        .tn-leave[data-dir="fwd"] { animation-name: tn-out-fwd; }
+        .tn-leave[data-dir="back"] { animation-name: tn-out-back; }
+        .tn-card { border-radius: 20px !important; animation-delay: calc(var(--i, 0) * 90ms + 100ms); }
+        .tn-appear { animation: tn-appear .6s cubic-bezier(.22,.61,.36,1) var(--d, 0ms) backwards; }
+        .tn-chip { animation: tn-chip-in .45s cubic-bezier(.22,.61,.36,1) calc(var(--i, 0) * 55ms + 120ms) backwards; }
+        .tn-chip-pop { animation: tn-chip-pop .2s ease; }
+        @media (hover: hover) { .tn-chip:not(:disabled):hover { border-color: rgba(232,160,32,.55) !important; color: #E8A020 !important; } }
+        .tn-walk { display: flex; gap: 10px; align-items: stretch; margin: 6px 0 6px 6px; min-height: 30px; }
+        .tn-walk-line { width: 2px; border-radius: 2px; background: linear-gradient(to bottom, #E8A020, rgba(232,160,32,.15));
+          transform-origin: top; animation: tn-line .6s cubic-bezier(.22,.61,.36,1) var(--d, 0ms) backwards; }
+        .tn-walk-txt { align-self: center; font-size: 11px; color: #E8A020; opacity: .82; animation: tn-fade .4s ease var(--dt, 0ms) backwards; }
+        .tn-overlay { animation: tn-fade .3s ease backwards; }
+        .tn-overlay.tn-closing { animation: tn-fade-out .25s ease forwards; }
+        .tn-sheet { animation: tn-sheet-in .6s cubic-bezier(.34,1.45,.5,1) backwards; }
+        .tn-sheet.tn-closing { animation: tn-sheet-out .25s ease-in forwards; }
+        .tn-mood { animation: tn-appear .5s cubic-bezier(.22,.61,.36,1) calc(var(--i, 0) * 70ms + 280ms) backwards; }
+        @media (hover: hover) { .tn-mood:hover { border-color: rgba(232,160,32,.55) !important; transform: translateY(-3px); } }
         @media (prefers-reduced-motion: reduce) {
+          .tn-enter, .tn-card, .tn-appear, .tn-chip, .tn-chip-pop, .tn-walk-line, .tn-walk-txt, .tn-overlay, .tn-sheet, .tn-mood,
+          .tn-icon::before, .tn-icon svg * { animation: none !important; transition: none !important; }
+          .tn-leave { display: none !important; }
+          .tn-icon svg * { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; }
           .tn, .tn *, .tn::after, .tn-blob1, .tn-blob2 { animation: none !important; transition: none !important; }
           .tn { transform: none !important; opacity: 1 !important; scale: none !important; }
           .tn-icon, .tn-label, .tn-sub { transform: none !important; }
@@ -525,7 +592,7 @@ const S: Record<string, React.CSSProperties> = {
   orbitCore: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 },
   loadTxt: { fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 18, color: "#F4F4F5" },
   loadSub: { color: "#A1A1AA", fontSize: 12.5, marginTop: 9 },
-  subChip: { whiteSpace: "nowrap", fontSize: 13, fontWeight: 600, color: "#A1A1AA", background: "#1A1A28", border: "1px solid rgba(255,255,255,0.055)", padding: "9px 15px", borderRadius: 6, cursor: "pointer", transition: "all .2s" },
+  subChip: { whiteSpace: "nowrap", fontSize: 13, fontWeight: 600, color: "#A1A1AA", background: "#1A1A28", border: "1px solid rgba(255,255,255,0.055)", padding: "9px 15px", borderRadius: 999, cursor: "pointer", transition: "all .2s" },
   eventCard: { display: "block", marginTop: 16, padding: 14, borderRadius: 14, border: "1px solid rgba(232,160,32,0.3)", background: "rgba(232,160,32,0.04)", textDecoration: "none", color: "inherit" },
   eventKicker: { fontSize: 10.5, letterSpacing: "0.5px", color: G, fontWeight: 700 },
   eventImg: { width: 52, height: 52, borderRadius: 10, objectFit: "cover" as const, flexShrink: 0 },
