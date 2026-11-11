@@ -80,8 +80,6 @@ export function MapDateBar({ night, tonight, onPick }: { night: string | null; t
   );
 }
 
-const rowTitle: React.CSSProperties = { margin: "10px 0 6px", fontSize: 12, fontWeight: 600, color: MUTED };
-
 export type PanelHandlers = {
   onToggleEventType: (t: (typeof EVENT_TYPES)[number]) => void;
   onToggleGenre: (key: string) => void;
@@ -173,8 +171,8 @@ export function MapLegend() {
   const uid = useId();
   const sw: React.CSSProperties = { width: 16, height: 16, display: "inline-block", boxSizing: "border-box", flex: "none", borderRadius: "50%" };
   return (
-    <section aria-labelledby={uid} style={{ marginTop: 18 }}>
-      <h3 id={uid} style={{ ...rowTitle, marginTop: 0 }}>{t("map_legend_title")}</h3>
+    <section aria-labelledby={uid}>
+      <h3 id={uid} style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 600, color: MUTED }}>{t("map_legend_title")}</h3>
       <ul aria-label={t("map_legend")} data-testid="map-legend" className="nm-legend">
         <li><i aria-hidden="true" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)" }} />{t("map_legend_active")}</li>
         <li><i aria-hidden="true" style={{ ...sw, background: "#6B6B80" }} />{t("map_legend_closed")}</li>

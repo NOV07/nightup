@@ -18,6 +18,7 @@ import { filterByRadius, nextRadius, isFarFromData, joinQuery, parseNear, serial
 import type { TranslationKey } from "../lib/translations";
 import type { PanelHandlers } from "./MapFilterPanel";
 import MapDock from "./MapDock";
+import MapInfo from "./MapInfo";
 import { activeFilterCount, pluralLabel } from "../lib/mapUi";
 import MapCard from "./MapCard";
 import MapList from "./MapList";
@@ -57,6 +58,13 @@ const CSS = `
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
 .nm-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.nm-info { position: absolute; z-index: 1000; right: 12px; top: 24px; }
+.nm-info-btn { width: 34px; height: 34px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #A9ABC0; font-size: 16px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.nm-info-btn[aria-expanded="true"] { color: #fff; border-color: #E8A020; }
+.nm-info-pop { position: absolute; right: 0; top: 42px; width: 210px; box-sizing: border-box; padding: 12px; border-radius: 10px; background: #1A1A28; border: 1px solid #3A3A55; box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
+@media (pointer: fine) { .nm-info { top: 12px; right: 56px; } }
+@media (prefers-reduced-motion: no-preference) { .nm-info-pop { animation: nm-fade-in .15s ease-out; } }
+@keyframes nm-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .nm-stack { position: absolute; z-index: 1000; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; pointer-events: none; }
 .nm-stack > * { pointer-events: auto; }
 .nm-btnrow { display: flex; align-items: flex-end; justify-content: space-between; pointer-events: none; }
@@ -340,6 +348,8 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
               {filterCount > 0 && <span className="nm-fbtn-n" data-testid="map-filter-count">{filterCount}</span>}
             </button>
           )}
+
+          <MapInfo />
 
           {empty && (
             <div className="nm-overlay" role="status"><p>{t("map_soon")}</p></div>
