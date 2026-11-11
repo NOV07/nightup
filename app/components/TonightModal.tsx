@@ -43,7 +43,7 @@ function buildNight(all: Spot[], mood: string): Spot[] {
 }
 
 // Tile/button with the tilt (useTilt), a gold glare and a ripple on click.
-// The ripple lives in its own overflow:hidden wrapper so the tile itself keeps preserve-3d.
+// The ripple lives in its own overflow:hidden wrapper so the tile itself keeps preserve-3d while tilting.
 function TiltTile({ className = "", style, index = 0, max = 8, dim, pop, onPress, onActivate, children }: {
   className?: string; style?: React.CSSProperties; index?: number; max?: number;
   dim?: boolean; pop?: boolean; onPress?: () => void; onActivate: () => void; children: React.ReactNode;
@@ -438,8 +438,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes tn-rise { from { opacity: 0; transform: translateY(18px) rotateX(-14deg); } to { opacity: 1; transform: none; } }
-        @keyframes tn-icon-in { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+        @keyframes tn-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+        @keyframes tn-icon-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes tn-in-fwd { from { opacity: 0; transform: translateX(34px); } }
         @keyframes tn-in-back { from { opacity: 0; transform: translateX(-34px); } }
         @keyframes tn-out-fwd { to { opacity: 0; transform: translateX(-34px); } }
@@ -465,10 +465,12 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         @keyframes tn-b2 { to { transform: translate(-36px, -26px); } }
         .tn-blob1 { animation: tn-b1 14s ease-in-out infinite alternate; }
         .tn-blob2 { animation: tn-b2 18s ease-in-out infinite alternate; }
-        .tn { position: relative; transform-style: preserve-3d; -webkit-tap-highlight-color: transparent;
-          transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+        .tn { position: relative; transform-style: flat; -webkit-tap-highlight-color: transparent; transform: none;
           transition: transform .35s cubic-bezier(.22,.61,.36,1), opacity .3s, scale .3s, border-color .3s;
           animation: tn-rise .6s cubic-bezier(.22,.61,.36,1) calc(var(--i, 0) * 70ms + 120ms) backwards; }
+        /* 3D only while the pointer is on the tile (data-3d is kept ~400ms after leave so the tile
+           eases back to flat before it stops being preserve-3d, no snap). */
+        .tn[data-3d] { transform-style: preserve-3d; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
         .tn[data-track] { transition: transform .08s linear, opacity .3s, scale .3s, border-color .3s; }
         .tn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
           background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(232,160,32,.22), transparent 60%);
@@ -478,15 +480,18 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         .tn-ripple { position: absolute; width: 20px; height: 20px; border-radius: 50%;
           background: radial-gradient(circle, rgba(232,160,32,.55), rgba(232,160,32,0) 70%);
           animation: tn-ripple .6s ease-out forwards; }
-        .tn-icon { position: relative; transform: translateZ(26px); align-self: flex-start; line-height: 0;
-          animation: tn-icon-in .7s cubic-bezier(.22,.61,.36,1) calc(var(--i, 0) * 70ms + 120ms) backwards; }
+        .tn-icon { position: relative; isolation: isolate; align-self: flex-start; line-height: 0; transition: transform .25s cubic-bezier(.22,.61,.36,1);
+          animation: tn-icon-in .5s ease-out calc(var(--i, 0) * 70ms + 120ms) backwards; }
         .tn-icon::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; pointer-events: none; z-index: -1;
           background: radial-gradient(circle, rgba(232,160,32,.5), transparent 68%);
           opacity: 0; scale: .6; transition: opacity .35s, scale .35s; }
         .tn[data-track] .tn-icon::before { opacity: 1; scale: 1; }
-        .tn-label { transform: translateZ(14px); }
-        .tn-sub { transform: translateZ(8px); }
+        .tn-label, .tn-sub { transition: transform .25s cubic-bezier(.22,.61,.36,1); }
+        .tn[data-track] .tn-icon { transform: translateZ(26px); }
+        .tn[data-track] .tn-label { transform: translateZ(14px); }
+        .tn[data-track] .tn-sub { transform: translateZ(8px); }
         .tn-surprise { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); animation-duration: .6s; animation-delay: .75s; }
+        .tn-surprise[data-3d] { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: flat; }
         .tn-surprise:active { scale: .98; }
         .tn-surprise .tn-fx::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
           background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
