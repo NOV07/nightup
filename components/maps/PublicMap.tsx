@@ -47,6 +47,9 @@ const CSS = `
 .nightup-public-map .nm-pin.is-selected .nm-pin-dot { transform: scale(1.18); border: 3px solid #FFFFFF; }
 .nightup-public-map .nm-pin:focus-visible { outline: none; }
 .nightup-public-map .nm-pin:focus-visible .nm-pin-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
+.nightup-public-map .nm-user-wrap { background: none; border: none; pointer-events: none; }
+.nightup-public-map .nm-user-halo { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(76,141,255,0.22); }
+.nightup-public-map .nm-user-dot { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; box-sizing: border-box; border-radius: 50%; background: #4C8DFF; border: 2.5px solid #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
 .nightup-public-map .leaflet-bar { border: 1px solid rgba(255,255,255,0.14); box-shadow: none; }
 .nightup-public-map .leaflet-bar a { background: #111120; color: #E8A020; border-bottom-color: rgba(255,255,255,0.12); }
 .nightup-public-map .leaflet-bar a:hover, .nightup-public-map .leaflet-bar a:focus { background: #1b1b30; color: #E8A020; }
@@ -101,9 +104,11 @@ type Props = {
   statusById?: Record<string, SpotStatus>
   /** Pixels the corner notices (two-finger hint, tile banner) move down, to leave room for an overlay on the map. */
   topInset?: number
+  /** Where the person is (only while "Near me" is on) and the radius to frame, or null for none. Never stored. */
+  userLocation?: { lat: number; lng: number; radiusKm: number | null } | null
 }
 
-export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0 }: Props) {
+export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0, userLocation = null }: Props) {
   const { t } = useLanguage()
   const elRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -111,10 +116,15 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   const markersRef = useRef<Map<string, { marker: L.Marker; el: HTMLButtonElement }>>(new Map())
   const onSelectRef = useRef(onSelect)
   const fitKeyRef = useRef<string | null>(null)
+  const userOnRef = useRef(false)
   const [tilesFailed, setTilesFailed] = useState(false)
   const [coarse, setCoarse] = useState(false)
 
   useEffect(() => { onSelectRef.current = onSelect })
+  const userLat = userLocation?.lat ?? null
+  const userLng = userLocation?.lng ?? null
+  const userRadius = userLocation?.radiusKm ?? null
+  useEffect(() => { userOnRef.current = userLat !== null && userLng !== null })
 
   // Create the map once.
   useEffect(() => {
@@ -194,7 +204,8 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
 
     // Frame the visible points when the set changes (filters), not on selection.
     const key = points.map(p => p.id).sort().join('|')
-    if (key !== fitKeyRef.current && points.length > 0) {
+    // While "Near me" is on the view follows the person and the radius instead (effect below).
+    if (key !== fitKeyRef.current && points.length > 0 && !userOnRef.current) {
       fitKeyRef.current = key
       if (points.length === 1) map.setView([points[0].lat, points[0].lng], FIT_MAX_ZOOM)
       else map.fitBounds(L.latLngBounds(points.map(p => [p.lat, p.lng] as L.LatLngTuple)), { padding: [60, 60], maxZoom: FIT_MAX_ZOOM })
@@ -217,6 +228,22 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
       map.panInside(sel.marker.getLatLng(), { paddingTopLeft: [40, 40], paddingBottomRight: [40, sheet ? 380 : 40] })
     }
   }, [selectedId, points])
+
+  // "Near me": a blue dot with a soft halo, an optional dashed circle of the radius, and the view framed on it.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || userLat === null || userLng === null) return
+    const group = L.layerGroup().addTo(map)
+    const icon = L.divIcon({ className: 'nm-user-wrap', html: '<span class="nm-user-halo"></span><span class="nm-user-dot"></span>', iconSize: [40, 40], iconAnchor: [20, 20] })
+    L.marker([userLat, userLng], { icon, interactive: false, keyboard: false, zIndexOffset: -500 }).addTo(group)
+    if (userRadius !== null) {
+      const circle = L.circle([userLat, userLng], { radius: userRadius * 1000, color: '#F5B335', weight: 1.5, dashArray: '6 6', fillColor: '#F5B335', fillOpacity: 0.04, interactive: false }).addTo(group)
+      map.fitBounds(circle.getBounds(), { padding: [24, 24] })
+    } else {
+      map.setView([userLat, userLng], 13)
+    }
+    return () => { group.remove() }
+  }, [userLat, userLng, userRadius])
 
   function retryTiles() {
     setTilesFailed(false)

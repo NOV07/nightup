@@ -14,6 +14,9 @@ import { DAY_NAMES } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
 import { formatNightLabel } from "../lib/mapDate";
 import { useAthensNow } from "../lib/useAthensNow";
+import { useUserLocation } from "../lib/useUserLocation";
+import { NEAR_RADII, filterByRadius, isFarFromData, joinQuery, parseNear, serializeNear, type NearState } from "../lib/mapNear";
+import type { TranslationKey } from "../lib/translations";
 import { MapDateBar, MapGroupBar, MapGroupPanel, MapLegend, type PanelHandlers } from "./MapFilterPanel";
 import MapCard from "./MapCard";
 
@@ -29,6 +32,16 @@ const CSS = `
 .nm-crumb a { color: #A9ABC0; text-decoration: none; display: inline-flex; align-items: center; min-height: 24px; }
 .nm-crumb a:hover { color: #fff; }
 .nm-controls { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 0 16px 10px; max-width: 792px; width: 100%; box-sizing: border-box; }
+.nm-near { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.nm-near-btn { min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #3A3A55; background: #1A1A28; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+.nm-near-btn[aria-pressed="true"] { background: rgba(76,141,255,0.16); border-color: #4C8DFF; }
+.nm-near-btn:disabled { opacity: 0.7; cursor: progress; }
+.nm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.nm-chip { min-height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid #3A3A55; background: transparent; color: #D5D6E3; font-size: 13px; font-weight: 600; cursor: pointer; }
+.nm-chip[aria-pressed="true"] { background: #E8A020; border-color: #E8A020; color: #0F0F1A; }
+.nm-near-msg { margin: 0; display: flex; align-items: flex-start; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 8px; background: #1A1A28; border: 1px solid #3A3A55; font-size: 13px; line-height: 1.4; color: #D5D6E3; }
+.nm-near-msg span { flex: 1; padding-top: 2px; }
+.nm-near-msg button { flex: none; width: 32px; height: 32px; border: 0; background: transparent; color: #A9ABC0; cursor: pointer; }
 .nm-panel { flex: none; max-height: 38vh; overflow-y: auto; box-sizing: border-box; padding: 10px 16px 12px; }
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
@@ -67,6 +80,12 @@ const CSS = `
 }
 `;
 
+/** The filters and the "Near me" part share the URL; the position never does. */
+function writeUrl(filters: MapFilters, near: NearState) {
+  const qs = joinQuery(serializeFilters(filters), serializeNear(near));
+  window.history.replaceState(window.history.state, "", qs ? `/map?${qs}` : "/map");
+}
+
 const DAY_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const NONE: MapPoint[] = [];
@@ -79,6 +98,12 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   const [filters, setFilters] = useState<MapFilters>(() => parseFilters(searchParams));
   const [open, setOpen] = useState<GroupKey | null>(() => parseOpenGroup(searchParams));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // "Near me": whether it is on and the radius live in the URL (near=1&r=3), never the position.
+  // From a link it only gets the button ready; the position is asked when the button is pressed.
+  const [near, setNearState] = useState<NearState>(() => parseNear(searchParams));
+  const loc = useUserLocation();
+  const filtersRef = useRef(filters);
+  const nearRef = useRef(near);
   const cardRef = useRef<HTMLDivElement>(null);
   const lastPicked = useRef<string | null>(null);
 
@@ -107,8 +132,14 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
       next = { ...raw, night: c.night === c.tonight ? null : c.night };
     }
     setFilters(next);
-    const qs = serializeFilters(next);
-    window.history.replaceState(window.history.state, "", qs ? `/map?${qs}` : "/map");
+    writeUrl(next, nearRef.current);
+  }, []);
+
+  useEffect(() => { filtersRef.current = filters; nearRef.current = near; });
+  const setNear = useCallback((next: NearState) => {
+    nearRef.current = next;
+    setNearState(next);
+    writeUrl(filtersRef.current, next);
   }, []);
 
   // "Now" is read in the browser (this page is cached on the server): the night, the status of
@@ -117,8 +148,14 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   const resolved = useMemo(() => (ctx ? resolvePoints(points, filters, ctx) : null), [points, filters, ctx]);
   const visible = resolved?.visible ?? NONE;
 
+  // "Near me" is active once the position is known and it is not far outside the area of the map.
+  const here = near.on && loc.status === "granted" && loc.lat !== null && loc.lng !== null ? { lat: loc.lat, lng: loc.lng } : null;
+  const tooFar = here ? isFarFromData(points, here) : false;
+  const userPos = here && !tooFar ? here : null;
+  const shown = useMemo(() => (userPos ? filterByRadius(visible, userPos, near.radius) : visible), [visible, userPos, near.radius]);
+
   // A pin that a filter has hidden cannot stay open.
-  const selected = visible.find((p) => p.id === selectedId) ?? null;
+  const selected = shown.find((p) => p.id === selectedId) ?? null;
 
   const pick = useCallback((id: string | null) => {
     setSelectedId(id);
@@ -149,6 +186,18 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedKey, close]);
 
+  const pressNear = () => {
+    if (near.on && loc.status === "granted") { setNear({ ...near, on: false }); loc.reset(); return; }
+    setNear({ ...near, on: true });
+    loc.requestLocation();
+  };
+  const dismissNear = () => { setNear({ ...near, on: false }); loc.reset(); };
+  const nearMsg: TranslationKey | null = !near.on ? null
+    : loc.status === "unsupported" ? "map_near_unsupported"
+    : loc.status === "denied" ? (loc.errorCode === 1 ? "map_near_denied" : "map_near_unavailable")
+    : tooFar ? "map_near_far" : null;
+  const locating = near.on && loc.status === "loading";
+
   const handlers: PanelHandlers = {
     onToggleEventType: (k) => update(toggleEventType(filters, k)),
     onToggleGenre: (k) => update(toggleEventGenre(filters, k)),
@@ -165,6 +214,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   // but has nothing to show with the current filters, it is "no results" instead.
   const showHint = !empty && !anyLit;
   const noMatch = !empty && anyLit && !!resolved && visible.length === 0;
+  const nearNone = !!userPos && visible.length > 0 && shown.length === 0;
   // How many points each group would show, lit or not (the numbers of the group boxes use the same).
   const counts = resolved?.counts ?? null;
 
@@ -195,15 +245,38 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
             if (next.filters !== filters) update(next.filters);
             setOpen(next.open);
           }} />
+        <div className="nm-near">
+          <button type="button" className="nm-near-btn" data-testid="near-me" aria-pressed={!!userPos} disabled={locating} aria-busy={locating} onClick={pressNear}>
+            {t("map_near_me")}
+          </button>
+          {userPos && (
+            <div className="nm-chips" role="group" aria-label={t("map_near_radius")}>
+              {NEAR_RADII.map((r) => (
+                <button key={String(r)} type="button" className="nm-chip" aria-pressed={near.radius === r} data-testid={`near-r-${r}`}
+                  onClick={() => setNear({ ...near, radius: r })}>
+                  {r === "all" ? t("map_near_all") : `${r} ${t("map_unit_km")}`}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {locating && <p className="nm-near-msg" role="status" data-testid="near-loading"><span>{t("map_near_loading")}</span></p>}
+        {nearMsg && (
+          <p className="nm-near-msg" role="status" data-testid="near-msg">
+            <span>{t(nearMsg)}</span>
+            <button type="button" onClick={dismissNear} aria-label={t("map_near_dismiss")}>✕</button>
+          </p>
+        )}
       </div>
       <MapGroupPanel group={open} filters={filters} id={panelId} handlers={handlers} />
 
       <div className="nm-body">
         <div className="nm-stage">
-          <PublicMap points={visible} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40} />
+          <PublicMap points={shown} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40}
+            userLocation={userPos ? { ...userPos, radiusKm: near.radius === "all" ? null : near.radius } : null} />
 
           <div className="nm-count" data-testid="map-counter" role="status">
-            {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}` : "…"}
+            {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}${userPos ? ` · ${shown.length} ${t("map_near_in_range")}` : ""}` : "…"}
           </div>
 
           {showHint && <div className="nm-hint" role="status" data-testid="map-empty-hint">{t("map_pick_layers")}</div>}
@@ -216,6 +289,10 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
               <p>{t("map_no_results")}</p>
               {hasFilters(filters) && <button type="button" onClick={() => update(clearAllFilters(filters))}>{t("map_clear_filters")}</button>}
             </div>
+          )}
+
+          {nearNone && (
+            <div className="nm-overlay" role="status" data-testid="near-none"><p>{t("map_near_none")}</p></div>
           )}
 
           {selected && <MapCard ref={cardRef} point={selected} status={status} hoursLine={hoursLine} onClose={close} />}
