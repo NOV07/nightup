@@ -18,8 +18,9 @@ function Icon({ point, status }: { point: MapPoint; status?: SpotStatus }) {
  * The same points as the map, as a list. A tap opens the same card. Venues say if they are open,
  * and when a position is known every row says how far it is (the list is then nearest first).
  */
-export default function MapList({ points, statusById, here, selectedId, onPick }: {
+export default function MapList({ points, closingSoon, statusById, here, selectedId, onPick }: {
   points: readonly MapPoint[];
+  closingSoon: ReadonlySet<string>;
   statusById?: Record<string, SpotStatus>;
   here: LatLng | null;
   selectedId: string | null;
@@ -52,6 +53,7 @@ export default function MapList({ points, statusById, here, selectedId, onPick }
               </span>
               <span className="nm-row-side">
                 {st && <span className={`nm-row-status is-${st}`}>{statusText(st)}</span>}
+                {closingSoon.has(p.id) && <span className="nm-row-soon" data-testid="map-list-soon">{t("map_closing_soon")}</span>}
                 {distanceKm !== null && <span className="nm-row-dist" data-testid="map-list-dist">{formatDistance(distanceKm, units, locale)}</span>}
               </span>
             </button>

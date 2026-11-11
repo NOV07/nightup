@@ -10,7 +10,7 @@ import {
   setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupPanel, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
   type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
-import { DAY_NAMES } from "../lib/openingHours";
+import { DAY_NAMES, closesSoon } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
 import { formatNightLabel } from "../lib/mapDate";
 import { useAthensNow } from "../lib/useAthensNow";
@@ -64,6 +64,7 @@ const CSS = `
 .nm-row-status { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: #2A2A38; color: #D5D6E3; }
 .nm-row-status.is-open { background: #1B3A2C; color: #34D399; }
 .nm-row-status.is-closed { color: #A9ABC0; }
+.nm-row-soon { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: rgba(245,179,53,0.16); color: #F5B335; }
 .nm-row-dist { font-size: 12px; color: #A9ABC0; }
 .nm-panel { flex: none; max-height: 38vh; overflow-y: auto; box-sizing: border-box; padding: 10px 16px 12px; }
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
@@ -177,6 +178,16 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   const tooFar = here ? isFarFromData(points, here) : false;
   const userPos = here && !tooFar ? here : null;
   const shown = useMemo(() => (userPos ? filterByRadius(visible, userPos, near.radius) : visible), [visible, userPos, near.radius]);
+
+  // "Closing soon": only for tonight, an open venue that closes within 90 minutes (Athens time, read from its hours).
+  const closingSoon = useMemo(() => {
+    const ids = new Set<string>();
+    if (!ctx || !resolved || ctx.night !== ctx.tonight) return ids;
+    for (const p of shown) {
+      if (p.kind === "spot" && resolved.status[p.id] === "open" && closesSoon(p.hours, ctx.moment.date, ctx.moment.minutes)) ids.add(p.id);
+    }
+    return ids;
+  }, [shown, resolved, ctx]);
 
   // A pin that a filter has hidden cannot stay open.
   const selected = shown.find((p) => p.id === selectedId) ?? null;
@@ -304,7 +315,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           <PublicMap points={shown} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40}
             userLocation={userPos ? { ...userPos, radiusKm: near.radius === "all" ? null : near.radius } : null} />
           </div>
-          {view === "list" && <MapList points={shown} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />}
+          {view === "list" && <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />}
 
           <div className="nm-count" data-testid="map-counter" role="status">
             {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}${userPos ? ` · ${shown.length} ${t("map_near_in_range")}` : ""}` : "…"}
@@ -326,7 +337,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
             <div className="nm-overlay" role="status" data-testid="near-none"><p>{t("map_near_none")}</p></div>
           )}
 
-          {selected && <MapCard ref={cardRef} point={selected} status={status} hoursLine={hoursLine} onClose={close} />}
+          {selected && <MapCard ref={cardRef} point={selected} status={status} closingSoon={!!selected && closingSoon.has(selected.id)} hoursLine={hoursLine} onClose={close} />}
         </div>
       </div>
 

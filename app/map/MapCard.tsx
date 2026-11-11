@@ -35,7 +35,7 @@ const STATUS_STYLE: Record<SpotStatus, { bg: string; fg: string }> = {
 };
 
 /** `status` and `hoursLine` ("Τρίτη: 18:00-1:30") are for venues: read from their published hours at the picked night. */
-const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatus; hoursLine?: string | null; onClose: () => void }>(function MapCard({ point, status, hoursLine, onClose }, ref) {
+const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatus; closingSoon?: boolean; hoursLine?: string | null; onClose: () => void }>(function MapCard({ point, status, closingSoon, hoursLine, onClose }, ref) {
   const { t, lang } = useLanguage();
   const primary = point.categories[0];
   const labels = [
@@ -119,6 +119,9 @@ const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatu
               <span style={{ ...badge, background: STATUS_STYLE[status].bg, color: STATUS_STYLE[status].fg, fontWeight: 600 }}>
                 {t(status === "open" ? "map_spot_open" : status === "closed" ? "map_spot_closed" : "map_spot_unknown")}
               </span>
+              {closingSoon && (
+                <span data-testid="map-card-soon" style={{ ...badge, background: "rgba(245,179,53,0.16)", color: "#F5B335", fontWeight: 600 }}>{t("map_closing_soon")}</span>
+              )}
               {hoursLine && <span style={{ fontSize: 13, color: "#A9ABC0" }}>{hoursLine}</span>}
             </div>
           )}
