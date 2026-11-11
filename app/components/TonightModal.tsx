@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import SpotCard from "./SpotCard";
 import { MOODS, loc, type Spot } from "../spots/types";
@@ -42,7 +42,7 @@ function buildNight(all: Spot[], mood: string): Spot[] {
   return pickSequence(all, moodSequence(mood), true);
 }
 
-// Tile/button with the tilt (useTilt), a gold glare, a draw-once on its icon and a ripple on click.
+// Tile/button with the tilt (useTilt), a gold glare and a ripple on click.
 // The ripple lives in its own overflow:hidden wrapper so the tile itself keeps preserve-3d.
 function TiltTile({ className = "", style, index = 0, max = 8, dim, pop, onPress, onActivate, children }: {
   className?: string; style?: React.CSSProperties; index?: number; max?: number;
@@ -53,27 +53,6 @@ function TiltTile({ className = "", style, index = 0, max = 8, dim, pop, onPress
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-
-  // Draw-once: strokes of the category icon draw themselves a single time, then the inline
-  // dash styles are removed so the final icon is exactly the original, never clipped.
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || reducedMotion()) return;
-    el.querySelectorAll<SVGGeometryElement>(".tn-icon svg :is(path, line, circle, rect, polyline)").forEach((sh) => {
-      if (typeof sh.getTotalLength !== "function") return;
-      let len = 0;
-      try { len = sh.getTotalLength(); } catch { return; }
-      if (!len) return;
-      const st = sh.style;
-      st.strokeDasharray = `${len}`;
-      st.strokeDashoffset = `${len}`;
-      st.animation = `tn-draw .9s cubic-bezier(.22,.61,.36,1) ${index * 70 + 380}ms both`;
-      sh.addEventListener("animationend", () => {
-        st.animation = ""; st.strokeDasharray = ""; st.strokeDashoffset = "";
-      }, { once: true });
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const click = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (timer.current) return;
@@ -390,7 +369,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
               </div>
             </Link>
           )}
-          <div key={`btn-${nightKey}`} className="tn-appear" style={{ display: "flex", gap: 10, marginTop: 22, "--d": "3200ms" } as React.CSSProperties}>
+          <div key={`btn-${nightKey}`} className="tn-appear tn-actions" style={{ "--d": "300ms" } as React.CSSProperties}>
             <button onClick={reroll} style={S.btnGhost}>{t("tonight_reroll")}</button>
             <button onClick={keepNight} style={S.btnGold}>{copied ? t("tonight_copied") : t("tonight_keep")}</button>
           </div>
@@ -460,7 +439,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes tn-rise { from { opacity: 0; transform: translateY(18px) rotateX(-14deg); } to { opacity: 1; transform: none; } }
-        @keyframes tn-draw { 0% { opacity: 0; } 1% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 1; } }
+        @keyframes tn-icon-in { from { opacity: 0; scale: .55; translate: 0 6px; } }
+        @keyframes tn-glow-once { 0% { opacity: 0; } 40% { opacity: .9; } 100% { opacity: 0; } }
         @keyframes tn-in-fwd { from { opacity: 0; transform: translateX(34px); } }
         @keyframes tn-in-back { from { opacity: 0; transform: translateX(-34px); } }
         @keyframes tn-out-fwd { to { opacity: 0; transform: translateX(-34px); } }
@@ -499,10 +479,12 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         .tn-ripple { position: absolute; width: 20px; height: 20px; border-radius: 50%;
           background: radial-gradient(circle, rgba(232,160,32,.55), rgba(232,160,32,0) 70%);
           animation: tn-ripple .6s ease-out forwards; }
-        .tn-icon { position: relative; transform: translateZ(26px); align-self: flex-start; line-height: 0; }
+        .tn-icon { position: relative; transform: translateZ(26px); align-self: flex-start; line-height: 0;
+          animation: tn-icon-in .55s cubic-bezier(.34,1.45,.5,1) calc(var(--i, 0) * 70ms + 380ms) both; }
         .tn-icon::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; pointer-events: none; z-index: -1;
           background: radial-gradient(circle, rgba(232,160,32,.5), transparent 68%);
-          opacity: 0; scale: .6; transition: opacity .35s, scale .35s; }
+          opacity: 0; scale: .6; transition: opacity .35s, scale .35s;
+          animation: tn-glow-once 1s ease calc(var(--i, 0) * 70ms + 380ms) backwards; }
         .tn[data-track] .tn-icon::before { opacity: 1; scale: 1; }
         .tn-label { transform: translateZ(14px); }
         .tn-sub { transform: translateZ(8px); }
@@ -525,6 +507,9 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         .tn-chip { animation: tn-chip-in .45s cubic-bezier(.22,.61,.36,1) calc(var(--i, 0) * 55ms + 120ms) backwards; }
         .tn-chip-pop { animation: tn-chip-pop .2s ease; }
         @media (hover: hover) { .tn-chip:not(:disabled):hover { border-color: rgba(232,160,32,.55) !important; color: #E8A020 !important; } }
+        .tn-actions { position: sticky; bottom: 0; z-index: 3; display: flex; gap: 10px; margin: 8px -24px 0;
+          padding: 28px 24px calc(14px + env(safe-area-inset-bottom));
+          background: linear-gradient(to bottom, rgba(10,10,18,0), #0A0A12 38%); }
         .tn-walk { display: flex; gap: 10px; align-items: stretch; margin: 6px 0 6px 6px; min-height: 30px; }
         .tn-walk-line { width: 2px; border-radius: 2px; background: linear-gradient(to bottom, #E8A020, rgba(232,160,32,.15));
           transform-origin: top; animation: tn-line .6s cubic-bezier(.22,.61,.36,1) var(--d, 0ms) backwards; }
@@ -537,9 +522,8 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         @media (hover: hover) { .tn-mood:hover { border-color: rgba(232,160,32,.55) !important; transform: translateY(-3px); } }
         @media (prefers-reduced-motion: reduce) {
           .tn-enter, .tn-card, .tn-appear, .tn-chip, .tn-chip-pop, .tn-walk-line, .tn-walk-txt, .tn-overlay, .tn-sheet, .tn-mood,
-          .tn-icon::before, .tn-icon svg * { animation: none !important; transition: none !important; }
+          .tn-icon, .tn-icon::before { animation: none !important; transition: none !important; }
           .tn-leave { display: none !important; }
-          .tn-icon svg * { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; }
           .tn, .tn *, .tn::after, .tn-blob1, .tn-blob2 { animation: none !important; transition: none !important; }
           .tn { transform: none !important; opacity: 1 !important; scale: none !important; }
           .tn-icon, .tn-label, .tn-sub { transform: none !important; }
