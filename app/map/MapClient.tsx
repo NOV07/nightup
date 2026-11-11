@@ -19,6 +19,7 @@ import { NEAR_RADII, filterByRadius, isFarFromData, joinQuery, parseNear, serial
 import type { TranslationKey } from "../lib/translations";
 import { MapDateBar, MapGroupBar, MapGroupPanel, MapLegend, type PanelHandlers } from "./MapFilterPanel";
 import MapCard from "./MapCard";
+import MapList from "./MapList";
 
 // Leaflet touches `window`, so the map itself only loads in the browser.
 const PublicMap = dynamic(() => import("@/components/maps/PublicMap"), {
@@ -42,6 +43,28 @@ const CSS = `
 .nm-near-msg { margin: 0; display: flex; align-items: flex-start; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 8px; background: #1A1A28; border: 1px solid #3A3A55; font-size: 13px; line-height: 1.4; color: #D5D6E3; }
 .nm-near-msg span { flex: 1; padding-top: 2px; }
 .nm-near-msg button { flex: none; width: 32px; height: 32px; border: 0; background: transparent; color: #A9ABC0; cursor: pointer; }
+.nm-seg { margin-left: auto; display: inline-flex; border: 1px solid #3A3A55; border-radius: 8px; overflow: hidden; }
+.nm-seg button { min-height: 44px; padding: 0 16px; border: 0; background: #1A1A28; color: #D5D6E3; font-size: 14px; font-weight: 600; cursor: pointer; }
+.nm-seg button[aria-pressed="true"] { background: #E8A020; color: #0F0F1A; }
+.nm-map-layer { position: absolute; inset: 0; }
+.nm-map-layer.is-hidden { visibility: hidden; pointer-events: none; }
+.nm-list { position: absolute; inset: 0; margin: 0; padding: 48px 0 12px; list-style: none; overflow-y: auto; overscroll-behavior: contain; }
+.nm-row { width: 100%; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: transparent; border: 0; border-bottom: 1px solid #1E1E32; color: #fff; text-align: left; cursor: pointer; font: inherit; }
+.nm-row:hover, .nm-row[aria-pressed="true"] { background: #1A1A28; }
+.nm-ico { flex: none; box-sizing: border-box; width: 38px; height: 38px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); display: flex; align-items: center; justify-content: center; font-size: 19px; line-height: 1; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+.nm-ico.is-closed { background: #6B6B80; }
+.nm-ico.is-closed span { filter: grayscale(1); opacity: 0.85; }
+.nm-ico.is-unknown { background: rgba(15,15,26,0.78); border-color: #E8A020; }
+.nm-ico.is-radar { box-shadow: 0 0 0 3px rgba(245,179,53,0.3), 0 2px 6px rgba(0,0,0,0.5); }
+.nm-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nm-row-name { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.nm-row-sub { font-size: 13px; color: #A9ABC0; overflow-wrap: anywhere; }
+.nm-row-radar { align-self: flex-start; font-size: 11px; font-weight: 600; color: #F5B335; }
+.nm-row-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 42%; text-align: right; }
+.nm-row-status { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: #2A2A38; color: #D5D6E3; }
+.nm-row-status.is-open { background: #1B3A2C; color: #34D399; }
+.nm-row-status.is-closed { color: #A9ABC0; }
+.nm-row-dist { font-size: 12px; color: #A9ABC0; }
 .nm-panel { flex: none; max-height: 38vh; overflow-y: auto; box-sizing: border-box; padding: 10px 16px 12px; }
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
@@ -101,6 +124,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   // "Near me": whether it is on and the radius live in the URL (near=1&r=3), never the position.
   // From a link it only gets the button ready; the position is asked when the button is pressed.
   const [near, setNearState] = useState<NearState>(() => parseNear(searchParams));
+  const [view, setView] = useState<"map" | "list">("map");
   const loc = useUserLocation();
   const filtersRef = useRef(filters);
   const nearRef = useRef(near);
@@ -176,7 +200,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     const id = lastPicked.current;
     setSelectedId(null);
     // Give focus back to the pin the card came from.
-    if (id) requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-pin="${CSS_ESCAPE(id)}"]`)?.focus());
+    if (id) requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-pin="${CSS_ESCAPE(id)}"], [data-list-item="${CSS_ESCAPE(id)}"]`)?.focus());
   }, []);
 
   useEffect(() => {
@@ -259,6 +283,10 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
               ))}
             </div>
           )}
+          <div className="nm-seg" role="group" aria-label={t("map_view_label")}>
+            <button type="button" aria-pressed={view === "map"} data-testid="view-map" onClick={() => setView("map")}>{t("map_view_map")}</button>
+            <button type="button" aria-pressed={view === "list"} data-testid="view-list" onClick={() => setView("list")}>{t("map_view_list")}</button>
+          </div>
         </div>
         {locating && <p className="nm-near-msg" role="status" data-testid="near-loading"><span>{t("map_near_loading")}</span></p>}
         {nearMsg && (
@@ -272,8 +300,11 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
       <div className="nm-body">
         <div className="nm-stage">
+          <div className={`nm-map-layer${view === "list" ? " is-hidden" : ""}`} aria-hidden={view === "list" ? true : undefined}>
           <PublicMap points={shown} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40}
             userLocation={userPos ? { ...userPos, radiusKm: near.radius === "all" ? null : near.radius } : null} />
+          </div>
+          {view === "list" && <MapList points={shown} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />}
 
           <div className="nm-count" data-testid="map-counter" role="status">
             {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}${userPos ? ` · ${shown.length} ${t("map_near_in_range")}` : ""}` : "…"}
