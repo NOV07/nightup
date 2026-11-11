@@ -15,7 +15,7 @@ import { weekdayIndex } from "../lib/dateKey";
 import { formatNightLabel } from "../lib/mapDate";
 import { useAthensNow } from "../lib/useAthensNow";
 import { useUserLocation } from "../lib/useUserLocation";
-import { NEAR_RADII, filterByRadius, isFarFromData, joinQuery, parseNear, serializeNear, type NearState } from "../lib/mapNear";
+import { filterByRadius, nextRadius, isFarFromData, joinQuery, parseNear, serializeNear, type NearState } from "../lib/mapNear";
 import type { TranslationKey } from "../lib/translations";
 import { MapDateBar, MapGroupRows, MapLegend, type PanelHandlers } from "./MapFilterPanel";
 import MapSheet from "./MapSheet";
@@ -36,15 +36,6 @@ const CSS = `
 .nm-crumb a:hover { color: #fff; }
 .nm-controls { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 0 16px 10px; max-width: 792px; width: 100%; box-sizing: border-box; }
 .nm-near { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.nm-near-btn { min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #3A3A55; background: #1A1A28; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
-.nm-near-btn[aria-pressed="true"] { background: rgba(76,141,255,0.16); border-color: #4C8DFF; }
-.nm-near-btn:disabled { opacity: 0.7; cursor: progress; }
-.nm-chips { order: 3; flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 6px; }
-.nm-chip { min-height: 34px; padding: 0 14px; border-radius: 18px; border: 1px solid #3A3A55; background: transparent; color: #D5D6E3; font-size: 13px; font-weight: 600; cursor: pointer; }
-.nm-chip[aria-pressed="true"] { background: #E8A020; border-color: #E8A020; color: #0F0F1A; }
-.nm-near-msg { margin: 0; display: flex; align-items: flex-start; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 8px; background: #1A1A28; border: 1px solid #3A3A55; font-size: 13px; line-height: 1.4; color: #D5D6E3; }
-.nm-near-msg span { flex: 1; padding-top: 2px; }
-.nm-near-msg button { flex: none; width: 32px; height: 32px; border: 0; background: transparent; color: #A9ABC0; cursor: pointer; }
 .nm-seg { order: 2; margin-left: auto; display: inline-flex; border: 1px solid #3A3A55; border-radius: 8px; overflow: hidden; }
 .nm-seg button { min-height: 44px; padding: 0 16px; border: 0; background: #1A1A28; color: #D5D6E3; font-size: 14px; font-weight: 600; cursor: pointer; }
 .nm-seg button[aria-pressed="true"] { background: #E8A020; color: #0F0F1A; }
@@ -73,6 +64,14 @@ const CSS = `
 .nm-body { flex: 1; min-height: 300px; display: flex; padding: 0 16px; }
 .nm-stage { flex: 1; min-width: 0; position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: #12121F; border: 1px solid #1E1E32; }
 .nm-count { position: absolute; z-index: 1000; left: 10px; top: 10px; max-width: calc(100% - 72px); box-sizing: border-box; padding: 6px 10px; border-radius: 8px; background: rgba(15,15,26,0.92); border: 1px solid #3A3A55; font-size: 12px; line-height: 1.35; color: #fff; pointer-events: none; }
+.nm-round { position: absolute; z-index: 1000; bottom: 12px; width: 48px; height: 48px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.nm-round:disabled { opacity: 0.7; cursor: progress; }
+.nm-loc { right: 12px; }
+.nm-loc[aria-pressed="true"] { border-color: #4C9AFF; background: rgba(76,154,255,0.2); }
+.nm-rad { position: absolute; z-index: 1000; right: 12px; bottom: 68px; height: 34px; padding: 0 14px; border-radius: 17px; background: rgba(15,15,26,0.94); border: 1px solid #4C9AFF; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.nm-toast { position: absolute; z-index: 1250; left: 12px; right: 12px; bottom: 72px; max-width: 420px; display: flex; align-items: flex-start; gap: 8px; box-sizing: border-box; padding: 10px 8px 10px 14px; border-radius: 10px; background: #1A1A28; border: 1px solid #3A3A55; box-shadow: 0 4px 16px rgba(0,0,0,0.5); font-size: 13px; line-height: 1.4; color: #D5D6E3; }
+.nm-toast span { flex: 1; padding-top: 3px; }
+.nm-toast button { flex: none; width: 32px; height: 32px; border: 0; background: transparent; color: #A9ABC0; cursor: pointer; }
 .nm-fbtn { position: absolute; z-index: 1000; left: 12px; top: 12px; max-width: calc(100% - 76px); height: 44px; padding: 0 16px; border-radius: 22px; display: flex; align-items: center; gap: 8px; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); white-space: nowrap; }
 .nm-fbtn > span:first-child { overflow: hidden; text-overflow: ellipsis; }
 .nm-fbtn.is-active { border-color: #E8A020; }
@@ -106,7 +105,7 @@ const CSS = `
 }
 .nm-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #D5D6E3; }
 .nm-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.nm-card { position: absolute; z-index: 1100; left: 20px; bottom: 20px; width: 340px; max-width: calc(100% - 40px); max-height: calc(100% - 40px); overflow-y: auto; box-sizing: border-box; background: #1A1A28; border-radius: 8px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); outline: none; }
+.nm-card { position: absolute; z-index: 1100; left: 20px; bottom: 72px; width: 340px; max-width: calc(100% - 40px); max-height: calc(100% - 150px); overflow-y: auto; box-sizing: border-box; background: #1A1A28; border-radius: 8px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); outline: none; }
 .nm-card-handle { display: none; }
 .nm-card-close { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #A9ABC0; cursor: pointer; }
 .nm-card-close:hover { color: #fff; }
@@ -127,9 +126,9 @@ const CSS = `
      (--mobile-radio-bar-height, plus the home-indicator inset): the map takes what the bars and the
      legend leave, and the legend ends right above the player instead of under it. */
   .nm-root { min-height: calc(100dvh - 57px - var(--mobile-radio-bar-height, 54px) - env(safe-area-inset-bottom, 0px)); }
-  .nm-card { left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 62%; border-radius: 8px 8px 0 0; padding: 10px 16px 20px; box-shadow: 0 -8px 24px rgba(0,0,0,0.45); }
-  .nm-card-handle { display: block; width: 36px; height: 4px; border-radius: 2px; background: #3A3A55; margin: 0 auto 14px; }
-  .nm-card-close { top: 14px; }
+  /* The card sits above the two round buttons (48px + 12px + 12px), so they stay visible and tappable. */
+  .nm-card { left: 12px; right: 12px; bottom: 72px; width: auto; max-width: none; max-height: calc(100% - 150px); border-radius: 12px; padding: 14px 16px 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.45); }
+  .nm-card-close { top: 8px; }
   .nm-cta { min-height: 48px; }
 }
 `;
@@ -143,6 +142,8 @@ function writeUrl(filters: MapFilters, near: NearState) {
 const DAY_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const NONE: MapPoint[] = [];
+/** How long a Near me message stays. */
+const TOAST_MS = 6000;
 
 export default function MapClient({ points }: { points: MapPoint[] }) {
   const { t, lang } = useLanguage();
@@ -251,17 +252,27 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedKey, close]);
 
+  // A second press turns Near me off. The messages are a toast that goes away by itself.
+  const [presses, setPresses] = useState(0);
+  const [dismissedToken, setDismissedToken] = useState<string | null>(null);
   const pressNear = () => {
+    setPresses((n) => n + 1);
     if (near.on && loc.status === "granted") { setNear({ ...near, on: false }); loc.reset(); return; }
     setNear({ ...near, on: true });
     loc.requestLocation();
   };
-  const dismissNear = () => { setNear({ ...near, on: false }); loc.reset(); };
   const nearMsg: TranslationKey | null = !near.on ? null
     : loc.status === "unsupported" ? "map_near_unsupported"
     : loc.status === "denied" ? (loc.errorCode === 1 ? "map_near_denied" : "map_near_unavailable")
     : tooFar ? "map_near_far" : null;
   const locating = near.on && loc.status === "loading";
+  const toastToken = nearMsg ? `${nearMsg}:${presses}` : null;
+  useEffect(() => {
+    if (!toastToken) return;
+    const id = setTimeout(() => setDismissedToken(toastToken), TOAST_MS);
+    return () => clearTimeout(id);
+  }, [toastToken]);
+  const toast = nearMsg && dismissedToken !== toastToken ? nearMsg : null;
 
   const openSheet = () => { setSelectedId(null); setSheetOpen(true); };
   const closeSheet = useCallback(() => setSheetOpen(false), []);
@@ -316,31 +327,11 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
       <div className="nm-controls">
         <div className="nm-near">
-          <button type="button" className="nm-near-btn" data-testid="near-me" aria-pressed={!!userPos} disabled={locating} aria-busy={locating} onClick={pressNear}>
-            {t("map_near_me")}
-          </button>
-          {userPos && (
-            <div className="nm-chips" role="group" aria-label={t("map_near_radius")}>
-              {NEAR_RADII.map((r) => (
-                <button key={String(r)} type="button" className="nm-chip" aria-pressed={near.radius === r} data-testid={`near-r-${r}`}
-                  onClick={() => setNear({ ...near, radius: r })}>
-                  {r === "all" ? t("map_near_all") : `${r} ${t("map_unit_km")}`}
-                </button>
-              ))}
-            </div>
-          )}
           <div className="nm-seg" role="group" aria-label={t("map_view_label")}>
             <button type="button" aria-pressed={view === "map"} data-testid="view-map" onClick={() => setView("map")}>{t("map_view_map")}</button>
             <button type="button" aria-pressed={view === "list"} data-testid="view-list" onClick={() => setView("list")}>{t("map_view_list")}</button>
           </div>
         </div>
-        {locating && <p className="nm-near-msg" role="status" data-testid="near-loading"><span>{t("map_near_loading")}</span></p>}
-        {nearMsg && (
-          <p className="nm-near-msg" role="status" data-testid="near-msg">
-            <span>{t(nearMsg)}</span>
-            <button type="button" onClick={dismissNear} aria-label={t("map_near_dismiss")}>✕</button>
-          </p>
-        )}
       </div>
 
       <div className="nm-body">
@@ -376,6 +367,23 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
           {nearNone && (
             <div className="nm-overlay" role="status" data-testid="near-none"><p>{t("map_near_none")}</p></div>
+          )}
+
+          {userPos && !selected && (
+            <button type="button" className="nm-rad" data-testid="near-radius" onClick={() => setNear({ ...near, radius: nextRadius(near.radius) })}
+              aria-label={`${t("map_near_radius")}: ${near.radius === "all" ? t("map_near_all") : `${near.radius} ${t("map_unit_km")}`}. ${t("map_near_radius_change")}`}>
+              {near.radius === "all" ? t("map_near_all") : `${near.radius} ${t("map_unit_km")}`}
+            </button>
+          )}
+          <button type="button" className="nm-round nm-loc" data-testid="near-me" aria-label={t("map_near_aria")} aria-pressed={!!userPos}
+            aria-busy={locating} disabled={locating} onClick={pressNear}>
+            <span aria-hidden="true">📍</span>
+          </button>
+          {(locating || toast) && (
+            <div className="nm-toast" role="status" data-testid={locating ? "near-loading" : "near-msg"}>
+              <span>{locating ? t("map_near_loading") : t(toast!)}</span>
+              {toast && <button type="button" onClick={() => setDismissedToken(toastToken)} aria-label={t("map_near_dismiss")}>✕</button>}
+            </div>
           )}
 
           {selected && <MapCard ref={cardRef} point={selected} status={status} closingSoon={!!selected && closingSoon.has(selected.id)} hoursLine={hoursLine} onClose={close} />}
