@@ -74,6 +74,10 @@ const CSS = `
 .nm-right > * { pointer-events: auto; }
 .nm-round { flex: none; width: 48px; height: 48px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 .nm-round:disabled { opacity: 0.7; cursor: progress; }
+.nm-loc.is-locating { position: relative; border-color: #4C9AFF; opacity: 1; }
+.nm-loc.is-locating::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px dashed rgba(76,154,255,0.7); pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) { .nm-loc.is-locating::after { border-style: solid; border-color: rgba(76,154,255,0.25); border-top-color: #4C9AFF; animation: nm-spin 0.9s linear infinite; } }
+@keyframes nm-spin { to { transform: rotate(360deg); } }
 .nm-loc[aria-pressed="true"] { border-color: #4C9AFF; background: rgba(76,154,255,0.2); }
 .nm-rad { height: 34px; padding: 0 14px; border-radius: 17px; background: rgba(15,15,26,0.94); border: 1px solid #4C9AFF; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .nm-toast { display: flex; align-items: flex-start; gap: 8px; box-sizing: border-box; padding: 10px 8px 10px 14px; border-radius: 10px; background: #1A1A28; border: 1px solid #3A3A55; box-shadow: 0 4px 16px rgba(0,0,0,0.5); font-size: 13px; line-height: 1.4; color: #D5D6E3; }
@@ -375,7 +379,7 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
                     {near.radius === "all" ? t("map_near_all") : `${near.radius} ${t("map_unit_km")}`}
                   </button>
                 )}
-                <button type="button" className="nm-round nm-loc" data-testid="near-me" aria-label={t("map_near_aria")} aria-pressed={!!userPos}
+                <button type="button" className={`nm-round nm-loc${locating ? " is-locating" : ""}`} data-testid="near-me" aria-label={t("map_near_aria")} aria-pressed={!!userPos}
                   aria-busy={locating} disabled={locating} onClick={pressNear}>
                   <span aria-hidden="true">📍</span>
                 </button>

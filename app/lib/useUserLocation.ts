@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { locate } from "./locate";
 
 export type UserLocationStatus = "idle" | "loading" | "granted" | "denied" | "unsupported";
 
@@ -22,44 +23,48 @@ export function useUserLocation(): UserLocationState {
   const [status, setStatus] = useState<UserLocationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<number | null>(null);
-  const requestId = useRef(0);
+  // The request in flight: a newer request or a reset cancels it, so an old answer is never used.
+  const cancelRef = useRef<(() => void) | null>(null);
 
   const requestLocation = useCallback(() => {
+    cancelRef.current?.();
+    cancelRef.current = null;
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setStatus("unsupported");
       return;
     }
 
-    const id = ++requestId.current;
     setStatus("loading");
     setError(null);
     setErrorCode(null);
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (id !== requestId.current) return;
-        setLat(pos.coords.latitude);
-        setLng(pos.coords.longitude);
+    // Up to two tries (see app/lib/locate.ts): a cached or network position first, then GPS.
+    cancelRef.current = locate(navigator.geolocation, (r) => {
+      cancelRef.current = null;
+      if (r.ok) {
+        setLat(r.lat);
+        setLng(r.lng);
         setStatus("granted");
-      },
-      (err) => {
-        if (id !== requestId.current) return;
-        setError(err.message);
-        setErrorCode(err.code);
+      } else {
+        setError(r.message);
+        setErrorCode(r.code);
         setStatus("denied");
-      },
-      { timeout: 8000, enableHighAccuracy: false }
-    );
+      }
+    });
   }, []);
 
   const reset = useCallback(() => {
-    requestId.current++;
+    cancelRef.current?.();
+    cancelRef.current = null;
     setLat(null);
     setLng(null);
     setStatus("idle");
     setError(null);
     setErrorCode(null);
   }, []);
+
+  // Leaving the page cancels a request still on its way.
+  useEffect(() => () => { cancelRef.current?.(); }, []);
 
   return { lat, lng, status, error, errorCode, requestLocation, reset };
 }
