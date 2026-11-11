@@ -325,14 +325,15 @@ test('a sub whose category is not selected is dropped', () => assert.deepEqual(p
 test('a date alone keeps every group shown', () => assert.deepEqual(parse('date=2026-11-13'), { ...NO_FILTERS, night: '2026-11-13' }))
 
 console.log('URL: old links and the buttons keep working')
-test('the buttons of /events and /spots still have the links this test is about', () => {
-  assert.ok(readFileSync(new URL('../app/events/EventsClient.tsx', import.meta.url), 'utf8').includes('href="/map?events=1"'))
-  assert.ok(readFileSync(new URL('../app/spots/SpotsClient.tsx', import.meta.url), 'utf8').includes('href="/map?show=spots&open=spots"'))
+test('the rows of /events and /spots build their link with the helper (not by hand) and keep their test ids', () => {
+  const ev = readFileSync(new URL('../app/events/EventsClient.tsx', import.meta.url), 'utf8'), sp = readFileSync(new URL('../app/spots/SpotsClient.tsx', import.meta.url), 'utf8')
+  assert.ok(ev.includes('eventsMapHref(') && ev.includes('testId="events-open-map"') && !/href="\/map/.test(ev))
+  assert.ok(sp.includes('spotsMapHref(') && sp.includes('testId="spots-open-map"') && !/href="\/map/.test(sp))
 })
-test('?events=1 (the button on /events, and the old switch): only Events is shown, its dock focus opens, no filter', () => {
+test('?events=1 (the old button on /events, and the old switch): only Events is shown, its dock focus opens, no filter', () => {
   assert.deepEqual(parse('events=1'), { ...NO_FILTERS, shown: ['events'] }); assert.equal(parseOpenGroup(new URLSearchParams('events=1')), 'events')
 })
-test('?show=spots&open=spots (the button on /spots): only Spots is shown, the dock opens on Spots', () => {
+test('?show=spots&open=spots (the old button on /spots): only Spots is shown, the dock opens on Spots', () => {
   assert.deepEqual(parse('show=spots&open=spots'), { ...NO_FILTERS, shown: ['spots'] }); assert.equal(parseOpenGroup(new URLSearchParams('show=spots&open=spots')), 'spots')
 })
 test('show (the previous scheme) shows only its groups and wins over hide and over the filters', () => {
