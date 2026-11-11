@@ -1,9 +1,10 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
-import { mapPointColor, MAP_CLOSED_COLOR } from '@/app/lib/mapColors'
+import { mapEmojiOf } from '@/app/lib/mapEmoji'
+import { CLUSTER_MAX_ZOOM, CLUSTER_RADIUS_PX, clusterPoints } from '@/app/lib/mapCluster'
 import type { MapPoint } from '@/app/lib/mapFilters'
 import type { SpotStatus } from '@/app/lib/openingHours'
 import type { TranslationKey } from '@/app/lib/translations'
@@ -21,25 +22,41 @@ const ATTRIBUTION = '<a href="https://www.openstreetmap.org/copyright" target="_
 const TILE_ERRORS_BEFORE_NOTICE = 5
 
 // Pin = a real <button> (Enter/Space/Tab work natively) with a 44px hit area and
-// a smaller visible shape: circle for wellness, rounded square for venues,
-// diamond for events. A venue shows its status: filled in its category colour =
-// open, grey = closed, an empty outline in its category colour = no readable hours.
+// one round 34px marker inside it: gold gradient with the point's emoji. A venue
+// shows its status: gold = open, grey with a grey-scale emoji = closed, a dark
+// see-through disc with a gold outline = no readable hours. Events and wellness
+// points are always "active" (normal gold).
 const CSS = `
 .nightup-public-map .leaflet-container { background: #16162a; font-family: inherit; }
 .nightup-public-map .leaflet-tile { outline: 1px solid transparent; }
 .nightup-public-map .nm-pin-wrap { background: none; border: none; }
-.nightup-public-map .nm-pin { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 28px; height: 28px; border: 3px solid #0F0F1A; box-shadow: 0 2px 5px rgba(0,0,0,0.55); transition: width .12s, height .12s, border-color .12s; }
-.nightup-public-map .nm-pin-dot.is-round { border-radius: 50%; }
-.nightup-public-map .nm-pin-dot.is-square { width: 26px; height: 26px; border-radius: 7px; }
-.nightup-public-map .nm-pin-dot.is-unknown { background: transparent !important; border-color: var(--pin-color); box-shadow: none; }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-unknown { border-color: #FFFFFF; background: var(--pin-color) !important; }
-.nightup-public-map .nm-pin-dot.is-diamond { width: 22px; height: 22px; border-radius: 4px; transform: rotate(45deg); }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot { width: 42px; height: 42px; border: 4px solid #FFFFFF; }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-diamond { width: 32px; height: 32px; }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-square { width: 40px; height: 40px; }
+.nightup-public-map .nm-pin { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); box-shadow: 0 2px 6px rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1; transition: transform .12s, border-color .12s; }
+.nightup-public-map .nm-pin-ring { display: none; position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; box-sizing: border-box; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #F5B335; pointer-events: none; opacity: 0; }
+.nightup-public-map .has-radar .nm-pin-ring { display: block; }
+/* Radar blip: two thin rings that grow to 1.45x the marker and fade. Without motion: a still, soft halo. */
+.nightup-public-map .has-radar .nm-pin-ring.r1 { opacity: 0.4; transform: scale(1.3); }
+@media (prefers-reduced-motion: no-preference) {
+  .nightup-public-map .has-radar .nm-pin-ring { animation: nm-blip 2.2s ease-out infinite; }
+  .nightup-public-map .has-radar .nm-pin-ring.r2 { animation-delay: 0.9s; }
+}
+@keyframes nm-blip { 0% { transform: scale(1); opacity: 0.75; } 100% { transform: scale(1.45); opacity: 0; } }
+.nightup-public-map .nm-pin-emoji { display: block; pointer-events: none; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.nightup-public-map .nm-pin-dot.is-closed { background: #6B6B80; }
+.nightup-public-map .nm-pin-dot.is-closed .nm-pin-emoji { filter: grayscale(1); opacity: 0.85; }
+.nightup-public-map .nm-pin-dot.is-unknown { background: rgba(15,15,26,0.78); border-color: #E8A020; }
+.nightup-public-map .nm-pin.is-selected .nm-pin-dot { transform: scale(1.18); border: 3px solid #FFFFFF; }
+.nightup-public-map .nm-cluster { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.nightup-public-map .nm-cluster .nm-pin-ring { width: 38px; height: 38px; margin: -19px 0 0 -19px; }
+.nightup-public-map .nm-cluster-dot { box-sizing: border-box; min-width: 38px; height: 38px; padding: 0 6px; border-radius: 19px; border: 2.5px solid #F5B335; background: #1A1A28; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(245,179,53,0.22), 0 2px 6px rgba(0,0,0,0.55); pointer-events: none; }
+.nightup-public-map .nm-cluster:focus-visible { outline: none; }
+.nightup-public-map .nm-cluster:focus-visible .nm-cluster-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
 .nightup-public-map .nm-pin:focus-visible { outline: none; }
 .nightup-public-map .nm-pin:focus-visible .nm-pin-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
+.nightup-public-map .nm-user-wrap { background: none; border: none; pointer-events: none; }
+.nightup-public-map .nm-user-halo { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(76,141,255,0.22); }
+.nightup-public-map .nm-user-dot { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; box-sizing: border-box; border-radius: 50%; background: #4C8DFF; border: 2.5px solid #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+@media (pointer: coarse) { .nightup-public-map.is-quiet .leaflet-control-zoom { display: none; } }
 .nightup-public-map .leaflet-bar { border: 1px solid rgba(255,255,255,0.14); box-shadow: none; }
 .nightup-public-map .leaflet-bar a { background: #111120; color: #E8A020; border-bottom-color: rgba(255,255,255,0.12); }
 .nightup-public-map .leaflet-bar a:hover, .nightup-public-map .leaflet-bar a:focus { background: #1b1b30; color: #E8A020; }
@@ -49,14 +66,13 @@ const CSS = `
 
 const STATUS_LABEL: Record<SpotStatus, TranslationKey> = { open: 'map_spot_open', closed: 'map_spot_closed', unknown: 'map_spot_unknown' }
 
-/** Colours and label of a pin. Called for new pins and again when the status of an existing one changes. */
+/** Look and label of a pin. Called for new pins and again when the status of an existing one changes. */
 function paintPin(el: HTMLButtonElement, p: MapPoint, status: SpotStatus | undefined, label: (k: TranslationKey) => string) {
-  const dot = el.firstElementChild as HTMLElement
-  const color = mapPointColor(p)
+  const dot = el.querySelector('.nm-pin-dot') as HTMLElement
   const st = p.kind === 'spot' ? status : undefined
+  el.classList.toggle('has-radar', p.event?.radar === true)
+  dot.classList.toggle('is-closed', st === 'closed')
   dot.classList.toggle('is-unknown', st === 'unknown')
-  dot.style.background = st === 'closed' ? MAP_CLOSED_COLOR : color
-  dot.style.setProperty('--pin-color', color)
   el.setAttribute('aria-label', st ? `${p.name}, ${label(STATUS_LABEL[st])}` : p.name)
 }
 
@@ -67,9 +83,20 @@ function makePinElement(p: MapPoint): HTMLButtonElement {
   b.dataset.pin = p.id
   b.setAttribute('aria-label', p.name)
   b.setAttribute('aria-pressed', 'false')
+  // Radar blip rings (shown only for radar picks, see .has-radar), under the marker.
+  for (const n of ['r1', 'r2']) {
+    const ring = document.createElement('span')
+    ring.className = `nm-pin-ring ${n}`
+    ring.setAttribute('aria-hidden', 'true')
+    b.appendChild(ring)
+  }
   const dot = document.createElement('span')
-  dot.className = `nm-pin-dot ${p.kind === 'wellness' ? 'is-round' : p.kind === 'event' ? 'is-diamond' : 'is-square'}`
+  dot.className = 'nm-pin-dot'
   dot.setAttribute('aria-hidden', 'true')
+  const emoji = document.createElement('span')
+  emoji.className = 'nm-pin-emoji'
+  emoji.textContent = mapEmojiOf(p)
+  dot.appendChild(emoji)
   b.appendChild(dot)
   return b
 }
@@ -84,9 +111,13 @@ type Props = {
   statusById?: Record<string, SpotStatus>
   /** Pixels the corner notices (two-finger hint, tile banner) move down, to leave room for an overlay on the map. */
   topInset?: number
+  /** The full-screen map page: no zoom buttons on touch screens and the two-finger hint only appears when a finger is put on the map. */
+  quiet?: boolean
+  /** Where the person is (only while "Near me" is on) and the radius to frame, or null for none. Never stored. */
+  userLocation?: { lat: number; lng: number; radiusKm: number | null } | null
 }
 
-export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0 }: Props) {
+export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0, userLocation = null, quiet = false }: Props) {
   const { t } = useLanguage()
   const elRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -94,10 +125,74 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   const markersRef = useRef<Map<string, { marker: L.Marker; el: HTMLButtonElement }>>(new Map())
   const onSelectRef = useRef(onSelect)
   const fitKeyRef = useRef<string | null>(null)
+  const userOnRef = useRef(false)
+  const clustersRef = useRef<Map<string, L.Marker>>(new Map())
+  const pointsRef = useRef<readonly MapPoint[]>(points)
+  const selectedRef = useRef<string | null>(selectedId)
+  const tRef = useRef(t)
   const [tilesFailed, setTilesFailed] = useState(false)
   const [coarse, setCoarse] = useState(false)
+  const [hint, setHint] = useState(false)
 
-  useEffect(() => { onSelectRef.current = onSelect })
+  useEffect(() => { onSelectRef.current = onSelect; tRef.current = t })
+
+  // Which points are drawn as their own pin and which are folded into a cluster at this zoom.
+  // Pin markers are kept (just taken off the map) so a pin keeps its element; cluster markers are
+  // reused while their members stay the same.
+  const syncMarkers = useCallback(() => {
+    const map = mapRef.current
+    if (!map) return
+    const zoom = map.getZoom()
+    const items = pointsRef.current.map(p => {
+      const px = map.project([p.lat, p.lng], zoom)
+      return { id: p.id, x: px.x, y: px.y, lat: p.lat, lng: p.lng, solo: p.event?.radar === true || p.id === selectedRef.current, radar: p.event?.radar === true }
+    })
+    const { singles, clusters } = zoom > CLUSTER_MAX_ZOOM
+      ? { singles: items.map(i => i.id), clusters: [] }
+      : clusterPoints(items, CLUSTER_RADIUS_PX)
+    const single = new Set(singles)
+    for (const [id, m] of markersRef.current) {
+      if (single.has(id)) { if (!map.hasLayer(m.marker)) m.marker.addTo(map) }
+      else m.marker.remove()
+    }
+    const want = new Set(clusters.map(c => c.key))
+    for (const [key, m] of clustersRef.current) {
+      if (!want.has(key)) { m.remove(); clustersRef.current.delete(key) }
+    }
+    for (const c of clusters) {
+      if (clustersRef.current.has(c.key)) continue
+      const b = document.createElement('button')
+      b.type = 'button'
+      b.className = c.radar ? 'nm-cluster has-radar' : 'nm-cluster'
+      if (c.radar) {
+        for (const n of ['r1', 'r2']) {
+          const ring = document.createElement('span')
+          ring.className = `nm-pin-ring ${n}`
+          ring.setAttribute('aria-hidden', 'true')
+          b.appendChild(ring)
+        }
+      }
+      b.setAttribute('aria-label', `${c.ids.length} ${tRef.current('map_cluster_aria')}`)
+      const dot = document.createElement('span')
+      dot.className = 'nm-cluster-dot'
+      dot.setAttribute('aria-hidden', 'true')
+      dot.textContent = String(c.ids.length)
+      b.appendChild(dot)
+      const marker = L.marker([c.lat, c.lng], { icon: L.divIcon({ className: 'nm-pin-wrap', html: b, iconSize: [44, 44], iconAnchor: [22, 22] }), keyboard: false, riseOnHover: true }).addTo(map)
+      marker.on('click', () => {
+        const members = c.ids.map(id => markersRef.current.get(id)?.marker.getLatLng()).filter((x): x is L.LatLng => !!x)
+        if (members.length === 0) return
+        const bounds = L.latLngBounds(members)
+        if (bounds.getNorthEast().equals(bounds.getSouthWest())) map.setView(bounds.getCenter(), Math.min(map.getZoom() + 2, 19))
+        else map.fitBounds(bounds, { padding: [60, 60], maxZoom: 18 })
+      })
+      clustersRef.current.set(c.key, marker)
+    }
+  }, [])
+  const userLat = userLocation?.lat ?? null
+  const userLng = userLocation?.lng ?? null
+  const userRadius = userLocation?.radiusKm ?? null
+  useEffect(() => { userOnRef.current = userLat !== null && userLng !== null })
 
   // Create the map once.
   useEffect(() => {
@@ -138,17 +233,31 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     tilesRef.current = tiles
 
     map.on('click', () => onSelectRef.current(null))
+    // Quiet mode: the two-finger hint shows for a moment when one finger touches the map, not at rest.
+    let hintTimer: ReturnType<typeof setTimeout> | undefined
+    const onTouch = (e: TouchEvent) => {
+      if (!isCoarse || e.touches.length !== 1) return
+      setHint(true)
+      clearTimeout(hintTimer)
+      hintTimer = setTimeout(() => setHint(false), 2500)
+    }
+    el.addEventListener('touchstart', onTouch, { passive: true })
+    map.on('zoomend', syncMarkers)
 
     const ro = new ResizeObserver(() => map.invalidateSize())
     ro.observe(el)
     mapRef.current = map
     const markers = markersRef.current
+    const clusters = clustersRef.current
     return () => {
+      el.removeEventListener('touchstart', onTouch)
+      clearTimeout(hintTimer)
       ro.disconnect()
       map.remove()
       mapRef.current = null
       tilesRef.current = null
       markers.clear()
+      clusters.clear()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -158,6 +267,7 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
+    pointsRef.current = points
     const markers = markersRef.current
     const wanted = new Set(points.map(p => p.id))
     for (const [id, m] of markers) {
@@ -170,14 +280,16 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
       paintPin(el, p, statusById?.[p.id], t)
       const icon = L.divIcon({ className: 'nm-pin-wrap', html: el, iconSize: [44, 44], iconAnchor: [22, 22] })
       // keyboard:false -> the inner <button> is the only tab stop.
-      const marker = L.marker([p.lat, p.lng], { icon, keyboard: false, riseOnHover: true }).addTo(map)
+      const marker = L.marker([p.lat, p.lng], { icon, keyboard: false, riseOnHover: true })
       marker.on('click', () => onSelectRef.current(p.id))
       markers.set(p.id, { marker, el })
     }
+    syncMarkers()
 
     // Frame the visible points when the set changes (filters), not on selection.
     const key = points.map(p => p.id).sort().join('|')
-    if (key !== fitKeyRef.current && points.length > 0) {
+    // While "Near me" is on the view follows the person and the radius instead (effect below).
+    if (key !== fitKeyRef.current && points.length > 0 && !userOnRef.current) {
       fitKeyRef.current = key
       if (points.length === 1) map.setView([points[0].lat, points[0].lng], FIT_MAX_ZOOM)
       else map.fitBounds(L.latLngBounds(points.map(p => [p.lat, p.lng] as L.LatLngTuple)), { padding: [60, 60], maxZoom: FIT_MAX_ZOOM })
@@ -187,6 +299,8 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
 
   // Selected pin: bigger with a white outline; bring the point into view.
   useEffect(() => {
+    selectedRef.current = selectedId
+    syncMarkers()
     for (const [id, { marker, el }] of markersRef.current) {
       const on = id === selectedId
       el.classList.toggle('is-selected', on)
@@ -199,7 +313,23 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
       const sheet = window.matchMedia('(max-width: 767px)').matches
       map.panInside(sel.marker.getLatLng(), { paddingTopLeft: [40, 40], paddingBottomRight: [40, sheet ? 380 : 40] })
     }
-  }, [selectedId, points])
+  }, [selectedId, points, syncMarkers])
+
+  // "Near me": a blue dot with a soft halo, an optional dashed circle of the radius, and the view framed on it.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || userLat === null || userLng === null) return
+    const group = L.layerGroup().addTo(map)
+    const icon = L.divIcon({ className: 'nm-user-wrap', html: '<span class="nm-user-halo"></span><span class="nm-user-dot"></span>', iconSize: [40, 40], iconAnchor: [20, 20] })
+    L.marker([userLat, userLng], { icon, interactive: false, keyboard: false, zIndexOffset: 400 }).addTo(group)
+    if (userRadius !== null) {
+      const circle = L.circle([userLat, userLng], { radius: userRadius * 1000, color: '#F5B335', weight: 1.5, dashArray: '6 6', fillColor: '#F5B335', fillOpacity: 0.04, interactive: false }).addTo(group)
+      map.fitBounds(circle.getBounds(), { padding: [24, 24] })
+    } else {
+      map.setView([userLat, userLng], 13)
+    }
+    return () => { group.remove() }
+  }, [userLat, userLng, userRadius])
 
   function retryTiles() {
     setTilesFailed(false)
@@ -207,19 +337,19 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
   }
 
   return (
-    <div className="nightup-public-map" style={{ position: 'absolute', inset: 0 }}>
+    <div className={`nightup-public-map${quiet ? ' is-quiet' : ''}`} style={{ position: 'absolute', inset: 0 }}>
       <style>{CSS}</style>
       <div ref={elRef} role="application" aria-label={ariaLabel ?? t('map_aria')} data-testid="public-map"
         style={{ position: 'absolute', inset: 0 }} />
-      {coarse && (
-        <p style={{ position: 'absolute', left: 12, top: 10 + topInset, zIndex: 500, margin: 0, padding: '4px 8px', borderRadius: 6, background: 'rgba(15,15,26,0.8)', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>
+      {coarse && (!quiet || hint) && (
+        <p role={quiet ? 'status' : undefined} style={{ position: 'absolute', left: 12, top: 10 + topInset, zIndex: 500, margin: 0, padding: '4px 8px', borderRadius: 6, background: 'rgba(15,15,26,0.8)', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>
           {t('spot_map_two_fingers')}
         </p>
       )}
       {tilesFailed && (
         // A banner, not a cover: the pins keep working when the tiles do not load.
         <div role="alert" style={{
-          position: 'absolute', left: 12, right: 72, top: (coarse ? 52 : 10) + topInset, zIndex: 1000, maxWidth: 420,
+          position: 'absolute', left: 12, right: 72, top: (coarse && !quiet ? 52 : 10) + topInset, zIndex: 1000, maxWidth: 420,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
           backgroundColor: 'rgba(15,15,26,0.94)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
           color: 'rgba(255,255,255,0.8)', fontSize: 13, padding: '6px 6px 6px 12px',

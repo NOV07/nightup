@@ -75,7 +75,7 @@ export async function getEventPoints(): Promise<MapPoint[]> {
     const window = eventLoadWindow(new Date())
     const { data, error } = await getSupabase()
       .from('events')
-      .select('id, title, image_url, has_copyright_restriction, date, time, venue, city, lat, lng, type, genres, genre')
+      .select('id, title, image_url, has_copyright_restriction, date, time, venue, city, lat, lng, type, genres, genre, is_radar_pick')
       .eq('status', 'approved')
       .gte('date', window.from)
       .lte('date', window.to)

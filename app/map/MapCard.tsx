@@ -35,7 +35,7 @@ const STATUS_STYLE: Record<SpotStatus, { bg: string; fg: string }> = {
 };
 
 /** `status` and `hoursLine` ("Τρίτη: 18:00-1:30") are for venues: read from their published hours at the picked night. */
-const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatus; hoursLine?: string | null; onClose: () => void }>(function MapCard({ point, status, hoursLine, onClose }, ref) {
+const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatus; closingSoon?: boolean; hoursLine?: string | null; onClose: () => void }>(function MapCard({ point, status, closingSoon, hoursLine, onClose }, ref) {
   const { t, lang } = useLanguage();
   const primary = point.categories[0];
   const labels = [
@@ -60,6 +60,11 @@ const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatu
           </div>
         )}
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 6, paddingRight: 36 }}>
+          {point.event?.radar && (
+            <span data-testid="map-card-radar" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", minHeight: 22, padding: "0 8px", borderRadius: 6, background: "rgba(245,179,53,0.14)", border: "1px solid rgba(245,179,53,0.45)", color: "#F5B335", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }}>
+              {t("map_radar_badge")}
+            </span>
+          )}
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, lineHeight: 1.2, overflowWrap: "anywhere" }}>{point.name}</h2>
           {point.event ? (
             <>
@@ -114,6 +119,9 @@ const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatu
               <span style={{ ...badge, background: STATUS_STYLE[status].bg, color: STATUS_STYLE[status].fg, fontWeight: 600 }}>
                 {t(status === "open" ? "map_spot_open" : status === "closed" ? "map_spot_closed" : "map_spot_unknown")}
               </span>
+              {closingSoon && (
+                <span data-testid="map-card-soon" style={{ ...badge, background: "rgba(245,179,53,0.16)", color: "#F5B335", fontWeight: 600 }}>{t("map_closing_soon")}</span>
+              )}
               {hoursLine && <span style={{ fontSize: 13, color: "#A9ABC0" }}>{hoursLine}</span>}
             </div>
           )}

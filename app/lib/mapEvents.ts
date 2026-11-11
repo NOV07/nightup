@@ -30,6 +30,7 @@ export type EventPointRow = {
   type?: unknown
   genres?: unknown
   genre?: unknown
+  is_radar_pick?: unknown
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -66,6 +67,7 @@ export function eventToPoint(row: EventPointRow, window: { from: string; to: str
       venue: typeof row.venue === 'string' && row.venue ? row.venue : null,
       type: eventTypeOf(row.type),
       genres: eventGenresOf(row),
+      radar: row.is_radar_pick === true,
     },
   }
 }

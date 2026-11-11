@@ -122,3 +122,65 @@ export function spotStatusAt(
   if (prev === undefined || prev === null) return min < UNREADABLE_TAIL_MINUTES ? 'unknown' : 'closed'
   return 'closed'
 }
+
+/** A spot that closes within this many minutes is "closing soon" on the map. */
+export const CLOSING_SOON_MINUTES = 90
+
+/**
+ * Minutes from `minutes` of the calendar day `date` until the spot closes, or
+ * null when it is not certainly open then (closed, unreadable, no hours) or
+ * never closes (24 h every day). Same input rules as spotStatusAt: `minutes`
+ * may run past 1440 (the early hours of the night). Shifts that end after
+ * midnight count, and a shift that ends at midnight and a next day that opens
+ * at 00:00 are one continuous stay.
+ */
+export function minutesUntilClose(
+  hours: Record<string, unknown> | null | undefined,
+  date: string,
+  minutes: number,
+): number | null {
+  if (spotStatusAt(hours, date, minutes) !== 'open' || !hours) return null
+
+  let day = date
+  let min = Math.floor(minutes)
+  while (min >= 1440) { min -= 1440; day = addDaysKey(day, 1) }
+
+  // `from` = minutes since 00:00 of `day`; `offset` = minutes from the asked moment to 00:00 of `day`.
+  let from = min
+  let offset = -min
+  let chained: number | null = null // the midnight we have reached, if the shift runs on into the next day
+  for (let i = 0; i < 8; i++) {
+    const idx = weekdayIndex(day)
+    const today = lookupDay(hours, idx)
+    const prev = lookupDay(hours, (idx + 6) % 7)
+    let end = -1
+    if (prev && prev.kind === 'open') {
+      for (const r of prev.ranges) if (r.close > 1440 && from < r.close - 1440) end = Math.max(end, r.close - 1440)
+    }
+    if (today && today.kind === 'open') {
+      for (const r of today.ranges) if (from >= r.open && from < r.close) end = Math.max(end, r.close)
+    }
+    if (end < 0) return chained
+    // Ends at midnight and the next day opens at 00:00: keep going.
+    if (end === 1440) {
+      day = addDaysKey(day, 1)
+      offset += 1440
+      chained = offset
+      from = 0
+      continue
+    }
+    return offset + end
+  }
+  return null
+}
+
+/** Open now and closing in `within` minutes or less (default CLOSING_SOON_MINUTES). */
+export function closesSoon(
+  hours: Record<string, unknown> | null | undefined,
+  date: string,
+  minutes: number,
+  within: number = CLOSING_SOON_MINUTES,
+): boolean {
+  const left = minutesUntilClose(hours, date, minutes)
+  return left !== null && left > 0 && left <= within
+}

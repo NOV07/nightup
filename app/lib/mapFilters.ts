@@ -59,13 +59,15 @@ export type MapPoint = {
     type: EventType
     /** Genre keys (app/lib/genres.ts), may be empty. */
     genres: string[]
+    /** Picked for Nightup Radar by the admin (events.is_radar_pick). */
+    radar: boolean
   }
   /** Spots only: the published opening hours (day name -> text), or null. */
   hours?: Record<string, string> | null
 }
 
 export type MapFilters = {
-  /** Groups whose layer is on (what the map draws). Empty by default: an empty map. */
+  /** Groups whose layer is on (what the map draws), in display order. All three by default; never empty (an empty list means all). */
   shown: GroupKey[]
   /** The picked night (YYYY-MM-DD); null = tonight, whatever the clock says. */
   night: string | null
@@ -82,7 +84,7 @@ export type MapFilters = {
 }
 
 export const NO_FILTERS: MapFilters = {
-  shown: [], night: null, evTypes: [], evGenres: [], spotStatus: 'all', categories: [], subcategories: [], wellnessSubs: [],
+  shown: [...GROUPS], night: null, evTypes: [], evGenres: [], spotStatus: 'all', categories: [], subcategories: [], wellnessSubs: [],
 }
 
 /** The categories a Spots filter can pick: all of them but wellness. */
@@ -112,7 +114,9 @@ type Raw = {
 /** Drops what cannot stand (unknown keys, duplicates, subs whose category is off) and puts the rest in display order. */
 export function normalizeFilters(input: Raw): MapFilters {
   const shownSet = new Set(input.shown ?? [])
-  const shown = GROUPS.filter(g => shownSet.has(g))
+  // Nothing shown is not a state the map has: it falls back to every group.
+  const picked = GROUPS.filter(g => shownSet.has(g))
+  const shown = picked.length ? picked : [...GROUPS]
 
   const typeSet = new Set(input.evTypes ?? [])
   const evTypes = EVENT_TYPES.filter(t => typeSet.has(t))
@@ -156,15 +160,22 @@ export function toggleGroupShown(f: MapFilters, g: GroupKey): MapFilters {
 export function showGroup(f: MapFilters, g: GroupKey): MapFilters {
   return f.shown.includes(g) ? f : normalizeFilters({ ...f, shown: [...f.shown, g] })
 }
-// Picking a filter in a group lights it; taking one off, or choosing «all», changes nothing about the layer.
+// Picking a filter in a group that is off lights it (see toggleEventType and the like); taking one off, or
+// choosing «all», changes nothing about the layer.
+
+/** What has the focus in the dock: the date row, a group's filters, or nothing. UI only (not in the URL). */
+export type DockFocus = 'date' | GroupKey | null
+
 /**
- * A tap on the NAME of a group: its panel opens or closes, and opening it lights the group if it is off.
- * Closing the panel leaves the group as it is (it never turns a layer off). The dot is the only way to
- * switch a layer off; see toggleGroupShown.
+ * A tap on a group chip of the dock. With every group shown, it shows ONLY that group (and focuses it).
+ * Otherwise: an off group is turned on and focused; a shown group without the focus gets it; a shown
+ * group that has the focus is hidden (and when that hides the last one, every group is back).
  */
-export function toggleGroupPanel(f: MapFilters, open: GroupKey | null, g: GroupKey): { filters: MapFilters; open: GroupKey | null } {
-  if (open === g) return { filters: f, open: null }
-  return { filters: showGroup(f, g), open: g }
+export function tapGroup(f: MapFilters, focus: DockFocus, g: GroupKey): { filters: MapFilters; focus: DockFocus } {
+  if (f.shown.length === GROUPS.length) return { filters: normalizeFilters({ ...f, shown: [g] }), focus: g }
+  if (!f.shown.includes(g)) return { filters: showGroup(f, g), focus: g }
+  if (focus !== g) return { filters: f, focus: g }
+  return { filters: toggleGroupShown(f, g), focus: null }
 }
 export const toggleEventType = (f: MapFilters, t: EventType): MapFilters => {
   const n = normalizeFilters({ ...f, evTypes: flip(f.evTypes, t) })
@@ -282,14 +293,15 @@ export function resolvePoints(points: readonly MapPoint[], f: MapFilters, ctx: M
 }
 
 // ── URL ─────────────────────────────────────────────────────────────────────
-//   ?show=events,spots  &c=drink,food  &s=cocktail_bar  &ws=yoga  &et=music  &eg=techno,house
+//   ?hide=events,spots  &c=drink,food  &s=cocktail_bar  &ws=yoga  &et=music  &eg=techno,house
 //   &st=open|closed  &date=2026-11-13   (+ ?open=events, read only)
-// `show` is what is lit. Nothing is written for the default (an empty map, no filter, tonight).
-// A link that carries filters but no `show` (every link made before the empty default, and the
-// buttons of /events and /spots) lights the groups its filters belong to, so it still opens on
-// what it points at. `show=` with no value means "filters set, nothing lit".
-// Old links keep working: ?c=wellness&s=yoga (wellness was a category) turns into the Wellness
-// filter, ?events=1 lights Events and opens its panel, and ?hide=… (the previous scheme) is ignored.
+// `hide` lists the groups that are hidden; every group is shown by default, and nothing is written for
+// the default (all shown, no filter, tonight). With filters and nothing hidden, `hide=` (no value) is written,
+// so the link is not read as an older one (below).
+// Older links keep working. `show=…` (the previous scheme, and the button of /spots) shows ONLY those groups,
+// and wins over `hide`; a `show` with no valid group shows all. A link with filters but neither `show` nor
+// `hide` shows the groups its filters belong to; ?events=1 (the button of /events) shows Events only;
+// ?c=wellness&s=yoga (wellness was a category) turns into the Wellness filter.
 
 const list = (v: string | null | undefined) => (v ? v.split(',').map(x => x.trim()).filter(Boolean) : [])
 
@@ -316,9 +328,16 @@ export function parseFilters(params: Params): MapFilters {
   })
 
   const show = params.get('show')
-  if (show !== null) return normalizeFilters({ ...filters, shown: list(show) })
+  if (show !== null) return normalizeFilters({ ...filters, shown: list(show) })   // an older link or a button: only these groups
 
-  // No `show`: an older link, or a button. Light what it filters (and what it names).
+  const hide = params.get('hide')
+  if (hide !== null) {
+    const hidden = new Set(list(hide))
+    return normalizeFilters({ ...filters, shown: GROUPS.filter(g => !hidden.has(g)) })   // `hide=` (no value): none hidden
+  }
+
+  // Neither `show` nor `hide`: an older link, or a button. It shows what it filters (and what it names),
+  // or every group when it filters nothing (the default).
   const lit: GroupKey[] = GROUPS.filter(g => hasGroupFilters(filters, g))
   if (params.get('events') === '1' && !lit.includes('events')) lit.push('events')
   if (rawC.includes('wellness') && !lit.includes('wellness')) lit.push('wellness')
@@ -342,8 +361,11 @@ export function serializeFilters(f: MapFilters): string {
   if (n.evTypes.length) parts.push(`et=${n.evTypes.join(',')}`)
   if (n.evGenres.length) parts.push(`eg=${n.evGenres.join(',')}`)
   if (n.spotStatus !== 'all') parts.push(`st=${n.spotStatus}`)
-  if (n.shown.length) parts.push(`show=${n.shown.join(',')}`)
-  else if (hasFilters(n)) parts.push('show=')
+  // Only what is hidden is written. `hide=` with no value says «nothing hidden, but there are filters», so a link
+  // with filters is not read as the older «show what it filters» kind.
+  const hidden = GROUPS.filter(g => !n.shown.includes(g))
+  if (hidden.length) parts.push(`hide=${hidden.join(',')}`)
+  else if (hasFilters(n)) parts.push('hide=')
   if (n.night) parts.push(`date=${n.night}`)
   return parts.join('&')
 }

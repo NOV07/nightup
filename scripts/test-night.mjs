@@ -139,7 +139,7 @@ test('genre keys: legacy spellings converted, unknown dropped, no duplicates', (
 })
 test('the point carries date, time, venue, type and genres', () => {
   const p = eventToPoint({ id: 'a1', title: 'T', date: '2026-11-13', time: '22:00:00', venue: 'V', city: 'Athens', lat: 37.9, lng: 23.7, type: 'culture', genres: ['jazz'] }, { from: '2026-11-09', to: '2027-01-10' }, null)
-  assert.deepEqual(p.event, { date: '2026-11-13', time: '22:00:00', venue: 'V', type: 'culture', genres: ['jazz'] })
+  assert.deepEqual(p.event, { date: '2026-11-13', time: '22:00:00', venue: 'V', type: 'culture', genres: ['jazz'], radar: false })
 })
 test('a point can be tested against a night', () => {
   const win = { from: '2026-11-09', to: '2027-01-10' }
