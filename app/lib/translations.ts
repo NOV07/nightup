@@ -279,6 +279,8 @@ const translations = {
   map_list_empty_pick: { el: "Δεν έχεις διαλέξει τίποτα. Άνοιξε τα φίλτρα.", en: "You haven't picked anything. Open the filters." },
   map_near_aria:       { el: "Κοντά μου", en: "Near me" },
   map_near_radius_change: { el: "Πάτα για να αλλάξει", en: "Tap to change" },
+  map_reset:           { el: "Επαναφορά", en: "Reset" },
+  map_dock_close:      { el: "Κλείσιμο φίλτρων", en: "Close filters" },
   // ── Spots ──────────────────────────────────────────────
   spots_hero_title:   { el: "Πού πάμε", en: "Where are we going" },
   spots_hero_em:      { el: "απόψε;", en: "tonight?" },
