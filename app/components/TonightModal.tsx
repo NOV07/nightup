@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import SpotCard from "./SpotCard";
 import { MOODS, loc, type Spot } from "../spots/types";
@@ -41,6 +41,86 @@ function buildNight(all: Spot[], mood: string): Spot[] {
   return pickSequence(all, moodSequence(mood), true);
 }
 
+const reducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Tile/button with a light CSS-only 3D tilt (pointer events, so touch works too),
+// a gold glare that follows the pointer and a ripple on click. Tilt is written via
+// CSS vars straight to the DOM in rAF (no setState per move). The ripple lives in its own
+// overflow:hidden wrapper so the tile itself keeps preserve-3d.
+function TiltTile({ className = "", style, index = 0, max = 8, dim, pop, onPress, onActivate, children }: {
+  className?: string; style?: React.CSSProperties; index?: number; max?: number;
+  dim?: boolean; pop?: boolean; onPress?: () => void; onActivate: () => void; children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const fx = useRef<HTMLSpanElement>(null);
+  const raf = useRef<number | null>(null);
+  const pt = useRef({ x: 0, y: 0 });
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (raf.current != null) cancelAnimationFrame(raf.current);
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const reset = () => {
+    const el = ref.current;
+    if (!el) return;
+    if (raf.current != null) { cancelAnimationFrame(raf.current); raf.current = null; }
+    el.removeAttribute("data-track");
+    el.style.setProperty("--rx", "0deg");
+    el.style.setProperty("--ry", "0deg");
+    el.style.setProperty("--go", "0");
+  };
+  const apply = () => {
+    raf.current = null;
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const px = Math.min(1, Math.max(0, (pt.current.x - r.left) / r.width));
+    const py = Math.min(1, Math.max(0, (pt.current.y - r.top) / r.height));
+    el.style.setProperty("--ry", `${((px - 0.5) * 2 * max).toFixed(2)}deg`);
+    el.style.setProperty("--rx", `${(-(py - 0.5) * 2 * max).toFixed(2)}deg`);
+    el.style.setProperty("--mx", `${(px * 100).toFixed(1)}%`);
+    el.style.setProperty("--my", `${(py * 100).toFixed(1)}%`);
+    el.style.setProperty("--go", "1");
+  };
+  const track = (e: React.PointerEvent) => {
+    if (reducedMotion()) return;
+    ref.current?.setAttribute("data-track", "");
+    pt.current = { x: e.clientX, y: e.clientY };
+    if (raf.current == null) raf.current = requestAnimationFrame(apply);
+  };
+  const end = (e: React.PointerEvent) => { if (e.type !== "pointerup" || e.pointerType !== "mouse") reset(); };
+
+  const click = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (timer.current) return;
+    if (reducedMotion()) { onActivate(); return; }
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = e.detail === 0 ? r.width / 2 : e.clientX - r.left;
+    const y = e.detail === 0 ? r.height / 2 : e.clientY - r.top;
+    const dot = document.createElement("span");
+    dot.className = "tn-ripple";
+    dot.style.left = `${x - 10}px`;
+    dot.style.top = `${y - 10}px`;
+    dot.addEventListener("animationend", () => dot.remove());
+    fx.current?.appendChild(dot);
+    onPress?.();
+    timer.current = setTimeout(() => { timer.current = null; onActivate(); }, 250);
+  };
+
+  return (
+    <button ref={ref} className={`tn ${className}${dim ? " tn-dim" : ""}${pop ? " tn-pop" : ""}`}
+      style={{ ...style, "--i": index } as React.CSSProperties}
+      onPointerEnter={track} onPointerMove={track} onPointerLeave={end} onPointerCancel={end} onPointerUp={end}
+      onClick={click}>
+      <span ref={fx} className="tn-fx" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
   const { t, lang } = useLanguage();
@@ -52,6 +132,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   const [activeCat, setActiveCat] = useState<SpotCategory>("drink");
   const [activeSub, setActiveSub] = useState<string | null>(null);
   const [moodOpen, setMoodOpen] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [night, setNight] = useState<Spot[]>([]);
@@ -173,7 +254,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       <div style={S.scrim} onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
         <div style={S.modal}>
           {/* atmosphere */}
-          <div style={S.blob1} /><div style={S.blob2} />
+          <div className="tn-blob1" style={S.blob1} /><div className="tn-blob2" style={S.blob2} />
 
           {/* top */}
           <div style={S.mtop}>
@@ -192,24 +273,26 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                 <h2 style={S.h2}>{t("tonight_what_doing")} <em style={S.em}>{t("spots_hero_em")}</em></h2>
                 <p style={S.sub}>{t("tonight_sub")}</p>
                 <div style={S.grid}>
-                  {SPOT_CATEGORIES.map((c) => (
-                    <button key={c.key} onClick={() => goCategory(c.key)} style={S.tile}
-                      onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.borderColor="rgba(232,160,32,0.15)";}}
-                      onMouseLeave={(e)=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor="rgba(255,255,255,0.055)";}}>
-                      <SpotCategoryIcon category={c.key} size={22} />
+                  {SPOT_CATEGORIES.map((c, i) => (
+                    <TiltTile key={c.key} className="tn-tile" style={S.tile} index={i}
+                      dim={picked !== null && picked !== c.key} pop={picked === c.key}
+                      onPress={() => setPicked(c.key)}
+                      onActivate={() => { setPicked(null); goCategory(c.key); }}>
+                      <div className="tn-icon" style={{ animationDelay: `${-i * 0.6}s` }}><SpotCategoryIcon category={c.key} size={22} /></div>
                       <div>
-                        <div style={S.tileLabel}>{loc(lang, c.label_el, c.label_en)}</div>
-                        <div style={S.tileSub}>{loc(lang, c.hint_el, c.hint_en)}</div>
+                        <div className="tn-label" style={S.tileLabel}>{loc(lang, c.label_el, c.label_en)}</div>
+                        <div className="tn-sub" style={S.tileSub}>{loc(lang, c.hint_el, c.hint_en)}</div>
                       </div>
-                    </button>
+                    </TiltTile>
                   ))}
                 </div>
-                <button onClick={() => setMoodOpen(true)} style={S.surprise}
-                  onMouseEnter={(e)=>{e.currentTarget.style.transform="translateY(-3px)";}}
-                  onMouseLeave={(e)=>{e.currentTarget.style.transform="none";}}>
-                  <span style={{ fontSize: 20 }}>✨</span>
+                <TiltTile className="tn-surprise" style={S.surprise} max={3}
+                  dim={picked !== null && picked !== "__surprise"} pop={picked === "__surprise"}
+                  onPress={() => setPicked("__surprise")}
+                  onActivate={() => { setPicked(null); setMoodOpen(true); }}>
+                  <span className="tn-twinkle" style={{ fontSize: 20 }}>✨</span>
                   <span>{t("tonight_surprise")}<br/><span style={{ fontWeight: 400, fontSize: 10.5, opacity: 0.7 }}>{t("tonight_surprise_sub")}</span></span>
-                </button>
+                </TiltTile>
                 <div style={{ textAlign: "center", marginTop: 16 }}>
                   <button onClick={handleClose} style={S.skip}>{t("tonight_skip")}</button>
                 </div>
@@ -350,6 +433,51 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes tn-rise { from { opacity: 0; transform: translateY(18px) rotateX(-14deg); } to { opacity: 1; transform: none; } }
+        @keyframes tn-float { from { transform: translateZ(26px) translateY(3px); } to { transform: translateZ(26px) translateY(-3px); } }
+        @keyframes tn-ripple { from { transform: scale(0); opacity: 1; } to { transform: scale(18); opacity: 0; } }
+        @keyframes tn-pop {
+          0% { scale: 1; }
+          35% { scale: .94; }
+          70% { scale: 1.04; border-color: rgba(232,160,32,.7); box-shadow: 0 0 26px rgba(232,160,32,.35); }
+          100% { scale: 1; }
+        }
+        @keyframes tn-shimmer { 0%, 70%, 100% { transform: translateX(-130%) skewX(-20deg); } 90% { transform: translateX(330%) skewX(-20deg); } }
+        @keyframes tn-twinkle { 0%, 100% { opacity: 1; scale: 1; } 50% { opacity: .55; scale: .86; } }
+        @keyframes tn-b1 { to { transform: translate(40px, 30px); } }
+        @keyframes tn-b2 { to { transform: translate(-36px, -26px); } }
+        .tn-blob1 { animation: tn-b1 14s ease-in-out infinite alternate; }
+        .tn-blob2 { animation: tn-b2 18s ease-in-out infinite alternate; }
+        .tn { position: relative; transform-style: preserve-3d; -webkit-tap-highlight-color: transparent;
+          transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+          transition: transform .35s cubic-bezier(.22,.61,.36,1), opacity .3s, scale .3s, border-color .3s;
+          animation: tn-rise .6s cubic-bezier(.22,.61,.36,1) calc(var(--i, 0) * 70ms + 120ms) backwards; }
+        .tn[data-track] { transition: transform .08s linear, opacity .3s, scale .3s, border-color .3s; }
+        .tn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+          background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(232,160,32,.22), transparent 60%);
+          opacity: var(--go, 0); transition: opacity .3s; }
+        @media (hover: hover) { .tn-tile:hover { border-color: rgba(232,160,32,.15) !important; } }
+        .tn-fx { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+        .tn-ripple { position: absolute; width: 20px; height: 20px; border-radius: 50%;
+          background: radial-gradient(circle, rgba(232,160,32,.55), rgba(232,160,32,0) 70%);
+          animation: tn-ripple .6s ease-out forwards; }
+        .tn-icon { transform: translateZ(26px); will-change: transform; animation: tn-float 4.5s ease-in-out infinite alternate; align-self: flex-start; }
+        .tn-label { transform: translateZ(14px); }
+        .tn-sub { transform: translateZ(8px); }
+        .tn-surprise { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); animation-duration: .6s; animation-delay: .75s; }
+        .tn-surprise:active { scale: .98; }
+        .tn-surprise .tn-fx::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
+          background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+          animation: tn-shimmer 4.5s ease-in-out infinite; }
+        .tn-twinkle { display: inline-block; animation: tn-twinkle 3s ease-in-out infinite; }
+        .tn-dim { opacity: .35; scale: .96; }
+        .tn-pop { opacity: 1; animation: tn-pop .45s ease; }
+        @media (prefers-reduced-motion: reduce) {
+          .tn, .tn *, .tn::after, .tn-blob1, .tn-blob2 { animation: none !important; transition: none !important; }
+          .tn { transform: none !important; opacity: 1 !important; scale: none !important; }
+          .tn-icon, .tn-label, .tn-sub { transform: none !important; }
+          .tn::after { opacity: 0 !important; }
+        }
         @media (max-width: 480px) {
           .tonight-modal-scroll h2 { font-size: 28px !important; }
         }
@@ -371,11 +499,11 @@ const S: Record<string, React.CSSProperties> = {
   h2: { fontFamily: "var(--font-spectral),Georgia,serif", fontWeight: 700, fontSize: 34, lineHeight: 1, letterSpacing: "-1.2px", marginTop: 12, color: "#F4F4F5" },
   em: { fontStyle: "italic", fontWeight: 600, color: G },
   sub: { color: "#A1A1AA", fontSize: 14, marginTop: 13, lineHeight: 1.55 },
-  grid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 24 },
-  tile: { textAlign: "left", border: "1px solid rgba(255,255,255,0.055)", background: "#1A1A28", borderRadius: 6, padding: "16px 14px", minHeight: 104, display: "flex", flexDirection: "column", gap: 10, cursor: "pointer", transition: "all .3s cubic-bezier(.22,.61,.36,1)", color: "#F4F4F5", width: "100%", boxSizing: "border-box" as const },
+  grid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 24, perspective: 900 },
+  tile: { textAlign: "left", border: "1px solid rgba(255,255,255,0.055)", background: "#1A1A28", borderRadius: 20, padding: "16px 14px", minHeight: 104, display: "flex", flexDirection: "column", gap: 10, cursor: "pointer", color: "#F4F4F5", width: "100%", boxSizing: "border-box" as const },
   tileLabel: { fontFamily: "var(--font-spectral),serif", fontWeight: 600, fontSize: 16, marginTop: "auto" },
   tileSub: { fontSize: 10.5, color: "#71717A", marginTop: 4 },
-  surprise: { marginTop: 18, width: "100%", border: "none", borderRadius: 14, padding: 18, fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16.5, cursor: "pointer", color: "#1a1407", background: "linear-gradient(100deg,#b87d12,#E8A020 40%,#F5B335 60%,#E8A020)", boxShadow: "0 16px 42px rgba(232,160,32,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "transform .3s cubic-bezier(.22,.61,.36,1)" },
+  surprise: { marginTop: 18, width: "100%", border: "none", borderRadius: 20, padding: 18, fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16.5, cursor: "pointer", color: "#1a1407", background: "linear-gradient(100deg,#b87d12,#E8A020 40%,#F5B335 60%,#E8A020)", boxShadow: "0 16px 42px rgba(232,160,32,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 },
   skip: { background: "none", border: "none", color: "#71717A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-inter),sans-serif" },
   back: { background: "none", border: "none", color: "#A1A1AA", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, padding: "14px 0 4px", fontWeight: 600, fontFamily: "var(--font-inter),sans-serif" },
   resHead: { fontFamily: "var(--font-spectral),serif", fontWeight: 700, fontSize: 25, letterSpacing: "-0.6px", marginTop: 2, color: "#F4F4F5" },

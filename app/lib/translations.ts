@@ -320,7 +320,7 @@ const translations = {
 
   // ── TonightModal ────────────────────────────────────────
   tonight_sub:        { el: "Διάλεξε διάθεση ή άσε μας να σου στήσουμε ολόκληρη τη βραδιά.", en: "Pick a vibe or let us build your whole night." },
-  tonight_surprise:   { el: "Εξέπληξέ με", en: "Surprise me" },
+  tonight_surprise:   { el: "Surprise me", en: "Surprise me" },
   tonight_surprise_sub: { el: "Ολόκληρη βραδιά σε 2 taps", en: "Full night in 2 taps" },
   tonight_skip:       { el: "Όχι τώρα. Δες την αρχική →", en: "Not now. See home →" },
   tonight_back:       { el: "‹ Πίσω", en: "‹ Back" },
