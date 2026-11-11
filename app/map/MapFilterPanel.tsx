@@ -242,15 +242,12 @@ export function MapGroupPanel({ group, filters, id, handlers }: { group: GroupKe
 
 export function MapLegend() {
   const { t } = useLanguage();
-  const sw: React.CSSProperties = { width: 12, height: 12, display: "inline-block", boxSizing: "border-box", flex: "none" };
-  const cats = `linear-gradient(135deg, ${MAP_CATEGORY_COLORS.drink} 0 33%, ${MAP_CATEGORY_COLORS.nightlife} 33% 66%, ${MAP_CATEGORY_COLORS.food} 66%)`;
+  const sw: React.CSSProperties = { width: 14, height: 14, display: "inline-block", boxSizing: "border-box", flex: "none", borderRadius: "50%" };
   return (
     <ul aria-label={t("map_legend")} data-testid="map-legend" className="nm-legend">
-      <li><i aria-hidden="true" style={{ ...sw, background: "#E8A020", borderRadius: 2, transform: "rotate(45deg) scale(.8)" }} />{t("map_legend_event")}</li>
-      <li><i aria-hidden="true" style={{ ...sw, background: cats, borderRadius: 3 }} />{t("map_legend_open")}</li>
-      <li><i aria-hidden="true" style={{ ...sw, background: "#6B6B80", borderRadius: 3 }} />{t("map_legend_closed")}</li>
-      <li><i aria-hidden="true" style={{ ...sw, border: "2px solid #D5D6E3", borderRadius: 3 }} />{t("map_legend_unknown")}</li>
-      <li><i aria-hidden="true" style={{ ...sw, background: "#4FC3A1", borderRadius: "50%" }} />{t("map_legend_wellness")}</li>
+      <li><i aria-hidden="true" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)" }} />{t("map_legend_active")}</li>
+      <li><i aria-hidden="true" style={{ ...sw, background: "#6B6B80" }} />{t("map_legend_closed")}</li>
+      <li><i aria-hidden="true" style={{ ...sw, background: "rgba(15,15,26,0.78)", border: "2px solid #E8A020" }} />{t("map_legend_unknown")}</li>
     </ul>
   );
 }

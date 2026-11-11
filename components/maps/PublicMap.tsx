@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
-import { mapPointColor, MAP_CLOSED_COLOR } from '@/app/lib/mapColors'
+import { mapEmojiOf } from '@/app/lib/mapEmoji'
 import type { MapPoint } from '@/app/lib/mapFilters'
 import type { SpotStatus } from '@/app/lib/openingHours'
 import type { TranslationKey } from '@/app/lib/translations'
@@ -21,23 +21,21 @@ const ATTRIBUTION = '<a href="https://www.openstreetmap.org/copyright" target="_
 const TILE_ERRORS_BEFORE_NOTICE = 5
 
 // Pin = a real <button> (Enter/Space/Tab work natively) with a 44px hit area and
-// a smaller visible shape: circle for wellness, rounded square for venues,
-// diamond for events. A venue shows its status: filled in its category colour =
-// open, grey = closed, an empty outline in its category colour = no readable hours.
+// one round 34px marker inside it: gold gradient with the point's emoji. A venue
+// shows its status: gold = open, grey with a grey-scale emoji = closed, a dark
+// see-through disc with a gold outline = no readable hours. Events and wellness
+// points are always "active" (normal gold).
 const CSS = `
 .nightup-public-map .leaflet-container { background: #16162a; font-family: inherit; }
 .nightup-public-map .leaflet-tile { outline: 1px solid transparent; }
 .nightup-public-map .nm-pin-wrap { background: none; border: none; }
-.nightup-public-map .nm-pin { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 28px; height: 28px; border: 3px solid #0F0F1A; box-shadow: 0 2px 5px rgba(0,0,0,0.55); transition: width .12s, height .12s, border-color .12s; }
-.nightup-public-map .nm-pin-dot.is-round { border-radius: 50%; }
-.nightup-public-map .nm-pin-dot.is-square { width: 26px; height: 26px; border-radius: 7px; }
-.nightup-public-map .nm-pin-dot.is-unknown { background: transparent !important; border-color: var(--pin-color); box-shadow: none; }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-unknown { border-color: #FFFFFF; background: var(--pin-color) !important; }
-.nightup-public-map .nm-pin-dot.is-diamond { width: 22px; height: 22px; border-radius: 4px; transform: rotate(45deg); }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot { width: 42px; height: 42px; border: 4px solid #FFFFFF; }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-diamond { width: 32px; height: 32px; }
-.nightup-public-map .nm-pin.is-selected .nm-pin-dot.is-square { width: 40px; height: 40px; }
+.nightup-public-map .nm-pin { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); box-shadow: 0 2px 6px rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1; transition: transform .12s, border-color .12s; }
+.nightup-public-map .nm-pin-emoji { display: block; pointer-events: none; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.nightup-public-map .nm-pin-dot.is-closed { background: #6B6B80; }
+.nightup-public-map .nm-pin-dot.is-closed .nm-pin-emoji { filter: grayscale(1); opacity: 0.85; }
+.nightup-public-map .nm-pin-dot.is-unknown { background: rgba(15,15,26,0.78); border-color: #E8A020; }
+.nightup-public-map .nm-pin.is-selected .nm-pin-dot { transform: scale(1.18); border: 3px solid #FFFFFF; }
 .nightup-public-map .nm-pin:focus-visible { outline: none; }
 .nightup-public-map .nm-pin:focus-visible .nm-pin-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
 .nightup-public-map .leaflet-bar { border: 1px solid rgba(255,255,255,0.14); box-shadow: none; }
@@ -49,14 +47,12 @@ const CSS = `
 
 const STATUS_LABEL: Record<SpotStatus, TranslationKey> = { open: 'map_spot_open', closed: 'map_spot_closed', unknown: 'map_spot_unknown' }
 
-/** Colours and label of a pin. Called for new pins and again when the status of an existing one changes. */
+/** Look and label of a pin. Called for new pins and again when the status of an existing one changes. */
 function paintPin(el: HTMLButtonElement, p: MapPoint, status: SpotStatus | undefined, label: (k: TranslationKey) => string) {
-  const dot = el.firstElementChild as HTMLElement
-  const color = mapPointColor(p)
+  const dot = el.querySelector('.nm-pin-dot') as HTMLElement
   const st = p.kind === 'spot' ? status : undefined
+  dot.classList.toggle('is-closed', st === 'closed')
   dot.classList.toggle('is-unknown', st === 'unknown')
-  dot.style.background = st === 'closed' ? MAP_CLOSED_COLOR : color
-  dot.style.setProperty('--pin-color', color)
   el.setAttribute('aria-label', st ? `${p.name}, ${label(STATUS_LABEL[st])}` : p.name)
 }
 
@@ -68,8 +64,12 @@ function makePinElement(p: MapPoint): HTMLButtonElement {
   b.setAttribute('aria-label', p.name)
   b.setAttribute('aria-pressed', 'false')
   const dot = document.createElement('span')
-  dot.className = `nm-pin-dot ${p.kind === 'wellness' ? 'is-round' : p.kind === 'event' ? 'is-diamond' : 'is-square'}`
+  dot.className = 'nm-pin-dot'
   dot.setAttribute('aria-hidden', 'true')
+  const emoji = document.createElement('span')
+  emoji.className = 'nm-pin-emoji'
+  emoji.textContent = mapEmojiOf(p)
+  dot.appendChild(emoji)
   b.appendChild(dot)
   return b
 }
