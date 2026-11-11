@@ -129,10 +129,16 @@ test('points within the radius become a cluster; a lone point stays', () => {
   assert.equal(clusters[0].key, 'a|b')
   assert.ok(Math.abs(clusters[0].lat - 0.015) < 1e-9 && Math.abs(clusters[0].lng - 0.015) < 1e-9)
 })
-test('radar picks (solo) never go into a cluster', () => {
-  const { singles, clusters } = clusterPoints([it('a', 10, 10), it('b', 12, 12), it('radar', 11, 11, true)])
-  assert.ok(singles.includes('radar'))
-  assert.deepEqual(clusters.map(c => c.ids), [['a', 'b']])
+test('radar picks stay their own pin, unless a cluster would cover them: then it carries the halo', () => {
+  const far = clusterPoints([it('a', 10, 10), it('b', 12, 12), { ...it('radar', 200, 200, true), radar: true }])
+  assert.ok(far.singles.includes('radar'))
+  assert.deepEqual(far.clusters.map(c => [c.ids, c.radar]), [[['a', 'b'], false]])
+  const under = clusterPoints([it('a', 10, 10), it('b', 12, 12), { ...it('radar', 11, 11, true), radar: true }])
+  assert.deepEqual(under.singles, [])
+  assert.deepEqual(under.clusters.map(c => [c.ids, c.radar]), [[['a', 'b', 'radar'], true]])
+  // the picked point (solo, not radar) is never swallowed
+  const picked = clusterPoints([it('a', 10, 10), it('b', 12, 12), it('sel', 11, 11, true)])
+  assert.deepEqual(picked.singles, ['sel'])
 })
 test('every point is in exactly one place', () => {
   const items = Array.from({ length: 200 }, (_, i) => it(`p${i}`, (i * 37) % 500, (i * 91) % 500, i % 17 === 0))

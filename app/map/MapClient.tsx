@@ -37,18 +37,20 @@ const CSS = `
 .nm-near-btn { min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #3A3A55; background: #1A1A28; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .nm-near-btn[aria-pressed="true"] { background: rgba(76,141,255,0.16); border-color: #4C8DFF; }
 .nm-near-btn:disabled { opacity: 0.7; cursor: progress; }
-.nm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.nm-chip { min-height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid #3A3A55; background: transparent; color: #D5D6E3; font-size: 13px; font-weight: 600; cursor: pointer; }
+.nm-chips { order: 3; flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.nm-chip { min-height: 34px; padding: 0 14px; border-radius: 18px; border: 1px solid #3A3A55; background: transparent; color: #D5D6E3; font-size: 13px; font-weight: 600; cursor: pointer; }
 .nm-chip[aria-pressed="true"] { background: #E8A020; border-color: #E8A020; color: #0F0F1A; }
 .nm-near-msg { margin: 0; display: flex; align-items: flex-start; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 8px; background: #1A1A28; border: 1px solid #3A3A55; font-size: 13px; line-height: 1.4; color: #D5D6E3; }
 .nm-near-msg span { flex: 1; padding-top: 2px; }
 .nm-near-msg button { flex: none; width: 32px; height: 32px; border: 0; background: transparent; color: #A9ABC0; cursor: pointer; }
-.nm-seg { margin-left: auto; display: inline-flex; border: 1px solid #3A3A55; border-radius: 8px; overflow: hidden; }
+.nm-seg { order: 2; margin-left: auto; display: inline-flex; border: 1px solid #3A3A55; border-radius: 8px; overflow: hidden; }
 .nm-seg button { min-height: 44px; padding: 0 16px; border: 0; background: #1A1A28; color: #D5D6E3; font-size: 14px; font-weight: 600; cursor: pointer; }
 .nm-seg button[aria-pressed="true"] { background: #E8A020; color: #0F0F1A; }
 .nm-map-layer { position: absolute; inset: 0; }
 .nm-map-layer.is-hidden { visibility: hidden; pointer-events: none; }
-.nm-list { position: absolute; inset: 0; margin: 0; padding: 48px 0 12px; list-style: none; overflow-y: auto; overscroll-behavior: contain; }
+.nm-list-wrap { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
+.nm-list-wrap .nm-count { position: static; margin: 10px; max-width: none; }
+.nm-list { margin: 0; padding: 0; list-style: none; }
 .nm-row { width: 100%; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: transparent; border: 0; border-bottom: 1px solid #1E1E32; color: #fff; text-align: left; cursor: pointer; font: inherit; }
 .nm-row:hover, .nm-row[aria-pressed="true"] { background: #1A1A28; }
 .nm-ico { flex: none; box-sizing: border-box; width: 38px; height: 38px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); display: flex; align-items: center; justify-content: center; font-size: 19px; line-height: 1; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
@@ -262,6 +264,12 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
     if (text && text.trim()) hoursLine = `${lang === "en" ? DAY_EN[idx] : DAY_NAMES[idx]}: ${text.trim()}`;
   }
 
+  const counter = (
+    <div className="nm-count" data-testid="map-counter" role="status">
+      {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}${userPos ? ` · ${shown.length} ${t("map_near_in_range")}` : ""}` : "…"}
+    </div>
+  );
+
   return (
     <div className="nm-root" lang={lang}>
       <style>{CSS}</style>
@@ -315,11 +323,14 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           <PublicMap points={shown} selectedId={selected?.id ?? null} onSelect={pick} statusById={resolved?.status} topInset={40}
             userLocation={userPos ? { ...userPos, radiusKm: near.radius === "all" ? null : near.radius } : null} />
           </div>
-          {view === "list" && <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />}
+          {view === "list" && (
+            <div className="nm-list-wrap">
+              {counter}
+              <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />
+            </div>
+          )}
 
-          <div className="nm-count" data-testid="map-counter" role="status">
-            {counts && ctx ? `${counts.events} ${t("map_events")} · ${counts.spots} ${t("map_spots")} · ${counts.wellness} ${t("map_wellness")} · ${formatNightLabel(ctx.night, lang)}${userPos ? ` · ${shown.length} ${t("map_near_in_range")}` : ""}` : "…"}
-          </div>
+          {view === "map" && counter}
 
           {showHint && <div className="nm-hint" role="status" data-testid="map-empty-hint">{t("map_pick_layers")}</div>}
 

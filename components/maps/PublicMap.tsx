@@ -32,13 +32,13 @@ const CSS = `
 .nightup-public-map .nm-pin-wrap { background: none; border: none; }
 .nightup-public-map .nm-pin { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); box-shadow: 0 2px 6px rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1; transition: transform .12s, border-color .12s; }
-.nightup-public-map .nm-pin-ring { display: none; position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; box-sizing: border-box; border-radius: 50%; border: 1.5px solid #F5B335; pointer-events: none; opacity: 0; }
-.nightup-public-map .nm-pin.has-radar .nm-pin-ring { display: block; }
+.nightup-public-map .nm-pin-ring { display: none; position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; box-sizing: border-box; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #F5B335; pointer-events: none; opacity: 0; }
+.nightup-public-map .has-radar .nm-pin-ring { display: block; }
 /* Radar blip: two thin rings that grow to 1.45x the marker and fade. Without motion: a still, soft halo. */
-.nightup-public-map .nm-pin.has-radar .nm-pin-ring.r1 { opacity: 0.4; transform: scale(1.3); }
+.nightup-public-map .has-radar .nm-pin-ring.r1 { opacity: 0.4; transform: scale(1.3); }
 @media (prefers-reduced-motion: no-preference) {
-  .nightup-public-map .nm-pin.has-radar .nm-pin-ring { animation: nm-blip 2.2s ease-out infinite; }
-  .nightup-public-map .nm-pin.has-radar .nm-pin-ring.r2 { animation-delay: 0.9s; }
+  .nightup-public-map .has-radar .nm-pin-ring { animation: nm-blip 2.2s ease-out infinite; }
+  .nightup-public-map .has-radar .nm-pin-ring.r2 { animation-delay: 0.9s; }
 }
 @keyframes nm-blip { 0% { transform: scale(1); opacity: 0.75; } 100% { transform: scale(1.45); opacity: 0; } }
 .nightup-public-map .nm-pin-emoji { display: block; pointer-events: none; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
@@ -46,7 +46,8 @@ const CSS = `
 .nightup-public-map .nm-pin-dot.is-closed .nm-pin-emoji { filter: grayscale(1); opacity: 0.85; }
 .nightup-public-map .nm-pin-dot.is-unknown { background: rgba(15,15,26,0.78); border-color: #E8A020; }
 .nightup-public-map .nm-pin.is-selected .nm-pin-dot { transform: scale(1.18); border: 3px solid #FFFFFF; }
-.nightup-public-map .nm-cluster { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.nightup-public-map .nm-cluster { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.nightup-public-map .nm-cluster .nm-pin-ring { width: 38px; height: 38px; margin: -19px 0 0 -19px; }
 .nightup-public-map .nm-cluster-dot { box-sizing: border-box; min-width: 38px; height: 38px; padding: 0 6px; border-radius: 19px; border: 2.5px solid #F5B335; background: #1A1A28; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(245,179,53,0.22), 0 2px 6px rgba(0,0,0,0.55); pointer-events: none; }
 .nightup-public-map .nm-cluster:focus-visible { outline: none; }
 .nightup-public-map .nm-cluster:focus-visible .nm-cluster-dot { outline: 2px solid #FFFFFF; outline-offset: 3px; }
@@ -140,7 +141,7 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     const zoom = map.getZoom()
     const items = pointsRef.current.map(p => {
       const px = map.project([p.lat, p.lng], zoom)
-      return { id: p.id, x: px.x, y: px.y, lat: p.lat, lng: p.lng, solo: p.event?.radar === true || p.id === selectedRef.current }
+      return { id: p.id, x: px.x, y: px.y, lat: p.lat, lng: p.lng, solo: p.event?.radar === true || p.id === selectedRef.current, radar: p.event?.radar === true }
     })
     const { singles, clusters } = zoom > CLUSTER_MAX_ZOOM
       ? { singles: items.map(i => i.id), clusters: [] }
@@ -158,7 +159,15 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
       if (clustersRef.current.has(c.key)) continue
       const b = document.createElement('button')
       b.type = 'button'
-      b.className = 'nm-cluster'
+      b.className = c.radar ? 'nm-cluster has-radar' : 'nm-cluster'
+      if (c.radar) {
+        for (const n of ['r1', 'r2']) {
+          const ring = document.createElement('span')
+          ring.className = `nm-pin-ring ${n}`
+          ring.setAttribute('aria-hidden', 'true')
+          b.appendChild(ring)
+        }
+      }
       b.setAttribute('aria-label', `${c.ids.length} ${tRef.current('map_cluster_aria')}`)
       const dot = document.createElement('span')
       dot.className = 'nm-cluster-dot'
@@ -297,7 +306,7 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     if (!map || userLat === null || userLng === null) return
     const group = L.layerGroup().addTo(map)
     const icon = L.divIcon({ className: 'nm-user-wrap', html: '<span class="nm-user-halo"></span><span class="nm-user-dot"></span>', iconSize: [40, 40], iconAnchor: [20, 20] })
-    L.marker([userLat, userLng], { icon, interactive: false, keyboard: false, zIndexOffset: -500 }).addTo(group)
+    L.marker([userLat, userLng], { icon, interactive: false, keyboard: false, zIndexOffset: 400 }).addTo(group)
     if (userRadius !== null) {
       const circle = L.circle([userLat, userLng], { radius: userRadius * 1000, color: '#F5B335', weight: 1.5, dashArray: '6 6', fillColor: '#F5B335', fillOpacity: 0.04, interactive: false }).addTo(group)
       map.fitBounds(circle.getBounds(), { padding: [24, 24] })

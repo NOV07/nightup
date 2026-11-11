@@ -4,7 +4,9 @@
 // a group. A group of two or more becomes a cluster drawn at the average of its
 // members. Leaders are always more than `radius` apart, so groups never overlap
 // (a plain grid would leave pins that touch across a cell edge). Radar picks (and
-// the open pin) are "solo": they never go into a cluster. Pure, so
+// the open pin) are "solo": they stay their own pin. Only when a radar pick would sit
+// right under a cluster (closer than `radius`) does it join that cluster, and the
+// cluster then carries the radar halo instead. Pure, so
 // scripts/test-map-v2.mjs can load it in plain Node.
 
 /** Clusters only exist up to this zoom; closer in, every pin is drawn. */
@@ -21,9 +23,11 @@ export type ClusterItem = {
   lng: number
   /** Never clustered (a radar pick, the picked point). */
   solo?: boolean
+  /** A radar pick: solo, but absorbed (with its halo moved to the cluster) when it would be hidden under one. */
+  radar?: boolean
 }
 
-export type Cluster = { key: string; ids: string[]; lat: number; lng: number }
+export type Cluster = { key: string; ids: string[]; lat: number; lng: number; /** holds a radar pick: draw the halo */ radar: boolean }
 
 export function clusterPoints(items: readonly ClusterItem[], radius: number = CLUSTER_RADIUS_PX): { singles: string[]; clusters: Cluster[] } {
   const singles: string[] = []
@@ -36,16 +40,32 @@ export function clusterPoints(items: readonly ClusterItem[], radius: number = CL
     if (g) g.members.push(it)
     else groups.push({ leader: it, members: [it] })
   }
-  const clusters: Cluster[] = []
+  const clusters: (Cluster & { x: number; y: number })[] = []
   for (const { members } of groups) {
     if (members.length === 1) { singles.push(members[0].id); continue }
     const ids = members.map(m => m.id)
     clusters.push({
-      key: ids.join('|'),
+      key: '',
       ids,
       lat: members.reduce((s, m) => s + m.lat, 0) / members.length,
       lng: members.reduce((s, m) => s + m.lng, 0) / members.length,
+      x: members.reduce((s, m) => s + m.x, 0) / members.length,
+      y: members.reduce((s, m) => s + m.y, 0) / members.length,
+      radar: false,
     })
   }
-  return { singles, clusters }
+  // A radar pick that a cluster would cover goes into it.
+  const kept: string[] = []
+  for (const id of singles) {
+    const it = items.find(i => i.id === id)
+    const c = it?.radar ? clusters.find(c => (c.x - it.x) ** 2 + (c.y - it.y) ** 2 <= r2) : undefined
+    if (c) { c.ids.push(id); c.radar = true } else kept.push(id)
+  }
+  return {
+    singles: kept,
+    clusters: clusters.map((c): Cluster => {
+      const ids = [...c.ids].sort()
+      return { key: ids.join('|'), ids, lat: c.lat, lng: c.lng, radar: c.radar }
+    }),
+  }
 }
