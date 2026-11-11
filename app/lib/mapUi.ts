@@ -1,13 +1,16 @@
-// Small pure helpers of the /map controls (the filter button and the "see N places" button), so
+// Small pure helpers of the /map controls (the number on the filter button), so
 // scripts/test-map-v3.mjs can load them in plain Node.
 
+import { GROUPS, hasFilters, type MapFilters } from './mapFilters.ts'
+
 /**
- * The number on the filter button: lit groups, plus one when the picked night is not tonight, plus
- * one when "Near me" is on. 0 = nothing chosen (the button then says "Choose what to see").
- * `night` is null for tonight (the filters never keep tonight as a date).
+ * The number on the filter button: how many things differ from the default. Hidden groups, plus one when
+ * the picked night is not tonight, plus one when "Near me" is on, plus one when any group has a filter
+ * (event type or genre, spot status, category or subcategory, wellness subcategory). 0 = the default (the
+ * number is not drawn). `night` is null for tonight (the filters never keep tonight as a date).
  */
-export function activeFilterCount(f: { shown: readonly unknown[]; night: string | null }, nearActive: boolean): number {
-  return f.shown.length + (f.night != null ? 1 : 0) + (nearActive ? 1 : 0)
+export function activeFilterCount(f: Pick<MapFilters, 'shown' | 'night' | 'evTypes' | 'evGenres' | 'spotStatus' | 'categories' | 'subcategories' | 'wellnessSubs'>, nearActive: boolean): number {
+  return (GROUPS.length - f.shown.length) + (f.night != null ? 1 : 0) + (nearActive ? 1 : 0) + (hasFilters(f as MapFilters) ? 1 : 0)
 }
 
 /** "See 1 place" / "See 12 places": `one` has no number, `many` has `{n}`. Both languages follow the same rule. */

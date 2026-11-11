@@ -7,8 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { useLanguage } from "../components/LanguageContext";
 import {
   clearAllFilters, hasFilters, mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
-  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleGroupShown, toggleMapCategory, toggleMapSub, toggleWellnessSub,
-  NO_FILTERS, showGroup, type GroupKey, type MapFilters, type MapPoint,
+  setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleMapCategory, toggleMapSub, toggleWellnessSub,
+  NO_FILTERS, tapGroup as tapGroupOf, type DockFocus, type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import { DAY_NAMES, closesSoon } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
@@ -17,7 +17,7 @@ import { useUserLocation } from "../lib/useUserLocation";
 import { filterByRadius, nextRadius, isFarFromData, joinQuery, parseNear, serializeNear, type NearState } from "../lib/mapNear";
 import type { TranslationKey } from "../lib/translations";
 import type { PanelHandlers } from "./MapFilterPanel";
-import MapDock, { type DockFocus } from "./MapDock";
+import MapDock from "./MapDock";
 import { activeFilterCount, pluralLabel } from "../lib/mapUi";
 import MapCard from "./MapCard";
 import MapList from "./MapList";
@@ -36,7 +36,6 @@ const CSS = `
 .nm-map-layer { position: absolute; inset: 0; }
 .nm-map-layer.is-hidden { visibility: hidden; pointer-events: none; }
 .nm-list-wrap { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 68px 0 calc(var(--nm-stack-h, 76px) + 12px); background: #0F0F1A; }
-.nm-list-empty { margin: 0; padding: 24px 20px; font-size: 15px; color: #D5D6E3; }
 .nm-list { margin: 0; padding: 0; list-style: none; }
 .nm-row { width: 100%; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: transparent; border: 0; border-bottom: 1px solid #1E1E32; color: #fff; text-align: left; cursor: pointer; font: inherit; }
 .nm-row:hover, .nm-row[aria-pressed="true"] { background: #1A1A28; }
@@ -273,12 +272,11 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
   const openDock = () => setDockOpen(true);
   const closeDock = useCallback(() => { setDockOpen(false); setDockFocus(null); }, []);
-  // A tap on a group chip: a hidden group is lit and gets the focus; a lit group gets the focus, and a lit group
-  // that already has it is hidden.
+  // A tap on a group chip (see tapGroup in mapFilters: with all shown it shows only that group, and so on).
   const tapGroup = (g: GroupKey) => {
-    if (!filters.shown.includes(g)) { update(showGroup(filters, g)); setDockFocus(g); }
-    else if (dockFocus === g) { update(toggleGroupShown(filters, g)); setDockFocus(null); }
-    else setDockFocus(g);
+    const r = tapGroupOf(filters, dockFocus, g);
+    update(r.filters);
+    setDockFocus(r.focus);
   };
   // Reset: groups, filters, the night (back to tonight) and Near me.
   const resetAll = () => {
@@ -296,10 +294,8 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
   };
 
   const empty = points.length === 0;
-  const anyLit = filters.shown.length > 0;
-  // Nothing is lit at first: the map is empty on purpose (the filter button says what to do). Once a
-  // group is lit but has nothing to show with the current filters, it is "no results" instead.
-  const noMatch = !empty && anyLit && !!resolved && visible.length === 0;
+  // Every group is shown at first. When the filters leave nothing to show, it is "no results".
+  const noMatch = !empty && !!resolved && visible.length === 0;
   const filterCount = activeFilterCount(filters, !!userPos);
   const nearNone = !!userPos && visible.length > 0 && shown.length === 0;
 
@@ -314,7 +310,6 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
   // Screen readers get the number of places (the counter is no longer drawn on the map).
   const countText = pluralLabel(shown.length, { one: t("map_count_one"), many: t("map_count_many") });
-
 
   return (
     <div className="nm-root" lang={lang}>
@@ -332,18 +327,16 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
           </div>
           {view === "list" && (
             <div className="nm-list-wrap">
-              {anyLit
-                ? <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />
-                : <p className="nm-list-empty" role="status" data-testid="map-list-empty">{t("map_list_empty_pick")}</p>}
+              <MapList points={shown} closingSoon={closingSoon} statusById={resolved?.status} here={userPos} selectedId={selected?.id ?? null} onPick={pick} />
             </div>
           )}
 
-          <div className="nm-sr" role="status" data-testid="map-count">{anyLit ? countText : ""}</div>
+          <div className="nm-sr" role="status" data-testid="map-count">{countText}</div>
 
           {!dockOpen && (
             <button ref={filterBtnRef} type="button" className={`nm-fbtn${filterCount > 0 ? " is-active" : ""}`} data-testid="map-filter-button"
               aria-expanded={false} onClick={openDock}>
-              <span>{filterCount > 0 ? t("map_filters") : t("map_filter_prompt")}</span>
+              <span>{t("map_filters")}</span>
               {filterCount > 0 && <span className="nm-fbtn-n" data-testid="map-filter-count">{filterCount}</span>}
             </button>
           )}

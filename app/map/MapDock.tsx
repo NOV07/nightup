@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
-import { GROUPS, type GroupKey, type MapFilters } from "../lib/mapFilters";
+import { GROUPS, type DockFocus, type GroupKey, type MapFilters } from "../lib/mapFilters";
 import { formatNightLabel } from "../lib/mapDate";
 import { MAP_GROUP_COLORS } from "../lib/mapColors";
 import { useLanguage } from "../components/LanguageContext";
 import { GROUP_LABEL, GroupFilterRow, MapDateBar, dockChip, type PanelHandlers } from "./MapFilterPanel";
-
-export type DockFocus = "date" | GroupKey | null;
 
 /**
  * The filters of the map: a small bar at the bottom with at most two rows, over the map (which stays
