@@ -3,6 +3,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { GROUPS, type DockFocus, type GroupKey, type MapFilters } from "../lib/mapFilters";
 import { formatNightLabel } from "../lib/mapDate";
+import { addDaysKey } from "../lib/dateKey";
 import { MAP_GROUP_COLORS } from "../lib/mapColors";
 import { useLanguage } from "../components/LanguageContext";
 import { GROUP_LABEL, GroupFilterRow, MapDateBar, dockChip, type PanelHandlers } from "./MapFilterPanel";
@@ -46,7 +47,7 @@ export default function MapDock({ filters, night, tonight, focus, canReset, hand
   }, [returnFocus]);
 
   const ready = night != null && tonight != null;
-  const dateLabel = !ready ? "…" : night === tonight ? t("map_tonight") : formatNightLabel(night, lang);
+  const dateLabel = !ready ? "…" : night === tonight ? t("map_tonight") : night === addDaysKey(tonight, 1) ? t("map_tomorrow") : formatNightLabel(night, lang);
   const dateChanged = ready && night !== tonight;
 
   return (

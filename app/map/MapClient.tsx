@@ -65,11 +65,13 @@ const CSS = `
 @media (pointer: fine) { .nm-info { top: 12px; right: 56px; } }
 @media (prefers-reduced-motion: no-preference) { .nm-info-pop { animation: nm-fade-in .15s ease-out; } }
 @keyframes nm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.nm-stack, .nm-info, .nm-fbtn { -webkit-user-select: none; user-select: none; }
 .nm-stack { position: absolute; z-index: 1000; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; pointer-events: none; }
 .nm-stack > * { pointer-events: auto; }
 .nm-btnrow { display: flex; align-items: flex-end; justify-content: space-between; pointer-events: none; }
 .nm-btnrow > * { pointer-events: auto; }
-.nm-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.nm-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
+.nm-right > * { pointer-events: auto; }
 .nm-round { flex: none; width: 48px; height: 48px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 .nm-round:disabled { opacity: 0.7; cursor: progress; }
 .nm-loc[aria-pressed="true"] { border-color: #4C9AFF; background: rgba(76,154,255,0.2); }
@@ -89,9 +91,9 @@ const CSS = `
 .nm-fbtn.is-active { border-color: #E8A020; }
 .nm-fbtn-n { flex: none; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: #E8A020; color: #0F0F1A; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 @media (prefers-reduced-motion: no-preference) {
-  .nm-dock { animation: nm-dock-in .18s ease-out; }
+  .nm-dock { transform-origin: 50% 100%; animation: nm-dock-in .18s ease-out; }
 }
-@keyframes nm-dock-in { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes nm-dock-in { from { transform: scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (min-width: 900px) {
   /* Wide screens: the dock and the card sit bottom-left; the round buttons stay in the corners. */
   .nm-dock { align-self: flex-start; width: min(100%, 560px); }
