@@ -14,7 +14,7 @@ import {
   haversineKm, filterByRadius, nearestDistanceKm, isFarFromData, parseNear, serializeNear, joinQuery, formatDistance, NO_NEAR, FAR_FROM_DATA_KM,
 } from '../app/lib/mapNear.ts'
 import { parseFilters, serializeFilters, NO_FILTERS } from '../app/lib/mapFilters.ts'
-import { clusterByGrid, CLUSTER_CELL_PX } from '../app/lib/mapCluster.ts'
+import { clusterPoints, CLUSTER_RADIUS_PX } from '../app/lib/mapCluster.ts'
 import { sortForList } from '../app/lib/mapList.ts'
 import { minutesUntilClose, closesSoon, spotStatusAt, CLOSING_SOON_MINUTES } from '../app/lib/openingHours.ts'
 
@@ -121,8 +121,8 @@ test('distance text', () => {
 
 console.log('clustering')
 const it = (id, x, y, solo) => ({ id, x, y, lat: y / 1000, lng: x / 1000, solo })
-test('a cell with two or more points becomes a cluster; a lone point stays', () => {
-  const { singles, clusters } = clusterByGrid([it('a', 10, 10), it('b', 20, 20), it('c', 300, 300)], CLUSTER_CELL_PX)
+test('points within the radius become a cluster; a lone point stays', () => {
+  const { singles, clusters } = clusterPoints([it('a', 10, 10), it('b', 20, 20), it('c', 300, 300)], CLUSTER_RADIUS_PX)
   assert.deepEqual(singles, ['c'])
   assert.equal(clusters.length, 1)
   assert.deepEqual(clusters[0].ids, ['a', 'b'])
@@ -130,19 +130,28 @@ test('a cell with two or more points becomes a cluster; a lone point stays', () 
   assert.ok(Math.abs(clusters[0].lat - 0.015) < 1e-9 && Math.abs(clusters[0].lng - 0.015) < 1e-9)
 })
 test('radar picks (solo) never go into a cluster', () => {
-  const { singles, clusters } = clusterByGrid([it('a', 10, 10), it('b', 12, 12), it('radar', 11, 11, true)])
+  const { singles, clusters } = clusterPoints([it('a', 10, 10), it('b', 12, 12), it('radar', 11, 11, true)])
   assert.ok(singles.includes('radar'))
   assert.deepEqual(clusters.map(c => c.ids), [['a', 'b']])
 })
 test('every point is in exactly one place', () => {
   const items = Array.from({ length: 200 }, (_, i) => it(`p${i}`, (i * 37) % 500, (i * 91) % 500, i % 17 === 0))
-  const { singles, clusters } = clusterByGrid(items)
+  const { singles, clusters } = clusterPoints(items)
   const all = [...singles, ...clusters.flatMap(c => c.ids)].sort()
   assert.deepEqual(all, items.map(i => i.id).sort())
 })
+test('pins that touch across a would-be cell edge still merge; leaders stay apart', () => {
+  const { clusters } = clusterPoints([it('a', 47, 10), it('b', 49, 10)]) // 2px apart, either side of x = 48
+  assert.equal(clusters.length, 1)
+  const items = Array.from({ length: 120 }, (_, i) => it(`q${i}`, (i * 53) % 400, (i * 29) % 400))
+  const r = clusterPoints(items)
+  const pos = (id) => items.find(i => i.id === id)
+  const shown = [...r.singles.map(pos), ...r.clusters.map(c => ({ x: pos(c.ids[0]).x, y: pos(c.ids[0]).y }))]
+  for (let i = 0; i < shown.length; i++) for (let j = i + 1; j < shown.length; j++) assert.ok(Math.hypot(shown[i].x - shown[j].x, shown[i].y - shown[j].y) > CLUSTER_RADIUS_PX)
+})
 test('empty / far apart', () => {
-  assert.deepEqual(clusterByGrid([]), { singles: [], clusters: [] })
-  assert.equal(clusterByGrid([it('a', 0, 0), it('b', 500, 500)]).clusters.length, 0)
+  assert.deepEqual(clusterPoints([]), { singles: [], clusters: [] })
+  assert.equal(clusterPoints([it('a', 0, 0), it('b', 500, 500)]).clusters.length, 0)
 })
 
 console.log('list order')

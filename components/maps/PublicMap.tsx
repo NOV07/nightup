@@ -4,7 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { mapEmojiOf } from '@/app/lib/mapEmoji'
-import { CLUSTER_CELL_PX, CLUSTER_MAX_ZOOM, clusterByGrid } from '@/app/lib/mapCluster'
+import { CLUSTER_MAX_ZOOM, CLUSTER_RADIUS_PX, clusterPoints } from '@/app/lib/mapCluster'
 import type { MapPoint } from '@/app/lib/mapFilters'
 import type { SpotStatus } from '@/app/lib/openingHours'
 import type { TranslationKey } from '@/app/lib/translations'
@@ -144,7 +144,7 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     })
     const { singles, clusters } = zoom > CLUSTER_MAX_ZOOM
       ? { singles: items.map(i => i.id), clusters: [] }
-      : clusterByGrid(items, CLUSTER_CELL_PX)
+      : clusterPoints(items, CLUSTER_RADIUS_PX)
     const single = new Set(singles)
     for (const [id, m] of markersRef.current) {
       if (single.has(id)) { if (!map.hasLayer(m.marker)) m.marker.addTo(map) }
