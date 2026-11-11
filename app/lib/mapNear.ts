@@ -63,8 +63,9 @@ export const isFarFromData = (points: readonly LatLng[], center: LatLng): boolea
   return d !== null && d > FAR_FROM_DATA_KM
 }
 
-/** "850 m" under a kilometre (rounded to 10 m), else "1,2 km". */
+/** "850 m" under a kilometre (rounded to 10 m), "1,2 km" under 10 km, "12 km" beyond. */
 export function formatDistance(km: number, units: { km: string; m: string }, locale: string): string {
   if (km < 1) return `${Math.max(10, Math.round((km * 1000) / 10) * 10)} ${units.m}`
-  return `${km.toLocaleString(locale, { maximumFractionDigits: 1, minimumFractionDigits: km < 10 ? 1 : 0 })} ${units.km}`
+  const digits = km < 10 ? 1 : 0
+  return `${km.toLocaleString(locale, { maximumFractionDigits: digits, minimumFractionDigits: digits })} ${units.km}`
 }
