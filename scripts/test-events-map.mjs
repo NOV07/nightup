@@ -26,7 +26,7 @@ test('valid upcoming event', () => {
   const p = eventToPoint(row(), WIN, '/img.png')
   assert.equal(p.kind, 'event'); assert.equal(p.id, 'e-ev1'); assert.equal(p.slug, 'ev1')
   assert.deepEqual([p.lat, p.lng], [37.9778, 23.7117]); assert.deepEqual(p.categories, []); assert.equal(p.image, '/img.png')
-  assert.deepEqual(p.event, { date: '2026-11-14', time: '22:00:00', venue: 'Gazi Hall', type: 'other', genres: [] })
+  assert.deepEqual(p.event, { date: '2026-11-14', time: '22:00:00', venue: 'Gazi Hall', type: 'other', genres: [], radar: false })
 })
 test('the window includes both ends and nothing outside', () => {
   assert.ok(eventToPoint(row({ date: WIN.from }), WIN, null)); assert.ok(eventToPoint(row({ date: WIN.to }), WIN, null))
@@ -55,7 +55,7 @@ test('missing title, id or date: not on the map', () => {
 })
 test('no time / venue / city give nulls', () => {
   const p = eventToPoint(row({ time: null, venue: '', city: null }), WIN, null)
-  assert.deepEqual(p.event, { date: '2026-11-14', time: null, venue: null, type: 'other', genres: [] }); assert.equal(p.area, null)
+  assert.deepEqual(p.event, { date: '2026-11-14', time: null, venue: null, type: 'other', genres: [], radar: false }); assert.equal(p.area, null)
 })
 
 console.log('event type (events.type -> the map\'s four types)')

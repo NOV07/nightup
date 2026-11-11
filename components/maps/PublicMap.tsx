@@ -31,6 +31,15 @@ const CSS = `
 .nightup-public-map .nm-pin-wrap { background: none; border: none; }
 .nightup-public-map .nm-pin { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .nightup-public-map .nm-pin-dot { box-sizing: border-box; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); box-shadow: 0 2px 6px rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1; transition: transform .12s, border-color .12s; }
+.nightup-public-map .nm-pin-ring { display: none; position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; box-sizing: border-box; border-radius: 50%; border: 1.5px solid #F5B335; pointer-events: none; opacity: 0; }
+.nightup-public-map .nm-pin.has-radar .nm-pin-ring { display: block; }
+/* Radar blip: two thin rings that grow to 1.45x the marker and fade. Without motion: a still, soft halo. */
+.nightup-public-map .nm-pin.has-radar .nm-pin-ring.r1 { opacity: 0.4; transform: scale(1.3); }
+@media (prefers-reduced-motion: no-preference) {
+  .nightup-public-map .nm-pin.has-radar .nm-pin-ring { animation: nm-blip 2.2s ease-out infinite; }
+  .nightup-public-map .nm-pin.has-radar .nm-pin-ring.r2 { animation-delay: 0.9s; }
+}
+@keyframes nm-blip { 0% { transform: scale(1); opacity: 0.75; } 100% { transform: scale(1.45); opacity: 0; } }
 .nightup-public-map .nm-pin-emoji { display: block; pointer-events: none; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 .nightup-public-map .nm-pin-dot.is-closed { background: #6B6B80; }
 .nightup-public-map .nm-pin-dot.is-closed .nm-pin-emoji { filter: grayscale(1); opacity: 0.85; }
@@ -51,6 +60,7 @@ const STATUS_LABEL: Record<SpotStatus, TranslationKey> = { open: 'map_spot_open'
 function paintPin(el: HTMLButtonElement, p: MapPoint, status: SpotStatus | undefined, label: (k: TranslationKey) => string) {
   const dot = el.querySelector('.nm-pin-dot') as HTMLElement
   const st = p.kind === 'spot' ? status : undefined
+  el.classList.toggle('has-radar', p.event?.radar === true)
   dot.classList.toggle('is-closed', st === 'closed')
   dot.classList.toggle('is-unknown', st === 'unknown')
   el.setAttribute('aria-label', st ? `${p.name}, ${label(STATUS_LABEL[st])}` : p.name)
@@ -63,6 +73,13 @@ function makePinElement(p: MapPoint): HTMLButtonElement {
   b.dataset.pin = p.id
   b.setAttribute('aria-label', p.name)
   b.setAttribute('aria-pressed', 'false')
+  // Radar blip rings (shown only for radar picks, see .has-radar), under the marker.
+  for (const n of ['r1', 'r2']) {
+    const ring = document.createElement('span')
+    ring.className = `nm-pin-ring ${n}`
+    ring.setAttribute('aria-hidden', 'true')
+    b.appendChild(ring)
+  }
   const dot = document.createElement('span')
   dot.className = 'nm-pin-dot'
   dot.setAttribute('aria-hidden', 'true')

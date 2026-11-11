@@ -248,6 +248,7 @@ export function MapLegend() {
       <li><i aria-hidden="true" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)" }} />{t("map_legend_active")}</li>
       <li><i aria-hidden="true" style={{ ...sw, background: "#6B6B80" }} />{t("map_legend_closed")}</li>
       <li><i aria-hidden="true" style={{ ...sw, background: "rgba(15,15,26,0.78)", border: "2px solid #E8A020" }} />{t("map_legend_unknown")}</li>
+      <li><i aria-hidden="true" className="nm-legend-radar" style={{ ...sw, background: "linear-gradient(135deg, #F5B335, #E8A020)", boxShadow: "0 0 0 3px rgba(245,179,53,0.35)" }} />{t("map_legend_radar")}</li>
     </ul>
   );
 }

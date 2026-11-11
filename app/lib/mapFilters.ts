@@ -59,6 +59,8 @@ export type MapPoint = {
     type: EventType
     /** Genre keys (app/lib/genres.ts), may be empty. */
     genres: string[]
+    /** Picked for Nightup Radar by the admin (events.is_radar_pick). */
+    radar: boolean
   }
   /** Spots only: the published opening hours (day name -> text), or null. */
   hours?: Record<string, string> | null

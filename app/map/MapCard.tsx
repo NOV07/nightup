@@ -60,6 +60,11 @@ const MapCard = forwardRef<HTMLDivElement, { point: MapPoint; status?: SpotStatu
           </div>
         )}
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 6, paddingRight: 36 }}>
+          {point.event?.radar && (
+            <span data-testid="map-card-radar" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", minHeight: 22, padding: "0 8px", borderRadius: 6, background: "rgba(245,179,53,0.14)", border: "1px solid rgba(245,179,53,0.45)", color: "#F5B335", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }}>
+              {t("map_radar_badge")}
+            </span>
+          )}
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, lineHeight: 1.2, overflowWrap: "anywhere" }}>{point.name}</h2>
           {point.event ? (
             <>
