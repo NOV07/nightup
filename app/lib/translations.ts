@@ -260,7 +260,7 @@ const translations = {
   map_legend_title:    { el: "Τι σημαίνουν τα εικονίδια", en: "What the icons mean" },
   map_near_aria:       { el: "Κοντά μου", en: "Near me" },
   map_near_radius_change: { el: "Πάτα για να αλλάξει", en: "Tap to change" },
-  map_reset:           { el: "Επαναφορά", en: "Reset" },
+  map_clear:           { el: "Καθαρισμός", en: "Clear" },
   map_dock_close:      { el: "Κλείσιμο φίλτρων", en: "Close filters" },
   // ── Spots ──────────────────────────────────────────────
   spots_hero_title:   { el: "Πού πάμε", en: "Where are we going" },

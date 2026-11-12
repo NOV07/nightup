@@ -10,22 +10,22 @@ import { GROUP_LABEL, GroupFilterRow, MapDateBar, dockChip, type PanelHandlers }
 
 /**
  * The filters of the map: a small bar at the bottom with at most two rows, over the map (which stays
- * visible and keeps moving). Row 1: the date and the three groups as chips, "Reset" when something differs
- * from the default, and a round ✕. Row 2 (only when a chip has the focus): the filters of that chip.
+ * visible and keeps moving). Row 1: the date and the three groups as chips, "Clear" (always there, dimmed at the default), and a round ✕. Row 2 (only when a chip has the focus): the filters of that chip.
  * Not modal: no scrim. Esc and ✕ close it; the filters stay. Focus moves in when it opens and back to
  * `returnFocus` when it closes.
  */
-export default function MapDock({ filters, night, tonight, focus, canReset, handlers, onTapDate, onTapGroup, onPickNight, onReset, onClose, returnFocus }: {
+export default function MapDock({ filters, night, tonight, focus, canClear, handlers, onTapDate, onToggleGroup, onToggleFocus, onPickNight, onClear, onClose, returnFocus }: {
   filters: MapFilters;
   night: string | null;
   tonight: string | null;
   focus: DockFocus;
-  canReset: boolean;
+  canClear: boolean;
   handlers: PanelHandlers;
   onTapDate: () => void;
-  onTapGroup: (g: GroupKey) => void;
+  onToggleGroup: (g: GroupKey) => void;
+  onToggleFocus: (g: GroupKey) => void;
   onPickNight: (night: string | null) => void;
-  onReset: () => void;
+  onClear: () => void;
   onClose: () => void;
   returnFocus: RefObject<HTMLElement | null>;
 }) {
@@ -60,17 +60,21 @@ export default function MapDock({ filters, night, tonight, focus, canReset, hand
           </button>
           {GROUPS.map((g) => {
             const on = filters.shown.includes(g);
+            const open = focus === g;
             return (
-              <button key={g} type="button" data-testid={`dock-${g}`} aria-pressed={on} onClick={() => onTapGroup(g)}
-                style={{ ...dockChip(on, MAP_GROUP_COLORS[g]), boxShadow: focus === g ? "0 0 0 2px rgba(232,160,32,0.35)" : undefined }}>
-                {t(GROUP_LABEL[g])}
-              </button>
+              <span key={g} className="nm-dock-grp">
+                <button type="button" data-testid={`dock-${g}`} aria-pressed={on} onClick={() => onToggleGroup(g)} style={dockChip(on, MAP_GROUP_COLORS[g])}>
+                  {t(GROUP_LABEL[g])}
+                </button>
+                <button type="button" className="nm-dock-arrow" data-testid={`dock-${g}-filters`} aria-label={`${t("map_filters")}: ${t(GROUP_LABEL[g])}`}
+                  aria-expanded={open} onClick={() => onToggleFocus(g)} style={open ? { borderColor: MAP_GROUP_COLORS[g], boxShadow: "0 0 0 2px rgba(232,160,32,0.35)" } : undefined}>
+                  <span aria-hidden="true">▾</span>
+                </button>
+              </span>
             );
           })}
-          {canReset && (
-            <button type="button" className="nm-dock-reset" data-testid="dock-reset" onClick={onReset}>{t("map_reset")}</button>
-          )}
         </div>
+        <button type="button" className="nm-dock-clear" data-testid="dock-clear" disabled={!canClear} onClick={onClear}>{t("map_clear")}</button>
         <button type="button" className="nm-dock-x" data-testid="dock-close" aria-label={t("map_dock_close")} onClick={onClose}>
           <span aria-hidden="true">✕</span>
         </button>

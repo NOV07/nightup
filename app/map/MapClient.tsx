@@ -8,7 +8,7 @@ import { useLanguage } from "../components/LanguageContext";
 import {
   mapContext, parseFilters, parseOpenGroup, resolvePoints, serializeFilters,
   setNight, setSpotStatus, toggleEventGenre, toggleEventType, toggleMapCategory, toggleMapSub, toggleWellnessSub,
-  NO_FILTERS, tapGroup as tapGroupOf, type DockFocus, type GroupKey, type MapFilters, type MapPoint,
+  NO_FILTERS, toggleGroupShown, type DockFocus, type GroupKey, type MapFilters, type MapPoint,
 } from "../lib/mapFilters";
 import { DAY_NAMES, closesSoon } from "../lib/openingHours";
 import { weekdayIndex } from "../lib/dateKey";
@@ -89,7 +89,12 @@ const CSS = `
 .nm-dock-chips::-webkit-scrollbar, .nm-dock-r2::-webkit-scrollbar { display: none; }
 .nm-dock-r2 { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: 6px; padding: 3px 2px; }
 .nm-dock-x { flex: none; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.nm-dock-reset { flex: none; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px dashed #6B6B80; background: transparent; color: #F5B335; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.nm-dock-clear { flex: none; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px dashed #6B6B80; background: transparent; color: #F5B335; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.nm-dock-clear:disabled { opacity: 0.4; cursor: default; }
+.nm-dock-grp { flex: none; display: inline-flex; align-items: center; gap: 2px; }
+.nm-dock-arrow { flex: none; box-sizing: border-box; width: 32px; height: 34px; padding: 0; border-radius: 17px; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 13px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.nm-dock-arrow span { display: inline-block; transition: transform .15s; }
+.nm-dock-arrow[aria-expanded="true"] span { transform: rotate(180deg); }
 .nm-fbtn { position: absolute; z-index: 1000; left: 12px; top: 12px; max-width: calc(100% - 76px); height: 44px; padding: 0 16px; border-radius: 22px; display: flex; align-items: center; gap: 8px; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); white-space: nowrap; }
 .nm-fbtn > span:first-child { overflow: hidden; text-overflow: ellipsis; }
 .nm-fbtn.is-active { border-color: #E8A020; }
@@ -285,14 +290,11 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
 
   const openDock = () => setDockOpen(true);
   const closeDock = useCallback(() => { setDockOpen(false); setDockFocus(null); }, []);
-  // A tap on a group chip (see tapGroup in mapFilters: with all shown it shows only that group, and so on).
-  const tapGroup = (g: GroupKey) => {
-    const r = tapGroupOf(filters, dockFocus, g);
-    update(r.filters);
-    setDockFocus(r.focus);
-  };
-  // Reset: groups, filters, the night (back to tonight) and Near me.
-  const resetAll = () => {
+  // A group's button only shows or hides the group (its filters are kept); the arrow next to it opens its filters.
+  const toggleGroup = (g: GroupKey) => update(toggleGroupShown(filters, g));
+  const toggleFocus = (g: GroupKey) => setDockFocus((f) => (f === g ? null : g));
+  // Clear: groups, filters, the night (back to tonight) and Near me.
+  const clearAll = () => {
     update(NO_FILTERS);
     if (near.on) { setNear({ ...near, on: false }); loc.reset(); }
   };
@@ -386,9 +388,9 @@ export default function MapClient({ points }: { points: MapPoint[] }) {
               </div>
             </div>
             {dockOpen && (
-              <MapDock filters={filters} night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} focus={dockFocus} canReset={filterCount > 0}
-                handlers={handlers} returnFocus={filterBtnRef} onClose={closeDock} onReset={resetAll}
-                onTapDate={() => setDockFocus((f) => (f === "date" ? null : "date"))} onTapGroup={tapGroup}
+              <MapDock filters={filters} night={ctx?.night ?? null} tonight={ctx?.tonight ?? null} focus={dockFocus} canClear={filterCount > 0}
+                handlers={handlers} returnFocus={filterBtnRef} onClose={closeDock} onClear={clearAll}
+                onTapDate={() => setDockFocus((f) => (f === "date" ? null : "date"))} onToggleGroup={toggleGroup} onToggleFocus={toggleFocus}
                 onPickNight={(n) => update(setNight(filters, n))} />
             )}
           </div>
