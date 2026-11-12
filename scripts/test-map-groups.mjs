@@ -3,7 +3,7 @@
  * Offline tests for the groups of the public map (Events / Spots / Wellness):
  * the night and what it does to events and to open/closed status, the filters
  * of each group, showing and hiding the layers (the map opens with all three shown),
- * the dock's group taps, counts and the URL (hide=, and the old links).
+ * the dock's group toggles, counts and the URL (hide=, and the old links).
  * Logic in app/lib/mapFilters.ts. No network, no database.
  *
  *   node scripts/test-map-groups.mjs
@@ -12,7 +12,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
   NO_FILTERS, mapContext, resolvePoints, normalizeFilters, parseFilters, parseOpenGroup, serializeFilters,
-  toggleGroupShown, tapGroup, showGroup, toggleEventType, toggleEventGenre, setSpotStatus, toggleMapCategory, toggleMapSub,
+  toggleGroupShown, showGroup, toggleEventType, toggleEventGenre, setSpotStatus, toggleMapCategory, toggleMapSub,
   toggleWellnessSub, setNight, clearGroupFilters, clearAllFilters, hasFilters, hasGroupFilters, eventMatches, GROUPS,
 } from '../app/lib/mapFilters.ts'
 
@@ -172,9 +172,11 @@ test('toggleGroupShown / showGroup', () => {
   assert.deepEqual(showGroup(F({ shown: ['spots'] }), 'events').shown, ['events', 'spots'])
   assert.deepEqual(showGroup(F({ shown: ['spots'] }), 'spots').shown, ['spots'])
 })
-test('hiding the last shown group brings every group back (nothing shown is not a state)', () => {
-  assert.deepEqual(toggleGroupShown(F({ shown: ['spots'] }), 'spots').shown, ALL)
-  assert.equal(run(toggleGroupShown(F({ shown: ['spots'] }), 'spots')).visible.length, 13)
+test('hiding the last shown group leaves a bare map (all three may be hidden)', () => {
+  const none = toggleGroupShown(F({ shown: ['spots'] }), 'spots')
+  assert.deepEqual(none.shown, []); assert.equal(run(none).visible.length, 0)
+  assert.deepEqual(run(none).counts, { events: 4, spots: 6, wellness: 3 })   // what showing them would draw
+  assert.deepEqual(toggleGroupShown(none, 'wellness').shown, ['wellness'])   // and one tap brings a group back
 })
 test('a layer that is hidden keeps its filters', () => {
   assert.deepEqual(toggleGroupShown(F({ shown: ['events', 'spots'], evTypes: ['music'] }), 'events').evTypes, ['music'])
@@ -218,38 +220,22 @@ test('an ignored pick (unknown or not a Spots sub) shows nothing', () => {
 })
 test('clearing a group\'s filters never shows it', () => assert.deepEqual(clearGroupFilters(without('events'), 'events').shown, ['spots', 'wellness']))
 
-console.log('a tap on a group chip of the dock')
-test('all shown: the tap shows ONLY that group and focuses it', () => {
-  for (const g of ALL) { const r = tapGroup(NO_FILTERS, null, g); assert.deepEqual(r.filters.shown, [g]); assert.equal(r.focus, g) }
-  assert.deepEqual(tapGroup(NO_FILTERS, 'date', 'spots').filters.shown, ['spots'])   // the date row had the focus: same
+console.log('a tap on a group button of the dock (only shows or hides that group)')
+test('all shown: hiding Wellness leaves Events and Spots (not «only Wellness»); a second tap shows it again', () => {
+  const h = toggleGroupShown(NO_FILTERS, 'wellness')
+  assert.deepEqual(h.shown, ['events', 'spots'])
+  assert.equal(run(h).visible.filter(p => p.kind === 'wellness').length, 0); assert.equal(run(h).visible.length, 10)
+  assert.deepEqual(toggleGroupShown(h, 'wellness').shown, ALL)
 })
-test('not all shown, the group is hidden: it is shown and focused; the others stay', () => {
-  const r = tapGroup(F({ shown: ['spots'] }), 'spots', 'wellness'); assert.deepEqual(r.filters.shown, ['spots', 'wellness']); assert.equal(r.focus, 'wellness')
-  const r2 = tapGroup(F({ shown: ['wellness'] }), null, 'events'); assert.deepEqual(r2.filters.shown, ['events', 'wellness']); assert.equal(r2.focus, 'events')
-})
-test('a shown group without the focus gets it (nothing is hidden, the filters object is the same)', () => {
-  const f = F({ shown: ['events', 'spots'] })
-  for (const focus of [null, 'date', 'events']) { const r = tapGroup(f, focus, 'spots'); assert.equal(r.filters, f); assert.equal(r.focus, 'spots') }
-})
-test('a shown group that has the focus is hidden, and the focus goes', () => {
-  const r = tapGroup(F({ shown: ['events', 'spots'] }), 'spots', 'spots'); assert.deepEqual(r.filters.shown, ['events']); assert.equal(r.focus, null)
-})
-test('hiding the last shown group brings all back, with no focus', () => {
-  const r = tapGroup(F({ shown: ['wellness'] }), 'wellness', 'wellness'); assert.deepEqual(r.filters.shown, ALL); assert.equal(r.focus, null)
-})
-test('solo, then add, then hide, then back to all', () => {
-  let r = tapGroup(NO_FILTERS, null, 'events')                       // only Events
-  r = tapGroup(r.filters, r.focus, 'spots')                          // + Spots
-  assert.deepEqual(r.filters.shown, ['events', 'spots']); assert.equal(r.focus, 'spots')
-  r = tapGroup(r.filters, r.focus, 'spots')                          // Spots has the focus: hidden
-  assert.deepEqual(r.filters.shown, ['events']); assert.equal(r.focus, null)
-  r = tapGroup(r.filters, r.focus, 'events')                         // Events has no focus: gets it
-  assert.equal(r.focus, 'events'); r = tapGroup(r.filters, r.focus, 'events')   // and now the last one is hidden
-  assert.deepEqual(r.filters.shown, ALL); assert.equal(r.focus, null)
+test('hiding all three, one after the other: they stay hidden, no fallback', () => {
+  let f = NO_FILTERS
+  for (const g of ALL) f = toggleGroupShown(f, g)
+  assert.deepEqual(f.shown, []); assert.equal(run(f).visible.length, 0)
+  assert.deepEqual(clearAllFilters(f).shown, [])    // clearing a filter never lights a group
 })
 test('only `shown` changes: filters and the night are kept', () => {
   const f = { ...NO_FILTERS, evTypes: ['music'], spotStatus: 'open', night: '2026-11-13' }
-  assert.deepEqual({ ...tapGroup(f, null, 'events').filters, shown: ALL }, f)
+  assert.deepEqual({ ...toggleGroupShown(f, 'events'), shown: ALL }, f)
 })
 
 console.log('toggles and normalising')
@@ -258,8 +244,9 @@ test('event type / genre toggle, display order', () => {
   f = toggleEventGenre(f, 'jazz'); f = toggleEventGenre(f, 'techno'); assert.deepEqual(f.evGenres, ['techno', 'jazz'])
   assert.deepEqual(toggleEventGenre(f, 'jazz').evGenres, ['techno'])
 })
-test('nothing shown (empty, unknown, absent) is every group', () => {
-  for (const raw of [{ shown: [] }, { shown: ['nope'] }, {}]) assert.deepEqual(normalizeFilters(raw).shown, ALL)
+test('`shown` absent is every group; an empty or unknown list is kept as nothing shown (the old-link fallbacks are in parseFilters)', () => {
+  assert.deepEqual(normalizeFilters({}).shown, ALL)
+  for (const raw of [{ shown: [] }, { shown: ['nope'] }]) assert.deepEqual(normalizeFilters(raw).shown, [])
 })
 test('normalize drops unknown types, genres, statuses, groups and bad dates', () => {
   const f = normalizeFilters({ shown: ['spots', 'nope', 'spots'], night: '31/12/2026', evTypes: ['music', 'x'], evGenres: ['techno', 'nope', 'Techno'], spotStatus: 'maybe' })
@@ -307,8 +294,16 @@ test('hide: the groups it names are hidden, the rest shown; filters do not decid
   assert.deepEqual(parse('hide=spots&c=drink').shown, ['events', 'wellness'])          // not the older «show what it filters»
   assert.deepEqual(parse('hide=&et=music'), { ...NO_FILTERS, evTypes: ['music'] })     // nothing hidden, one filter: all stay shown
 })
-test('hiding every group, or naming nothing valid, shows all', () => {
-  for (const q of ['hide=events,spots,wellness', 'hide=events,spots,wellness&c=drink', 'hide=garbage,,', 'hide=']) assert.deepEqual(parse(q).shown, ALL, q)
+test('naming nothing valid in hide shows all; naming all three hides all three', () => {
+  for (const q of ['hide=garbage,,', 'hide=']) assert.deepEqual(parse(q).shown, ALL, q)
+  for (const q of ['hide=events,spots,wellness', 'hide=events,spots,wellness&c=drink', 'hide=wellness,spots,events']) assert.deepEqual(parse(q).shown, [], q)
+})
+test('all hidden: written as hide=events,spots,wellness (filters too) and read back', () => {
+  const f = F({ shown: [] })
+  assert.equal(serializeFilters(f), 'hide=events,spots,wellness')
+  assert.deepEqual(parse('hide=events,spots,wellness'), f)
+  const g = F({ shown: [], evTypes: ['music'], night: '2026-11-13' })
+  assert.equal(serializeFilters(g), 'et=music&hide=events,spots,wellness&date=2026-11-13'); assert.deepEqual(parse(serializeFilters(g)), g)
 })
 test('round trip, including a layer that is hidden but has filters, and all shown with filters', () => {
   for (const f of [
@@ -316,7 +311,7 @@ test('round trip, including a layer that is hidden but has filters, and all show
     F({ shown: ['events'], evTypes: ['music'], spotStatus: 'closed' }),     // Spots has a filter but is hidden
     { ...NO_FILTERS, evGenres: ['jazz'] },                                   // filters, all shown: must not come back as «Events only»
     { ...NO_FILTERS, categories: ['drink'] }, { ...NO_FILTERS, spotStatus: 'open' }, { ...NO_FILTERS, wellnessSubs: ['yoga'] },
-    F({ shown: ['events'] }), NO_FILTERS, { ...NO_FILTERS, night: '2026-11-13' },
+    F({ shown: ['events'] }), F({ shown: [] }), NO_FILTERS, { ...NO_FILTERS, night: '2026-11-13' },
   ]) assert.deepEqual(parse(serializeFilters(f)), f, serializeFilters(f))
 })
 test('garbage gives the defaults', () => assert.deepEqual(parse('c=%3Cscript%3E&s=;;,&et=zzz&eg=,&st=maybe&show=all,none&hide=nope&date=tomorrow&ws=club'), NO_FILTERS))
