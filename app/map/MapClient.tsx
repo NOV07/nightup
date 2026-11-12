@@ -85,16 +85,21 @@ const CSS = `
 .nm-toast button { flex: none; width: 32px; height: 32px; border: 0; background: transparent; color: #A9ABC0; cursor: pointer; }
 .nm-dock { box-sizing: border-box; padding: 8px; border-radius: 14px; background: rgba(26,26,40,0.97); border: 1px solid #3A3A55; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
 .nm-dock-r1 { display: flex; align-items: center; gap: 6px; }
-.nm-dock-chips { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 3px 2px; }
-.nm-dock-chips::-webkit-scrollbar, .nm-dock-r2::-webkit-scrollbar { display: none; }
+.nm-dock-groups { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
 .nm-dock-r2 { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: 6px; padding: 3px 2px; }
-.nm-dock-x { flex: none; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.nm-dock-clear { flex: none; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px dashed #6B6B80; background: transparent; color: #F5B335; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-.nm-dock-clear:disabled { opacity: 0.4; cursor: default; }
-.nm-dock-grp { flex: none; display: inline-flex; align-items: center; gap: 2px; }
-.nm-dock-arrow { flex: none; box-sizing: border-box; width: 32px; height: 34px; padding: 0; border-radius: 17px; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 13px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.nm-dock-arrow span { display: inline-block; transition: transform .15s; }
-.nm-dock-arrow[aria-expanded="true"] span { transform: rotate(180deg); }
+.nm-dock-r2::-webkit-scrollbar { display: none; }
+.nm-pill { flex: none; box-sizing: border-box; height: 34px; border-radius: 17px; display: inline-flex; align-items: center; font-size: 13px; white-space: nowrap; }
+.nm-pill button { height: 34px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.nm-pill .nm-pill-label { padding: 0 0 0 10px; border-radius: 17px 0 0 17px; }
+.nm-pill .nm-pill-caret { width: 34px; min-width: 34px; border-radius: 0 17px 17px 0; }
+.nm-pill-caret svg { transition: transform .15s; }
+.nm-pill-caret[aria-expanded="true"] svg { transform: rotate(180deg); }
+.nm-dock-x { flex: none; margin-left: auto; width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 1px solid #3A3A55; background: transparent; color: #fff; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.nm-dock-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; font-size: 13px; }
+.nm-dock-date, .nm-dock-reset { min-height: 34px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.nm-dock-date { color: #E4E5F0; }
+.nm-dock-reset { color: #F5B335; font-weight: 500; }
+.nm-dock-reset:disabled { opacity: 0.4; cursor: default; }
 .nm-fbtn { position: absolute; z-index: 1000; left: 12px; top: 12px; max-width: calc(100% - 76px); height: 44px; padding: 0 16px; border-radius: 22px; display: flex; align-items: center; gap: 8px; background: rgba(15,15,26,0.94); border: 1px solid #3A3A55; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); white-space: nowrap; }
 .nm-fbtn > span:first-child { overflow: hidden; text-overflow: ellipsis; }
 .nm-fbtn.is-active { border-color: #E8A020; }
