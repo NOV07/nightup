@@ -113,10 +113,10 @@ type Raw = {
 
 /** Drops what cannot stand (unknown keys, duplicates, subs whose category is off) and puts the rest in display order. */
 export function normalizeFilters(input: Raw): MapFilters {
-  const shownSet = new Set(input.shown ?? [])
-  // Nothing shown is not a state the map has: it falls back to every group.
-  const picked = GROUPS.filter(g => shownSet.has(g))
-  const shown = picked.length ? picked : [...GROUPS]
+  // No `shown` at all means every group. An empty list is a real state (all three hidden, a bare map): the
+  // older-link fallbacks («no valid group» = all) live in parseFilters, where the link is read.
+  const shownSet = new Set(input.shown ?? GROUPS)
+  const shown = GROUPS.filter(g => shownSet.has(g))
 
   const typeSet = new Set(input.evTypes ?? [])
   const evTypes = EVENT_TYPES.filter(t => typeSet.has(t))
@@ -153,7 +153,7 @@ export function wellnessSubKeys(): string[] {
 
 const flip = <T,>(list: readonly T[], v: T): T[] => (list.includes(v) ? list.filter(x => x !== v) : [...list, v])
 
-/** The layer of a group on or off (the dot). Its filters are kept. */
+/** The layer of a group on or off (the group's button in the dock). Its filters are kept; all three may be off. */
 export function toggleGroupShown(f: MapFilters, g: GroupKey): MapFilters {
   return normalizeFilters({ ...f, shown: flip(f.shown, g) })
 }
@@ -166,17 +166,6 @@ export function showGroup(f: MapFilters, g: GroupKey): MapFilters {
 /** What has the focus in the dock: the date row, a group's filters, or nothing. UI only (not in the URL). */
 export type DockFocus = 'date' | GroupKey | null
 
-/**
- * A tap on a group chip of the dock. With every group shown, it shows ONLY that group (and focuses it).
- * Otherwise: an off group is turned on and focused; a shown group without the focus gets it; a shown
- * group that has the focus is hidden (and when that hides the last one, every group is back).
- */
-export function tapGroup(f: MapFilters, focus: DockFocus, g: GroupKey): { filters: MapFilters; focus: DockFocus } {
-  if (f.shown.length === GROUPS.length) return { filters: normalizeFilters({ ...f, shown: [g] }), focus: g }
-  if (!f.shown.includes(g)) return { filters: showGroup(f, g), focus: g }
-  if (focus !== g) return { filters: f, focus: g }
-  return { filters: toggleGroupShown(f, g), focus: null }
-}
 export const toggleEventType = (f: MapFilters, t: EventType): MapFilters => {
   const n = normalizeFilters({ ...f, evTypes: flip(f.evTypes, t) })
   return n.evTypes.length > f.evTypes.length ? showGroup(n, 'events') : n
@@ -328,12 +317,16 @@ export function parseFilters(params: Params): MapFilters {
   })
 
   const show = params.get('show')
-  if (show !== null) return normalizeFilters({ ...filters, shown: list(show) })   // an older link or a button: only these groups
+  if (show !== null) {
+    // an older link or a button: only these groups; none valid = all
+    const only = list(show).filter((g): g is GroupKey => (GROUPS as readonly string[]).includes(g))
+    return normalizeFilters({ ...filters, shown: only.length ? only : GROUPS })
+  }
 
   const hide = params.get('hide')
   if (hide !== null) {
     const hidden = new Set(list(hide))
-    return normalizeFilters({ ...filters, shown: GROUPS.filter(g => !hidden.has(g)) })   // `hide=` (no value): none hidden
+    return normalizeFilters({ ...filters, shown: GROUPS.filter(g => !hidden.has(g)) })   // `hide=` (no value): none hidden; all three named: a bare map
   }
 
   // Neither `show` nor `hide`: an older link, or a button. It shows what it filters (and what it names),
@@ -341,7 +334,7 @@ export function parseFilters(params: Params): MapFilters {
   const lit: GroupKey[] = GROUPS.filter(g => hasGroupFilters(filters, g))
   if (params.get('events') === '1' && !lit.includes('events')) lit.push('events')
   if (rawC.includes('wellness') && !lit.includes('wellness')) lit.push('wellness')
-  return normalizeFilters({ ...filters, shown: lit })
+  return normalizeFilters({ ...filters, shown: lit.length ? lit : GROUPS })
 }
 
 /** Which group's panel the link wants open (?open=events, or the old ?events=1). */

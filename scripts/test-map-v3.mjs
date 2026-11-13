@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict'
 import { activeFilterCount, pluralLabel } from '../app/lib/mapUi.ts'
 import { nextRadius, NEAR_RADII, DEFAULT_NEAR_RADIUS, parseNear, serializeNear } from '../app/lib/mapNear.ts'
-import { NO_FILTERS, toggleGroupShown, setNight, tapGroup, normalizeFilters } from '../app/lib/mapFilters.ts'
+import { NO_FILTERS, toggleGroupShown, setNight, normalizeFilters } from '../app/lib/mapFilters.ts'
 import translations from '../app/lib/translations.ts'
 
 let passed = 0, failed = 0
@@ -30,10 +30,11 @@ test('every hidden group counts one', () => {
   assert.equal(activeFilterCount(F({ shown: ['spots'] }), false), 2)
   assert.equal(activeFilterCount(F({ shown: ['wellness'] }), false), 2)
 })
-test('the solo tap on a group (two hidden) = 2; hiding the last one brings all back = 0', () => {
-  const solo = tapGroup(NO_FILTERS, null, 'spots')
-  assert.equal(activeFilterCount(solo.filters, false), 2)
-  assert.equal(activeFilterCount(tapGroup(solo.filters, solo.focus, 'spots').filters, false), 0)
+test('hiding and showing a group again goes back to 0; all three hidden = 3', () => {
+  const h = toggleGroupShown(NO_FILTERS, 'spots')
+  assert.equal(activeFilterCount(h, false), 1)
+  assert.equal(activeFilterCount(toggleGroupShown(h, 'spots'), false), 0)
+  assert.equal(activeFilterCount(F({ shown: [] }), false), 3)
 })
 test('a night other than tonight adds one; tonight (null) adds nothing', () => {
   assert.equal(activeFilterCount(setNight(NO_FILTERS, '2026-11-11'), false), 1)
@@ -67,10 +68,10 @@ test('English: 1 → "1 place", otherwise "N places"', () => {
   assert.deepEqual([1, 0, 25].map(n => pluralLabel(n, c)), ['1 place', '0 places', '25 places'])
 })
 test('every text of the controls exists in Greek and English', () => {
-  for (const k of ['map_filters', 'map_reset', 'map_dock_close', 'map_legend_title', 'map_count_one', 'map_count_many', 'map_near_aria', 'map_near_radius_change', 'map_near_me', 'map_view_list', 'map_view_map', 'map_tonight', 'map_tomorrow', 'map_date_bar']) {
+  for (const k of ['map_filters', 'map_clear', 'map_dock_close', 'map_legend_title', 'map_count_one', 'map_count_many', 'map_near_aria', 'map_near_radius_change', 'map_near_me', 'map_view_list', 'map_view_map', 'map_tonight', 'map_tomorrow', 'map_date_bar']) {
     assert.ok(translations[k]?.el && translations[k]?.en, k)
   }
-  assert.equal(translations.map_filters.el, 'Φίλτρα'); assert.equal(translations.map_reset.el, 'Επαναφορά')
+  assert.equal(translations.map_filters.el, 'Φίλτρα'); assert.equal(translations.map_clear.el, 'Καθαρισμός')
 })
 
 console.log('radius chip')
