@@ -17,6 +17,8 @@ import HostedEventCard from '@/components/profile/HostedEventCard'
 import ProfileListings from '@/components/profile/ProfileListings'
 import ProfileGallery, { type ProfileGalleryPhoto } from '@/components/ui/ProfileGallery'
 import { genreLabel } from "@/app/lib/genres";
+import SpotProfileClient from '@/app/spots/[slug]/SpotProfileClient'
+import { venueAsSpot } from '@/app/lib/venueAsSpot'
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80"
 
@@ -275,6 +277,84 @@ export default async function ProfilePage({ params }: Props) {
         </div>
       </section>
     )
+
+  // A venue shows on the spot page layout (SpotProfileClient), fed from its
+  // profile. Everything the spot page has no slot for renders below it.
+  if (profile.profile_type === 'venue') {
+    const venueSocials = socialLinks.filter(s => s.key !== 'instagram' && s.key !== 'website') // both are already info cards
+    const showEvents = visibility.upcoming_events !== false
+    const sectionH2 = { color: 'rgba(255,255,255,0.3)' }
+    return (
+      <div style={{ backgroundColor: '#0F0F1A', minHeight: '100vh' }}>
+        <SpotProfileClient
+          kind="venue"
+          spot={venueAsSpot(profile)}
+          owner={{ id: profile.id, username: profile.username, avatarUrl: avatarSrc, avatarCrop }}
+          events={showEvents ? upcomingEvents : []}
+          listings={(profileListings ?? []) as any}
+          categoryLabel={profile.network_category ?? null}
+          capacity={profile.venue_capacity ?? null}
+        />
+        <div className="max-w-4xl mx-auto px-6 pb-16 space-y-12">
+          {profile.announcements && (
+            <div className="px-5 py-4" style={{ backgroundColor: 'rgba(232,160,32,0.06)', border: '0.5px solid rgba(232,160,32,0.2)', borderLeft: '3px solid #E8A020', borderRadius: 8 }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#E8A020' }}>Announcement</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>{profile.announcements}</p>
+            </div>
+          )}
+
+          {pastEventsSection(hostedEventCard)}
+
+          {visibility.music_embed !== false && profile.featured_track_url && (
+            <section>
+              <h2 className="text-sm font-bold uppercase tracking-widest mb-5" style={sectionH2}>Music</h2>
+              <div className="overflow-hidden" style={{ border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 8 }}>
+                <FeaturedTrackEmbed url={profile.featured_track_url} showUser={false} />
+              </div>
+            </section>
+          )}
+
+          {visibility.gallery !== false && galleryPhotos.length > 0 && (
+            <section>
+              <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={sectionH2}>Gallery</h2>
+              <ProfileGallery photos={galleryPhotos} />
+            </section>
+          )}
+
+          {profile.booking_info && (
+            <section>
+              <h2 className="text-sm font-bold uppercase tracking-widest mb-4" style={sectionH2}>Booking</h2>
+              <div className="p-5" style={{ backgroundColor: '#111120', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 8 }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>{profile.booking_info}</p>
+              </div>
+            </section>
+          )}
+
+          {(venueSocials.length > 0 || profile.booking_email) && (
+            <div className="flex flex-wrap gap-2">
+              {venueSocials.map(social => (
+                <a key={social.key} href={social.url!} target="_blank" rel="noopener noreferrer"
+                  className="text-xs px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)' }}>
+                  {social.label}
+                </a>
+              ))}
+              <ContactPill email={profile.booking_email} phone={null} />
+            </div>
+          )}
+
+          {profileMixes.length > 0 && (
+            <section>
+              <h2 className="text-sm font-bold uppercase tracking-widest mb-5" style={sectionH2}><T k="profile_sets" /></h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {profileMixes.map((mix: any) => <MixCard key={mix.id} mix={mix} />)}
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ backgroundColor: '#0F0F1A', minHeight: '100vh' }}>
