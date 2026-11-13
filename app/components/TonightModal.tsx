@@ -16,6 +16,7 @@ import { useLanguage } from "./LanguageContext";
 import { useUserLocation } from "../lib/useUserLocation";
 import { useTilt, reducedMotion } from "./useTilt";
 import { DAY_NAMES } from "../lib/openingHours";
+import { walkLeg } from "../lib/walkTime";
 import TonightRoute, { type RouteStep } from "./TonightRoute";
 
 const SEEN_KEY = "nightup_tonight_seen";
@@ -89,9 +90,12 @@ const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFin
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
   const { t, lang } = useLanguage();
-  const WALKS = [t("tonight_walk_2"), t("tonight_walk_4")];
-  // One walking text per leg, shared by the timeline and the route screen (leg i = from step i to step i+1).
-  const walkText = (i: number) => WALKS[i] ?? t("tonight_walk_min");
+  // Walk between two steps, computed once (app/lib/walkTime.ts) and shared by the timeline and the route screen.
+  // null when either step has no coordinates: nothing is shown then.
+  const walkBetween = (a?: { lat?: number | null; lng?: number | null }, b?: { lat?: number | null; lng?: number | null }) =>
+    a && b && isNum(a.lat) && isNum(a.lng) && isNum(b.lat) && isNum(b.lng)
+      ? t("tonight_walk_approx").replace("{n}", String(walkLeg({ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng }).minutes))
+      : null;
   // The stop's own category (the one it was picked for), shown uppercase via CSS.
   const stopCategoryLabel = (s: Spot) => spotCategoryLabel(s.nightSlot ?? s.category, lang);
   const LOAD_STEPS = [t("tonight_load_1"), t("tonight_load_2"), t("tonight_load_3"), t("tonight_load_4")];
@@ -266,7 +270,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       key: `e-${matchedEvent.id}`, kind: "event" as const, time: matchedEvent.time ?? "", name: matchedEvent.title, category: t("tonight_route_event"),
       hours: null, meta: matchedEvent.venue || null, lat: matchedEvent.lat as number, lng: matchedEvent.lng as number, walkAfter: null, eventId: matchedEvent.id,
     }] : []),
-  ].map((st, i, all) => ({ ...st, walkAfter: i < all.length - 1 ? walkText(i) : null }));
+  ].map((st, i, all) => ({ ...st, walkAfter: i < all.length - 1 ? walkBetween(st, all[i + 1]) : null }));
   const routeReady = routeSteps.length >= 2 && night.every((s) => isNum(s.lat) && isNum(s.lng)) && (!matchedEvent || (isNum(matchedEvent.lat) && isNum(matchedEvent.lng)));
 
   const renderView = (v: View, leaving = false) => (
@@ -370,19 +374,19 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                   {STOP_TIMES[i]} · <span style={{ textTransform: "uppercase" }}>{stopCategoryLabel(s)}</span>
                 </div>
                 <SpotCard spot={s} compact onNavigate={handleClose} />
-                {i < night.length - 1 && (
+                {i < night.length - 1 && walkBetween(s, night[i + 1]) && (
                   <div className="tn-walk" style={{ "--d": `${i * 850 + 700}ms`, "--dt": `${i * 850 + 1000}ms` } as React.CSSProperties}>
                     <span className="tn-walk-line" />
-                    <span className="tn-walk-txt">· {walkText(i)}</span>
+                    <span className="tn-walk-txt">· {walkBetween(s, night[i + 1])}</span>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          {matchedEvent && night.length > 0 && (
+          {matchedEvent && night.length > 0 && walkBetween(night[night.length - 1], matchedEvent) && (
             <div className="tn-walk" style={{ "--d": `${(night.length - 1) * 850 + 700}ms`, "--dt": `${(night.length - 1) * 850 + 1000}ms`, marginBottom: 0 } as React.CSSProperties}>
               <span className="tn-walk-line" />
-              <span className="tn-walk-txt">· {walkText(night.length - 1)}</span>
+              <span className="tn-walk-txt">· {walkBetween(night[night.length - 1], matchedEvent)}</span>
             </div>
           )}
           {matchedEvent && (
