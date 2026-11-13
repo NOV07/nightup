@@ -1,6 +1,9 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { LuCar } from 'react-icons/lu'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { mapEmojiOf } from '@/app/lib/mapEmoji'
@@ -57,6 +60,18 @@ const CSS = `
 .nightup-public-map .nm-user-halo { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(76,141,255,0.22); }
 .nightup-public-map .nm-user-dot { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; box-sizing: border-box; border-radius: 50%; background: #4C8DFF; border: 2.5px solid #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
 @media (pointer: coarse) { .nightup-public-map.is-quiet .leaflet-control-zoom { display: none; } }
+/* Route mode (Tonight modal): round gold numbered pins, a straight gold line and walk chips. Fades only, no pops. */
+.nightup-public-map .nm-route-pin { position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+.nightup-public-map .nm-route-dot { box-sizing: border-box; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); box-shadow: 0 2px 6px rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; line-height: 1; color: #0F0F1A; }
+.nightup-public-map .nm-route-pulse { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; box-sizing: border-box; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #F5B335; pointer-events: none; opacity: 0; }
+.nightup-public-map .nm-route-chip-ico { display: inline-flex; vertical-align: -2px; }
+.nightup-public-map .nm-route-chip { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap; padding: 3px 9px; border-radius: 999px; background: rgba(15,15,26,0.94); border: 1px solid rgba(232,160,32,0.55); color: #F5B335; font-size: 11px; font-weight: 600; line-height: 1.3; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .nightup-public-map .nm-route-pin, .nightup-public-map .nm-route-chip { animation: nm-route-fade .5s ease var(--at, 0ms) backwards; }
+  .nightup-public-map .nm-route-pulse { animation: nm-route-pulse 2.8s ease-in-out 1.2s infinite; }
+}
+@keyframes nm-route-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nm-route-pulse { 0% { transform: scale(1); opacity: 0.5; } 70%, 100% { transform: scale(1.55); opacity: 0; } }
 .nightup-public-map .leaflet-bar { border: 1px solid rgba(255,255,255,0.14); box-shadow: none; }
 .nightup-public-map .leaflet-bar a { background: #111120; color: #E8A020; border-bottom-color: rgba(255,255,255,0.12); }
 .nightup-public-map .leaflet-bar a:hover, .nightup-public-map .leaflet-bar a:focus { background: #1b1b30; color: #E8A020; }
@@ -115,9 +130,12 @@ type Props = {
   quiet?: boolean
   /** Where the person is (only while "Near me" is on) and the radius to frame, or null for none. Never stored. */
   userLocation?: { lat: number; lng: number; radiusKm: number | null } | null
+  /** Route mode (Tonight modal): numbered stops joined by a straight line, with `legs[i]` as the chip between stop i and i+1.
+   *  Draws only the route (pass no points). Must be 2+ stops; leave unset for the normal map. */
+  route?: { stops: { lat: number; lng: number; name: string }[]; legs: { text: string; drive?: string; label?: string }[] } | null
 }
 
-export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0, userLocation = null, quiet = false }: Props) {
+export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0, userLocation = null, quiet = false, route = null }: Props) {
   const { t } = useLanguage()
   const elRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -330,6 +348,85 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     }
     return () => { group.remove() }
   }, [userLat, userLng, userRadius])
+
+  // Route mode: fit the stops, then draw the line from stop 1 to the last one, once (~1.8s). Pins and chips fade in as the line reaches them.
+  const routeKey = route && route.stops.length >= 2 ? JSON.stringify(route) : null
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !route || !routeKey) return
+    const { stops, legs } = route
+    const latlngs = stops.map(s => L.latLng(s.lat, s.lng))
+    map.fitBounds(L.latLngBounds(latlngs), { padding: [56, 56], maxZoom: FIT_MAX_ZOOM, animate: false })
+
+    const START = 350
+    const DRAW = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1800
+    const seg = latlngs.slice(1).map((p, i) => latlngs[i].distanceTo(p))
+    const total = seg.reduce((a, b) => a + b, 0) || 1
+    const reach: number[] = [0]
+    seg.forEach((d, i) => reach.push(reach[i] + d / total))
+
+    const group = L.layerGroup().addTo(map)
+    const line = L.polyline(latlngs, { color: '#E8A020', weight: 3.5, opacity: 0.95, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(group)
+
+    stops.forEach((s, i) => {
+      const el = document.createElement('div')
+      el.className = 'nm-route-pin'
+      el.setAttribute('role', 'img')
+      el.setAttribute('aria-label', `${i + 1}. ${s.name}`)
+      el.style.setProperty('--at', `${DRAW ? START + reach[i] * DRAW : 0}ms`)
+      if (i === 0) {
+        const pulse = document.createElement('span')
+        pulse.className = 'nm-route-pulse'
+        pulse.setAttribute('aria-hidden', 'true')
+        el.appendChild(pulse)
+      }
+      const dot = document.createElement('span')
+      dot.className = 'nm-route-dot'
+      dot.setAttribute('aria-hidden', 'true')
+      dot.textContent = String(i + 1)
+      el.appendChild(dot)
+      L.marker(latlngs[i], { icon: L.divIcon({ className: 'nm-pin-wrap', html: el, iconSize: [44, 44], iconAnchor: [22, 22] }), interactive: false, keyboard: false, zIndexOffset: 500 }).addTo(group)
+    })
+    // A chip never sits on a pin: when two stops are too close on screen for it to fit between them, it is left out (the cards still show the times).
+    const CHIP_MIN_GAP_PX = 96
+    legs.forEach((leg, i) => {
+      if (!leg || (!leg.text && !leg.drive) || i >= seg.length) return
+      if (map.latLngToContainerPoint(latlngs[i]).distanceTo(map.latLngToContainerPoint(latlngs[i + 1])) < CHIP_MIN_GAP_PX) return
+      const el = document.createElement('span')
+      el.className = 'nm-route-chip'
+      if (leg.label) el.setAttribute('aria-label', leg.label)
+      if (leg.text) el.appendChild(document.createTextNode(leg.text))
+      if (leg.drive) {
+        if (leg.text) el.appendChild(document.createTextNode(' · '))
+        const ico = document.createElement('span')
+        ico.className = 'nm-route-chip-ico'
+        ico.setAttribute('aria-hidden', 'true')
+        ico.innerHTML = renderToStaticMarkup(createElement(LuCar, { size: 12 })) // trusted: our own icon markup
+        el.appendChild(ico)
+        el.appendChild(document.createTextNode(` ${leg.drive}`))
+      }
+      el.style.setProperty('--at', `${DRAW ? START + ((reach[i] + reach[i + 1]) / 2) * DRAW : 0}ms`)
+      const mid = L.latLng((latlngs[i].lat + latlngs[i + 1].lat) / 2, (latlngs[i].lng + latlngs[i + 1].lng) / 2)
+      L.marker(mid, { icon: L.divIcon({ className: 'nm-pin-wrap', html: el, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: false, keyboard: false }).addTo(group)
+    })
+
+    // Draw the line with a dash offset. The dash is dropped when it is done (and on zoom), so a later zoom never leaves gaps.
+    const path = line.getElement() as SVGPathElement | undefined
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const settle = () => { if (path) { path.style.transition = 'none'; path.style.strokeDasharray = 'none'; path.style.strokeDashoffset = '0' } }
+    if (path && DRAW) {
+      const len = path.getTotalLength()
+      path.style.strokeDasharray = `${len}`
+      path.style.strokeDashoffset = `${len}`
+      void path.getBoundingClientRect()
+      path.style.transition = `stroke-dashoffset ${DRAW}ms cubic-bezier(.33,0,.67,1) ${START}ms`
+      path.style.strokeDashoffset = '0'
+      timer = setTimeout(settle, START + DRAW + 100)
+      map.once('zoomstart', settle)
+    }
+    return () => { clearTimeout(timer); map.off('zoomstart', settle); group.remove() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeKey])
 
   function retryTiles() {
     setTilesFailed(false)
