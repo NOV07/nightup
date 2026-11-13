@@ -2,7 +2,9 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { LuCar } from "react-icons/lu";
 import { useLanguage } from "./LanguageContext";
+import type { LegTimes } from "../lib/walkTime";
 
 // The map (Leaflet) is only fetched once this screen is mounted, i.e. after «Δες τη διαδρομή» is pressed.
 const PublicMap = dynamic(() => import("@/components/maps/PublicMap"), {
@@ -22,13 +24,25 @@ export interface RouteStep {
   meta: string | null;
   lat: number;
   lng: number;
-  /** Walk text from this step to the next, the same text the timeline shows. */
-  walkAfter: string | null;
+  /** Times from this step to the next (one helper, app/lib/walkTime.ts), shown the same in the timeline, the chips and the cards. */
+  walkAfter: LegTimes | null;
   eventId?: string;
 }
 
 const NOOP = () => {};
 const G = "#E8A020";
+
+/** «~4 λεπτά», or «~25 λεπτά με τα πόδια · [car] ~6 λεπτά με αμάξι» when the walk is long. */
+export function LegLabel({ leg }: { leg: LegTimes }) {
+  const { t } = useLanguage();
+  const n = (k: "tonight_walk_approx" | "tonight_walk_foot" | "tonight_drive_approx", min: number) => t(k).replace("{n}", String(min));
+  if (!leg.drive) return <>{n("tonight_walk_approx", leg.walk.minutes)}</>;
+  return (
+    <>
+      {n("tonight_walk_foot", leg.walk.minutes)} · <LuCar aria-hidden="true" size={12} style={{ verticalAlign: "-2px" }} /> {n("tonight_drive_approx", leg.drive.minutes)}
+    </>
+  );
+}
 
 export const mapsUrl = (lat: number, lng: number) => `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
@@ -36,7 +50,14 @@ export default function TonightRoute({ steps, onNavigate, loading }: { steps: Ro
   const { t } = useLanguage();
   const route = {
     stops: steps.map((s) => ({ lat: s.lat, lng: s.lng, name: s.name })),
-    legs: steps.slice(0, -1).map((s) => s.walkAfter ?? ""),
+    legs: steps.slice(0, -1).map((s) => {
+      const leg = s.walkAfter;
+      if (!leg) return { text: "" };
+      const m = (min: number) => t("tonight_min_short").replace("{n}", String(min));
+      return leg.drive
+        ? { text: m(leg.walk.minutes), drive: m(leg.drive.minutes), label: `${t("tonight_walk_foot").replace("{n}", String(leg.walk.minutes))} · ${t("tonight_drive_approx").replace("{n}", String(leg.drive.minutes))}` }
+        : { text: t("tonight_walk_approx").replace("{n}", String(leg.walk.minutes)) };
+    }),
   };
 
   return (
@@ -46,7 +67,7 @@ export default function TonightRoute({ steps, onNavigate, loading }: { steps: Ro
         {!loading && <PublicMap points={[]} selectedId={null} onSelect={NOOP} ariaLabel={t("tonight_route_map_aria")} quiet route={route} />}
       </div>
 
-      <ol className="tn-route-list" style={{ listStyle: "none", margin: "18px 0 0", padding: 0 }}>
+      <ol className="tn-route-list" style={{ listStyle: "none", margin: "16px 0 0", padding: 0 }}>
         {steps.map((s, i) => (
           <li key={s.key}>
             <div className="tn-route-card" style={card}>
@@ -70,7 +91,7 @@ export default function TonightRoute({ steps, onNavigate, loading }: { steps: Ro
             {s.walkAfter && i < steps.length - 1 && (
               <div className="tn-walk" style={{ margin: "4px 0 4px 17px" }}>
                 <span className="tn-walk-line" style={{ animation: "none" }} />
-                <span className="tn-walk-txt" style={{ animation: "none" }}>· {s.walkAfter}</span>
+                <span className="tn-walk-txt" style={{ animation: "none" }}>· <LegLabel leg={s.walkAfter} /></span>
               </div>
             )}
           </li>

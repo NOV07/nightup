@@ -1,6 +1,9 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { LuCar } from 'react-icons/lu'
 import 'leaflet/dist/leaflet.css'
 import { useLanguage } from '@/app/components/LanguageContext'
 import { mapEmojiOf } from '@/app/lib/mapEmoji'
@@ -61,6 +64,7 @@ const CSS = `
 .nightup-public-map .nm-route-pin { position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
 .nightup-public-map .nm-route-dot { box-sizing: border-box; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #0F0F1A; background: linear-gradient(135deg, #F5B335, #E8A020); box-shadow: 0 2px 6px rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; line-height: 1; color: #0F0F1A; }
 .nightup-public-map .nm-route-pulse { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; box-sizing: border-box; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #F5B335; pointer-events: none; opacity: 0; }
+.nightup-public-map .nm-route-chip-ico { display: inline-flex; vertical-align: -2px; }
 .nightup-public-map .nm-route-chip { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap; padding: 3px 9px; border-radius: 999px; background: rgba(15,15,26,0.94); border: 1px solid rgba(232,160,32,0.55); color: #F5B335; font-size: 11px; font-weight: 600; line-height: 1.3; pointer-events: none; }
 @media (prefers-reduced-motion: no-preference) {
   .nightup-public-map .nm-route-pin, .nightup-public-map .nm-route-chip { animation: nm-route-fade .5s ease var(--at, 0ms) backwards; }
@@ -128,7 +132,7 @@ type Props = {
   userLocation?: { lat: number; lng: number; radiusKm: number | null } | null
   /** Route mode (Tonight modal): numbered stops joined by a straight line, with `legs[i]` as the chip between stop i and i+1.
    *  Draws only the route (pass no points). Must be 2+ stops; leave unset for the normal map. */
-  route?: { stops: { lat: number; lng: number; name: string }[]; legs: string[] } | null
+  route?: { stops: { lat: number; lng: number; name: string }[]; legs: { text: string; drive?: string; label?: string }[] } | null
 }
 
 export default function PublicMap({ points, selectedId, onSelect, ariaLabel, statusById, topInset = 0, userLocation = null, quiet = false, route = null }: Props) {
@@ -383,11 +387,24 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
       el.appendChild(dot)
       L.marker(latlngs[i], { icon: L.divIcon({ className: 'nm-pin-wrap', html: el, iconSize: [44, 44], iconAnchor: [22, 22] }), interactive: false, keyboard: false, zIndexOffset: 500 }).addTo(group)
     })
-    legs.forEach((text, i) => {
-      if (!text || i >= seg.length) return
+    // A chip never sits on a pin: when two stops are too close on screen for it to fit between them, it is left out (the cards still show the times).
+    const CHIP_MIN_GAP_PX = 96
+    legs.forEach((leg, i) => {
+      if (!leg || !leg.text || i >= seg.length) return
+      if (map.latLngToContainerPoint(latlngs[i]).distanceTo(map.latLngToContainerPoint(latlngs[i + 1])) < CHIP_MIN_GAP_PX) return
       const el = document.createElement('span')
       el.className = 'nm-route-chip'
-      el.textContent = text
+      if (leg.label) el.setAttribute('aria-label', leg.label)
+      el.appendChild(document.createTextNode(leg.text))
+      if (leg.drive) {
+        el.appendChild(document.createTextNode(' · '))
+        const ico = document.createElement('span')
+        ico.className = 'nm-route-chip-ico'
+        ico.setAttribute('aria-hidden', 'true')
+        ico.innerHTML = renderToStaticMarkup(createElement(LuCar, { size: 12 })) // trusted: our own icon markup
+        el.appendChild(ico)
+        el.appendChild(document.createTextNode(` ${leg.drive}`))
+      }
       el.style.setProperty('--at', `${DRAW ? START + ((reach[i] + reach[i + 1]) / 2) * DRAW : 0}ms`)
       const mid = L.latLng((latlngs[i].lat + latlngs[i + 1].lat) / 2, (latlngs[i].lng + latlngs[i + 1].lng) / 2)
       L.marker(mid, { icon: L.divIcon({ className: 'nm-pin-wrap', html: el, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: false, keyboard: false }).addTo(group)

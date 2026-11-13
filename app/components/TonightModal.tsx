@@ -16,8 +16,8 @@ import { useLanguage } from "./LanguageContext";
 import { useUserLocation } from "../lib/useUserLocation";
 import { useTilt, reducedMotion } from "./useTilt";
 import { DAY_NAMES } from "../lib/openingHours";
-import { walkLeg } from "../lib/walkTime";
-import TonightRoute, { type RouteStep } from "./TonightRoute";
+import { legTimes } from "../lib/walkTime";
+import TonightRoute, { LegLabel, type RouteStep } from "./TonightRoute";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
@@ -90,11 +90,11 @@ const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFin
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
   const { t, lang } = useLanguage();
-  // Walk between two steps, computed once (app/lib/walkTime.ts) and shared by the timeline and the route screen.
+  // Times between two steps, computed once (app/lib/walkTime.ts) and shared by the timeline, the chips and the route cards.
   // null when either step has no coordinates: nothing is shown then.
-  const walkBetween = (a?: { lat?: number | null; lng?: number | null }, b?: { lat?: number | null; lng?: number | null }) =>
+  const legBetween = (a?: { lat?: number | null; lng?: number | null }, b?: { lat?: number | null; lng?: number | null }) =>
     a && b && isNum(a.lat) && isNum(a.lng) && isNum(b.lat) && isNum(b.lng)
-      ? t("tonight_walk_approx").replace("{n}", String(walkLeg({ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng }).minutes))
+      ? legTimes({ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng })
       : null;
   // The stop's own category (the one it was picked for), shown uppercase via CSS.
   const stopCategoryLabel = (s: Spot) => spotCategoryLabel(s.nightSlot ?? s.category, lang);
@@ -270,7 +270,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       key: `e-${matchedEvent.id}`, kind: "event" as const, time: matchedEvent.time ?? "", name: matchedEvent.title, category: t("tonight_route_event"),
       hours: null, meta: matchedEvent.venue || null, lat: matchedEvent.lat as number, lng: matchedEvent.lng as number, walkAfter: null, eventId: matchedEvent.id,
     }] : []),
-  ].map((st, i, all) => ({ ...st, walkAfter: i < all.length - 1 ? walkBetween(st, all[i + 1]) : null }));
+  ].map((st, i, all) => ({ ...st, walkAfter: i < all.length - 1 ? legBetween(st, all[i + 1]) : null }));
   const routeReady = routeSteps.length >= 2 && night.every((s) => isNum(s.lat) && isNum(s.lng)) && (!matchedEvent || (isNum(matchedEvent.lat) && isNum(matchedEvent.lng)));
 
   const renderView = (v: View, leaving = false) => (
@@ -374,19 +374,19 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                   {STOP_TIMES[i]} · <span style={{ textTransform: "uppercase" }}>{stopCategoryLabel(s)}</span>
                 </div>
                 <SpotCard spot={s} compact onNavigate={handleClose} />
-                {i < night.length - 1 && walkBetween(s, night[i + 1]) && (
+                {i < night.length - 1 && legBetween(s, night[i + 1]) && (
                   <div className="tn-walk" style={{ "--d": `${i * 850 + 700}ms`, "--dt": `${i * 850 + 1000}ms` } as React.CSSProperties}>
                     <span className="tn-walk-line" />
-                    <span className="tn-walk-txt">· {walkBetween(s, night[i + 1])}</span>
+                    <span className="tn-walk-txt">· {<LegLabel leg={legBetween(s, night[i + 1])!} />}</span>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          {matchedEvent && night.length > 0 && walkBetween(night[night.length - 1], matchedEvent) && (
+          {matchedEvent && night.length > 0 && legBetween(night[night.length - 1], matchedEvent) && (
             <div className="tn-walk" style={{ "--d": `${(night.length - 1) * 850 + 700}ms`, "--dt": `${(night.length - 1) * 850 + 1000}ms`, marginBottom: 0 } as React.CSSProperties}>
               <span className="tn-walk-line" />
-              <span className="tn-walk-txt">· {walkBetween(night[night.length - 1], matchedEvent)}</span>
+              <span className="tn-walk-txt">· {<LegLabel leg={legBetween(night[night.length - 1], matchedEvent)!} />}</span>
             </div>
           )}
           {matchedEvent && (
@@ -427,9 +427,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
       {v === "route" && (
         <div>
           <button onClick={() => setView("night")} style={S.back}>{t("tonight_back")}</button>
-          <div style={S.nightKicker}>{t("tonight_kicker")}</div>
-          <div style={S.nightTitle}>{t("tonight_route_title")} <em style={S.em}>{t("tonight_route_title_em")}</em></div>
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: 8 }}>
             <TonightRoute steps={routeSteps} onNavigate={handleClose} loading={leaving} />
           </div>
         </div>
