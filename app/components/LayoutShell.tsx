@@ -12,7 +12,7 @@ import TonightFAB from "./TonightFAB";
 import { useTonightModal } from "./TonightContext";
 import { useRegisterModalOpen } from "./ModalStateContext";
 import type { Spot } from "../spots/types";
-import { SPOT_COLS, mapSpot } from "../spots/mapSpot";
+import { SPOT_MAP_COLS, mapSpot } from "../spots/mapSpot";
 
 // Routes that render full-screen with no nav/footer/players.
 // /admin brings its own chrome (sidebar + mobile nav) from app/admin/layout.tsx,
@@ -55,7 +55,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     );
     supabase
       .from("spots")
-      .select(SPOT_COLS)
+      .select(SPOT_MAP_COLS)
       .eq("is_published", true)
       .order("is_sponsored", { ascending: false })
       .order("rating", { ascending: false })
@@ -74,7 +74,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     );
     supabase
       .from("events")
-      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, type, genres, price")
+      .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city, lat, lng, type, genres, price")
       .eq("status", "approved")
       .gte("date", today)
       .order("date", { ascending: true })

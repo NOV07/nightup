@@ -15,6 +15,8 @@ import CroppedImage from "../../components/ui/CroppedImage";
 import { useLanguage } from "./LanguageContext";
 import { useUserLocation } from "../lib/useUserLocation";
 import { useTilt, reducedMotion } from "./useTilt";
+import { DAY_NAMES } from "../lib/openingHours";
+import TonightRoute, { type RouteStep } from "./TonightRoute";
 
 const SEEN_KEY = "nightup_tonight_seen";
 const SEEN_HOURS = 12;
@@ -35,6 +37,8 @@ export interface EventLite {
   type: string | null;
   genres: string[] | null;
   price: string | null;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 // client-side night builder (fallback when /api/spots/build-night fails)
@@ -80,15 +84,18 @@ function TiltTile({ className = "", style, index = 0, max = 8, dim, pop, onPress
   );
 }
 
-const VIEW_RANK = { tiles: 0, subcats: 1, results: 2, night: 3 } as const;
+const VIEW_RANK = { tiles: 0, subcats: 1, results: 2, night: 3, route: 4 } as const;
+const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const STOP_TIMES = ["20:30", "22:00", "00:00"];
 export default function TonightModal({ spots, open, onClose, events }: { spots: Spot[]; open: boolean; onClose: () => void; events: EventLite[] }) {
   const { t, lang } = useLanguage();
   const WALKS = [t("tonight_walk_2"), t("tonight_walk_4")];
+  // One walking text per leg, shared by the timeline and the route screen (leg i = from step i to step i+1).
+  const walkText = (i: number) => WALKS[i] ?? t("tonight_walk_min");
   // The stop's own category (the one it was picked for), shown uppercase via CSS.
   const stopCategoryLabel = (s: Spot) => spotCategoryLabel(s.nightSlot ?? s.category, lang);
   const LOAD_STEPS = [t("tonight_load_1"), t("tonight_load_2"), t("tonight_load_3"), t("tonight_load_4")];
-  type View = "tiles" | "subcats" | "results" | "night";
+  type View = "tiles" | "subcats" | "results" | "night" | "route";
   const [view, setViewRaw] = useState<View>("tiles");
   // Screen transition: the previous view stays mounted for 300ms (leave) while the new one enters.
   const [dir, setDir] = useState<"fwd" | "back" | null>(null);
@@ -244,7 +251,25 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
   const kicker = `${days[now.getDay()]}  ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}  ${t("filter_athens")}`;
   const activeCatDef = spotCategoryDef(activeCat);
 
-  const renderView = (v: View) => (
+  // The route: the night's spots and then the matched event, as steps. Only offered when every step has coordinates.
+  const todayIdx = (now.getDay() + 6) % 7;
+  const hoursLine = (s: Spot) => {
+    const text = (s.openingHours ?? spots.find((x) => x.id === s.id)?.openingHours)?.[DAY_NAMES[todayIdx]]?.trim();
+    return text ? `${t("tonight_route_hours")}: ${text}` : null;
+  };
+  const routeSteps: RouteStep[] = [
+    ...night.map((s, i): RouteStep => ({
+      key: `s-${s.id}`, kind: "spot", time: STOP_TIMES[i] ?? "", name: s.name, category: stopCategoryLabel(s),
+      hours: hoursLine(s), meta: null, lat: s.lat as number, lng: s.lng as number, walkAfter: null,
+    })),
+    ...(matchedEvent ? [{
+      key: `e-${matchedEvent.id}`, kind: "event" as const, time: matchedEvent.time ?? "", name: matchedEvent.title, category: t("tonight_route_event"),
+      hours: null, meta: matchedEvent.venue || null, lat: matchedEvent.lat as number, lng: matchedEvent.lng as number, walkAfter: null, eventId: matchedEvent.id,
+    }] : []),
+  ].map((st, i, all) => ({ ...st, walkAfter: i < all.length - 1 ? walkText(i) : null }));
+  const routeReady = routeSteps.length >= 2 && night.every((s) => isNum(s.lat) && isNum(s.lng)) && (!matchedEvent || (isNum(matchedEvent.lat) && isNum(matchedEvent.lng)));
+
+  const renderView = (v: View, leaving = false) => (
     <>
       {/* ── TILES ── */}
       {v === "tiles" && (
@@ -348,12 +373,18 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
                 {i < night.length - 1 && (
                   <div className="tn-walk" style={{ "--d": `${i * 850 + 700}ms`, "--dt": `${i * 850 + 1000}ms` } as React.CSSProperties}>
                     <span className="tn-walk-line" />
-                    <span className="tn-walk-txt">· {WALKS[i] ?? t("tonight_walk_min")}</span>
+                    <span className="tn-walk-txt">· {walkText(i)}</span>
                   </div>
                 )}
               </div>
             ))}
           </div>
+          {matchedEvent && night.length > 0 && (
+            <div className="tn-walk" style={{ "--d": `${(night.length - 1) * 850 + 700}ms`, "--dt": `${(night.length - 1) * 850 + 1000}ms`, marginBottom: 0 } as React.CSSProperties}>
+              <span className="tn-walk-line" />
+              <span className="tn-walk-txt">· {walkText(night.length - 1)}</span>
+            </div>
+          )}
           {matchedEvent && (
             <Link key={`ev-${nightKey}`} href={`/events/${matchedEvent.id}`} onClick={handleClose} className="tn-appear" style={{ ...S.eventCard, "--d": "3000ms" } as React.CSSProperties}>
               <div style={S.eventKicker}>🎉 {t("tonight_try_event")}</div>
@@ -369,9 +400,33 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
               </div>
             </Link>
           )}
+          {routeReady && (
+            <button key={`route-${nightKey}`} type="button" onClick={() => setView("route")} className="tn-appear tn-route-cta" data-testid="tonight-route-cta" style={{ ...S.routeCta, "--d": "3200ms" } as React.CSSProperties}>
+              <span aria-hidden="true" style={S.routeIcon}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={G} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+              </span>
+              <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#F4F4F5" }}>{t("tonight_route_cta")}</span>
+                <span style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{t("tonight_route_cta_sub")}</span>
+              </span>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={G} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+          )}
           <div key={`btn-${nightKey}`} className="tn-appear tn-actions" style={{ "--d": "300ms" } as React.CSSProperties}>
             <button onClick={reroll} style={S.btnGhost}>{t("tonight_reroll")}</button>
             <button onClick={keepNight} style={S.btnGold}>{copied ? t("tonight_copied") : t("tonight_keep")}</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ROUTE ── */}
+      {v === "route" && (
+        <div>
+          <button onClick={() => setView("night")} style={S.back}>{t("tonight_back")}</button>
+          <div style={S.nightKicker}>{t("tonight_kicker")}</div>
+          <div style={S.nightTitle}>{t("tonight_route_title")} <em style={S.em}>{t("tonight_route_title_em")}</em></div>
+          <div style={{ marginTop: 18 }}>
+            <TonightRoute steps={routeSteps} onNavigate={handleClose} loading={leaving} />
           </div>
         </div>
       )}
@@ -397,7 +452,7 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
           </div>
 
           <div style={S.scroll} className="tonight-modal-scroll">
-            {leave && <div key={`l-${leave}`} className="tn-leave" data-dir={dir} aria-hidden="true">{renderView(leave)}</div>}
+            {leave && <div key={`l-${leave}`} className="tn-leave" data-dir={dir} aria-hidden="true">{renderView(leave, true)}</div>}
             <div key={view} className={dir ? "tn-enter" : undefined} data-dir={dir ?? undefined}>{renderView(view)}</div>
           </div>
 
@@ -517,6 +572,11 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
         .tn-walk-line { width: 2px; border-radius: 2px; background: linear-gradient(to bottom, #E8A020, rgba(232,160,32,.15));
           transform-origin: top; animation: tn-line .6s cubic-bezier(.22,.61,.36,1) var(--d, 0ms) backwards; }
         .tn-walk-txt { align-self: center; font-size: 11px; color: #E8A020; opacity: .82; animation: tn-fade .4s ease var(--dt, 0ms) backwards; }
+        .tn-route-map { position: relative; isolation: isolate; height: 320px; border-radius: 16px; overflow: hidden; background: #12121F; border: 1px solid rgba(255,255,255,.08); }
+        .tn-route-cta { cursor: pointer; font: inherit; }
+        .tn-route-btn:focus-visible, .tn-route-cta:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        @media (hover: hover) { .tn-route-cta:hover, .tn-route-btn:hover { border-color: rgba(232,160,32,.6) !important; } }
+        @media (max-width: 480px) { .tn-route-map { margin: 0 -24px; border-radius: 0; border-left: 0; border-right: 0; height: 360px; } }
         .tn-overlay { animation: tn-fade .3s ease backwards; }
         .tn-overlay.tn-closing { animation: tn-fade-out .25s ease forwards; }
         .tn-sheet { animation: tn-sheet-in .6s cubic-bezier(.34,1.45,.5,1) backwards; }
@@ -581,6 +641,8 @@ const S: Record<string, React.CSSProperties> = {
   loadSub: { color: "#A1A1AA", fontSize: 12.5, marginTop: 9 },
   subChip: { whiteSpace: "nowrap", fontSize: 13, fontWeight: 600, color: "#A1A1AA", background: "#1A1A28", border: "1px solid rgba(255,255,255,0.055)", padding: "9px 15px", borderRadius: 999, cursor: "pointer", transition: "all .2s" },
   eventCard: { display: "block", marginTop: 16, padding: 14, borderRadius: 14, border: "1px solid rgba(232,160,32,0.3)", background: "rgba(232,160,32,0.04)", textDecoration: "none", color: "inherit" },
+  routeCta: { display: "flex", alignItems: "center", gap: 14, width: "100%", boxSizing: "border-box", minHeight: 64, marginTop: 12, padding: "12px 16px", borderRadius: 14, border: "1px solid rgba(232,160,32,0.3)", background: "rgba(232,160,32,0.04)", color: "inherit" },
+  routeIcon: { flex: "none", width: 40, height: 40, borderRadius: "50%", background: "rgba(232,160,32,0.12)", display: "flex", alignItems: "center", justifyContent: "center" },
   eventKicker: { fontSize: 10.5, letterSpacing: "0.5px", color: G, fontWeight: 700 },
   eventImg: { width: 52, height: 52, borderRadius: 10, objectFit: "cover" as const, flexShrink: 0 },
   eventTitle: { fontFamily: "var(--font-spectral),serif", fontWeight: 600, fontSize: 14.5, color: "#F4F4F5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
