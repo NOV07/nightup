@@ -390,14 +390,14 @@ export default function PublicMap({ points, selectedId, onSelect, ariaLabel, sta
     // A chip never sits on a pin: when two stops are too close on screen for it to fit between them, it is left out (the cards still show the times).
     const CHIP_MIN_GAP_PX = 96
     legs.forEach((leg, i) => {
-      if (!leg || !leg.text || i >= seg.length) return
+      if (!leg || (!leg.text && !leg.drive) || i >= seg.length) return
       if (map.latLngToContainerPoint(latlngs[i]).distanceTo(map.latLngToContainerPoint(latlngs[i + 1])) < CHIP_MIN_GAP_PX) return
       const el = document.createElement('span')
       el.className = 'nm-route-chip'
       if (leg.label) el.setAttribute('aria-label', leg.label)
-      el.appendChild(document.createTextNode(leg.text))
+      if (leg.text) el.appendChild(document.createTextNode(leg.text))
       if (leg.drive) {
-        el.appendChild(document.createTextNode(' · '))
+        if (leg.text) el.appendChild(document.createTextNode(' · '))
         const ico = document.createElement('span')
         ico.className = 'nm-route-chip-ico'
         ico.setAttribute('aria-hidden', 'true')

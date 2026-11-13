@@ -32,14 +32,15 @@ export interface RouteStep {
 const NOOP = () => {};
 const G = "#E8A020";
 
-/** «~4 λεπτά», or «~25 λεπτά με τα πόδια · [car] ~6 λεπτά με αμάξι» when the walk is long. */
+/** «~4 λεπτά»; «~25 λεπτά με τα πόδια · [car] ~6 λεπτά με αμάξι» for a longer walk; «[car] ~14 λεπτά με αμάξι» alone above 30 min. */
 export function LegLabel({ leg }: { leg: LegTimes }) {
   const { t } = useLanguage();
   const n = (k: "tonight_walk_approx" | "tonight_walk_foot" | "tonight_drive_approx", min: number) => t(k).replace("{n}", String(min));
-  if (!leg.drive) return <>{n("tonight_walk_approx", leg.walk.minutes)}</>;
+  if (!leg.drive && leg.walk) return <>{n("tonight_walk_approx", leg.walk.minutes)}</>;
+  if (!leg.drive) return null;
   return (
     <>
-      {n("tonight_walk_foot", leg.walk.minutes)} · <LuCar aria-hidden="true" size={12} style={{ verticalAlign: "-2px" }} /> {n("tonight_drive_approx", leg.drive.minutes)}
+      {leg.walk && <>{n("tonight_walk_foot", leg.walk.minutes)} · </>}<LuCar aria-hidden="true" size={12} style={{ verticalAlign: "-2px" }} /> {n("tonight_drive_approx", leg.drive.minutes)}
     </>
   );
 }
@@ -54,9 +55,11 @@ export default function TonightRoute({ steps, onNavigate, loading }: { steps: Ro
       const leg = s.walkAfter;
       if (!leg) return { text: "" };
       const m = (min: number) => t("tonight_min_short").replace("{n}", String(min));
-      return leg.drive
-        ? { text: m(leg.walk.minutes), drive: m(leg.drive.minutes), label: `${t("tonight_walk_foot").replace("{n}", String(leg.walk.minutes))} · ${t("tonight_drive_approx").replace("{n}", String(leg.drive.minutes))}` }
-        : { text: t("tonight_walk_approx").replace("{n}", String(leg.walk.minutes)) };
+      if (!leg.drive) return { text: leg.walk ? t("tonight_walk_approx").replace("{n}", String(leg.walk.minutes)) : "" };
+      const driveLabel = t("tonight_drive_approx").replace("{n}", String(leg.drive.minutes));
+      return leg.walk
+        ? { text: m(leg.walk.minutes), drive: m(leg.drive.minutes), label: `${t("tonight_walk_foot").replace("{n}", String(leg.walk.minutes))} · ${driveLabel}` }
+        : { text: "", drive: m(leg.drive.minutes), label: driveLabel };
     }),
   };
 

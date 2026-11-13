@@ -10,6 +10,8 @@ const DRIVE_METERS_PER_MIN = 400;
 const DRIVE_MIN_MINUTES = 2;
 /** The car time is shown next to the walk time only when walking takes more than this many minutes. */
 export const SHOW_DRIVE_AFTER_WALK_MIN = 10;
+/** Above this many walking minutes the walk time is hidden and only the car time is shown. */
+export const WALK_HIDE_MIN = 30;
 
 export type WalkLeg = { meters: number; minutes: number };
 
@@ -38,10 +40,15 @@ export function driveLeg(a: Point, b: Point): WalkLeg {
   return { meters, minutes: Math.max(DRIVE_MIN_MINUTES, Math.round((meters * DRIVE_DETOUR) / DRIVE_METERS_PER_MIN)) };
 }
 
-export type LegTimes = { walk: WalkLeg; drive: WalkLeg | null };
+export type LegTimes = { walk: WalkLeg | null; drive: WalkLeg | null };
 
-/** Both times of one leg, from one place. `drive` is set only when the walk is longer than 10 minutes. */
+/**
+ * Both times of one leg, from one place.
+ * walk <= 10 min: walk only. 10 < walk <= 30: both. walk > 30: drive only (`walk` is null).
+ */
 export function legTimes(a: Point, b: Point): LegTimes {
   const walk = walkLeg(a, b);
-  return { walk, drive: walk.minutes > SHOW_DRIVE_AFTER_WALK_MIN ? driveLeg(a, b) : null };
+  if (walk.minutes <= SHOW_DRIVE_AFTER_WALK_MIN) return { walk, drive: null };
+  const drive = driveLeg(a, b);
+  return { walk: walk.minutes > WALK_HIDE_MIN ? null : walk, drive };
 }
