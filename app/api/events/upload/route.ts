@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
+import { verifyAdminToken } from '@/app/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // The admin panel logs in with the admin_auth cookie only (no Supabase session).
+  const isAdmin = !user && verifyAdminToken(req.cookies.get('admin_auth')?.value)
+  if (!user && !isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let formData: FormData
   try {
@@ -28,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const ext = file.name.split('.').pop() || 'jpg'
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const path = `${user.id}/${Date.now()}-${safeName}`
+  const path = `${user ? user.id : 'admin'}/${Date.now()}-${safeName}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const admin = getSupabaseAdmin()
