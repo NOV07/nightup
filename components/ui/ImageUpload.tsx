@@ -8,9 +8,13 @@ interface ImageUploadProps {
   existingUrl?: string
   folder?: string
   bucket?: string
+  /** Upload through POST /api/gallery/upload instead of straight to Storage
+   *  from the browser. For callers with no Supabase session (the admin, who
+   *  only holds the admin_auth cookie). Default false: unchanged behaviour. */
+  viaApi?: boolean
 }
 
-export default function ImageUpload({ onUpload, existingUrl, folder = 'general', bucket = 'uploads' }: ImageUploadProps) {
+export default function ImageUpload({ onUpload, existingUrl, folder = 'general', bucket = 'uploads', viaApi = false }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string>(existingUrl || '')
   const [error, setError] = useState('')
@@ -37,6 +41,28 @@ export default function ImageUpload({ onUpload, existingUrl, folder = 'general',
 
     setUploading(true)
     setError('')
+
+    if (viaApi) {
+      try {
+        const uploadFile = await compressImage(file)
+        const body = new FormData()
+        body.append('file', uploadFile, uploadFile.name)
+        body.append('context', 'spot')
+        const res = await fetch('/api/gallery/upload', { method: 'POST', body })
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok || !json.url) {
+          setError(json.error ?? `Upload failed (HTTP ${res.status})`)
+          return
+        }
+        setPreview(json.url)
+        onUpload(json.url)
+      } catch {
+        setError('Upload failed')
+      } finally {
+        setUploading(false)
+      }
+      return
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not logged in'); setUploading(false); return }

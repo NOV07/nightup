@@ -58,6 +58,7 @@ export default function AdminSpotEdit({ spot, onSaved }: { spot: Record<string, 
         loading={loading}
         error={error}
         isEdit
+        adminMode
       />
       {/* Sent with the wizard's Save button. Admin only, never in the owner form. */}
       <div data-testid="admin-spot-extras" style={{ maxWidth: 640, margin: '16px auto 0', padding: 16, borderRadius: 14, border: '1px solid rgba(232,160,32,0.35)', backgroundColor: '#111120' }}>

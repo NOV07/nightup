@@ -113,6 +113,12 @@ await test('admin cookie without a Supabase user uploads under "admin"', async (
   assert.match(db.uploads[0], /^spot\/admin\/\d+-p_h\.jpg$/)
   assert.equal((await res.json()).type, 'image')
 })
+await test('cover upload (context=spot, as ImageUpload viaApi sends it) with admin cookie returns a url', async () => {
+  const res = await uploadRoute.POST(upload(cookie(), 'image/png'))
+  assert.equal(res.status, 200)
+  const json = await res.json()
+  assert.match(json.url, /^https:\/\/fake\.test\/spot\/admin\//)
+})
 await test('a Supabase user still uploads under their id', async () => {
   db.user = { id: 'u-9' }
   const res = await uploadRoute.POST(upload())

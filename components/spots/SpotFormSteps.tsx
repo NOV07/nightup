@@ -208,6 +208,9 @@ interface Props {
   error: string
   /** Editing an existing spot — changes the submit button copy. */
   isEdit?: boolean
+  /** Admin editing a spot: uploads go through the API (admin cookie) because
+   *  the admin has no Supabase session. Owners leave this off. */
+  adminMode?: boolean
 }
 
 // ── Sub-components (outside the default export to avoid remount per render) ──
@@ -509,12 +512,13 @@ function Step2({ form, set, stepErrors, mapsChecking, onMapsChange, onMapsBlur, 
   )
 }
 
-function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropper, setShowCropper }: {
+function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropper, setShowCropper, adminMode }: {
   form: SpotFormData; set: SetField; stepErrors: Record<string, string>
   onGalleryAdd: (item: GalleryItem) => void
   onGalleryRemove: (i: number) => void
   showCropper: boolean
   setShowCropper: (v: boolean) => void
+  adminMode: boolean
 }) {
   const { t, lang } = useLanguage()
   return (
@@ -539,7 +543,7 @@ function Step3({ form, set, stepErrors, onGalleryAdd, onGalleryRemove, showCropp
             </div>
           </div>
         ) : (
-          <ImageUpload folder="spots" onUpload={url => { set('cover_image', url); set('crop', null) }} />
+          <ImageUpload folder="spots" viaApi={adminMode} onUpload={url => { set('cover_image', url); set('crop', null) }} />
         )}
         <Err stepErrors={stepErrors} k="cover_image" />
 
@@ -722,7 +726,7 @@ function Step4({ form, set, stepErrors }: {
   )
 }
 
-export default function SpotFormSteps({ initialData, onSubmit, loading, error, isEdit = false }: Props) {
+export default function SpotFormSteps({ initialData, onSubmit, loading, error, isEdit = false, adminMode = false }: Props) {
   const { t } = useLanguage()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<SpotFormData>({ ...DEFAULTS, ...initialData })
@@ -1014,7 +1018,7 @@ export default function SpotFormSteps({ initialData, onSubmit, loading, error, i
           {step === 3 && (
             <Step3 form={form} set={set} stepErrors={stepErrors}
               onGalleryAdd={addGalleryImage} onGalleryRemove={removeGalleryImage}
-              showCropper={showCropper} setShowCropper={setShowCropper} />
+              showCropper={showCropper} setShowCropper={setShowCropper} adminMode={adminMode} />
           )}
           {step === 4 && <Step4 form={form} set={set} stepErrors={stepErrors} />}
 
