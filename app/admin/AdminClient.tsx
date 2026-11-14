@@ -12,6 +12,7 @@ import { SPOT_CROP_ASPECT } from "../spots/types";
 import SpotTaxonomyPicker from "../../components/spots/SpotTaxonomyPicker";
 import { containsUrl } from "../lib/spotMapUrl";
 import { primaryCategory, spotCategoriesOf, spotCategoryLabel, spotSubcategoriesOf, spotSubLabel, type SpotCategory } from "../lib/spotCategories";
+import AdminSpotEdit from "./AdminSpotEdit";
 import WellnessSpotsPanel from "../components/admin/WellnessSpotsPanel";
 import LocationPicker from "../../components/maps/LocationPicker";
 import { useLanguage } from "../components/LanguageContext";
@@ -1919,7 +1920,7 @@ export default function AdminClient() {
       {/* ── EDIT MODAL ────────────────────────────────────────────────────── */}
       {editItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:"rgba(0,0,0,0.85)" }} onClick={e => { if (e.target === e.currentTarget) setEditItem(null); }}>
-          <div className={`relative w-full ${previewTab === "events" ? "max-w-5xl" : "max-w-lg"} max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6`} style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
+          <div className={`relative w-full ${previewTab === "events" ? "max-w-5xl" : previewTab === "spots" ? "max-w-3xl" : "max-w-lg"} max-h-[90dvh] overscroll-contain overflow-y-auto rounded-2xl p-4 sm:p-6`} style={{ backgroundColor:"#0F0F1A", border:"1px solid #E8A020" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold" style={{ color:"#E8A020" }}>Edit</h2>
               <button onClick={() => setEditItem(null)} className="text-sm px-3 py-1 rounded-lg" style={{ backgroundColor:"#111120", color:"rgba(255,255,255,0.45)", border:"1px solid rgba(232,160,32,0.12)" }}>Close</button>
@@ -1938,6 +1939,11 @@ export default function AdminClient() {
                   error={editError}
                 />
               </>
+            ) : previewTab === "spots" ? (
+              <AdminSpotEdit
+                spot={editItem as Record<string, any>}
+                onSaved={async () => { setEditItem(null); await fetchContent(); }}
+              />
             ) : (
             <EditForm
               item={editItem}
