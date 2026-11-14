@@ -19,6 +19,7 @@ const { signAdminToken } = await import('../app/lib/adminAuth.ts')
 const adminRoute = await import('../app/api/admin/spots/[id]/route.ts')
 const ownerRoute = await import('../app/api/spots/[id]/route.ts')
 const uploadRoute = await import('../app/api/gallery/upload/route.ts')
+const resolveRoute = await import('../app/api/maps/resolve/route.ts')
 
 let passed = 0, failed = 0
 async function test(name, fn) {
@@ -133,6 +134,27 @@ await test('neither user nor admin cookie -> 401', async () => {
 await test('admin uploads keep the type and size checks', async () => {
   assert.equal((await uploadRoute.POST(upload(cookie(), 'application/pdf'))).status, 400)
   assert.equal((await uploadRoute.POST(upload(cookie(), 'image/jpeg', 9 * 1024 * 1024))).status, 400)
+})
+
+console.log('POST /api/maps/resolve')
+// An unusable url makes the route answer 400 before any network call, so
+// "not 401" is observable offline.
+const resolve = (headers = {}) =>
+  new NextRequest('http://t/api/maps/resolve', { method: 'POST', body: JSON.stringify({ url: '' }), headers: { 'content-type': 'application/json', ...headers } })
+await test('admin cookie without a Supabase user is not rejected as 401', async () => {
+  const res = await resolveRoute.POST(resolve(cookie()))
+  assert.notEqual(res.status, 401)
+  assert.equal(res.status, 400)
+})
+await test('a Supabase user still gets through', async () => {
+  db.user = { id: 'u-9' }
+  assert.equal((await resolveRoute.POST(resolve())).status, 400)
+})
+await test('neither user nor admin cookie -> 401', async () => {
+  assert.equal((await resolveRoute.POST(resolve())).status, 401)
+})
+await test('forged admin cookie -> 401', async () => {
+  assert.equal((await resolveRoute.POST(resolve({ cookie: 'admin_auth=123.abcd' }))).status, 401)
 })
 
 console.log(`\n${passed} passed, ${failed} failed`)

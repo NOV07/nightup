@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
+import { verifyAdminToken } from '@/app/lib/adminAuth'
 import { firstUrl } from '@/app/lib/mapsCoords'
 import { resolveMapsUrl, takeRateLimit, MapsResolveError } from '@/app/lib/mapsResolve'
 import { extractPlaceText, geocodeNominatim } from '@/app/lib/mapsGeocode'
@@ -13,11 +14,14 @@ import { extractPlaceText, geocodeNominatim } from '@/app/lib/mapsGeocode'
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
+  // The admin has no Supabase session, only the admin_auth cookie. Accepted
+  // when there is no user; all admin calls share one rate-limit bucket.
+  const isAdmin = (authError || !user) && verifyAdminToken(req.cookies.get('admin_auth')?.value)
+  if ((authError || !user) && !isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!takeRateLimit(user.id)) {
+  if (!takeRateLimit(isAdmin ? 'admin' : user!.id)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
   }
 
