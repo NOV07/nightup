@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
 import { getSupabaseAdmin } from '../../../lib/supabase'
+import { verifyAdminToken } from '@/app/lib/adminAuth'
 
 /** Storage subfolder per gallery surface. There are only two: `spots.gallery`
  *  (the array column) and `creator_gallery` (the row-per-item table that backs
@@ -17,7 +18,11 @@ const MAX_VIDEO = 60 * 1024 * 1024
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // An admin editing someone else's spot has no Supabase session; a valid
+  // admin_auth cookie is accepted instead and the file lands under "admin".
+  const isAdmin = !user && verifyAdminToken(req.cookies.get('admin_auth')?.value)
+  if (!user && !isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const owner = user ? user.id : 'admin'
 
   let formData: FormData
   try {
@@ -55,7 +60,7 @@ export async function POST(req: NextRequest) {
   // would mean shipping ffmpeg just to parse a container header.
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const path = `${context}/${user.id}/${Date.now()}-${safeName}`
+  const path = `${context}/${owner}/${Date.now()}-${safeName}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const admin = getSupabaseAdmin()
