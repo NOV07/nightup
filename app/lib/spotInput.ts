@@ -43,6 +43,77 @@ export function withSpotTaxonomy(
   return { ok: true, row }
 }
 
+export type SpotUpdatesResult =
+  | { ok: true; updates: Record<string, unknown> }
+  | { ok: false; error: string; code?: string }
+
+/**
+ * The one validation + whitelist pass for an edit of an existing spot, shared
+ * by the owner route (/api/spots/[id]) and the admin route
+ * (/api/admin/spots/[id]). `existing` is the stored row (address, categories).
+ * `allowEmptyPin` lets a spot that never had a pin be saved without one; the
+ * owner route leaves it off so an edit either keeps the pin or moves it.
+ * Returns only whitelisted columns; an empty result is the caller's call.
+ */
+export function buildSpotUpdates(
+  body: Record<string, unknown>,
+  existing: { address?: string | null; categories?: readonly string[] | null },
+  opts: { allowEmptyPin?: boolean } = {},
+): SpotUpdatesResult {
+  // Only a change to a link is refused; a spot that already holds one can
+  // still have its other fields edited.
+  if (spotAddressLinkError(body.address, existing.address)) {
+    return { ok: false, error: ADDRESS_IS_LINK_MESSAGE, code: ADDRESS_IS_LINK }
+  }
+
+  // A null lat/lng would empty the generated `geo` column and drop the spot
+  // from proximity search, so an edit either keeps the pin or moves it.
+  const coordsError = spotCoordsError(body, { allowEmpty: opts.allowEmptyPin === true })
+  if (coordsError) return { ok: false, error: coordsError }
+
+  // Same validator as create. Only the taxonomy columns the payload actually
+  // carries are written; subcategories sent alone are checked against the
+  // categories already stored.
+  const taxonomy = withSpotTaxonomy(body, { required: false, existingCategories: existing.categories ?? [] })
+  if (!taxonomy.ok) return { ok: false, error: taxonomy.error }
+
+  const updates: Record<string, unknown> = {}
+  SPOT_FIELDS.forEach(k => { if (k in taxonomy.row) updates[k] = taxonomy.row[k] })
+  if ('instagram' in updates) updates.instagram = normalizeInstagram(updates.instagram as string | null)
+  return { ok: true, updates }
+}
+
+/**
+ * The admin-only columns of an edit: slug, featured, is_sponsored, rating,
+ * is_published. Only keys present in the payload are returned. `slug` comes
+ * back slugified (empty means "not given"); the route makes it unique.
+ */
+export function checkAdminSpotExtras(
+  body: Record<string, unknown>,
+): { ok: true; extras: Record<string, unknown> } | { ok: false; error: string } {
+  const extras: Record<string, unknown> = {}
+  for (const k of ['featured', 'is_sponsored', 'is_published']) {
+    if (!(k in body)) continue
+    if (typeof body[k] !== 'boolean') return { ok: false, error: `${k} must be true or false` }
+    extras[k] = body[k]
+  }
+  if ('rating' in body) {
+    const r = body.rating
+    if (r == null) extras.rating = null
+    else if (typeof r !== 'number' || !Number.isFinite(r) || r < 0 || r > 5) {
+      return { ok: false, error: 'rating must be a number from 0 to 5' }
+    } else extras.rating = r
+  }
+  if ('slug' in body && body.slug != null) {
+    if (typeof body.slug !== 'string') return { ok: false, error: 'slug must be text' }
+    const slug = slugify(body.slug)
+    if (!slug) return { ok: false, error: 'slug is empty after cleanup' }
+    if (slug.length > 120) return { ok: false, error: 'slug is too long (max 120 characters)' }
+    extras.slug = slug
+  }
+  return { ok: true, extras }
+}
+
 const MAX_GALLERY = 8
 
 /** Stable error code for a link stored where a street address belongs. */

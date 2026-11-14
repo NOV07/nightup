@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/app/lib/supabase-server'
-import { SPOT_FIELDS } from '../route'
-import { withSpotTaxonomy, spotAddressLinkError, ADDRESS_IS_LINK, ADDRESS_IS_LINK_MESSAGE } from '@/app/lib/spotInput'
-import { spotCoordsError } from '@/app/lib/mapsCoords'
-import { normalizeInstagram } from '@/app/lib/instagram'
+import { buildSpotUpdates } from '@/app/lib/spotInput'
 
 export async function PATCH(
   req: NextRequest,
@@ -38,31 +35,13 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  // Only a change to a link is refused; a spot that already holds one can
-  // still have its other fields edited.
-  if (spotAddressLinkError(body.address, existing.address)) {
-    return NextResponse.json({ error: ADDRESS_IS_LINK_MESSAGE, code: ADDRESS_IS_LINK }, { status: 400 })
-  }
-
-  // A null lat/lng would empty the generated `geo` column and drop the spot
-  // from proximity search, so an edit either keeps the pin or moves it.
-  const coordsError = spotCoordsError(body)
-  if (coordsError) {
-    return NextResponse.json({ error: coordsError }, { status: 400 })
-  }
-
   // Slug stays fixed after creation — it is the public URL. is_published and
   // owner_id are deliberately absent so an owner cannot self-publish.
-  const updates: Record<string, unknown> = {}
-  // Same validator as create. Only the taxonomy columns the payload actually
-  // carries are written; subcategories sent alone are checked against the
-  // categories already stored.
-  const taxonomy = withSpotTaxonomy(body, { required: false, existingCategories: existing.categories ?? [] })
-  if (!taxonomy.ok) {
-    return NextResponse.json({ error: taxonomy.error }, { status: 400 })
+  const built = buildSpotUpdates(body, existing)
+  if (!built.ok) {
+    return NextResponse.json({ error: built.error, ...(built.code ? { code: built.code } : {}) }, { status: 400 })
   }
-  SPOT_FIELDS.forEach(k => { if (k in taxonomy.row) updates[k] = taxonomy.row[k] })
-  if ('instagram' in updates) updates.instagram = normalizeInstagram(updates.instagram as string | null)
+  const updates = built.updates
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
