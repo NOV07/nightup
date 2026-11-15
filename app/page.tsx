@@ -104,7 +104,7 @@ export default async function HomePage() {
         .select("id, title, category, published_at, read_time, hero_image, excerpt")
         .eq("status", "published")
         .order("created_at", { ascending: false })
-        .limit(3),
+        .limit(6),
       supabase.from("music_releases").select("id, title, artist, type, cover_image, spotify_url, soundcloud_url, is_promoted, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
       supabase.from("mixes").select("id, title, artist, genre, cover_image, soundcloud_url, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
       supabase.from("playlists").select("id, title, platform, embed_url, cover_image, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(5),
@@ -412,8 +412,8 @@ export default async function HomePage() {
             </Link>
           )}
 
-          {/* Releases — col 2, row 2 */}
-          {newReleases.length > 0 && (
+          {/* More articles — col 2, row 2 */}
+          {latestArticles.length > 2 && (
             <div className="reveal-right" style={{
               gridColumn: "2", gridRow: "2",
               background: "var(--bg-primary)",
@@ -431,73 +431,49 @@ export default async function HomePage() {
                   fontFamily: "var(--font-mono)", fontSize: "10px",
                   letterSpacing: "0.16em", textTransform: "uppercase",
                   color: "var(--gold)", margin: 0,
-                }}>New Releases</p>
-                <Link href="/nightwaves" style={{
+                }}>More Stories</p>
+                <Link href="/magazine" style={{
                   fontFamily: "var(--font-mono)", fontSize: "8px",
                   letterSpacing: "0.08em", color: "var(--text-muted)",
                   textDecoration: "none", marginLeft: "auto",
-                }}>Explore →</Link>
+                }}>All →</Link>
               </div>
-
-              {newReleases.slice(0, 4).map((r: any, i: number) => {
-                const El = r.external ? "a" : Link;
-                const props = r.external
-                  ? { href: r.href, target: "_blank",
-                      rel: "noopener noreferrer" }
-                  : { href: r.href };
-                return (
-                  <El key={r.id} {...(props as any)}
-                    className="release-row-item"
-                    style={{
-                      display: "flex", gap: "12px",
-                      alignItems: "center",
-                      padding: "11px 16px",
-                      borderBottom: i < 3
-                        ? "1px solid rgba(255,255,255,0.04)"
-                        : "none",
-                      textDecoration: "none",
-                      transition: "background 0.2s",
-                    }}>
-                    <div style={{
-                      width: "44px", height: "44px",
-                      flexShrink: 0, position: "relative",
-                      overflow: "hidden",
-                      background: "var(--bg-surface)",
-                    }}>
-                      <Image src={r.cover_image || FALLBACK_IMAGE}
-                        alt={r.title} fill
-                        style={{ objectFit: "cover",
-                          transition: "transform 0.4s ease" }}
-                        className="release-thumb" />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{
-                        fontFamily: "var(--font-sans)",
-                        fontSize: "13px", fontWeight: 500,
-                        color: "var(--text-primary)",
-                        whiteSpace: "nowrap", overflow: "hidden",
-                        textOverflow: "ellipsis", margin: "0 0 1px",
-                        transition: "color 0.2s",
-                      }} className="release-title">
-                        {r.artist || r.title}
-                      </p>
-                      <p style={{
-                        fontFamily: "var(--font-serif)",
-                        fontStyle: "italic", fontSize: "11px",
-                        color: "var(--text-secondary)",
-                        whiteSpace: "nowrap", overflow: "hidden",
-                        textOverflow: "ellipsis", margin: 0,
-                      }}>{r.artist ? r.title : ""}</p>
-                      <p style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "8px", letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        color: "var(--text-muted)", marginTop: "2px",
-                      }}>{r.typeBadge}</p>
-                    </div>
-                  </El>
-                );
-              })}
+              {latestArticles.slice(2, 6).map((a: any) => (
+                <Link key={a.id} href={`/magazine/${a.id}`}
+                  className="discover-card"
+                  style={{
+                    display: "flex", alignItems: "center", gap: "12px",
+                    padding: "10px 16px", textDecoration: "none",
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  }}>
+                  <Image src={a.image} alt={a.title}
+                    width={96} height={96}
+                    className="discover-card-img"
+                    style={{ width: "56px", height: "56px",
+                      objectFit: "cover", flexShrink: 0 }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{
+                      fontFamily: "var(--font-mono)", fontSize: "8px",
+                      letterSpacing: "0.12em", textTransform: "uppercase",
+                      color: "var(--gold)", margin: 0,
+                    }}>{a.category}</p>
+                    <h3 style={{
+                      fontFamily: "var(--font-serif)", fontSize: "14px",
+                      fontWeight: 400, lineHeight: 1.3, margin: "3px 0 0",
+                      color: "var(--text-primary)",
+                      display: "-webkit-box", WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical", overflow: "hidden",
+                    }} className="discover-card-title">
+                      <TranslatedText text={a.title} />
+                    </h3>
+                    <p style={{
+                      fontFamily: "var(--font-mono)", fontSize: "8px",
+                      letterSpacing: "0.08em", textTransform: "uppercase",
+                      color: "var(--text-muted)", marginTop: "4px",
+                    }}>Magazine · {a.readTime}</p>
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
 
