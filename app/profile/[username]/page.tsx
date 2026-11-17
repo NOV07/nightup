@@ -338,15 +338,15 @@ export default async function ProfilePage({ params }: Props) {
                   backgroundColor: 'rgba(255,255,255,0.07)',
                   color: 'rgba(255,255,255,0.45)'
                 }}>{profileTypeLabel[profile.profile_type]}</span>
-                {profile.network_category && (
+                {(profile.network_category || profile.network_subcategory) && (
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{
                     backgroundColor: 'rgba(232,160,32,0.08)',
                     color: '#E8A020',
                     border: '0.5px solid rgba(232,160,32,0.2)',
                   }}>
-                    {profile.network_subcategory
+                    {profile.network_category && profile.network_subcategory
                       ? <><NetworkCategoryText value={profile.network_category} /> · <NetworkCategoryText value={profile.network_subcategory} /></>
-                      : <NetworkCategoryText value={profile.network_category} />}
+                      : <NetworkCategoryText value={(profile.network_category || profile.network_subcategory)!} />}
                   </span>
                 )}
               </div>

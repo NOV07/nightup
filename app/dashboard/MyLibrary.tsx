@@ -282,7 +282,7 @@ export default function MyLibrary({ savedEvents, upcomingEvents, savedSpots, fol
                     key={p.id}
                     href={profileHref(p.username)}
                     title={p.display_name}
-                    sub={[networkCategoryLabel(p.network_category, lang), p.location].filter(Boolean).join(' · ')}
+                    sub={[networkCategoryLabel(p.network_subcategory || p.network_category, lang), p.location].filter(Boolean).join(' · ')}
                   />
                 ))}
               </div>

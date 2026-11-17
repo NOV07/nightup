@@ -154,7 +154,7 @@ export default async function DashboardPage() {
 
   const { data: followsRaw } = await supabase
     .from('follows')
-    .select('profile_id, profiles(id, username, display_name, avatar_url, location, network_tab, network_category)')
+    .select('profile_id, profiles(id, username, display_name, avatar_url, location, network_tab, network_category, network_subcategory)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
