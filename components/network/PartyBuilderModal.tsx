@@ -98,7 +98,12 @@ export default function PartyBuilderModal({ onClose, profiles }: Props) {
     return profiles
       .filter(p => {
         if (p.network_tab !== need.tab) return false
-        if (need.category && p.network_category !== need.category) return false
+        // Artists keep their role (DJ, Singer…) in network_subcategory; every
+        // other tab uses network_category.
+        const role = need.tab === 'Artists'
+          ? (p.network_subcategory || p.network_category)
+          : p.network_category
+        if (need.category && role !== need.category) return false
         return true
       })
       .sort((a, b) => {

@@ -1,4 +1,4 @@
-export { CITIES, GENRE_FILTERS, CITY_LABELS } from "./searchConstants";
+export { CITIES, GENRE_FILTERS, CITY_LABELS } from "./searchConstants.ts";
 
 export const NETWORK = {
   "Artists": {

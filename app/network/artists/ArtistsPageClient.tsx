@@ -23,6 +23,7 @@ export default function ArtistsPageClient({ profiles }: { profiles: Profile[] })
           intro: t('network_gate_artists_desc'),
           accent: GOLD,
           subcategories: SUBCATEGORIES,
+          filterField: 'network_subcategory',
           profiles,
         },
       ]}
