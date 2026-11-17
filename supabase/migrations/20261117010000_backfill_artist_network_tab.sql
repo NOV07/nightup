@@ -4,7 +4,7 @@
 --
 -- To be run by hand in the Supabase SQL Editor, AFTER checking:
 --
---   -- 0. the constraint must accept 'Artists' (else run 20261117000000 first)
+--   -- 0. the constraint must accept 'Artists' (confirmed in prod: Artists, Venues, Professionals)
 --   select pg_get_constraintdef(oid) from pg_constraint
 --   where conrelid = 'public.profiles'::regclass and conname = 'profiles_network_tab_check';
 --
