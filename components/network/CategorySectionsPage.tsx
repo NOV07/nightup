@@ -20,6 +20,9 @@ export interface CategorySection {
   accent: string
   /** Chips inside the section; empty for taxonomies without subcategories. */
   subcategories: readonly string[]
+  /** Profile column the chips filter on. Artists keep their role in
+   *  network_subcategory; professionals and venues use network_category. */
+  filterField?: 'network_category' | 'network_subcategory'
   profiles: Profile[]
 }
 
@@ -110,7 +113,7 @@ export default function CategorySectionsPage({
         {visible.map(section => {
           const sub = subFilter[section.id] ?? null
           const shown = sub
-            ? section.profiles.filter(p => p.network_category === sub)
+            ? section.profiles.filter(p => p[section.filterField ?? 'network_category'] === sub)
             : section.profiles
 
           return (
@@ -146,7 +149,7 @@ export default function CategorySectionsPage({
                     {t('network_all')}
                   </button>
                   {section.subcategories.map(name => {
-                    const n = section.profiles.filter(p => p.network_category === name).length
+                    const n = section.profiles.filter(p => p[section.filterField ?? 'network_category'] === name).length
                     if (n === 0) return null
                     const on = sub === name
                     return (
