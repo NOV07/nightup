@@ -1,4 +1,4 @@
-import { GENRE_KEYS } from "./genres";
+import { GENRE_KEYS } from "./genres.ts";
 
 // Single source of truth for filter values used across search, events, and network.
 // Keep in sync with actual DB values for genre and city columns.
