@@ -304,7 +304,9 @@ export default function DashboardClient({ profile, events, releases, savedEvents
         genres: form.genres,
         services: form.services,
         section_visibility: form.section_visibility,
-        network_tab: form.network_tab || null,
+        // Artists always belong to the Artists network tab; the role dropdown
+        // only fills network_subcategory and stays optional.
+        network_tab: profile.profile_type === 'artist' ? 'Artists' : (form.network_tab || null),
         network_category: form.network_category || null,
         network_subcategory: form.network_subcategory || null,
       })
