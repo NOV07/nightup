@@ -42,7 +42,7 @@ const dayRank = (day: string) => {
   return i === -1 ? DAY_ORDER.length : i;
 };
 
-export default function SpotProfileClient({ spot, owner = null, events = [], listings = [] }: { spot: FullSpot; owner?: SpotOwner | null; events?: HostedEvent[]; listings?: ProfileListing[] }) {
+export default function SpotProfileClient({ spot, owner = null, events = [], pastEvents = [], listings = [] }: { spot: FullSpot; owner?: SpotOwner | null; events?: HostedEvent[]; pastEvents?: HostedEvent[]; listings?: ProfileListing[] }) {
   const { t, lang } = useLanguage();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -197,6 +197,14 @@ export default function SpotProfileClient({ spot, owner = null, events = [], lis
             <h2 style={sectionTitle}>{t("spots_upcoming_events")}</h2>
             <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
               {events.map((e) => <HostedEventCard key={e.id} event={e} />)}
+            </div>
+          </div>
+        )}
+        {pastEvents.length > 0 && (
+          <div>
+            <h2 style={sectionTitle}>{t("spots_past_events")}</h2>
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+              {pastEvents.map((e) => <HostedEventCard key={e.id} event={e} hideTicket />)}
             </div>
           </div>
         )}

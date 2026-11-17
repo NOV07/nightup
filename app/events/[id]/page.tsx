@@ -127,6 +127,8 @@ export default async function EventPage({ params }: Props) {
   }
 
   // More events from same organizer
+  const today = new Date().toISOString().split('T')[0]
+  let pastMoreEvents: { id: string; title: string; image_url: string | null; has_copyright_restriction: boolean; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null; date: string }[] = []
   let moreEvents: { id: string; title: string; image_url: string | null; has_copyright_restriction: boolean; crop_x: number | null; crop_y: number | null; crop_width: number | null; crop_height: number | null; date: string }[] = []
   if (event.profile_id && !hostIsArtist) {
     const { data, error } = await supabase
@@ -135,10 +137,23 @@ export default async function EventPage({ params }: Props) {
       .eq('profile_id', event.profile_id)
       .eq('status', 'approved')
       .neq('id', id)
+      .gte('date', today)
       .order('date', { ascending: true })
       .limit(3)
     logQueryError(`events/${id}`, 'more events', error)
     moreEvents = data ?? []
+
+    const { data: pastData, error: pastError } = await supabase
+      .from('events')
+      .select('id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date')
+      .eq('profile_id', event.profile_id)
+      .eq('status', 'approved')
+      .neq('id', id)
+      .lt('date', today)
+      .order('date', { ascending: false })
+      .limit(3)
+    logQueryError(`events/${id}`, 'past events', pastError)
+    pastMoreEvents = pastData ?? []
   }
 
   // Artist profiles for lineup matching (case-insensitive, trimmed exact match — same as profile page)
@@ -522,10 +537,49 @@ export default async function EventPage({ params }: Props) {
         {moreEvents.length > 0 && (
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 14 }}>
-              More Events
+              <T k="event_more_events_heading" />
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {moreEvents.map(e => (
+                <Link key={e.id} href={`/events/${e.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px',
+                    borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                  }}>
+                    <div style={{ position: 'relative', width: 52, height: 52, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                      <CroppedImage
+                        src={getEventCoverImage(e)}
+                        alt={e.title}
+                        crop={getEventCrop(e)}
+                        sizes="52px"
+                      />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {e.title}
+                      </p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+                        {e.date ? new Date(e.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>→</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+
+        {/* Past events from same organizer */}
+        {pastMoreEvents.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.50)', marginBottom: 14 }}>
+              <T k="spots_past_events" />
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {pastMoreEvents.map(e => (
                 <Link key={e.id} href={`/events/${e.id}`} style={{ textDecoration: 'none' }}>
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 12, padding: '12px',

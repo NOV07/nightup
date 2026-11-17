@@ -20,7 +20,7 @@ export interface HostedEvent {
 
 // Event row used on profile pages (organizer / venue / professional) and,
 // later, on the spot page. Data comes in as props; no queries here.
-export default function HostedEventCard({ event }: { event: HostedEvent }) {
+export default function HostedEventCard({ event, hideTicket = false }: { event: HostedEvent; hideTicket?: boolean }) {
   return (
     <Link key={event.id} href={`/events/${event.id}`}
       className="flex items-center gap-4 p-4 rounded-2xl min-w-0 transition-opacity hover:opacity-80"
@@ -35,7 +35,7 @@ export default function HostedEventCard({ event }: { event: HostedEvent }) {
         </p>
         <span className="text-xs mt-1 inline-block" style={{ color: '#E8A020' }}>{event.city}</span>
       </div>
-      {event.ticket_url && (
+      {event.ticket_url && !hideTicket && (
         <a href={event.ticket_url} target="_blank" rel="noopener noreferrer"
           className="text-xs px-3 py-1.5 rounded-full flex-shrink-0 font-medium"
           style={{ backgroundColor: '#E8A020', color: '#0F0F1A' }}>

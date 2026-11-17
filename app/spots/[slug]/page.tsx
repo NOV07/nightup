@@ -57,10 +57,11 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
   // without an owner account.
   let owner: SpotOwner | null = null;
   let events: HostedEvent[] = [];
+  let pastEvents: HostedEvent[] = [];
   let listings: ProfileListing[] = [];
   if (spot.ownerId) {
     const today = new Date().toISOString().split("T")[0];
-    const [{ data: ownerRow }, { data: ev }, { data: li }] = await Promise.all([
+    const [{ data: ownerRow }, { data: ev }, { data: li }, { data: past }] = await Promise.all([
       supabase
         .from("profiles")
         .select("username, display_name, avatar_url, avatar_crop_x, avatar_crop_y, avatar_crop_width, avatar_crop_height")
@@ -81,6 +82,14 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
         .eq("profile_id", spot.ownerId)
         .eq("is_active", true)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("events")
+        .select("id, title, image_url, has_copyright_restriction, crop_x, crop_y, crop_width, crop_height, date, time, venue, city")
+        .eq("profile_id", spot.ownerId)
+        .eq("status", "approved")
+        .lt("date", today)
+        .order("date", { ascending: false })
+        .limit(12),
     ]);
     if (ownerRow?.username) {
       // Same placeholder filter as the profile page.
@@ -94,6 +103,7 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
       };
     }
     events = (ev ?? []) as HostedEvent[];
+    pastEvents = (past ?? []) as HostedEvent[];
     listings = (li ?? []) as ProfileListing[];
   }
 
@@ -104,6 +114,7 @@ export default async function SpotProfilePage({ params }: { params: Promise<{ sl
         spot={spot as any}
         owner={owner}
         events={events}
+        pastEvents={pastEvents}
         listings={listings}
       />
     </>
