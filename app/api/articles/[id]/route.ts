@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
-import { countWords, isMissingSourcesColumn } from '@/app/lib/articleContent'
+import { countWords } from '@/app/lib/articleContent'
 import { sanitizeArticleHtml, sanitizeSources } from '@/app/lib/sanitizeArticle'
 
 function getSupabase() {
@@ -71,15 +71,8 @@ export async function PATCH(
     if (!existing.data?.published_at) payload.published_at = new Date().toISOString()
   }
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('articles').update(payload).eq('id', id).select().single()
-
-  // See isMissingSourcesColumn: a pending migration must not block saving.
-  if (isMissingSourcesColumn(error)) {
-    const { sources: _dropped, ...withoutSources } = payload
-    ;({ data, error } = await supabase
-      .from('articles').update(withoutSources).eq('id', id).select().single())
-  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ article: data })

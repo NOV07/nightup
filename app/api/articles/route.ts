@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/app/lib/adminAuth'
-import { countWords, isMissingSourcesColumn } from '@/app/lib/articleContent'
+import { countWords } from '@/app/lib/articleContent'
 import { sanitizeArticleHtml, sanitizeSources } from '@/app/lib/sanitizeArticle'
 
 function getSupabase() {
@@ -79,12 +79,7 @@ export async function POST(req: NextRequest) {
     read_time:    readTime,
   }
 
-  let { data, error } = await supabase.from('articles').insert(row).select().single()
-
-  if (isMissingSourcesColumn(error)) {
-    const { sources: _dropped, ...withoutSources } = row
-    ;({ data, error } = await supabase.from('articles').insert(withoutSources).select().single())
-  }
+  const { data, error } = await supabase.from('articles').insert(row).select().single()
 
   if (error) {
     console.error('Supabase insert error:', error)

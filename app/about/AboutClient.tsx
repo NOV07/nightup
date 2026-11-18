@@ -244,13 +244,6 @@ export default function AboutClient({ liveStats }: { liveStats: LiveStats }) {
   void eventPhotoError; void setEventPhotoError; void eventPhotoRef;
   void activeTab; void setActiveTab; void submitError;
 
-  const tracked = useRef(false);
-  useEffect(() => {
-    if (tracked.current) return;
-    tracked.current = true;
-    fetch("/api/track-visit", { method: "POST" }).catch(() => {});
-  }, []);
-
   // ── Handlers — kept for backward compat ──
   const handleEventPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setEventPhotoError("");
