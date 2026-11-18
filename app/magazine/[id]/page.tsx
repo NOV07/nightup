@@ -97,21 +97,6 @@ function extractNightUpTip(html: string): string | null {
   return null;
 }
 
-function extractSources(html: string): Array<{ url: string; domain: string }> {
-  const ulMatches = [...html.matchAll(/<ul[^>]*>([\s\S]*?)<\/ul>/gi)];
-  if (!ulMatches.length) return [];
-  const lastUl = ulMatches[ulMatches.length - 1][1];
-  const linkMatches = [...lastUl.matchAll(/href="(https?:\/\/[^"]+)"/gi)];
-  return linkMatches.map((m) => {
-    const url = m[1];
-    try {
-      return { url, domain: new URL(url).hostname.replace(/^www\./, "") };
-    } catch {
-      return { url, domain: url };
-    }
-  });
-}
-
 
 interface Article {
   id: string;
@@ -140,7 +125,7 @@ function mapArticle(data: any): Article {
     content: data.content ?? "",
     series: data.series ?? null,
     series_order: data.series_order ?? null,
-    // Absent until 20260814010000_article_sources.sql is applied.
+    // Rows with no sources fall back to an empty list.
     sources: Array.isArray(data.sources) ? data.sources : [],
     featured: (data as any).featured ?? false,
   };
@@ -248,7 +233,6 @@ export default async function MagazineArticlePage({ params }: Props) {
   const htmlContent = article.content || "";
   const firstBlockquote = htmlContent ? extractFirstBlockquote(htmlContent) : null;
   const nightUpTip = htmlContent ? extractNightUpTip(htmlContent) : null;
-  const sources = htmlContent ? extractSources(htmlContent) : [];
   const excerptDisplay = article.excerpt || "";
 
   return (
@@ -435,38 +419,6 @@ export default async function MagazineArticlePage({ params }: Props) {
               </span>
               <p style={{ color: "#ffffff", fontSize: "16px", lineHeight: 1.7 }}>{nightUpTip}</p>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── 5. SOURCES ────────────────────────────────────────── */}
-      {sources.length > 0 && (
-        <div className="max-w-5xl mx-auto px-4 my-10">
-          <div className="flex items-center gap-3 mb-5">
-            <div style={{ width: "20px", height: "2px", backgroundColor: "#E8A020" }} />
-            <h2 className="text-xs font-bold uppercase" style={{ color: "#E8A020", letterSpacing: "0.1em" }}>
-              <T k="article_sources" />
-            </h2>
-          </div>
-          <div className="space-y-2">
-            {sources.map((s, i) => (
-              <a
-                key={i}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg transition-colors"
-                style={{ backgroundColor: "#0D0D1A", border: "1px solid rgba(255,255,255,0.08)", padding: "12px 16px", display: "flex" }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-                <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>{s.domain}</span>
-                <span className="text-xs ml-auto truncate" style={{ color: "rgba(255,255,255,0.40)", maxWidth: "260px" }}>{s.url}</span>
-              </a>
-            ))}
           </div>
         </div>
       )}
