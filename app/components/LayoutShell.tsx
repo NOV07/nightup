@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import Navbar from "./Navbar";
+import VisitTracker from "./VisitTracker";
 import RadioStrip from "./RadioStrip";
 import MusicPlayerBar from "./MusicPlayerBar";
 import { Footer } from "@/components/layout/Footer";
@@ -95,11 +96,17 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }, []);
 
   if (isStandalone) {
-    return <>{children}</>;
+    return (
+      <>
+        <VisitTracker />
+        {children}
+      </>
+    );
   }
 
   return (
     <>
+      <VisitTracker />
       <Navbar />
       <main className="tonight-blurable flex-1 pb-4">{children}</main>
       <Footer />
