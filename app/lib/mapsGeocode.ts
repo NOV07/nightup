@@ -1,6 +1,6 @@
 // Fallback geocoding for Google Maps links whose final URL carries no
-// coordinates (`/maps/place/<name>, <address>/data=!1s0x…`). The address
-// text in the path goes to OpenStreetMap Nominatim. Server-only: it reads
+// coordinates (`/maps/place/<name>, <address>/data=!1s0x…`). The name and the
+// address text in the path go to OpenStreetMap Nominatim. Server-only: it reads
 // NOMINATIM_USER_AGENT. Only erasable TS syntax, so the .mjs tests import it.
 //
 // Nominatim usage policy: at most 1 request/second for the whole server, an
@@ -182,10 +182,22 @@ function pick(rows: NominatimRow[] | null, postcode: string | null): GeocodeHit 
   return null
 }
 
+/** Drops combining marks, so `Oulaloúm` is searched as `Oulaloum`. */
+export function stripAccents(s: string): string {
+  return s.normalize('NFD').replace(/\p{M}+/gu, '').normalize('NFC')
+}
+
 /**
- * Address-only lookup (names never matched in testing). Free-text query first;
- * when nothing passes the postcode filter, one structured search. At most two
- * requests per call. A result from another postcode is never returned.
+ * Looks the place up in up to three Nominatim requests, stopping at the first
+ * result that passes the filters:
+ *   1. `name, city` (accents stripped), when the link has a name and a city.
+ *      Matches venues OSM knows by name, even when the link's Latin street
+ *      spelling matches nothing (`Oulaloum, Ilioupoli`).
+ *   2. the address as free text.
+ *   3. the address as a structured search.
+ * Every result has to be fine enough for a pin (`precisionOf`) and, when the
+ * link has a postcode, to carry the same postcode, so a same-named place in
+ * another area is never returned. Without a postcode the hit is `unverified`.
  */
 export async function geocodeNominatim(place: PlaceText, options: GeocodeOptions = {}): Promise<GeocodeHit | null> {
   const userAgent = options.userAgent ?? process.env.NOMINATIM_USER_AGENT ?? ''
@@ -193,11 +205,17 @@ export async function geocodeNominatim(place: PlaceText, options: GeocodeOptions
   const opts = { fetchImpl: options.fetchImpl ?? fetch, userAgent }
   if (place.addressParts.length === 0) return null
 
+  const street = place.addressParts[0]
+  const city = place.addressParts.length > 1 ? place.addressParts[place.addressParts.length - 1] : ''
+
+  if (place.name && city) {
+    const byName = pick(await search({ q: `${stripAccents(place.name)}, ${city}` }, opts), place.postcode)
+    if (byName) return byName
+  }
+
   const first = pick(await search({ q: place.addressParts.join(', ') }, opts), place.postcode)
   if (first) return first
 
-  const street = place.addressParts[0]
-  const city = place.addressParts.length > 1 ? place.addressParts[place.addressParts.length - 1] : ''
   if (!city && !place.postcode) return null
   const structured: Record<string, string> = { street, country: 'gr' }
   if (city) structured.city = city

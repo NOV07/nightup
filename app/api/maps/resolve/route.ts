@@ -8,7 +8,7 @@ import { extractPlaceText, geocodeNominatim } from '@/app/lib/mapsGeocode'
 // into coordinates. It fetches a user-supplied URL, so it is authenticated,
 // rate limited, and restricted to an exact-hostname allowlist on every hop.
 // When the final URL has no coordinates, the address in its /place/ segment
-// is geocoded with Nominatim. No upstream body is ever returned: only
+// is geocoded with Nominatim (name + city first, then the address). No upstream body is ever returned: only
 // lat, lng, finalUrl, source and, for Nominatim, placeText/precision/unverified.
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
