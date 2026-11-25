@@ -9,20 +9,24 @@
  *   node scripts/test-maps-geocode-live.mjs
  */
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { resolveMapsUrl, MapsResolveError } from '../app/lib/mapsResolve.ts'
 import { extractPlaceText, geocodeNominatim, resetNominatimState, NOMINATIM_MIN_INTERVAL_MS } from '../app/lib/mapsGeocode.ts'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-for (const l of readFileSync(resolve(ROOT, '.env.local'), 'utf8').split(/\r?\n/)) {
-  const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/)
-  if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '')
+// .env.local is optional: NOMINATIM_USER_AGENT may also come from the environment.
+const envFile = resolve(ROOT, '.env.local')
+if (existsSync(envFile)) {
+  for (const l of readFileSync(envFile, 'utf8').split(/\r?\n/)) {
+    const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/)
+    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '')
+  }
 }
-if (!process.env.NOMINATIM_USER_AGENT) { console.error('NOMINATIM_USER_AGENT missing in .env.local'); process.exit(1) }
+if (!process.env.NOMINATIM_USER_AGENT) { console.error('NOMINATIM_USER_AGENT missing (.env.local or environment)'); process.exit(1) }
 
-const NEA_IONIA = '14231', EGALEO = '12244', VOLOS = { lat: 39.365806, lng: 22.928561 }
+const NEA_IONIA = '14231', EGALEO = '12244', ILIOUPOLI = '16341', VOLOS = { lat: 39.365806, lng: 22.928561 }
 const requests = []
 const timedFetch = async (url, init) => {
   requests.push({ at: Date.now(), url })
@@ -81,6 +85,16 @@ await test('Link 3: Egaleo 122 44', async () => {
   const a = await areaOf(r.lat, r.lng)
   console.log(`       reverse: ${a.display}`)
   assert.equal(a.postcode, EGALEO)
+})
+await test('Oulaloum (Mimis share link): Ilioupoli 163 41, near 37.93, 23.75, by name', async () => {
+  const r = await resolveLink('https://maps.app.goo.gl/TPSMdRmmQvXHJJtV9?g_st=ac')
+  console.log(`       ${show(r)}`)
+  assert.equal(r.source, 'nominatim')
+  assert.equal(r.precision, 'building')
+  assert.ok(Math.abs(r.lat - 37.9232576) < 0.003 && Math.abs(r.lng - 23.7549734) < 0.003, 'not at the venue (browser-link coordinates)')
+  const a = await areaOf(r.lat, r.lng)
+  console.log(`       reverse: ${a.display}`)
+  assert.equal(a.postcode, ILIOUPOLI)
 })
 await test('Control: coordinates straight from the URL, no Nominatim', async () => {
   const before = requests.length

@@ -178,6 +178,18 @@ await test(`more than ${MAX_REDIRECTS} redirects stops`, async () => {
 await test('final 200 without coordinates is no_coords', async () => {
   await expectCode(resolveMapsUrl('https://maps.app.goo.gl/x', async () => new Response('<html>secret</html>', { status: 200 })), 'no_coords')
 })
+// Mimis's share link (maps.app.goo.gl/TPSMdRmmQvXHJJtV9?g_st=ac): the 302 target has no @lat,lng and no !3d!4d, only a place id.
+await test('Oulaloum share link: one redirect to /maps/place/<name, address> -> no_coords with that finalUrl', async () => {
+  const short = 'https://maps.app.goo.gl/TPSMdRmmQvXHJJtV9?g_st=ac'
+  const place = 'https://www.google.com/maps/place/Oulalo%C3%BAm,+Fidiou+52,+Ilioupoli+163+41/data=!4m2!3m1!1s0x14a1bdcdce193e11:0x47a779e326a34809!18m1!1e1?coh=192189&entry=gps&g_st=ac'
+  try {
+    await resolveMapsUrl(short, scripted({ [short]: redirect(place), [place]: async () => new Response('<html>never read</html>', { status: 200 }) }))
+    assert.fail('should not resolve coordinates')
+  } catch (e) {
+    assert.equal(e.code, 'no_coords')
+    assert.equal(e.finalUrl, place)
+  }
+})
 await test('fetch failure maps to fetch_failed', async () => {
   await expectCode(resolveMapsUrl('https://maps.app.goo.gl/x', async () => { throw new Error('boom') }), 'fetch_failed')
 })
