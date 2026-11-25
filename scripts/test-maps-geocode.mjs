@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict'
 import { validateCoords, spotCoordsError } from '../app/lib/mapsCoords.ts'
 import {
-  extractPlaceText, geocodeNominatim, precisionOf, resetNominatimState, NOMINATIM_MIN_INTERVAL_MS,
+  extractPlaceText, geocodeNominatim, precisionOf, resetNominatimState, stripAccents, NOMINATIM_MIN_INTERVAL_MS,
 } from '../app/lib/mapsGeocode.ts'
 
 let passed = 0, failed = 0
@@ -18,6 +18,8 @@ async function test(name, fn) {
 }
 
 const LINK1 = 'https://www.google.com/maps/place/%CE%A4%CF%83%CE%B9%CF%80%CE%BF%CF%85%CF%81%CE%AC%CE%B4%CE%B9%CE%BA%CE%BF+%C2%ABTam+Tiririm%C2%BB,+Ag.+Anargiron+6,+Nea+Ionia+142+31/data=!4m2!3m1!1s0x14a1a3001818316d:0x6e7c9be51e8f3bf2!18m1!1e1'
+// Mimis's share link (maps.app.goo.gl/TPSMdRmmQvXHJJtV9), after the first redirect: no @lat,lng, no !3d!4d.
+const OULALOUM = 'https://www.google.com/maps/place/Oulalo%C3%BAm,+Fidiou+52,+Ilioupoli+163+41/data=!4m2!3m1!1s0x14a1bdcdce193e11:0x47a779e326a34809!18m1!1e1?coh=192189&entry=gps&g_st=ac'
 const LINK3 = 'https://www.google.com/maps/place/Veaki+25,+Egaleo+122+44/data=!4m2!3m1!1s0x14a1bca1ba2f45ef:0x355dce829e87d3db!18m1!1e1'
 const CONTROL = 'https://www.google.com/maps/place/37.983496,23.669933/data=!4m6!3m5!1s0!7e2!8m2!3d37.9834959!4d23.6699333!18m1!1e1'
 
@@ -30,6 +32,12 @@ await test('Link 1: name, «» removed, address and postcode split', () => asser
 }))
 await test('Link 3: street with number first means no name', () => assert.deepEqual(extractPlaceText(LINK3), {
   text: 'Veaki 25, Egaleo 122 44', name: null, addressParts: ['Veaki 25', 'Egaleo'], postcode: '122 44',
+}))
+await test('Oulaloum: accented Latin name, address and postcode split', () => assert.deepEqual(extractPlaceText(OULALOUM), {
+  text: 'Oulaloúm, Fidiou 52, Ilioupoli 163 41',
+  name: 'Oulaloúm',
+  addressParts: ['Fidiou 52', 'Ilioupoli'],
+  postcode: '163 41',
 }))
 await test('control: /place/lat,lng returns null', () => assert.equal(extractPlaceText(CONTROL), null))
 await test('Greek text, + as space', () => assert.deepEqual(
@@ -113,6 +121,8 @@ const road = (lat, lon, postcode) => ({ lat: String(lat), lon: String(lon), cate
 const VOLOS = road(39.365806, 22.928561, '384 45')
 const NEA_IONIA = road(38.042582, 23.750542, '142 31')
 const EGALEO = road(37.985103, 23.670716, '122 44')
+const FIDIOU = road(37.92059, 23.7537, '163 41')
+const CAFE = { lat: '37.92336', lon: '23.75499', category: 'amenity', type: 'cafe', addresstype: 'amenity', address: { postcode: '163 41' } }
 function mock(respond, calls = []) {
   return async (url, init) => {
     const u = new URL(url)
@@ -126,12 +136,13 @@ await test('Link 1 Latin: Volos (384 45) is filtered out, structured search trie
   const calls = []
   const hit = await geocodeNominatim(extractPlaceText(LINK1), { userAgent: UA, fetchImpl: mock(() => [VOLOS], calls) })
   assert.equal(hit, null)
-  assert.equal(calls.length, 2)
-  assert.equal(calls[0].params.q, 'Ag. Anargiron 6, Nea Ionia')
+  assert.equal(calls.length, 3)
+  assert.equal(calls[0].params.q, 'Τσιπουραδικο Tam Tiririm, Nea Ionia')
+  assert.equal(calls[1].params.q, 'Ag. Anargiron 6, Nea Ionia')
   assert.deepEqual(
-    { street: calls[1].params.street, city: calls[1].params.city, postalcode: calls[1].params.postalcode, country: calls[1].params.country },
+    { street: calls[2].params.street, city: calls[2].params.city, postalcode: calls[2].params.postalcode, country: calls[2].params.country },
     { street: 'Ag. Anargiron 6', city: 'Nea Ionia', postalcode: '142 31', country: 'gr' })
-  assert.equal(calls[1].params.q, undefined)
+  assert.equal(calls[2].params.q, undefined)
 })
 await test('Link 1: structured search finding Nea Ionia 142 31 is accepted', async () => {
   resetNominatimState()
@@ -167,12 +178,62 @@ await test('no postcode in link: first result, unverified: true', async () => {
   const hit = await geocodeNominatim(place, { userAgent: UA, fetchImpl: mock(() => [road(37.976, 23.728, '105 63')]) })
   assert.deepEqual(hit, { lat: 37.976, lng: 23.728, precision: 'street', unverified: true })
 })
-await test('the name is never sent to Nominatim', async () => {
+await test('Oulaloum: name + city (accents stripped) is the first query and wins in one call', async () => {
   resetNominatimState()
   const calls = []
-  await geocodeNominatim(extractPlaceText(LINK1), { userAgent: UA, fetchImpl: mock(() => [], calls) })
-  assert.ok(calls.length <= 2)
-  for (const c of calls) assert.ok(!JSON.stringify(c.params).includes('Tiririm'), JSON.stringify(c.params))
+  const hit = await geocodeNominatim(extractPlaceText(OULALOUM), { userAgent: UA, fetchImpl: mock(() => [CAFE], calls) })
+  assert.deepEqual(hit, { lat: 37.92336, lng: 23.75499, precision: 'building', unverified: false })
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].params.q, 'Oulaloum, Ilioupoli')
+})
+await test('Oulaloum: name finds nothing, the address query is tried next; street only gives precision street', async () => {
+  resetNominatimState()
+  const calls = []
+  const hit = await geocodeNominatim(extractPlaceText(OULALOUM), {
+    userAgent: UA, fetchImpl: mock(p => (p.get('q') === 'Fidiou 52, Ilioupoli' ? [FIDIOU] : []), calls),
+  })
+  assert.deepEqual(hit, { lat: 37.92059, lng: 23.7537, precision: 'street', unverified: false })
+  assert.deepEqual(calls.map(c => c.params.q), ['Oulaloum, Ilioupoli', 'Fidiou 52, Ilioupoli'])
+})
+await test('Oulaloum: a same-named place in another area (postcode 564 31) is rejected', async () => {
+  resetNominatimState()
+  const other = { ...CAFE, lat: '40.67', lon: '22.93', address: { postcode: '564 31' } }
+  const calls = []
+  const hit = await geocodeNominatim(extractPlaceText(OULALOUM), { userAgent: UA, fetchImpl: mock(() => [other], calls) })
+  assert.equal(hit, null)
+  assert.equal(calls.length, 3)
+})
+await test('Oulaloum without postcode: name hit accepted, unverified: true', async () => {
+  resetNominatimState()
+  const place = extractPlaceText('https://www.google.com/maps/place/Oulalo%C3%BAm,+Fidiou+52,+Ilioupoli/data=x')
+  const hit = await geocodeNominatim(place, { userAgent: UA, fetchImpl: mock(() => [CAFE]) })
+  assert.deepEqual(hit, { lat: 37.92336, lng: 23.75499, precision: 'building', unverified: true })
+})
+await test('Greek name and address: no accent stripping needed, name query first', async () => {
+  resetNominatimState()
+  const calls = []
+  const place = extractPlaceText('https://www.google.com/maps/place/Ουλαλούμ,+Φειδίου+52,+Ηλιούπολη+163+41/data=x')
+  const hit = await geocodeNominatim(place, { userAgent: UA, fetchImpl: mock(() => [CAFE], calls) })
+  assert.equal(hit?.precision, 'building')
+  assert.equal(calls[0].params.q, 'Ουλαλουμ, Ηλιούπολη')
+})
+await test('address-only link sends no name query', async () => {
+  resetNominatimState()
+  const calls = []
+  await geocodeNominatim(extractPlaceText(LINK3), { userAgent: UA, fetchImpl: mock(() => [EGALEO], calls) })
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].params.q, 'Veaki 25, Egaleo')
+})
+await test('never more than 3 requests per lookup', async () => {
+  resetNominatimState()
+  const calls = []
+  await geocodeNominatim(extractPlaceText(OULALOUM), { userAgent: UA, fetchImpl: mock(() => [], calls) })
+  assert.equal(calls.length, 3)
+})
+await test('stripAccents', () => {
+  assert.equal(stripAccents('Oulaloúm'), 'Oulaloum')
+  assert.equal(stripAccents('Café Zoé'), 'Cafe Zoe')
+  assert.equal(stripAccents('Ουλαλούμ'), 'Ουλαλουμ')
 })
 await test('postcode is not part of the free-text query', async () => {
   resetNominatimState()

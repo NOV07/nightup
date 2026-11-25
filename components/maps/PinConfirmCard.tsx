@@ -37,7 +37,9 @@ export default function PinConfirmCard({ coords, info, confirmed, disabled, onPi
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5, margin: '0 0 10px' }}>{t('spot_map_viewport_only')}</p>
       )}
       {(info?.precision === 'street') && (
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, margin: '0 0 10px' }}>{t('spot_map_street_only')}</p>
+        <p data-testid="pin-approx" style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, margin: '0 0 10px' }}>
+          <strong style={{ color: '#E8A020' }}>{t('event_map_approx')}.</strong> {t('spot_map_street_only')}
+        </p>
       )}
       {info?.unverified && (
         <p style={{ fontSize: 12, color: '#E8A020', lineHeight: 1.5, margin: '0 0 10px' }}>⚠ {t('spot_map_unverified')}</p>

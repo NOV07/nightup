@@ -34,12 +34,21 @@ mkdirSync(SHOTS, { recursive: true })
 const LINK1 = 'https://maps.app.goo.gl/1wk9aEsShzbEcEfb7'
 const LINK3 = 'https://maps.app.goo.gl/5uB215aGnKZxH6eZ6'
 const CONTROL = 'https://maps.app.goo.gl/4A1zptjKzYvK26Nk7'
+// Mobile share link: its redirect has no @lat,lng and no !3d!4d, only a place id, so the
+// server finds it in Nominatim by name + city. Browser-link coordinates: 37.9232576, 23.7549734.
+const OULALOUM = 'https://maps.app.goo.gl/TPSMdRmmQvXHJJtV9?g_st=ac'
+const OULALOUM_TEXT = 'Oulaloúm, Fidiou 52, Ilioupoli 163 41'
+const OULALOUM_FINAL = 'https://www.google.com/maps/place/Oulalo%C3%BAm,+Fidiou+52,+Ilioupoli+163+41/data=!4m2!3m1!1s0x14a1bdcdce193e11:0x47a779e326a34809'
 const EGALEO = { lat: 37.9851034, lng: 23.6707159 }
 const CANNED: Record<string, { status: number; body: object }> = {
   [LINK1]: { status: 422, body: { error: 'no_coords' } },
   [LINK3]: { status: 200, body: {
     ...EGALEO, source: 'nominatim', placeText: 'Veaki 25, Egaleo 122 44', precision: 'street',
     finalUrl: 'https://www.google.com/maps/place/Veaki+25,+Egaleo+122+44/data=!4m2!3m1!1s0x14a1bca1ba2f45ef:0x355dce829e87d3db',
+  } },
+  [OULALOUM]: { status: 200, body: {
+    lat: 37.9233556, lng: 23.7549895, source: 'nominatim', placeText: OULALOUM_TEXT, precision: 'building',
+    finalUrl: OULALOUM_FINAL,
   } },
   [CONTROL]: { status: 200, body: {
     lat: 37.9834959, lng: 23.6699333, source: 'url',
@@ -233,6 +242,18 @@ test.describe('new spot wizard (mocked resolve)', () => {
     await page.screenshot({ path: join(SHOTS, '1b-found-after-drag.png'), fullPage: true })
     await nextBtn(page).click()
     await expect(picker(page)).toHaveCount(0)
+  })
+
+  test('(β3) Oulaloum share link -> nominatim/building: place text, no "street only" note', async ({ page }) => {
+    const calls = await mockResolve(page)
+    await toLocationStep(page)
+    await linkInput(page).fill(OULALOUM)
+    const card = page.getByTestId('map-nominatim-card')
+    await expect(card).toBeVisible()
+    await expect(card).toContainText(OULALOUM_TEXT)
+    await expect(card).not.toContainText('Βρήκαμε τον δρόμο, όχι τον ακριβή αριθμό')
+    expect(await coordsText(page)).toEqual({ lat: 37.923356, lng: 23.75499 })
+    expect(calls).toEqual([OULALOUM])
   })
 
   test('(β2) unverified result shows the area warning', async ({ page }) => {
@@ -457,7 +478,62 @@ test.describe('admin', () => {
   })
 })
 
+// Event form (/dashboard/events/new, step 2): same route, PinConfirmCard instead of the spot card.
+async function toEventLinkStep(page: Page) {
+  await page.goto('/dashboard/events/new')
+  for (const el of await page.locator('input[type=text], input:not([type])').all()) {
+    if (await el.isVisible()) await el.fill('Deltest event').catch(() => {})
+  }
+  for (const el of await page.locator('textarea').all()) if (await el.isVisible()) await el.fill('Deltest description')
+  await nextBtn(page).click()
+  await expect(page.getByTestId('event-maps-url')).toBeVisible()
+}
+
+test.describe('new event form (mocked resolve)', () => {
+  test.beforeEach(async ({ context, baseURL }) => { await signIn(context, NEW, baseURL!) })
+
+  test('Oulaloum share link -> confirm card with the place, no "approximate" note; nothing is submitted', async ({ page }) => {
+    const calls = await mockResolve(page)
+    await toEventLinkStep(page)
+    await page.getByTestId('event-maps-url').fill(OULALOUM)
+    await expect(page.getByTestId('pin-card')).toBeVisible()
+    await expect(page.getByTestId('pin-place')).toHaveText(OULALOUM_TEXT)
+    await expect(page.getByTestId('pin-coords')).toContainText('37.923356, 23.754990')
+    await expect(page.getByTestId('pin-approx')).toHaveCount(0)
+    await expect(page.getByTestId('pin-confirm')).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    expect(calls).toEqual([OULALOUM])
+    await page.getByTestId('pin-card').scrollIntoViewIfNeeded()
+    await page.screenshot({ path: join(SHOTS, '5-event-oulaloum.png') })
+  })
+
+  test('street-only result shows «Κατά προσέγγιση»; the organiser still has to confirm', async ({ page }) => {
+    await page.route('**/api/maps/resolve', r => r.fulfill({ json: { ...(CANNED[OULALOUM].body as object), precision: 'street', placeText: 'Fidiou 52, Ilioupoli 163 41' } }))
+    await toEventLinkStep(page)
+    await page.getByTestId('event-maps-url').fill(OULALOUM)
+    await expect(page.getByTestId('pin-approx')).toContainText('Κατά προσέγγιση')
+    await expect(page.getByTestId('pin-approx')).toContainText('Βρήκαμε τον δρόμο, όχι τον ακριβή αριθμό')
+    await page.getByTestId('pin-card').scrollIntoViewIfNeeded()
+    await page.screenshot({ path: join(SHOTS, '5b-event-approx.png') })
+    await page.getByTestId('pin-confirm').click()
+    await expect(page.getByTestId('pin-confirm')).toHaveCount(0)
+  })
+})
+
 test.describe('live', () => {
+  test('smoke: real Oulaloum share link through the real resolve route (by name, Ilioupoli)', async ({ page, context, baseURL }) => {
+    test.setTimeout(60_000)
+    await signIn(context, NEW, baseURL!)
+    await toLocationStep(page)
+    await linkInput(page).fill(OULALOUM)
+    const card = page.getByTestId('map-nominatim-card')
+    await expect(card).toBeVisible({ timeout: 30_000 })
+    await expect(card).toContainText(OULALOUM_TEXT)
+    const c = await coordsText(page)
+    expect(Math.abs(c.lat - 37.9232576)).toBeLessThan(0.003) // ~300 m of the browser-link coordinates
+    expect(Math.abs(c.lng - 23.7549734)).toBeLessThan(0.003)
+  })
+
   test('smoke: real Link 3 through the real resolve route', async ({ page, context, baseURL }) => {
     test.setTimeout(60_000)
     await signIn(context, NEW, baseURL!)
