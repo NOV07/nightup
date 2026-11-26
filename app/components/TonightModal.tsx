@@ -10,6 +10,7 @@ import {
 } from "../lib/spotCategories";
 import { SpotCategoryIcon } from "../lib/spotIcons";
 import { getEventMood } from "../lib/eventMood";
+import { getEventDayLabel, formatEventDateTime } from "../lib/eventDayLabel";
 import { getEventCoverImage, getEventCrop } from "../lib/getEventCoverImage";
 import CroppedImage from "../../components/ui/CroppedImage";
 import { useLanguage } from "./LanguageContext";
@@ -391,14 +392,14 @@ export default function TonightModal({ spots, open, onClose, events }: { spots: 
           )}
           {matchedEvent && (
             <Link key={`ev-${nightKey}`} href={`/events/${matchedEvent.id}`} onClick={handleClose} className="tn-appear" style={{ ...S.eventCard, "--d": "3000ms" } as React.CSSProperties}>
-              <div style={S.eventKicker}>🎉 {t("tonight_try_event")}</div>
+              <div style={S.eventKicker}>🎉 {`${t("tonight_try_event")} ${getEventDayLabel(matchedEvent, t)}`.trim()}</div>
               <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10 }}>
                 <div style={{ position: "relative", ...S.eventImg }}>
                   <CroppedImage src={getEventCoverImage(matchedEvent)} alt={matchedEvent.title} crop={getEventCrop(matchedEvent)} sizes="52px" style={{ borderRadius: S.eventImg.borderRadius }} />
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={S.eventTitle}>{matchedEvent.title}</div>
-                  <div style={S.eventMeta}>{matchedEvent.date}{matchedEvent.time ? ` · ${matchedEvent.time}` : ""}</div>
+                  <div style={S.eventMeta}>{formatEventDateTime(matchedEvent, t)}</div>
                   <div style={S.eventMeta}>{matchedEvent.venue}</div>
                 </div>
               </div>

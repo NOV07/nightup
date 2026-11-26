@@ -374,7 +374,13 @@ const translations = {
   tonight_vibe_q:     { el: "τι είδος;", en: "which type?" },
   tonight_see_results:{ el: "Δες τι λείπει", en: "See what's missing" },
   tonight_have_all:   { el: "Τα έχεις όλα! 🎉", en: "You have it all! 🎉" },
-  tonight_try_event:  { el: "Ή δοκίμασε ένα event απόψε", en: "Or try an event tonight" },
+  // Title = tonight_try_event + " " + day label (app/lib/eventDayLabel.ts). Day names are Monday-first.
+  tonight_try_event:  { el: "Ή δοκίμασε ένα event", en: "Or try an event" },
+  tonight_day_tonight:  { el: "απόψε", en: "tonight" },
+  tonight_day_tomorrow: { el: "αύριο", en: "tomorrow" },
+  tonight_day_on_date:  { el: "στις", en: "on" },
+  tonight_day_on_names: { el: "τη Δευτέρα,την Τρίτη,την Τετάρτη,την Πέμπτη,την Παρασκευή,το Σάββατο,την Κυριακή", en: "on Monday,on Tuesday,on Wednesday,on Thursday,on Friday,on Saturday,on Sunday" },
+  tonight_day_short_names: { el: "Δευ,Τρί,Τετ,Πέμ,Παρ,Σάβ,Κυρ", en: "Mon,Tue,Wed,Thu,Fri,Sat,Sun" },
 
   // ── AuthModal ────────────────────────────────────────────
   auth_check_email:   { el: "Έλεγξε το email σου. Σου στείλαμε ένα reset link.", en: "Check your email. We sent a reset link." },
